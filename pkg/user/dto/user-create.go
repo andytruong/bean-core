@@ -14,14 +14,20 @@ type UserCreateInput struct {
 }
 
 type UserEmailsInput struct {
-	Primary   *model.UserEmailInput   `json:"primary"`
-	Secondary []*model.UserEmailInput `json:"secondary"`
+	Primary   *UserEmailInput   `json:"primary"`
+	Secondary []*UserEmailInput `json:"secondary"`
+}
+
+type UserEmailInput struct {
+	Verified bool   `json:"verified"`
+	Value    string `json:"value"`
+	IsActive bool   `json:"isActive"`
 }
 
 type UserNameInput struct {
 	FirstName     *string `json:"firstName"`
 	LastName      *string `json:"lastName"`
-	PrefferedName *string `json:"prefferedName"`
+	PreferredName *string `json:"preferredName"`
 }
 
 type UserCreateOutcome struct {

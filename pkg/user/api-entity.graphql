@@ -9,7 +9,7 @@ type User {
 type UserName {
     firstName: String
     lastName: String
-    prefferedName: String
+    preferredName: String
 }
 
 type UserEmails {

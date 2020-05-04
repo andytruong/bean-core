@@ -16,7 +16,7 @@ input UserCreateInput {
 input UserNameInput {
     firstName: String
     lastName: String
-    prefferedName: String
+    preferredName: String
 }
 
 input UserEmailsInput {

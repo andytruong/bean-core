@@ -1,18 +1,25 @@
 package user
 
+import (
+	"github.com/jinzhu/gorm"
+	"go.uber.org/zap"
+)
+
 func NewUserService() *UserModule {
 	return &UserModule{}
 }
 
 type UserModule struct {
-	mutationResolver *UserMutationResolver
+	db        *gorm.DB
+	logger    *zap.Logger
+	rMutation *UserMutationResolver
 }
 
 func (this *UserModule) MutationResolver() *UserMutationResolver {
-	if nil == this.mutationResolver {
-		this.mutationResolver = &UserMutationResolver{
+	if nil == this.rMutation {
+		this.rMutation = &UserMutationResolver{
 		}
 	}
 
-	return this.mutationResolver
+	return this.rMutation
 }

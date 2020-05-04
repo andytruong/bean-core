@@ -160,7 +160,7 @@ type ComplexityRoot struct {
 	UserName struct {
 		FirstName     func(childComplexity int) int
 		LastName      func(childComplexity int) int
-		PrefferedName func(childComplexity int) int
+		PreferredName func(childComplexity int) int
 	}
 
 	ValidationOutcome struct {
@@ -646,12 +646,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UserName.LastName(childComplexity), true
 
-	case "UserName.prefferedName":
-		if e.complexity.UserName.PrefferedName == nil {
+	case "UserName.preferredName":
+		if e.complexity.UserName.PreferredName == nil {
 			break
 		}
 
-		return e.complexity.UserName.PrefferedName(childComplexity), true
+		return e.complexity.UserName.PreferredName(childComplexity), true
 
 	case "ValidationOutcome.errors":
 		if e.complexity.ValidationOutcome.Errors == nil {
@@ -811,7 +811,7 @@ type Membership {
 type UserName {
     firstName: String
     lastName: String
-    prefferedName: String
+    preferredName: String
 }
 
 type UserEmails {
@@ -846,7 +846,7 @@ input UserCreateInput {
 input UserNameInput {
     firstName: String
     lastName: String
-    prefferedName: String
+    preferredName: String
 }
 
 input UserEmailsInput {
@@ -3162,7 +3162,7 @@ func (ec *executionContext) _UserName_lastName(ctx context.Context, field graphq
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserName_prefferedName(ctx context.Context, field graphql.CollectedField, obj *model1.UserName) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserName_preferredName(ctx context.Context, field graphql.CollectedField, obj *model1.UserName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3179,7 +3179,7 @@ func (ec *executionContext) _UserName_prefferedName(ctx context.Context, field g
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PrefferedName, nil
+		return obj.PreferredName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4427,8 +4427,8 @@ func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserEmailInput(ctx context.Context, obj interface{}) (model1.UserEmailInput, error) {
-	var it model1.UserEmailInput
+func (ec *executionContext) unmarshalInputUserEmailInput(ctx context.Context, obj interface{}) (dto1.UserEmailInput, error) {
+	var it dto1.UserEmailInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -4465,13 +4465,13 @@ func (ec *executionContext) unmarshalInputUserEmailsInput(ctx context.Context, o
 		switch k {
 		case "primary":
 			var err error
-			it.Primary, err = ec.unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmailInput(ctx, v)
+			it.Primary, err = ec.unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "secondary":
 			var err error
-			it.Secondary, err = ec.unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmailInput(ctx, v)
+			it.Secondary, err = ec.unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4499,9 +4499,9 @@ func (ec *executionContext) unmarshalInputUserNameInput(ctx context.Context, obj
 			if err != nil {
 				return it, err
 			}
-		case "prefferedName":
+		case "preferredName":
 			var err error
-			it.PrefferedName, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.PreferredName, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5175,8 +5175,8 @@ func (ec *executionContext) _UserName(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._UserName_firstName(ctx, field, obj)
 		case "lastName":
 			out.Values[i] = ec._UserName_lastName(ctx, field, obj)
-		case "prefferedName":
-			out.Values[i] = ec._UserName_prefferedName(ctx, field, obj)
+		case "preferredName":
+			out.Values[i] = ec._UserName_preferredName(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5616,15 +5616,15 @@ func (ec *executionContext) marshalNUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUse
 	return ec._UserEmail(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋmodelᚐUserEmailInput(ctx context.Context, v interface{}) (model1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (dto1.UserEmailInput, error) {
 	return ec.unmarshalInputUserEmailInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmailInput(ctx context.Context, v interface{}) (*model1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto1.UserEmailInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋmodelᚐUserEmailInput(ctx, v)
+	res, err := ec.unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, v)
 	return &res, err
 }
 
@@ -6503,11 +6503,11 @@ func (ec *executionContext) marshalOUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUse
 	return ec._UserEmail(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserEmailInput2beanᚋpkgᚋuserᚋmodelᚐUserEmailInput(ctx context.Context, v interface{}) (model1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalOUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (dto1.UserEmailInput, error) {
 	return ec.unmarshalInputUserEmailInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmailInput(ctx context.Context, v interface{}) ([]*model1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) ([]*dto1.UserEmailInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -6517,9 +6517,9 @@ func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋm
 		}
 	}
 	var err error
-	res := make([]*model1.UserEmailInput, len(vSlice))
+	res := make([]*dto1.UserEmailInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmailInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -6527,11 +6527,11 @@ func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋm
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmailInput(ctx context.Context, v interface{}) (*model1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto1.UserEmailInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOUserEmailInput2beanᚋpkgᚋuserᚋmodelᚐUserEmailInput(ctx, v)
+	res, err := ec.unmarshalOUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, v)
 	return &res, err
 }
 
