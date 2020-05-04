@@ -1,0 +1,18 @@
+http-server:
+  address: ":8484"
+  readTimeout:  15s
+  writeTimeout: 15s
+  idleTimeout: 15s
+  graphql:
+    playround:
+      title: "GraphQL playground"
+      enabled: true
+      path: /
+
+databases:
+  default:
+    driver: "${DB_DRIVER}"
+    master:
+      url: "${DB_MASTER_URL}"
+    slave:
+      url: "${DB_SLAVE_URL}"
