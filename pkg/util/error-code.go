@@ -6,15 +6,10 @@ import (
 	"strconv"
 )
 
-type Error struct {
-	Code   *ErrorCode `json:"code"`
-	Fields []string   `json:"fields"`
-}
-
 type ErrorCode string
 
 const (
-	ErrorCodeInut         ErrorCode = "Inut"
+	ErrorCodeInput        ErrorCode = "Input"
 	ErrorCodeConfig       ErrorCode = "Config"
 	ErrorCodeRuntime      ErrorCode = "Runtime"
 	ErrorCodeDbTimeout    ErrorCode = "DB_Timeout"
@@ -22,7 +17,7 @@ const (
 )
 
 var AllErrorCode = []ErrorCode{
-	ErrorCodeInut,
+	ErrorCodeInput,
 	ErrorCodeConfig,
 	ErrorCodeRuntime,
 	ErrorCodeDbTimeout,
@@ -31,7 +26,7 @@ var AllErrorCode = []ErrorCode{
 
 func (e ErrorCode) IsValid() bool {
 	switch e {
-	case ErrorCodeInut, ErrorCodeConfig, ErrorCodeRuntime, ErrorCodeDbTimeout, ErrorCodeDbConstraint:
+	case ErrorCodeInput, ErrorCodeConfig, ErrorCodeRuntime, ErrorCodeDbTimeout, ErrorCodeDbConstraint:
 		return true
 	}
 	return false

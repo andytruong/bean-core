@@ -20,7 +20,7 @@ type Error {
 enum ErrorCode   {
     # Input errors
     # ---------------------
-    Inut
+    Input
 
     # internal errors
     # ---------------------
