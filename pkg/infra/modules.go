@@ -1,0 +1,29 @@
+package infra
+
+import (
+	"bean/pkg/access"
+	"bean/pkg/user"
+)
+
+type (
+	modules struct {
+		user   *user.UserModule
+		access *access.AccessModule
+	}
+)
+
+func (this *modules) User() *user.UserModule {
+	if nil == this.user {
+		this.user = user.NewUserService()
+	}
+
+	return this.user
+}
+
+func (this *modules) Access() *access.AccessModule {
+	if nil == this.access {
+		this.access = access.NewAccessModule()
+	}
+
+	return this.access
+}

@@ -11,7 +11,7 @@ model:
   filename: pkg/infra/gql/model.go
 
 resolver:
-  filename: pkg/infra/gql-resolvers.go
+  filename: pkg/infra/resolvers.go
   type: Resolver
 
 autobind:

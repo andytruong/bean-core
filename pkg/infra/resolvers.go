@@ -12,6 +12,14 @@ import (
 )
 
 type (
+	resolvers struct {
+		container *Container
+		root      *rootResolver
+		query     *queryResolver
+		mutation  *mutationResolver
+		session   *sessionResolver
+	}
+
 	rootResolver struct {
 		container *Container
 	}
@@ -29,6 +37,37 @@ type (
 		container *Container
 	}
 )
+
+func (this *resolvers) getRoot() *rootResolver {
+	if nil == this.root {
+		this.root = &rootResolver{container: this.container}
+	}
+
+	return this.root
+}
+
+func (this *resolvers) getQuery() *queryResolver {
+	if this.query == nil {
+		this.query = &queryResolver{}
+	}
+
+	return this.query
+}
+
+func (this *resolvers) getMutation() *mutationResolver {
+	if nil == this.mutation {
+		this.mutation = &mutationResolver{
+			UserMutationResolver:   this.container.modules.User().MutationResolver(),
+			AccessMutationResolver: this.container.modules.Access().MutationResolver(),
+		}
+	}
+
+	return this.mutation
+}
+
+func (this *resolvers) getSession() *sessionResolver {
+	panic("wip")
+}
 
 func (this *rootResolver) Session() gql.SessionResolver {
 	return this.container.gql.getSession()

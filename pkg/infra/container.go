@@ -14,9 +14,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
-	"bean/pkg/access"
 	"bean/pkg/infra/gql"
-	"bean/pkg/user"
 )
 
 func NewContainer(path string) (*Container, error) {
@@ -63,19 +61,6 @@ type (
 		mu      *sync.Mutex
 		gql     resolvers
 		modules modules
-	}
-
-	resolvers struct {
-		container *Container
-		root      *rootResolver
-		query     *queryResolver
-		mutation  *mutationResolver
-		session   *sessionResolver
-	}
-
-	modules struct {
-		user   *user.UserModule
-		access *access.AccessModule
 	}
 
 	DatabaseConfig struct {
@@ -125,51 +110,4 @@ func (this *Container) ListenAndServe() error {
 	this.Logger.Info("🚀 HTTP server is running", zap.String("address", this.HttpServer.Address))
 
 	return server.ListenAndServe()
-}
-
-func (this *resolvers) getRoot() *rootResolver {
-	if nil == this.root {
-		this.root = &rootResolver{container: this.container}
-	}
-
-	return this.root
-}
-
-func (this *resolvers) getQuery() *queryResolver {
-	if this.query == nil {
-		this.query = &queryResolver{}
-	}
-
-	return this.query
-}
-
-func (this *resolvers) getMutation() *mutationResolver {
-	if nil == this.mutation {
-		this.mutation = &mutationResolver{
-			UserMutationResolver:   this.container.modules.User().MutationResolver(),
-			AccessMutationResolver: this.container.modules.Access().MutationResolver(),
-		}
-	}
-
-	return this.mutation
-}
-
-func (this *resolvers) getSession() *sessionResolver {
-	panic("wip")
-}
-
-func (this *modules) User() *user.UserModule {
-	if nil == this.user {
-		this.user = user.NewUserService()
-	}
-
-	return this.user
-}
-
-func (this *modules) Access() *access.AccessModule {
-	if nil == this.access {
-		this.access = access.NewAccessModule()
-	}
-
-	return this.access
 }
