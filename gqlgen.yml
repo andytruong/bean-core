@@ -2,18 +2,16 @@ schema:
   - pkg/util/api*.graphql
   - pkg/namespace/api*.graphql
   - pkg/user/api*.graphql
-  - pkg/access/api-entity.graphql
-  - pkg/access/api-query.graphql
-  - pkg/access/api-mutation.graphql
+  - pkg/access/api*.graphql
 
 exec:
-  filename: pkg/graphql/generated.go
+  filename: pkg/infra/gql/generated.go
 
 model:
-  filename: pkg/graphql/model-gen.go
+  filename: pkg/infra/gql/model-gen.go
 
 resolver:
-  filename: pkg/graphql/resolver.go
+  filename: pkg/infra/gql/resolver.go
   type: Resolver
 
 autobind:
