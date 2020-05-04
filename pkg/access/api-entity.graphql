@@ -1,4 +1,5 @@
 type Session {
+    id: ID!
     hashedToken: String!
     user: User
     namespace: Namespace!

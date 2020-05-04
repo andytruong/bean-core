@@ -26,7 +26,7 @@ func (r *mutationResolver) Version(ctx context.Context) (string, error) {
 	panic("not implemented")
 }
 
-func (r *mutationResolver) UserCreate(ctx context.Context, input *dto.UserCreateInput) (*access_dto.UserCreateOutcome, error) {
+func (r *mutationResolver) UserCreate(ctx context.Context, input *dto.UserCreateInput) (*dto.UserCreateOutcome, error) {
 	panic("not implemented")
 }
 

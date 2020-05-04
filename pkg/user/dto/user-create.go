@@ -2,6 +2,7 @@ package dto
 
 import (
 	"bean/pkg/user/model"
+	"bean/pkg/util"
 )
 
 type UserCreateInput struct {
@@ -21,4 +22,9 @@ type UserNameInput struct {
 	FirstName     *string `json:"firstName"`
 	LastName      *string `json:"lastName"`
 	PrefferedName *string `json:"prefferedName"`
+}
+
+type UserCreateOutcome struct {
+	User   *model.User   `json:"user"`
+	Errors []*util.Error `json:"errors"`
 }

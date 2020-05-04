@@ -3,12 +3,6 @@
 package gql
 
 import (
-	"bean/pkg/access/dto"
-	model1 "bean/pkg/access/model"
-	"bean/pkg/namespace/model"
-	dto1 "bean/pkg/user/dto"
-	model2 "bean/pkg/user/model"
-	"bean/pkg/util"
 	"bytes"
 	"context"
 	"errors"
@@ -16,6 +10,13 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"bean/pkg/access/dto"
+	model1 "bean/pkg/access/model"
+	"bean/pkg/namespace/model"
+	dto1 "bean/pkg/user/dto"
+	model2 "bean/pkg/user/model"
+	"bean/pkg/util"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -169,7 +170,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	Version(ctx context.Context) (string, error)
-	UserCreate(ctx context.Context, input *dto1.UserCreateInput) (*dto.UserCreateOutcome, error)
+	UserCreate(ctx context.Context, input *dto1.UserCreateInput) (*dto1.UserCreateOutcome, error)
 	SessionCreate(ctx context.Context, input *dto.LoginInput) (*dto.LoginOutcome, error)
 	SessionDelete(ctx context.Context, input *dto.LoginInput) (*dto.LogoutPayload, error)
 }
@@ -1809,7 +1810,7 @@ func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*dto.UserCreateOutcome)
+	res := resTmp.(*dto1.UserCreateOutcome)
 	fc.Result = res
 	return ec.marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐUserCreateOutcome(ctx, field.Selections, res)
 }
@@ -2721,7 +2722,7 @@ func (ec *executionContext) _User_isActive(ctx context.Context, field graphql.Co
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserCreateOutcome_user(ctx context.Context, field graphql.CollectedField, obj *dto.UserCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserCreateOutcome_user(ctx context.Context, field graphql.CollectedField, obj *dto1.UserCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2752,7 +2753,7 @@ func (ec *executionContext) _UserCreateOutcome_user(ctx context.Context, field g
 	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.UserCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.UserCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4984,7 +4985,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 
 var userCreateOutcomeImplementors = []string{"UserCreateOutcome"}
 
-func (ec *executionContext) _UserCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.UserCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) _UserCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.UserCreateOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userCreateOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -6370,11 +6371,11 @@ func (ec *executionContext) unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋdto
 	return &res, err
 }
 
-func (ec *executionContext) marshalOUserCreateOutcome2beanᚋpkgᚋaccessᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto.UserCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalOUserCreateOutcome2beanᚋpkgᚋaccessᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.UserCreateOutcome) graphql.Marshaler {
 	return ec._UserCreateOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.UserCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.UserCreateOutcome) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
