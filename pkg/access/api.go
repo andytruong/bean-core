@@ -17,9 +17,9 @@ func (r *AccessMutationResolver) SessionDelete(ctx context.Context, input *dto.L
 	panic("not implemented")
 }
 
-type QueryResolver struct {
+type AccessQueryResolver struct {
 }
 
-func (this QueryResolver) LoadSession(ctx context.Context, input *dto.ValidationInput) (*dto.ValidationOutcome, error) {
+func (this AccessQueryResolver) LoadSession(ctx context.Context, input *dto.ValidationInput) (*dto.ValidationOutcome, error) {
 	panic("wip")
 }

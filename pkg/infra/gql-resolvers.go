@@ -22,23 +22,24 @@ type (
 	}
 
 	queryResolver struct {
-		*access.QueryResolver
+		*access.AccessQueryResolver
 	}
 
 	sessionResolver struct {
+		container *Container
 	}
 )
 
 func (this *rootResolver) Session() gql.SessionResolver {
-	return this.container.gqlResolvers.session
+	return this.container.gql.session
 }
 
 func (this *rootResolver) Mutation() gql.MutationResolver {
-	return this.container.gqlResolvers.mutation
+	return this.container.gql.mutation
 }
 
 func (this *rootResolver) Query() gql.QueryResolver {
-	return this.container.gqlResolvers.query
+	return this.container.gql.query
 }
 
 func (this mutationResolver) Ping(ctx context.Context) (string, error) {
