@@ -17,8 +17,8 @@ type (
 	}
 
 	mutationResolver struct {
-		*access.AccessMutationResolver
 		*user.UserMutationResolver
+		*access.AccessMutationResolver
 	}
 
 	queryResolver struct {
@@ -31,15 +31,15 @@ type (
 )
 
 func (this *rootResolver) Session() gql.SessionResolver {
-	return this.container.gql.session
+	return this.container.gql.getSession()
 }
 
 func (this *rootResolver) Mutation() gql.MutationResolver {
-	return this.container.gql.mutation
+	return this.container.gql.getMutation()
 }
 
 func (this *rootResolver) Query() gql.QueryResolver {
-	return this.container.gql.query
+	return this.container.gql.getQuery()
 }
 
 func (this mutationResolver) Ping(ctx context.Context) (string, error) {
