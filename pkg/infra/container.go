@@ -32,24 +32,28 @@ func NewContainer(path string) (*Container, error) {
 		return nil, err
 	}
 
+	// setup logger
+	this.Logger, err = zap.NewProduction()
+	if nil != err {
+		return nil, err
+	}
+
 	// setup gql-resolvers
-	if false {
-		this.gql = struct {
-			root     *rootResolver
-			query    *queryResolver
-			mutation *mutationResolver
-			session  *sessionResolver
-		}{
-			root:  &rootResolver{container: this},
-			query: &queryResolver{AccessQueryResolver: nil},
-			mutation: &mutationResolver{
-				AccessMutationResolver: nil,
-				UserMutationResolver:   nil,
-			},
-			session: &sessionResolver{
-				container: this,
-			},
-		}
+	this.gql = struct {
+		root     *rootResolver
+		query    *queryResolver
+		mutation *mutationResolver
+		session  *sessionResolver
+	}{
+		root:  &rootResolver{container: this},
+		query: &queryResolver{AccessQueryResolver: nil},
+		mutation: &mutationResolver{
+			AccessMutationResolver: nil,
+			UserMutationResolver:   nil,
+		},
+		session: &sessionResolver{
+			container: this,
+		},
 	}
 
 	return this, nil
@@ -62,7 +66,7 @@ type (
 	//  - HTTP server (GraphQL query interface)
 	Container struct {
 		Version    string `yaml:"version"`
-		Logger     zap.Logger
+		Logger     *zap.Logger
 		DB         *gorm.DB
 		Databases  map[string]DatabaseConfig `yaml:"databases"`
 		HttpServer HttpServerConfig          `yaml:"http-server"`
