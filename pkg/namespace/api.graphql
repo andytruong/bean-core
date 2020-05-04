@@ -1,0 +1,28 @@
+type Namespace {
+    id: ID!
+    title: String
+    domainNames: DomainNames
+}
+
+type DomainNames {
+    primary: DomainName!
+    secondary: [DomainName]
+}
+
+type DomainName {
+    id: ID!
+    verified: Boolean!
+    value: Email!
+    createdAt: Time!
+    updatedAt: Time!
+    isActive: Boolean!
+}
+
+type Membership {
+    id: ID!
+    namespaceId: ID!
+    userId: ID!
+    isActive: Boolean!
+    createdAt: Time
+    updatedAt: Time
+}

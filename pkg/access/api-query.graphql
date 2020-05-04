@@ -1,0 +1,15 @@
+# ---------------------
+# SessionLoad // Validation
+# ---------------------
+extend type Query {
+    loadSession(input: LoginInput): LoginOutcome!
+}
+
+input ValidationInput {
+    hashedToken: String!
+}
+
+type ValidationOutcome {
+    status: Boolean!
+    errors: [Error!]
+}

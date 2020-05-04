@@ -1,0 +1,45 @@
+# ---------------------
+# SessionCreate // Login
+# ---------------------
+extend type Mutation {
+    sessionCreate(input: LoginInput): LoginOutcome!
+}
+
+input LoginInput {
+    namespaceId: String
+    username: String!
+    hashedPassword: String!
+    context: LoginContextInput
+}
+
+input LoginContextInput {
+    ipAddress: IP
+    country: CountryCode
+    deviceType: DeviceType
+    deviceName: String
+}
+
+type LoginOutcome {
+    errors: [Error!]
+    session: Session
+}
+
+# ---------------------
+# SessionDelete // Logout
+# ---------------------
+extend type Mutation {
+    sessionDelete(input: LoginInput): LogoutPayload!
+}
+
+type LogoutInput {
+    hashedToken: String!
+}
+
+type LogoutPayload {
+    errors: [Error!]
+    result: Boolean
+}
+
+# ---------------------
+# TODO: one time login
+# ---------------------

@@ -1,0 +1,27 @@
+type User {
+    id: ID!
+    name: UserName!
+    emails: UserEmails
+    avatarUri: Uri
+    isActive: Boolean!
+}
+
+type UserName {
+    firstName: String
+    lastName: String
+    prefferedName: String
+}
+
+type UserEmails {
+    primary: UserEmail!
+    secondary: [UserEmail]
+}
+
+type UserEmail {
+    id: ID!
+    verified: Boolean!
+    value: Email!
+    createdAt: Time!
+    updatedAt: Time!
+    isActive: Boolean!
+}

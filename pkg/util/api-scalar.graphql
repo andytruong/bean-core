@@ -1,0 +1,39 @@
+scalar Time
+scalar Uri
+scalar IP
+scalar CountryCode
+scalar Email
+
+type Query {
+    version: String!
+}
+
+type Mutation {
+    version: String!
+}
+
+type Error {
+    code: ErrorCode
+    fields: [String!]
+}
+
+enum ErrorCode   {
+    # Input errors
+    # ---------------------
+    Inut
+
+    # internal errors
+    # ---------------------
+    Config
+    Runtime
+
+    # Server errors
+    # ---------------------
+    DB_Timeout
+    DB_Constraint
+}
+
+enum AccessScope {
+    Anonymous
+    Authenticated
+}

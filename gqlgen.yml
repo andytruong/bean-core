@@ -1,0 +1,25 @@
+schema:
+  - pkg/util/api*.graphql
+  - pkg/namespace/api*.graphql
+  - pkg/user/api-entity.graphql
+  - pkg/user/api-mutation.graphql
+
+exec:
+  filename: pkg/graphql/generated.go
+
+model:
+  filename: pkg/graphql/model-gen.go
+
+resolver:
+  filename: pkg/graphql/resolver.go
+  type: Resolver
+
+autobind:
+  - bean/pkg/graphql
+  - bean/pkg/user/dto
+  - bean/pkg/user/model
+  - bean/pkg/namespace/dto
+  - bean/pkg/namespace/model
+  - bean/pkg/access/dto
+  - bean/pkg/access/model
+  - bean/pkg/util

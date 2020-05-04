@@ -1,0 +1,36 @@
+# ---------------------
+# UserCreate
+# ---------------------
+extend type Mutation {
+    userCreate(input: UserCreateInput): UserCreateOutcome
+}
+
+input UserCreateInput {
+    id: ID
+    name: UserNameInput!
+    emails: UserEmailsInput
+    avatarUri: Uri
+    isActive: Boolean!
+}
+
+input UserNameInput {
+    firstName: String
+    lastName: String
+    prefferedName: String
+}
+
+input UserEmailsInput {
+    primary: UserEmailInput!
+    secondary: [UserEmailInput]
+}
+
+input UserEmailInput {
+    verified: Boolean!
+    value: Email!
+    isActive: Boolean!
+}
+
+type UserCreateOutcome {
+    user: User
+    errors: [Error]
+}
