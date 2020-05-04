@@ -5,20 +5,18 @@ schema:
   - pkg/access/api*.graphql
 
 exec:
-  filename: pkg/infra/gql/generated.go
+  filename: pkg/infra/gql/schema.go
 
 model:
-  filename: pkg/infra/gql/model-gen.go
+  filename: pkg/infra/gql/model.go
 
 resolver:
-  filename: pkg/infra/gql/resolver.go
+  filename: pkg/infra/gql-resolvers.go
   type: Resolver
 
 autobind:
-  - bean/pkg/graphql
   - bean/pkg/user/dto
   - bean/pkg/user/model
-  - bean/pkg/namespace/dto
   - bean/pkg/namespace/model
   - bean/pkg/access/dto
   - bean/pkg/access/model

@@ -28,18 +28,18 @@ type LoginOutcome {
 # SessionDelete // Logout
 # ---------------------
 extend type Mutation {
-    sessionDelete(input: LoginInput): LogoutPayload!
+    sessionDelete(input: LoginInput): LogoutOutcome!
 }
 
 type LogoutInput {
     hashedToken: String!
 }
 
-type LogoutPayload {
+type LogoutOutcome {
     errors: [Error!]
     result: Boolean
 }
 
 # ---------------------
-# TODO: one time login
+# TODO: one time login // forget password
 # ---------------------

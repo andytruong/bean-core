@@ -5,11 +5,11 @@ scalar CountryCode
 scalar Email
 
 type Query {
-    version: String!
+    ping: String!
 }
 
 type Mutation {
-    version: String!
+    ping: String!
 }
 
 type Error {

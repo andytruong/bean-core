@@ -8,7 +8,7 @@ type LogoutInput struct {
 	HashedToken string `json:"hashedToken"`
 }
 
-type LogoutPayload struct {
+type LogoutOutcome struct {
 	Errors []*util.Error `json:"errors"`
 	Result *bool         `json:"result"`
 }
