@@ -87,8 +87,8 @@ type (
 func (this *Container) ListenAndServe() error {
 	router := mux.NewRouter()
 	router.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
-		config := &gql.Config{Resolvers: this.gql.getRoot()}
-		schema := gql.NewExecutableSchema(*config)
+		config := gql.Config{Resolvers: this.gql.getRoot()}
+		schema := gql.NewExecutableSchema(config)
 		server := handler.NewDefaultServer(schema)
 		server.ServeHTTP(w, r)
 	})
