@@ -1,8 +1,10 @@
 schema:
   - pkg/util/api*.graphql
   - pkg/namespace/api*.graphql
-  - pkg/user/api-entity.graphql
-  - pkg/user/api-mutation.graphql
+  - pkg/user/api*.graphql
+  - pkg/access/api-entity.graphql
+  - pkg/access/api-query.graphql
+  - pkg/access/api-mutation.graphql
 
 exec:
   filename: pkg/graphql/generated.go

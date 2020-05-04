@@ -2,7 +2,7 @@
 # SessionLoad // Validation
 # ---------------------
 extend type Query {
-    loadSession(input: LoginInput): LoginOutcome!
+    loadSession(input: ValidationInput): ValidationOutcome!
 }
 
 input ValidationInput {

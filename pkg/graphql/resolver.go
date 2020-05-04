@@ -18,7 +18,19 @@ func (r *mutationResolver) UserCreate(ctx context.Context, input *dto.UserCreate
 	panic("not implemented")
 }
 
+func (r *mutationResolver) SessionCreate(ctx context.Context, input *dto1.LoginInput) (*dto1.LoginOutcome, error) {
+	panic("not implemented")
+}
+
+func (r *mutationResolver) SessionDelete(ctx context.Context, input *dto1.LoginInput) (*dto1.LogoutPayload, error) {
+	panic("not implemented")
+}
+
 func (r *queryResolver) Version(ctx context.Context) (string, error) {
+	panic("not implemented")
+}
+
+func (r *queryResolver) LoadSession(ctx context.Context, input *dto1.ValidationInput) (*dto1.ValidationOutcome, error) {
 	panic("not implemented")
 }
 
