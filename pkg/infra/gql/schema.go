@@ -859,7 +859,6 @@ extend type Mutation {
 }
 
 input UserCreateInput {
-    id: ID
     name: UserNameInput!
     emails: UserEmailsInput
     avatarUri: Uri
@@ -4482,12 +4481,6 @@ func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, o
 
 	for k, v := range asMap {
 		switch k {
-		case "id":
-			var err error
-			it.ID, err = ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNUserNameInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserNameInput(ctx, v)
@@ -6342,29 +6335,6 @@ func (ec *executionContext) marshalOErrorCode2ᚖbeanᚋpkgᚋutilᚐErrorCode(c
 		return graphql.Null
 	}
 	return v
-}
-
-func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalID(v)
-}
-
-func (ec *executionContext) marshalOID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	return graphql.MarshalID(v)
-}
-
-func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOID2string(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOID2string(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOIP2string(ctx context.Context, v interface{}) (string, error) {

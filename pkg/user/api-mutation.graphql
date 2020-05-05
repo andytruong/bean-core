@@ -6,7 +6,6 @@ extend type Mutation {
 }
 
 input UserCreateInput {
-    id: ID
     name: UserNameInput!
     emails: UserEmailsInput
     avatarUri: Uri
