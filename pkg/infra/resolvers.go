@@ -18,6 +18,7 @@ type (
 		query     *queryResolver
 		mutation  *mutationResolver
 		session   *sessionResolver
+		user      *userResolver
 	}
 
 	rootResolver struct {
@@ -34,6 +35,10 @@ type (
 	}
 
 	sessionResolver struct {
+		container *Container
+	}
+
+	userResolver struct {
 		container *Container
 	}
 )
@@ -87,8 +92,15 @@ func (this *resolvers) getSession() *sessionResolver {
 	return this.session
 }
 
-func (this *rootResolver) Session() gql.SessionResolver {
-	return this.container.gql.getSession()
+func (this *resolvers) getUser() *userResolver {
+	if nil == this.user {
+		this.container.mu.Lock()
+		defer this.container.mu.Unlock()
+
+		this.user = &userResolver{container: this.container}
+	}
+
+	return this.user
 }
 
 func (this *rootResolver) Mutation() gql.MutationResolver {
@@ -97,6 +109,14 @@ func (this *rootResolver) Mutation() gql.MutationResolver {
 
 func (this *rootResolver) Query() gql.QueryResolver {
 	return this.container.gql.getQuery()
+}
+
+func (this *rootResolver) Session() gql.SessionResolver {
+	return this.container.gql.getSession()
+}
+
+func (this *rootResolver) User() gql.UserResolver {
+	return this.container.gql.getUser()
 }
 
 func (this mutationResolver) Ping(ctx context.Context) (string, error) {
@@ -112,5 +132,13 @@ func (this sessionResolver) User(ctx context.Context, obj *model.Session) (*user
 }
 
 func (this sessionResolver) Namespace(ctx context.Context, obj *model.Session) (*namespace_model.Namespace, error) {
+	panic("implement me")
+}
+
+func (this userResolver) Name(ctx context.Context, obj *user_model.User) (*user_model.UserName, error) {
+	panic("implement me")
+}
+
+func (this userResolver) Emails(ctx context.Context, obj *user_model.User) (*user_model.UserEmails, error) {
 	panic("implement me")
 }

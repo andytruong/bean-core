@@ -4,6 +4,8 @@ type User {
     emails: UserEmails
     avatarUri: Uri
     isActive: Boolean!
+    createdAt: Time!
+    updatedAt: Time!
 }
 
 type UserName {

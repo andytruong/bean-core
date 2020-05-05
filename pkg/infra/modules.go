@@ -7,14 +7,15 @@ import (
 
 type (
 	modules struct {
-		user   *user.UserModule
-		access *access.AccessModule
+		container *Container
+		user      *user.UserModule
+		access    *access.AccessModule
 	}
 )
 
 func (this *modules) User() *user.UserModule {
 	if nil == this.user {
-		this.user = user.NewUserService()
+		this.user = user.NewUserService(this.container.DB, this.container.Logger)
 	}
 
 	return this.user
