@@ -23,6 +23,7 @@ func NewContainer(path string) (*Container, error) {
 		return nil, err
 	}
 
+	// parse environment variables
 	content := os.ExpandEnv(string(raw))
 	this := &Container{
 		mu: &sync.Mutex{},

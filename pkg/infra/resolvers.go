@@ -40,6 +40,9 @@ type (
 
 func (this *resolvers) getRoot() *rootResolver {
 	if nil == this.root {
+		this.container.mu.Lock()
+		defer this.container.mu.Unlock()
+
 		this.root = &rootResolver{container: this.container}
 	}
 
@@ -48,6 +51,9 @@ func (this *resolvers) getRoot() *rootResolver {
 
 func (this *resolvers) getQuery() *queryResolver {
 	if this.query == nil {
+		this.container.mu.Lock()
+		defer this.container.mu.Unlock()
+
 		this.query = &queryResolver{}
 	}
 
@@ -56,6 +62,9 @@ func (this *resolvers) getQuery() *queryResolver {
 
 func (this *resolvers) getMutation() *mutationResolver {
 	if nil == this.mutation {
+		this.container.mu.Lock()
+		defer this.container.mu.Unlock()
+
 		this.mutation = &mutationResolver{
 			UserMutationResolver:   this.container.modules.User().MutationResolver(),
 			AccessMutationResolver: this.container.modules.Access().MutationResolver(),
@@ -66,7 +75,16 @@ func (this *resolvers) getMutation() *mutationResolver {
 }
 
 func (this *resolvers) getSession() *sessionResolver {
-	panic("wip")
+	if nil == this.session {
+		this.container.mu.Lock()
+		defer this.container.mu.Unlock()
+
+		this.session = &sessionResolver{
+			container: this.container,
+		}
+	}
+
+	return this.session
 }
 
 func (this *rootResolver) Session() gql.SessionResolver {
