@@ -15,7 +15,7 @@ type (
 
 func (this *modules) User() *user.UserModule {
 	if nil == this.user {
-		this.user = user.NewUserService(this.container.DB, this.container.Logger)
+		this.user = user.NewUserService(this.container.DB, this.container.Logger, this.container.Identifier())
 	}
 
 	return this.user

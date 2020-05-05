@@ -12,6 +12,7 @@ import (
 )
 
 type (
+	// lazy access into detail resolver.
 	resolvers struct {
 		container *Container
 		root      *rootResolver

@@ -6,7 +6,6 @@ import (
 )
 
 type UserCreateInput struct {
-	ID        *string          `json:"id"`
 	Name      *UserNameInput   `json:"name"`
 	Emails    *UserEmailsInput `json:"emails"`
 	AvatarURI *string          `json:"avatarUri"`

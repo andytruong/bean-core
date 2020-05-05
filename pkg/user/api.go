@@ -2,36 +2,77 @@ package user
 
 import (
 	"context"
-	"fmt"
+	"time"
+
+	"github.com/jinzhu/gorm"
 
 	"bean/pkg/user/dto"
 	"bean/pkg/user/model"
+	"bean/pkg/util"
 )
 
 type (
 	UserMutationResolver struct {
+		db *gorm.DB
+		id *util.Identifier
 	}
 )
 
+// TODO: Work in progress
 func (this *UserMutationResolver) UserCreate(ctx context.Context, input *dto.UserCreateInput) (*dto.UserCreateOutcome, error) {
-	// validate email address
-	// validate avatar URI
+	// TODO: validate email address
+	// TODO: validate avatar URI
+
 	// create base record
 	user := model.User{
-		// how to ID like youtube?
-		//  - https://blog.codinghorror.com/url-shortening-hashes-in-practice/
-		//  - http://www.fileformat.info/tool/hash.htm
-		//  - https://hashids.org/
-		ID:        "TODO",
 		AvatarURI: input.AvatarURI,
 		IsActive:  input.IsActive,
 	}
 
-	// db := ctx.DB()
-	// db.Create(user)
-	fmt.Println("WIP", user)
+	// Generate user Identifier.
+	if id, err := this.id.Hash("User", time.Now()); nil != err {
+		return nil, err
+	} else {
+		user.ID = id
+	}
+
+	if err := this.db.Create(user).Error; nil != err {
+		return nil, err
+	}
 
 	// create emails
+	if nil != input.Emails {
+		if nil != input.Emails.Primary {
+			primaryEmail := model.UserEmail{
+				ID:        "TODO",
+				UserId:    user.ID,
+				Verified:  input.Emails.Primary.Verified,
+				Value:     input.Emails.Primary.Value,
+				IsActive:  input.Emails.Primary.IsActive,
+				CreatedAt: time.Time{},
+				UpdatedAt: time.Time{},
+			}
+
+			this.db.Create(primaryEmail)
+		}
+
+		if nil != input.Emails.Secondary {
+			for _, secondaryInput := range input.Emails.Secondary {
+				email := model.UserEmail{
+					ID:        "TODO",
+					UserId:    user.ID,
+					Verified:  secondaryInput.Verified,
+					Value:     secondaryInput.Value,
+					IsActive:  secondaryInput.IsActive,
+					CreatedAt: time.Time{},
+					UpdatedAt: time.Time{},
+				}
+
+				this.db.Create(email)
+			}
+		}
+	}
+
 	// save name object
 	// outcome
 
