@@ -43,29 +43,31 @@ func (this *UserMutationResolver) UserCreate(ctx context.Context, input *dto.Use
 	// create emails
 	if nil != input.Emails {
 		if nil != input.Emails.Primary {
-			primaryEmail := model.UserEmail{
-				ID:        "TODO",
+			id, _ := this.id.ULID()
+			email := model.UserEmail{
+				ID:        id,
 				UserId:    user.ID,
 				Verified:  input.Emails.Primary.Verified,
 				Value:     input.Emails.Primary.Value,
 				IsActive:  input.Emails.Primary.IsActive,
-				CreatedAt: time.Time{},
-				UpdatedAt: time.Time{},
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
 			}
 
-			this.db.Create(primaryEmail)
+			this.db.Create(email)
 		}
 
 		if nil != input.Emails.Secondary {
 			for _, secondaryInput := range input.Emails.Secondary {
+				id, _ := this.id.ULID()
 				email := model.UserEmail{
-					ID:        "TODO",
+					ID:        id,
 					UserId:    user.ID,
 					Verified:  secondaryInput.Verified,
 					Value:     secondaryInput.Value,
 					IsActive:  secondaryInput.IsActive,
-					CreatedAt: time.Time{},
-					UpdatedAt: time.Time{},
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
 				}
 
 				this.db.Create(email)
