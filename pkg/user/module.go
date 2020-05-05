@@ -5,8 +5,11 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewUserService() *UserModule {
-	return &UserModule{}
+func NewUserService(db *gorm.DB, logger *zap.Logger) *UserModule {
+	return &UserModule{
+		db:     db,
+		logger: logger,
+	}
 }
 
 type UserModule struct {
