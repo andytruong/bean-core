@@ -2,7 +2,7 @@ scalar Time
 scalar Uri
 scalar IP
 scalar CountryCode
-scalar Email
+scalar EmailAddress
 
 type Query {
     ping: String!

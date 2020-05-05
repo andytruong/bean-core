@@ -12,7 +12,7 @@ type DomainNames {
 type DomainName {
     id: ID!
     verified: Boolean!
-    value: Email!
+    value: String!
     createdAt: Time!
     updatedAt: Time!
     isActive: Boolean!

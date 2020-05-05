@@ -1,10 +1,14 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"bean/pkg/util"
+)
 
 type User struct {
 	ID        string    `json:"id"`
-	AvatarURI *string   `json:"avatarUri"`
+	AvatarURI *util.Uri `json:"avatarUri"`
 	IsActive  bool      `json:"isActive"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`

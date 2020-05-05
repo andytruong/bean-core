@@ -22,7 +22,7 @@ type UserEmails {
 type UserEmail {
     id: ID!
     verified: Boolean!
-    value: Email!
+    value: EmailAddress!
     createdAt: Time!
     updatedAt: Time!
     isActive: Boolean!
