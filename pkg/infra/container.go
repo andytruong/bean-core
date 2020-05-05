@@ -15,6 +15,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"bean/pkg/infra/gql"
+	"bean/pkg/util"
 )
 
 func NewContainer(path string) (*Container, error) {
@@ -60,6 +61,7 @@ type (
 		HttpServer HttpServerConfig          `yaml:"http-server"`
 
 		mu      *sync.Mutex
+		id      *util.Identifier
 		gql     resolvers
 		modules modules
 	}
@@ -111,4 +113,14 @@ func (this *Container) ListenAndServe() error {
 	this.Logger.Info("🚀 HTTP server is running", zap.String("address", this.HttpServer.Address))
 
 	return server.ListenAndServe()
+}
+
+func (this *Container) Identifier() *util.Identifier {
+	if nil == this.id {
+		this.mu.Lock()
+		this.id = &util.Identifier{}
+		this.mu.Unlock()
+	}
+
+	return this.id
 }
