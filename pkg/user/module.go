@@ -7,12 +7,16 @@ import (
 	"bean/pkg/util"
 )
 
-func NewUserService(db *gorm.DB, logger *zap.Logger, id *util.Identifier) *UserModule {
+func NewUserService(db *gorm.DB, logger *zap.Logger, id *util.Identifier) (*UserModule, error) {
+	if err := util.NilPointerErrorValidate(db, logger, id); nil != err {
+		return nil, err
+	}
+
 	return &UserModule{
 		db:     db,
 		logger: logger,
 		id:     id,
-	}
+	}, nil
 }
 
 type UserModule struct {

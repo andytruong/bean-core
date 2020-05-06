@@ -12,6 +12,17 @@ import (
 	"bean/pkg/util"
 )
 
+func NewUserMutationResolver(db *gorm.DB, id *util.Identifier) (*UserMutationResolver, error) {
+	if err := util.NilPointerErrorValidate(db, id); nil != err {
+		return nil, err
+	}
+
+	return &UserMutationResolver{
+		db: db,
+		id: id,
+	}, nil
+}
+
 type (
 	UserMutationResolver struct {
 		db *gorm.DB
@@ -23,7 +34,6 @@ type (
 	}
 )
 
-// TODO: validate avatar URI
 func (this *UserMutationResolver) UserCreate(ctx context.Context, input *dto.UserCreateInput) (*dto.UserCreateOutcome, error) {
 	sv := service.UserCreateAPI{ID: this.id}
 	tx := this.db.BeginTx(ctx, &sql.TxOptions{})

@@ -7,6 +7,6 @@ func NewAccessModule() *AccessModule {
 type AccessModule struct {
 }
 
-func (this AccessModule) MutationResolver() *AccessMutationResolver {
-	return &AccessMutationResolver{}
+func (this AccessModule) MutationResolver() (*AccessMutationResolver, error) {
+	return &AccessMutationResolver{}, nil
 }

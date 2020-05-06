@@ -63,9 +63,14 @@ func (this *resolvers) getQuery() *queryResolver {
 		this.mu.Lock()
 		defer this.mu.Unlock()
 
+		mUser, err := this.container.modules.User()
+		if nil != err {
+			panic(err)
+		}
+
 		this.query = &queryResolver{
 			// AccessQueryResolver: this.container.modules.Access().MutationResolver(),
-			UserQueryResolver: this.container.modules.User().QueryResolver(),
+			UserQueryResolver: mUser.QueryResolver(),
 		}
 	}
 
@@ -77,9 +82,24 @@ func (this *resolvers) getMutation() *mutationResolver {
 		this.mu.Lock()
 		defer this.mu.Unlock()
 
+		modUser, err := this.container.modules.User()
+		if nil != err {
+			panic(err)
+		}
+
+		mUser, err := modUser.MutationResolver()
+		if nil != err {
+			panic(err)
+		}
+
+		mAccess, err := this.container.modules.Access().MutationResolver()
+		if nil != err {
+			panic(err)
+		}
+
 		this.mutation = &mutationResolver{
-			UserMutationResolver:   this.container.modules.User().MutationResolver(),
-			AccessMutationResolver: this.container.modules.Access().MutationResolver(),
+			UserMutationResolver:   mUser,
+			AccessMutationResolver: mAccess,
 		}
 	}
 

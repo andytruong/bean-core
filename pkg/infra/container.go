@@ -1,9 +1,11 @@
 package infra
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"sync"
 	"time"
 
@@ -19,31 +21,29 @@ import (
 )
 
 func NewContainer(path string) (*Container, error) {
-	raw, err := ioutil.ReadFile(path)
-	if nil != err {
-		return nil, err
-	}
+	var err error
 
-	// parse environment variables
-	content := os.ExpandEnv(string(raw))
 	this := &Container{}
 	this.mu = &sync.Mutex{}
-	this.modules.container = this
 
-	if err := yaml.Unmarshal([]byte(content), &this); nil != err {
-		return nil, err
+	this.modules = modules{
+		container: this,
+		user:      nil,
+		access:    nil,
 	}
-
-	// setup logger
-	this.Logger, err = zap.NewProduction()
-	if nil != err {
-		return nil, err
-	}
-
-	// setup gql-resolvers
+	
 	this.gql = resolvers{
 		container: this,
 		mu:        &sync.Mutex{},
+	}
+
+	// setup logger
+	if this.Logger, err = zap.NewProduction(); nil != err {
+		return nil, err
+	}
+
+	if err := this.parseFile(path); nil != err {
+		return nil, err
 	}
 
 	return this, nil
@@ -87,6 +87,47 @@ type (
 		Path    string `yaml:"path"`
 	}
 )
+
+func (this *Container) parseFile(path string) error {
+	raw, err := ioutil.ReadFile(path)
+	if nil != err {
+		return err
+	} else if content, err := this.replaceEnvVariables(raw); nil != err {
+		return err
+	} else if err := yaml.Unmarshal(content, &this); nil != err {
+		return err
+	}
+
+	return nil
+}
+
+func (this *Container) replaceEnvVariables(inBytes []byte) ([]byte, error) {
+	if envRegex, err := regexp.Compile(`\${[0-9A-Za-z_]+(:((\${[^}]+})|[^}])+)?}`); err != nil {
+		return nil, err
+	} else if escapedEnvRegex, err := regexp.Compile(`\${({[0-9A-Za-z_]+(:((\${[^}]+})|[^}])+)?})}`); err != nil {
+		return nil, err
+	} else {
+		replaced := envRegex.ReplaceAllFunc(inBytes, func(content []byte) []byte {
+			var value string
+			if len(content) > 3 {
+				if colonIndex := bytes.IndexByte(content, ':'); colonIndex == -1 {
+					value = os.Getenv(string(content[2 : len(content)-1]))
+				} else {
+					targetVar := content[2:colonIndex]
+					defaultVal := content[colonIndex+1 : len(content)-1]
+
+					value = os.Getenv(string(targetVar))
+					if len(value) == 0 {
+						value = string(defaultVal)
+					}
+				}
+			}
+			return []byte(value)
+		})
+
+		return escapedEnvRegex.ReplaceAll(replaced, []byte("$$$1")), nil
+	}
+}
 
 func (this *Container) ListenAndServe() error {
 	router := mux.NewRouter()

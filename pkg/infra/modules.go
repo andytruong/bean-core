@@ -13,12 +13,14 @@ type (
 	}
 )
 
-func (this *modules) User() *user.UserModule {
+func (this *modules) User() (*user.UserModule, error) {
+	var err error
+
 	if nil == this.user {
-		this.user = user.NewUserService(this.container.DB, this.container.Logger, this.container.Identifier())
+		this.user, err = user.NewUserService(this.container.DB, this.container.Logger, this.container.Identifier())
 	}
 
-	return this.user
+	return this.user, err
 }
 
 func (this *modules) Access() *access.AccessModule {
