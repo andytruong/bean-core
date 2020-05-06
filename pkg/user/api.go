@@ -6,8 +6,9 @@ import (
 
 	"github.com/jinzhu/gorm"
 
-	"bean/pkg/user/api"
 	"bean/pkg/user/dto"
+	"bean/pkg/user/model"
+	"bean/pkg/user/service"
 	"bean/pkg/util"
 )
 
@@ -16,15 +17,18 @@ type (
 		db *gorm.DB
 		id *util.Identifier
 	}
+
+	UserQueryResolver struct {
+		db *gorm.DB
+	}
 )
 
-// TODO: Work in progress
 // TODO: validate avatar URI
 func (this *UserMutationResolver) UserCreate(ctx context.Context, input *dto.UserCreateInput) (*dto.UserCreateOutcome, error) {
-	ctl := api.UserCreateAPI{ID: this.id}
+	sv := service.UserCreateAPI{ID: this.id}
 	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
 
-	if outcome, err := ctl.Create(tx, input); nil != err {
+	if outcome, err := sv.Create(tx, input); nil != err {
 		tx.Rollback()
 
 		return nil, err
@@ -33,4 +37,10 @@ func (this *UserMutationResolver) UserCreate(ctx context.Context, input *dto.Use
 
 		return outcome, nil
 	}
+}
+
+func (this *UserQueryResolver) User(ctx context.Context, id string) (*model.User, error) {
+	sv := service.UserQueryAPI{}
+
+	return sv.Load(this.db, id)
 }

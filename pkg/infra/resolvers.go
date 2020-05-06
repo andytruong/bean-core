@@ -2,6 +2,7 @@ package infra
 
 import (
 	"context"
+	"sync"
 
 	"bean/pkg/access"
 	"bean/pkg/access/model"
@@ -15,6 +16,7 @@ type (
 	// lazy access into detail resolver.
 	resolvers struct {
 		container *Container
+		mu        *sync.Mutex
 		root      *rootResolver
 		query     *queryResolver
 		mutation  *mutationResolver
@@ -33,6 +35,7 @@ type (
 
 	queryResolver struct {
 		*access.AccessQueryResolver
+		*user.UserQueryResolver
 	}
 
 	sessionResolver struct {
@@ -46,8 +49,8 @@ type (
 
 func (this *resolvers) getRoot() *rootResolver {
 	if nil == this.root {
-		this.container.mu.Lock()
-		defer this.container.mu.Unlock()
+		this.mu.Lock()
+		defer this.mu.Unlock()
 
 		this.root = &rootResolver{container: this.container}
 	}
@@ -57,10 +60,13 @@ func (this *resolvers) getRoot() *rootResolver {
 
 func (this *resolvers) getQuery() *queryResolver {
 	if this.query == nil {
-		this.container.mu.Lock()
-		defer this.container.mu.Unlock()
+		this.mu.Lock()
+		defer this.mu.Unlock()
 
-		this.query = &queryResolver{}
+		this.query = &queryResolver{
+			// AccessQueryResolver: this.container.modules.Access().MutationResolver(),
+			UserQueryResolver: this.container.modules.User().QueryResolver(),
+		}
 	}
 
 	return this.query
@@ -68,8 +74,8 @@ func (this *resolvers) getQuery() *queryResolver {
 
 func (this *resolvers) getMutation() *mutationResolver {
 	if nil == this.mutation {
-		this.container.mu.Lock()
-		defer this.container.mu.Unlock()
+		this.mu.Lock()
+		defer this.mu.Unlock()
 
 		this.mutation = &mutationResolver{
 			UserMutationResolver:   this.container.modules.User().MutationResolver(),
@@ -82,8 +88,8 @@ func (this *resolvers) getMutation() *mutationResolver {
 
 func (this *resolvers) getSession() *sessionResolver {
 	if nil == this.session {
-		this.container.mu.Lock()
-		defer this.container.mu.Unlock()
+		this.mu.Lock()
+		defer this.mu.Unlock()
 
 		this.session = &sessionResolver{
 			container: this.container,
@@ -95,8 +101,8 @@ func (this *resolvers) getSession() *sessionResolver {
 
 func (this *resolvers) getUser() *userResolver {
 	if nil == this.user {
-		this.container.mu.Lock()
-		defer this.container.mu.Unlock()
+		this.mu.Lock()
+		defer this.mu.Unlock()
 
 		this.user = &userResolver{container: this.container}
 	}

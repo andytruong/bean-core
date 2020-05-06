@@ -26,9 +26,9 @@ func NewContainer(path string) (*Container, error) {
 
 	// parse environment variables
 	content := os.ExpandEnv(string(raw))
-	this := &Container{
-		mu: &sync.Mutex{},
-	}
+	this := &Container{}
+	this.mu = &sync.Mutex{}
+	this.modules.container = this
 
 	if err := yaml.Unmarshal([]byte(content), &this); nil != err {
 		return nil, err
@@ -43,6 +43,7 @@ func NewContainer(path string) (*Container, error) {
 	// setup gql-resolvers
 	this.gql = resolvers{
 		container: this,
+		mu:        &sync.Mutex{},
 	}
 
 	return this, nil
@@ -116,7 +117,7 @@ func (this *Container) ListenAndServe() error {
 }
 
 func (this *Container) Identifier() *util.Identifier {
-	if nil == this.id {
+	if this.id == nil {
 		this.mu.Lock()
 		this.id = &util.Identifier{}
 		this.mu.Unlock()

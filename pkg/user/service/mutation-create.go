@@ -1,4 +1,4 @@
-package api
+package service
 
 import (
 	"time"
@@ -36,25 +36,15 @@ func (this *UserCreateAPI) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto
 
 	// create emails
 	if err := this.createEmails(tx, &user, input); nil != err {
-		tx.Rollback()
-
 		return nil, err
 	}
 
 	// save name object
 	if err := this.createName(tx, &user, input); nil != err {
-		tx.Rollback()
-
 		return nil, err
 	}
 
-	// outcome
-	outcome := dto.UserCreateOutcome{
-		User:   &user,
-		Errors: nil,
-	}
-
-	return &outcome, nil
+	return &dto.UserCreateOutcome{User: &user}, nil
 }
 
 func (this *UserCreateAPI) createEmails(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
