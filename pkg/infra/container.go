@@ -24,6 +24,12 @@ func NewContainer(path string) (*Container, error) {
 	var err error
 
 	this := &Container{}
+
+	// parse configuration from YAML configuration file & env variables.
+	if err := this.parseFile(path); nil != err {
+		return nil, err
+	}
+
 	this.mu = &sync.Mutex{}
 
 	this.modules = modules{
@@ -31,20 +37,20 @@ func NewContainer(path string) (*Container, error) {
 		user:      nil,
 		access:    nil,
 	}
-	
+
 	this.gql = resolvers{
 		container: this,
 		mu:        &sync.Mutex{},
 	}
 
 	// setup logger
-	if this.Logger, err = zap.NewProduction(); nil != err {
+	if this.logger, err = zap.NewProduction(); nil != err {
 		return nil, err
 	}
 
-	if err := this.parseFile(path); nil != err {
-		return nil, err
-	}
+	// TODO: setup database
+	// should support multiple database connections.
+	this.db = nil
 
 	return this, nil
 }
@@ -55,9 +61,7 @@ type (
 	//  - Database connections
 	//  - HTTP server (GraphQL query interface)
 	Container struct {
-		Version    string `yaml:"version"`
-		Logger     *zap.Logger
-		DB         *gorm.DB
+		Version    string                    `yaml:"version"`
 		Databases  map[string]DatabaseConfig `yaml:"databases"`
 		HttpServer HttpServerConfig          `yaml:"http-server"`
 
@@ -65,6 +69,8 @@ type (
 		id      *util.Identifier
 		gql     resolvers
 		modules modules
+		logger  *zap.Logger
+		db      *gorm.DB
 	}
 
 	DatabaseConfig struct {
@@ -152,7 +158,7 @@ func (this *Container) ListenAndServe() error {
 		IdleTimeout:       this.HttpServer.ReadTimeout,
 	}
 
-	this.Logger.Info("🚀 HTTP server is running", zap.String("address", this.HttpServer.Address))
+	this.logger.Info("🚀 HTTP server is running", zap.String("address", this.HttpServer.Address))
 
 	return server.ListenAndServe()
 }

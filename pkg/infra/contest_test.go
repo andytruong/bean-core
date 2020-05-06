@@ -22,5 +22,8 @@ func TestContainer(t *testing.T) {
 	id := container.Identifier()
 
 	ass.NotNil(t, id)
-	ass.NotNil(t, container.modules.User())
+
+	sv, err := container.modules.User()
+	ass.NoError(err)
+	ass.NotNil(sv)
 }

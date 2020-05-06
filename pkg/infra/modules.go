@@ -17,7 +17,7 @@ func (this *modules) User() (*user.UserModule, error) {
 	var err error
 
 	if nil == this.user {
-		this.user, err = user.NewUserService(this.container.DB, this.container.Logger, this.container.Identifier())
+		this.user, err = user.NewUserService(this.container.db, this.container.logger, this.container.Identifier())
 	}
 
 	return this.user, err
