@@ -21,7 +21,7 @@ type (
 
 func (this *EmailAddress) UnmarshalGQL(v interface{}) error {
 	if input, ok := v.(string); !ok {
-		return fmt.Errorf("points must be strings")
+		return fmt.Errorf("email-address must be strings")
 	} else {
 		_, err := mail.ParseAddress(input)
 		if nil != err {
@@ -40,14 +40,14 @@ func (this EmailAddress) MarshalGQL(w io.Writer) {
 
 func (this *Uri) UnmarshalGQL(v interface{}) error {
 	if input, ok := v.(string); !ok {
-		return fmt.Errorf("points must be strings")
+		return fmt.Errorf("URI must be strings")
 	} else {
-		url, err := url.ParseRequestURI(input)
+		uri, err := url.ParseRequestURI(input)
 		if nil != err {
-			return err
+			return fmt.Errorf("invalid URI for request")
 		}
 
-		if "" == url.RequestURI() {
+		if "" == uri.RequestURI() {
 			return fmt.Errorf("missing request URI")
 		}
 

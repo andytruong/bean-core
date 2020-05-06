@@ -23,15 +23,14 @@ type UserModule struct {
 	query    *UserQueryResolver
 }
 
-func (this *UserModule) MutationResolver() *UserMutationResolver {
+func (this *UserModule) MutationResolver() (*UserMutationResolver, error) {
+	var err error
+
 	if nil == this.mutation {
-		this.mutation = &UserMutationResolver{
-			db: this.db,
-			id: this.id,
-		}
+		this.mutation, err = NewUserMutationResolver(this.db, this.id)
 	}
 
-	return this.mutation
+	return this.mutation, err
 }
 
 func (this *UserModule) QueryResolver() *UserQueryResolver {
