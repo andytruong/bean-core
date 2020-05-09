@@ -7,6 +7,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.3
 	github.com/jinzhu/gorm v1.9.11
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/oklog/ulid v1.3.1
 	github.com/pkg/errors v0.9.1
 	github.com/speps/go-hashids v2.0.0+incompatible

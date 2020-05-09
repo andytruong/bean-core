@@ -12,9 +12,9 @@ http-server:
       path: /
 
 databases:
-  default:
-    driver: "${DB_DRIVER:sqlite}"
-    master:
-      url: "${DB_MASTER_URL:dev.sqlite}"
-    slave:
-      url: "${DB_SLAVE_URL:dev.sqlite}"
+  master:
+    driver: "${DB_DRIVER:sqlite3}"
+    url:    "${DB_MASTER_URL:dev.sqlite}"
+  slave:
+    driver: "${DB_SLAVE_URL:sqlite3}"
+    url:    "${DB_SLAVE_URL:dev.sqlite}"

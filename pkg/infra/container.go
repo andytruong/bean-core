@@ -12,7 +12,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
-	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
@@ -48,9 +47,10 @@ func NewContainer(path string) (*Container, error) {
 		return nil, err
 	}
 
-	// TODO: setup database
-	// should support multiple database connections.
-	this.db = nil
+	this.dbs = databases{
+		config:      this.Databases,
+		connections: &sync.Map{},
+	}
 
 	return this, nil
 }
@@ -68,13 +68,14 @@ type (
 		mu      *sync.Mutex
 		id      *util.Identifier
 		gql     resolvers
+		dbs     databases
 		modules modules
 		logger  *zap.Logger
-		db      *gorm.DB
 	}
 
 	DatabaseConfig struct {
-		Driver string `yaml:""`
+		Driver string `yaml:"driver"`
+		Url    string `yaml:"url"`
 	}
 
 	HttpServerConfig struct {

@@ -29,13 +29,13 @@ type (
 	}
 
 	mutationResolver struct {
-		*user.UserMutationResolver
+		user.UserMutationResolver
 		*access.AccessMutationResolver
 	}
 
 	queryResolver struct {
 		*access.AccessQueryResolver
-		*user.UserQueryResolver
+		user.UserQueryResolver
 	}
 
 	sessionResolver struct {
@@ -70,7 +70,7 @@ func (this *resolvers) getQuery() *queryResolver {
 
 		this.query = &queryResolver{
 			// AccessQueryResolver: this.container.modules.Access().MutationResolver(),
-			UserQueryResolver: mUser.QueryResolver(),
+			UserQueryResolver: mUser.Query,
 		}
 	}
 
@@ -87,18 +87,13 @@ func (this *resolvers) getMutation() *mutationResolver {
 			panic(err)
 		}
 
-		mUser, err := modUser.MutationResolver()
-		if nil != err {
-			panic(err)
-		}
-
 		mAccess, err := this.container.modules.Access().MutationResolver()
 		if nil != err {
 			panic(err)
 		}
 
 		this.mutation = &mutationResolver{
-			UserMutationResolver:   mUser,
+			UserMutationResolver:   modUser.Mutation,
 			AccessMutationResolver: mAccess,
 		}
 	}
