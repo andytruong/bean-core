@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strings"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -21,6 +22,15 @@ func (this *UserCreateAPI) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto
 	user := model.User{
 		AvatarURI: input.AvatarURI,
 		IsActive:  input.IsActive,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	if nil != input.Password {
+		user.Password = strings.Join([]string{
+			input.Password.Algorithm,
+			input.Password.HashedValue,
+		}, " -> ")
 	}
 
 	// Generate user Identifier.
@@ -43,6 +53,8 @@ func (this *UserCreateAPI) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto
 	if err := this.createName(tx, &user, input); nil != err {
 		return nil, err
 	}
+
+	// TODO: unique email address
 
 	return &dto.UserCreateOutcome{User: &user}, nil
 }
