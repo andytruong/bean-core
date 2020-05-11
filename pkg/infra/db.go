@@ -10,10 +10,13 @@ import (
 	"bean/pkg/util"
 )
 
-
 type databases struct {
 	config      map[string]DatabaseConfig
 	connections *sync.Map
+}
+
+func (this *databases) master() (*gorm.DB, error) {
+	return this.get("master")
 }
 
 func (this *databases) get(name string) (*gorm.DB, error) {

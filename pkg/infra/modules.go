@@ -17,7 +17,7 @@ func (this *modules) User() (*user.UserModule, error) {
 	var err error
 
 	if nil == this.user {
-		db, err := this.container.dbs.get("master")
+		db, err := this.container.dbs.master()
 		if nil != err {
 			return nil, err
 		}
