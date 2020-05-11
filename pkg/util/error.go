@@ -5,19 +5,18 @@ type (
 		Code   *ErrorCode `json:"code"`
 		Fields []string   `json:"fields"`
 	}
-
-	Err string
 )
 
+type Err string
 func (e Err) Error() string { return string(e) }
 
-const ConfigError = Err("configuration error")
-const NilPointerError = Err("nil pointer error")
+const ErrorConfig = Err("configuration error")
+const ErrorNilPointer = Err("nil pointer error")
 
 func NilPointerErrorValidate(values ...interface{}) error {
 	for _, value := range values {
 		if nil == value {
-			return NilPointerError
+			return ErrorNilPointer
 		}
 	}
 

@@ -20,7 +20,7 @@ func (this *databases) get(name string) (*gorm.DB, error) {
 	if db, ok := this.connections.Load(name); ok {
 		return db.(*gorm.DB), nil
 	} else if cnf, ok := this.config[name]; !ok {
-		return nil, errors.Wrap(util.ConfigError, "database config not provided: "+name)
+		return nil, errors.Wrap(util.ErrorConfig, "database config not provided: "+name)
 	} else if con, err := gorm.Open(cnf.Driver, cnf.Url); nil != err {
 		return nil, err
 	} else {
