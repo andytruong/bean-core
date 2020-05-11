@@ -24,3 +24,7 @@ type UserModule struct {
 	Mutation UserMutationResolver
 	Query    UserQueryResolver
 }
+
+func (this UserModule) Install(tx *gorm.DB) error {
+	panic("implement me")
+}
