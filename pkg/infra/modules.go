@@ -3,6 +3,7 @@ package infra
 import (
 	"bean/pkg/access"
 	"bean/pkg/user"
+	"bean/pkg/util"
 )
 
 type (
@@ -12,6 +13,13 @@ type (
 		access    *access.AccessModule
 	}
 )
+
+func (this *modules) List() []util.Module {
+	mUser, _ := this.User()
+	mAccess := this.Access()
+
+	return []util.Module{mUser, mAccess}
+}
 
 func (this *modules) User() (*user.UserModule, error) {
 	var err error
