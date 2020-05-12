@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 
 	"bean/pkg/user/dto"
 	"bean/pkg/util"
@@ -16,14 +14,16 @@ import (
 )
 
 func TestNewUserModule(t *testing.T) {
-	// container := infra.NewMockContainer
+	ass := assert.New(t)
+	_, err := NewUserModule(util.MockDatabase(), util.MockLogger(), util.MockIdentifier())
+	ass.NoError(err)
 }
 
 func TestUserMutationResolver_UserCreate(t *testing.T) {
 	ass := assert.New(t)
-	db, err := gorm.Open("sqlite3", ":memory:")
-	ass.NoError(err)
-	module, err := NewUserModule(db, zap.NewNop(), &util.Identifier{})
+	db := util.MockDatabase()
+	module, err := NewUserModule(db, util.MockLogger(), util.MockIdentifier())
+	util.MockInstall(module, db)
 	ass.NoError(err)
 
 	passAlg, _ := password.Get("bcrypt")
@@ -62,7 +62,6 @@ func TestUserMutationResolver_UserCreate(t *testing.T) {
 	}
 
 	t.Run("test happy case, no error", func(t *testing.T) {
-		fmt.Println("INPUT", input)
 		outcome, err := module.Mutation.UserCreate(context.Background(), input)
 		ass.NoError(err)
 		fmt.Println("OUTCOME: ", outcome)
