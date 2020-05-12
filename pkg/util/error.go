@@ -8,8 +8,10 @@ type (
 )
 
 type Err string
+
 func (e Err) Error() string { return string(e) }
 
+const ErrorInvalidArgument = Err("invalid argument")
 const ErrorConfig = Err("configuration error")
 const ErrorNilPointer = Err("nil pointer error")
 

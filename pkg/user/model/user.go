@@ -8,9 +8,9 @@ import (
 
 type User struct {
 	ID        string    `json:"id"`
-	AvatarURI *util.Uri `json:"avatarUri"`
+	Version   string    `json:"version"`
 	IsActive  bool      `json:"isActive"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-	Password  string    `json:"password"`
+	AvatarURI *util.Uri `json:"avatarUri"`
 }

@@ -14,9 +14,16 @@ type UserEmails struct {
 type UserEmail struct {
 	ID        string            `json:"id"`
 	UserId    string            `json:"userId"`
-	Verified  bool              `json:"verified"`
+	Value     util.EmailAddress `json:"value"`
+	IsActive  bool              `json:"isActive"`
+	CreatedAt time.Time         `json:"createdAt"`
+	UpdatedAt time.Time         `json:"updatedAt"`
+	Verified  bool              `json:"isVerified"`
+}
+
+type UserUnverifiedEmail struct {
+	ID        string            `json:"id"        gorm:"primary_key"`
 	Value     util.EmailAddress `json:"value"`
 	CreatedAt time.Time         `json:"createdAt"`
 	UpdatedAt time.Time         `json:"updatedAt"`
-	IsActive  bool              `json:"isActive"`
 }

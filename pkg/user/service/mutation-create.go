@@ -1,7 +1,6 @@
 package service
 
 import (
-	"strings"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -26,13 +25,6 @@ func (this *UserCreateAPI) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto
 		UpdatedAt: time.Now(),
 	}
 
-	if nil != input.Password {
-		user.Password = strings.Join([]string{
-			input.Password.Algorithm,
-			input.Password.HashedValue,
-		}, " -> ")
-	}
-
 	// Generate user Identifier.
 	if id, err := this.ID.Hash("User", time.Now()); nil != err {
 		return nil, err
@@ -54,7 +46,25 @@ func (this *UserCreateAPI) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto
 		return nil, err
 	}
 
-	// TODO: unique email address
+	// save password
+	if nil != input.Password {
+		id, err := this.ID.UUID()
+		if nil != err {
+			return nil, err
+		}
+
+		pass := model.UserPassword{
+			ID:          id,
+			UserId:      user.ID,
+			Algorithm:   input.Password.Algorithm,
+			HashedValue: input.Password.HashedValue,
+			CreatedAt:   time.Time{},
+			UpdatedAt:   time.Time{},
+			IsActive:    false,
+		}
+
+		tx.Save(pass)
+	}
 
 	return &dto.UserCreateOutcome{User: &user}, nil
 }
@@ -62,36 +72,46 @@ func (this *UserCreateAPI) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto
 func (this *UserCreateAPI) createEmails(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
 	if nil != input.Emails {
 		if nil != input.Emails.Primary {
+			table := "user_email"
 			id, _ := this.ID.ULID()
+
+			if !input.Emails.Primary.Verified {
+				table = "user_email_unverified"
+			}
+
 			email := model.UserEmail{
 				ID:        id,
 				UserId:    user.ID,
-				Verified:  input.Emails.Primary.Verified,
 				Value:     input.Emails.Primary.Value,
 				IsActive:  input.Emails.Primary.IsActive,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			}
 
-			if err := tx.Create(email).Error; nil != err {
+			if err := tx.Table(table).Create(email).Error; nil != err {
 				return err
 			}
 		}
 
 		if nil != input.Emails.Secondary {
 			for _, secondaryInput := range input.Emails.Secondary {
+				table := "user_email"
 				id, _ := this.ID.ULID()
+
+				if !secondaryInput.Verified {
+					table = "user_email_unverified"
+				}
+
 				email := model.UserEmail{
 					ID:        id,
 					UserId:    user.ID,
-					Verified:  secondaryInput.Verified,
 					Value:     secondaryInput.Value,
 					IsActive:  secondaryInput.IsActive,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
 				}
 
-				if err := tx.Create(email).Error; nil != err {
+				if err := tx.Table(table).Create(email).Error; nil != err {
 					return err
 				}
 			}
