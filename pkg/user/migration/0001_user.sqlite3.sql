@@ -1,4 +1,4 @@
-CREATE TABLE "user"
+CREATE TABLE users
 (
     id         uuid                   NOT NULL,
     version    uuid                   NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE user_name
     first_name     character varying(64) NOT NULL,
     last_name      character varying(64) NOT NULL,
     preferred_name character varying(64) NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES "user" (id)
+    FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
 CREATE INDEX user_name_fk ON user_name (user_id);
@@ -30,7 +30,7 @@ CREATE TABLE user_password
     updated_at   timestamp              NOT NULL,
     algorithm    character varying(8)   NOT NULL,
     hashed_value character varying(255) NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES "user" (id)
+    FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
 CREATE INDEX user_pass_fk ON user_password (user_id);
@@ -39,14 +39,31 @@ CREATE INDEX user_pass_status ON user_password (is_active);
 
 CREATE TABLE user_email
 (
-    user_id    uuid                   NOT NULL,
+    id         character varying(26)  NOT NULL,
+    user_id    character varying(26)  NOT NULL,
     is_primary boolean                NOT NULL,
     is_active  boolean                NOT NULL,
     created_at timestamp              NOT NULL,
     updated_at timestamp              NOT NULL,
     value      character varying(128) NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES "user" (id)
+    FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
 CREATE INDEX user_email_fk ON user_email (user_id);
 CREATE INDEX user_email_lookup ON user_email (value);
+
+
+CREATE TABLE user_email_unverified
+(
+    id         character varying(26)  NOT NULL,
+    user_id    character varying(26)  NOT NULL,
+    is_primary boolean                NOT NULL,
+    is_active  boolean                NOT NULL,
+    created_at timestamp              NOT NULL,
+    updated_at timestamp              NOT NULL,
+    value      character varying(128) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+CREATE INDEX user_email_fk ON user_email_unverified (user_id);
+CREATE INDEX user_email_lookup ON user_email_unverified (value);

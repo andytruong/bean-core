@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -26,13 +27,18 @@ func (this *UserCreateAPI) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto
 	}
 
 	// Generate user Identifier.
-	if id, err := this.ID.Hash("User", time.Now()); nil != err {
+	if id, err := this.ID.ULID(); nil != err {
+		return nil, err
+	} else if version, err := this.ID.ULID(); nil != err {
 		return nil, err
 	} else {
 		user.ID = id
+		user.Version = version
 	}
 
-	if err := tx.Create(user).Error; nil != err {
+	fmt.Println("user", user)
+
+	if err := tx.Create(&user).Error; nil != err {
 		return nil, err
 	}
 
@@ -88,7 +94,7 @@ func (this *UserCreateAPI) createEmails(tx *gorm.DB, user *model.User, input *dt
 				UpdatedAt: time.Now(),
 			}
 
-			if err := tx.Table(table).Create(email).Error; nil != err {
+			if err := tx.Table(table).Create(&email).Error; nil != err {
 				return err
 			}
 		}
@@ -111,7 +117,7 @@ func (this *UserCreateAPI) createEmails(tx *gorm.DB, user *model.User, input *dt
 					UpdatedAt: time.Now(),
 				}
 
-				if err := tx.Table(table).Create(email).Error; nil != err {
+				if err := tx.Table(table).Create(&email).Error; nil != err {
 					return err
 				}
 			}

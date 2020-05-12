@@ -29,7 +29,7 @@ type (
 	}
 
 	mutationResolver struct {
-		user.UserMutationResolver
+		*user.UserMutationResolver
 		*access.AccessMutationResolver
 	}
 
