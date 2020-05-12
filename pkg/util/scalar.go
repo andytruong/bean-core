@@ -60,3 +60,11 @@ func (this *Uri) UnmarshalGQL(v interface{}) error {
 func (this Uri) MarshalGQL(w io.Writer) {
 	fmt.Fprintf(w, `"%s"`, this)
 }
+
+func NilString(input string) *string {
+	return &input
+}
+
+func NilUri(input Uri) *Uri {
+	return &input
+}
