@@ -65,5 +65,5 @@ CREATE TABLE user_email_unverified
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
-CREATE INDEX user_email_fk ON user_email_unverified (user_id);
-CREATE INDEX user_email_lookup ON user_email_unverified (value);
+CREATE INDEX user_un_email_fk ON user_email_unverified (user_id);
+CREATE INDEX user_un_email_lookup ON user_email_unverified (value);
