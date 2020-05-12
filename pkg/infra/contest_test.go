@@ -1,19 +1,22 @@
 package infra
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func NewMockContainer() *Container {
-	container, err := NewContainer("../../config.yaml")
+	_ = os.Setenv("DB_MASTER_URL", ":memory:")
+	_ = os.Setenv("DB_SLAVE_URL", ":memory:")
+	ctn, err := NewContainer("../../config.yaml")
 
 	if nil != err {
 		panic(err)
 	}
 
-	return container
+	return ctn
 }
 
 func TestContainer(t *testing.T) {
