@@ -26,7 +26,7 @@ func (this UserInstallAPI) Run(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if ok {
 		return filepath.Walk(
-			path.Dir(path.Dir(filename)) + "/migration/",
+			path.Dir(path.Dir(filename))+"/migration/",
 			func(path string, info os.FileInfo, err error) error {
 				if !info.IsDir() {
 					if strings.HasSuffix(path, ".sql") {
@@ -46,15 +46,25 @@ func (this UserInstallAPI) install(tx *gorm.DB, driver string, file string) erro
 	migration := util.NewMigration("user", file)
 	path := migration.RealPath()
 
+	if !migration.DriverMatch(driver) {
+		this.logger.Info(
+			"👉 driver unmatch",
+			zap.String("module", migration.Module),
+			zap.String("path", path),
+		)
+
+		return nil
+	}
+
 	if can, err := migration.IsExecuted(tx); nil != err {
 		return err
 	} else if can {
-		content, err := ioutil.ReadFile(path)
-		if nil != err {
-			return err
-		}
-
 		if migration.DriverMatch(driver) {
+			content, err := ioutil.ReadFile(path)
+			if nil != err {
+				return err
+			}
+
 			if err := tx.Exec(string(content)).Error; nil != err {
 				this.logger.Info(
 					"⚡️ executed migration",
@@ -66,12 +76,6 @@ func (this UserInstallAPI) install(tx *gorm.DB, driver string, file string) erro
 			} else {
 				return migration.Save(tx)
 			}
-		} else {
-			this.logger.Info(
-				"👉 driver unmatch",
-				zap.String("module", migration.Module),
-				zap.String("path", path),
-			)
 		}
 	}
 
