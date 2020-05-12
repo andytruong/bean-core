@@ -27,6 +27,7 @@ func main() {
 		Name: "bean",
 		Commands: []*cli.Command{
 			cmd.HttpServerCommand(container),
+			cmd.MigrationCommand(container),
 		},
 	}
 
