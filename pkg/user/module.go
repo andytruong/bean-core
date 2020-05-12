@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
 
+	"bean/pkg/user/service"
 	"bean/pkg/util"
 )
 
@@ -25,6 +26,8 @@ type UserModule struct {
 	Query    UserQueryResolver
 }
 
-func (this UserModule) Install(tx *gorm.DB) error {
-	panic("implement me")
+func (this UserModule) Install(tx *gorm.DB, driver string) error {
+	api := service.NewUserInstallAPI(this.logger)
+
+	return api.Run(tx, driver)
 }

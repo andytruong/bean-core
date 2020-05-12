@@ -14,6 +14,7 @@ func (e Err) Error() string { return string(e) }
 const ErrorInvalidArgument = Err("invalid argument")
 const ErrorConfig = Err("configuration error")
 const ErrorNilPointer = Err("nil pointer error")
+const ErrorQuery = Err("query error")
 
 func NilPointerErrorValidate(values ...interface{}) error {
 	for _, value := range values {
