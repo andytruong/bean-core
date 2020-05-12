@@ -15,7 +15,12 @@ func (this *Container) Install(ctx context.Context) error {
 		tx := db.BeginTx(ctx, &sql.TxOptions{})
 
 		// create migration table if not existing
-		tx.AutoMigrate(util.Migration{})
+		if !tx.HasTable(util.Migration{}) {
+			if err := tx.CreateTable(util.Migration{}).Error; nil != err {
+				tx.Rollback()
+				return err
+			}
+		}
 
 		// loop through modules
 		for _, mod := range this.modules.List() {

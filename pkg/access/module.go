@@ -16,5 +16,5 @@ func (this AccessModule) MutationResolver() (*AccessMutationResolver, error) {
 }
 
 func (this AccessModule) Install(tx *gorm.DB) error {
-	panic("implement me")
+	return nil
 }
