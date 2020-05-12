@@ -47,6 +47,10 @@ type (
 	}
 )
 
+func (this *rootResolver) UserEmail() gql.UserEmailResolver {
+	panic("implement me")
+}
+
 func (this *resolvers) getRoot() *rootResolver {
 	if nil == this.root {
 		this.mu.Lock()

@@ -48,14 +48,14 @@ func (this UserInstallAPI) install(tx *gorm.DB, driver string, file string) erro
 
 	if !migration.DriverMatch(driver) {
 		this.logger.Info(
-			"👉 driver unmatch",
+			"👉 driver unmatched",
 			zap.String("module", migration.Module),
 			zap.String("path", path),
 		)
 
 		return nil
 	}
-
+	
 	if can, err := migration.IsExecuted(tx); nil != err {
 		return err
 	} else if can {

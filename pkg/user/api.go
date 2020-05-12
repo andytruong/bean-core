@@ -36,7 +36,14 @@ type (
 	UserQueryResolver struct {
 		db *gorm.DB
 	}
+
+	UserEmailResolver struct {
+	}
 )
+
+func (u UserEmailResolver) Verified(ctx context.Context, obj *model.UserEmail) (bool, error) {
+	return obj.IsVerified, nil
+}
 
 func (this *UserMutationResolver) UserCreate(ctx context.Context, input *dto.UserCreateInput) (*dto.UserCreateOutcome, error) {
 	sv := service.UserCreateAPI{ID: this.id}

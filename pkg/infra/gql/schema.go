@@ -45,6 +45,7 @@ type ResolverRoot interface {
 	Query() QueryResolver
 	Session() SessionResolver
 	User() UserResolver
+	UserEmail() UserEmailResolver
 }
 
 type DirectiveRoot struct {
@@ -191,6 +192,9 @@ type SessionResolver interface {
 type UserResolver interface {
 	Name(ctx context.Context, obj *model.User) (*model.UserName, error)
 	Emails(ctx context.Context, obj *model.User) (*model.UserEmails, error)
+}
+type UserEmailResolver interface {
+	Verified(ctx context.Context, obj *model.UserEmail) (bool, error)
 }
 
 type executableSchema struct {
@@ -3042,13 +3046,13 @@ func (ec *executionContext) _UserEmail_verified(ctx context.Context, field graph
 		Object:   "UserEmail",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Verified, nil
+		return ec.resolvers.UserEmail().Verified(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5322,32 +5326,41 @@ func (ec *executionContext) _UserEmail(ctx context.Context, sel ast.SelectionSet
 		case "id":
 			out.Values[i] = ec._UserEmail_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "verified":
-			out.Values[i] = ec._UserEmail_verified(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UserEmail_verified(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "value":
 			out.Values[i] = ec._UserEmail_value(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._UserEmail_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._UserEmail_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "isActive":
 			out.Values[i] = ec._UserEmail_isActive(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

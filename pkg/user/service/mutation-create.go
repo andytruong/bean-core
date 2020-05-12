@@ -92,6 +92,7 @@ func (this *UserCreateAPI) createEmails(tx *gorm.DB, user *model.User, input *dt
 				IsActive:  input.Emails.Primary.IsActive,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
+				IsPrimary: true,
 			}
 
 			if err := tx.Table(table).Create(&email).Error; nil != err {
@@ -113,6 +114,7 @@ func (this *UserCreateAPI) createEmails(tx *gorm.DB, user *model.User, input *dt
 					UserId:    user.ID,
 					Value:     secondaryInput.Value,
 					IsActive:  secondaryInput.IsActive,
+					IsPrimary: false,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
 				}
