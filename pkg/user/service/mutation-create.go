@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -35,8 +34,6 @@ func (this *UserCreateAPI) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto
 		user.ID = id
 		user.Version = version
 	}
-
-	fmt.Println("user", user)
 
 	if err := tx.Create(&user).Error; nil != err {
 		return nil, err

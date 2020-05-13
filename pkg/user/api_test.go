@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -64,8 +63,11 @@ func TestUserMutationResolver_UserCreate(t *testing.T) {
 	t.Run("test happy case, no error", func(t *testing.T) {
 		outcome, err := module.Mutation.UserCreate(context.Background(), input)
 		ass.NoError(err)
-		fmt.Println("OUTCOME: ", outcome)
+		ass.Empty(outcome.Errors)
+		ass.Equal("https://foo.bar", string(*outcome.User.AvatarURI))
 	})
 
-	// email duplication
+	t.Run("error by email duplication", func(t *testing.T) {
+		ass.True(true, "TODO")
+	})
 }

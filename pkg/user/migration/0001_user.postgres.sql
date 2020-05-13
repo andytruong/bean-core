@@ -11,8 +11,9 @@ CREATE TABLE users
     CONSTRAINT user_version UNIQUE (version)
 );
 
-CREATE TABLE user_name
+CREATE TABLE user_names
 (
+    id             character varying(26) NOT NULL PRIMARY KEY,
     user_id        character varying(26) NOT NULL,
     first_name     character varying(64) NOT NULL,
     last_name      character varying(64) NOT NULL,
@@ -20,10 +21,11 @@ CREATE TABLE user_name
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
-CREATE INDEX user_name_fk ON user_name USING hash (user_id);
+CREATE INDEX user_name_fk ON user_names USING hash (user_id);
 
 CREATE TABLE user_password
 (
+    id           character varying(26)  NOT NULL PRIMARY KEY,
     user_id      character varying(26)  NOT NULL,
     is_active    boolean                NOT NULL,
     created_at   timestamp              NOT NULL,
@@ -39,7 +41,7 @@ CREATE INDEX user_pass_status ON user_password USING hash (is_active);
 
 CREATE TABLE user_email
 (
-    id         character varying(26)  NOT NULL,
+    id         character varying(26)  NOT NULL PRIMARY KEY,
     user_id    character varying(26)  NOT NULL,
     is_primary boolean                NOT NULL,
     is_active  boolean                NOT NULL,
@@ -54,7 +56,7 @@ CREATE INDEX user_email_lookup ON user_email USING hash (value);
 
 CREATE TABLE user_email_unverified
 (
-    id         character varying(26)  NOT NULL,
+    id         character varying(26)  NOT NULL PRIMARY KEY,
     user_id    character varying(26)  NOT NULL,
     is_primary boolean                NOT NULL,
     is_active  boolean                NOT NULL,
