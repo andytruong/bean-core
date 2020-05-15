@@ -7,6 +7,7 @@ import (
 	"bean/pkg/access"
 	"bean/pkg/access/model"
 	"bean/pkg/infra/gql"
+	"bean/pkg/namespace"
 	namespace_model "bean/pkg/namespace/model"
 	"bean/pkg/user"
 	user_model "bean/pkg/user/model"
@@ -29,6 +30,7 @@ type (
 
 	mutationResolver struct {
 		*user.UserMutationResolver
+		*namespace.NamespaceMutationResolver
 		*access.AccessMutationResolver
 	}
 

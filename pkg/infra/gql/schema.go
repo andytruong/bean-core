@@ -95,16 +95,22 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		Ping          func(childComplexity int) int
-		SessionCreate func(childComplexity int, input *dto.LoginInput) int
-		SessionDelete func(childComplexity int, input *dto.LoginInput) int
-		UserCreate    func(childComplexity int, input *dto1.UserCreateInput) int
+		NamespaceCreate func(childComplexity int, input NamespaceCreateInput) int
+		Ping            func(childComplexity int) int
+		SessionCreate   func(childComplexity int, input *dto.LoginInput) int
+		SessionDelete   func(childComplexity int, input *dto.LoginInput) int
+		UserCreate      func(childComplexity int, input *dto1.UserCreateInput) int
 	}
 
 	Namespace struct {
 		DomainNames func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Title       func(childComplexity int) int
+	}
+
+	NamespaceCreateOutcome struct {
+		Errors    func(childComplexity int) int
+		Namespace func(childComplexity int) int
 	}
 
 	Query struct {
@@ -176,6 +182,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	Ping(ctx context.Context) (string, error)
+	NamespaceCreate(ctx context.Context, input NamespaceCreateInput) (*NamespaceCreateOutcome, error)
 	UserCreate(ctx context.Context, input *dto1.UserCreateInput) (*dto1.UserCreateOutcome, error)
 	SessionCreate(ctx context.Context, input *dto.LoginInput) (*dto.LoginOutcome, error)
 	SessionDelete(ctx context.Context, input *dto.LoginInput) (*dto.LogoutOutcome, error)
@@ -359,6 +366,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Membership.UserID(childComplexity), true
 
+	case "Mutation.namespaceCreate":
+		if e.complexity.Mutation.NamespaceCreate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_namespaceCreate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NamespaceCreate(childComplexity, args["input"].(NamespaceCreateInput)), true
+
 	case "Mutation.ping":
 		if e.complexity.Mutation.Ping == nil {
 			break
@@ -422,6 +441,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Namespace.Title(childComplexity), true
+
+	case "NamespaceCreateOutcome.errors":
+		if e.complexity.NamespaceCreateOutcome.Errors == nil {
+			break
+		}
+
+		return e.complexity.NamespaceCreateOutcome.Errors(childComplexity), true
+
+	case "NamespaceCreateOutcome.namespace":
+		if e.complexity.NamespaceCreateOutcome.Namespace == nil {
+			break
+		}
+
+		return e.complexity.NamespaceCreateOutcome.Namespace(childComplexity), true
 
 	case "Query.loadSession":
 		if e.complexity.Query.LoadSession == nil {
@@ -810,6 +843,42 @@ enum AccessScope {
     Authenticated
 }
 `, BuiltIn: false},
+	&ast.Source{Name: "pkg/namespace/api-mutation.graphql", Input: `extend type Mutation {
+    namespaceCreate(input: NamespaceCreateInput!): NamespaceCreateOutcome
+
+    # TODO: create membership
+}
+
+input NamespaceCreateInput {
+    object: NamespaceCreateInputObject!
+    context: NamespaceCreateContext!
+}
+
+input NamespaceCreateInputObject {
+    title: String
+    domainNames: DomainNamesInput
+}
+
+input NamespaceCreateContext {
+    userId: ID!
+}
+
+input DomainNamesInput {
+    primary: DomainNameInput!
+    secondary: [DomainNameInput]
+}
+
+input DomainNameInput {
+    verified: Boolean
+    value: String
+    isActive: Boolean
+}
+
+type NamespaceCreateOutcome {
+    errors: [Error]
+    namespace: Namespace
+}
+`, BuiltIn: false},
 	&ast.Source{Name: "pkg/namespace/api.graphql", Input: `type Namespace {
     id: ID!
     title: String
@@ -1012,6 +1081,20 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_namespaceCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 NamespaceCreateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNNamespaceCreateInput2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_sessionCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -1854,6 +1937,44 @@ func (ec *executionContext) _Mutation_ping(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_namespaceCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_namespaceCreate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NamespaceCreate(rctx, args["input"].(NamespaceCreateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*NamespaceCreateOutcome)
+	fc.Result = res
+	return ec.marshalONamespaceCreateOutcome2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateOutcome(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2068,6 +2189,68 @@ func (ec *executionContext) _Namespace_domainNames(ctx context.Context, field gr
 	res := resTmp.(*model2.DomainNames)
 	fc.Result = res
 	return ec.marshalODomainNames2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainNames(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NamespaceCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *NamespaceCreateOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NamespaceCreateOutcome",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*util.Error)
+	fc.Result = res
+	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐError(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NamespaceCreateOutcome_namespace(ctx context.Context, field graphql.CollectedField, obj *NamespaceCreateOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NamespaceCreateOutcome",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model2.Namespace)
+	fc.Result = res
+	return ec.marshalONamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_ping(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4480,6 +4663,60 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputDomainNameInput(ctx context.Context, obj interface{}) (DomainNameInput, error) {
+	var it DomainNameInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "verified":
+			var err error
+			it.Verified, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "value":
+			var err error
+			it.Value, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isActive":
+			var err error
+			it.IsActive, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputDomainNamesInput(ctx context.Context, obj interface{}) (DomainNamesInput, error) {
+	var it DomainNamesInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "primary":
+			var err error
+			it.Primary, err = ec.unmarshalNDomainNameInput2ᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "secondary":
+			var err error
+			it.Secondary, err = ec.unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputLoginContextInput(ctx context.Context, obj interface{}) (dto.LoginContextInput, error) {
 	var it dto.LoginContextInput
 	var asMap = obj.(map[string]interface{})
@@ -4543,6 +4780,72 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj in
 		case "context":
 			var err error
 			it.Context, err = ec.unmarshalOLoginContextInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginContextInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputNamespaceCreateContext(ctx context.Context, obj interface{}) (NamespaceCreateContext, error) {
+	var it NamespaceCreateContext
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "userId":
+			var err error
+			it.UserID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputNamespaceCreateInput(ctx context.Context, obj interface{}) (NamespaceCreateInput, error) {
+	var it NamespaceCreateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "object":
+			var err error
+			it.Object, err = ec.unmarshalNNamespaceCreateInputObject2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateInputObject(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "context":
+			var err error
+			it.Context, err = ec.unmarshalNNamespaceCreateContext2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateContext(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputNamespaceCreateInputObject(ctx context.Context, obj interface{}) (NamespaceCreateInputObject, error) {
+	var it NamespaceCreateInputObject
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "title":
+			var err error
+			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "domainNames":
+			var err error
+			it.DomainNames, err = ec.unmarshalODomainNamesInput2ᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNamesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4980,6 +5283,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "namespaceCreate":
+			out.Values[i] = ec._Mutation_namespaceCreate(ctx, field)
 		case "userCreate":
 			out.Values[i] = ec._Mutation_userCreate(ctx, field)
 		case "sessionCreate":
@@ -5023,6 +5328,32 @@ func (ec *executionContext) _Namespace(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._Namespace_title(ctx, field, obj)
 		case "domainNames":
 			out.Values[i] = ec._Namespace_domainNames(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var namespaceCreateOutcomeImplementors = []string{"NamespaceCreateOutcome"}
+
+func (ec *executionContext) _NamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *NamespaceCreateOutcome) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, namespaceCreateOutcomeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NamespaceCreateOutcome")
+		case "errors":
+			out.Values[i] = ec._NamespaceCreateOutcome_errors(ctx, field, obj)
+		case "namespace":
+			out.Values[i] = ec._NamespaceCreateOutcome_namespace(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5726,6 +6057,18 @@ func (ec *executionContext) marshalNDomainName2ᚖbeanᚋpkgᚋnamespaceᚋmodel
 	return ec._DomainName(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNDomainNameInput2beanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx context.Context, v interface{}) (DomainNameInput, error) {
+	return ec.unmarshalInputDomainNameInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNDomainNameInput2ᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx context.Context, v interface{}) (*DomainNameInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNDomainNameInput2beanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx context.Context, v interface{}) (util.EmailAddress, error) {
 	var res util.EmailAddress
 	return res, res.UnmarshalGQL(v)
@@ -5803,6 +6146,34 @@ func (ec *executionContext) marshalNNamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodel�
 		return graphql.Null
 	}
 	return ec._Namespace(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNNamespaceCreateContext2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateContext(ctx context.Context, v interface{}) (NamespaceCreateContext, error) {
+	return ec.unmarshalInputNamespaceCreateContext(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNNamespaceCreateContext2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateContext(ctx context.Context, v interface{}) (*NamespaceCreateContext, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNNamespaceCreateContext2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateContext(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalNNamespaceCreateInput2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateInput(ctx context.Context, v interface{}) (NamespaceCreateInput, error) {
+	return ec.unmarshalInputNamespaceCreateInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateInputObject(ctx context.Context, v interface{}) (NamespaceCreateInputObject, error) {
+	return ec.unmarshalInputNamespaceCreateInputObject(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNNamespaceCreateInputObject2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateInputObject(ctx context.Context, v interface{}) (*NamespaceCreateInputObject, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateInputObject(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -6328,6 +6699,38 @@ func (ec *executionContext) marshalODomainName2ᚖbeanᚋpkgᚋnamespaceᚋmodel
 	return ec._DomainName(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalODomainNameInput2beanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx context.Context, v interface{}) (DomainNameInput, error) {
+	return ec.unmarshalInputDomainNameInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx context.Context, v interface{}) ([]*DomainNameInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*DomainNameInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalODomainNameInput2ᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalODomainNameInput2ᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx context.Context, v interface{}) (*DomainNameInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalODomainNameInput2beanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalODomainNames2beanᚋpkgᚋnamespaceᚋmodelᚐDomainNames(ctx context.Context, sel ast.SelectionSet, v model2.DomainNames) graphql.Marshaler {
 	return ec._DomainNames(ctx, sel, &v)
 }
@@ -6337,6 +6740,18 @@ func (ec *executionContext) marshalODomainNames2ᚖbeanᚋpkgᚋnamespaceᚋmode
 		return graphql.Null
 	}
 	return ec._DomainNames(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalODomainNamesInput2beanᚋpkgᚋinfraᚋgqlᚐDomainNamesInput(ctx context.Context, v interface{}) (DomainNamesInput, error) {
+	return ec.unmarshalInputDomainNamesInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalODomainNamesInput2ᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNamesInput(ctx context.Context, v interface{}) (*DomainNamesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalODomainNamesInput2beanᚋpkgᚋinfraᚋgqlᚐDomainNamesInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalOError2beanᚋpkgᚋutilᚐError(ctx context.Context, sel ast.SelectionSet, v util.Error) graphql.Marshaler {
@@ -6499,6 +6914,28 @@ func (ec *executionContext) unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐ
 	}
 	res, err := ec.unmarshalOLoginInput2beanᚋpkgᚋaccessᚋdtoᚐLoginInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalONamespace2beanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx context.Context, sel ast.SelectionSet, v model2.Namespace) graphql.Marshaler {
+	return ec._Namespace(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalONamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx context.Context, sel ast.SelectionSet, v *model2.Namespace) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Namespace(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalONamespaceCreateOutcome2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v NamespaceCreateOutcome) graphql.Marshaler {
+	return ec._NamespaceCreateOutcome(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalONamespaceCreateOutcome2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *NamespaceCreateOutcome) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NamespaceCreateOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOSession2beanᚋpkgᚋaccessᚋmodelᚐSession(ctx context.Context, sel ast.SelectionSet, v model1.Session) graphql.Marshaler {
