@@ -46,7 +46,7 @@ CREATE TABLE user_emails
     is_active  boolean                NOT NULL,
     created_at timestamp              NOT NULL,
     updated_at timestamp              NOT NULL,
-    value      character varying(128) NOT NULL,
+    value      character varying(320) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT user_unique_email UNIQUE (value)
 );

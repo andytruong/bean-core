@@ -88,7 +88,7 @@ func (this *UserCreateAPI) createEmails(tx *gorm.DB, user *model.User, input *dt
 		email := model.UserEmail{
 			ID:        id,
 			UserId:    user.ID,
-			Value:     input.Emails.Primary.Value,
+			Value:     input.Emails.Primary.Value.LowerCaseValue(),
 			IsActive:  input.Emails.Primary.IsActive,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -112,7 +112,7 @@ func (this *UserCreateAPI) createEmails(tx *gorm.DB, user *model.User, input *dt
 			email := model.UserEmail{
 				ID:        id,
 				UserId:    user.ID,
-				Value:     secondaryInput.Value,
+				Value:     secondaryInput.Value.LowerCaseValue(),
 				IsActive:  secondaryInput.IsActive,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
