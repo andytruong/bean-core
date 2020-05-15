@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/mail"
 	"net/url"
+	"strings"
 )
 
 type (
@@ -18,6 +19,13 @@ type (
 		Value string
 	}
 )
+
+func (this EmailAddress) LowerCaseValue() EmailAddress {
+	stringRaw := string(this)
+	stringLower := strings.ToLower(stringRaw)
+
+	return EmailAddress(stringLower)
+}
 
 func (this *EmailAddress) UnmarshalGQL(v interface{}) error {
 	if input, ok := v.(string); !ok {

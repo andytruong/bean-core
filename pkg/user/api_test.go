@@ -77,4 +77,8 @@ func TestUserMutationResolver_UserCreate(t *testing.T) {
 	t.Run("error by email duplication", func(t *testing.T) {
 		ass.True(true, "TODO")
 	})
+
+	t.Run("email is casted to lower-case", func(t *testing.T) {
+		ass.True(true, "TODO")
+	})
 }
