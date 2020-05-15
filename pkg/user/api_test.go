@@ -8,7 +8,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 
-	"bean/pkg/user/dto"
+	"bean/pkg/user/model/dto"
 	"bean/pkg/util"
 	"bean/pkg/util/password"
 )

@@ -8,8 +8,8 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 
-	"bean/pkg/user/dto"
 	"bean/pkg/user/model"
+	"bean/pkg/user/model/dto"
 	"bean/pkg/user/service"
 	"bean/pkg/util"
 )

@@ -3,12 +3,6 @@
 package gql
 
 import (
-	"bean/pkg/access/dto"
-	model1 "bean/pkg/access/model"
-	model2 "bean/pkg/namespace/model"
-	dto1 "bean/pkg/user/dto"
-	"bean/pkg/user/model"
-	"bean/pkg/util"
 	"bytes"
 	"context"
 	"errors"
@@ -16,6 +10,13 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	model1 "bean/pkg/access/model"
+	"bean/pkg/access/model/dto"
+	model2 "bean/pkg/namespace/model"
+	"bean/pkg/user/model"
+	dto1 "bean/pkg/user/model/dto"
+	"bean/pkg/util"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"

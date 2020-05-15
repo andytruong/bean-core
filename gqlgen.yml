@@ -21,9 +21,9 @@ resolver:
   type: Resolver
 
 autobind:
-  - bean/pkg/user/dto
   - bean/pkg/user/model
+  - bean/pkg/user/model/dto
   - bean/pkg/namespace/model
-  - bean/pkg/access/dto
   - bean/pkg/access/model
+  - bean/pkg/access/model/dto
   - bean/pkg/util
