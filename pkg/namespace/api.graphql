@@ -1,6 +1,11 @@
 type Namespace {
     id: ID!
+    version: ID!
     title: String
+    createdAt: Time!
+    updatedAt: Time!
+    isActive: Boolean!
+
     domainNames: DomainNames
 }
 

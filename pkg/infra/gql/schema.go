@@ -103,9 +103,13 @@ type ComplexityRoot struct {
 	}
 
 	Namespace struct {
+		CreatedAt   func(childComplexity int) int
 		DomainNames func(childComplexity int) int
 		ID          func(childComplexity int) int
+		IsActive    func(childComplexity int) int
 		Title       func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
+		Version     func(childComplexity int) int
 	}
 
 	NamespaceCreateOutcome struct {
@@ -421,6 +425,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UserCreate(childComplexity, args["input"].(*dto1.UserCreateInput)), true
 
+	case "Namespace.createdAt":
+		if e.complexity.Namespace.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Namespace.CreatedAt(childComplexity), true
+
 	case "Namespace.domainNames":
 		if e.complexity.Namespace.DomainNames == nil {
 			break
@@ -435,12 +446,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Namespace.ID(childComplexity), true
 
+	case "Namespace.isActive":
+		if e.complexity.Namespace.IsActive == nil {
+			break
+		}
+
+		return e.complexity.Namespace.IsActive(childComplexity), true
+
 	case "Namespace.title":
 		if e.complexity.Namespace.Title == nil {
 			break
 		}
 
 		return e.complexity.Namespace.Title(childComplexity), true
+
+	case "Namespace.updatedAt":
+		if e.complexity.Namespace.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Namespace.UpdatedAt(childComplexity), true
+
+	case "Namespace.version":
+		if e.complexity.Namespace.Version == nil {
+			break
+		}
+
+		return e.complexity.Namespace.Version(childComplexity), true
 
 	case "NamespaceCreateOutcome.errors":
 		if e.complexity.NamespaceCreateOutcome.Errors == nil {
@@ -881,7 +913,12 @@ type NamespaceCreateOutcome {
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/namespace/api.graphql", Input: `type Namespace {
     id: ID!
+    version: ID!
     title: String
+    createdAt: Time!
+    updatedAt: Time!
+    isActive: Boolean!
+
     domainNames: DomainNames
 }
 
@@ -2129,6 +2166,40 @@ func (ec *executionContext) _Namespace_id(ctx context.Context, field graphql.Col
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Namespace_version(ctx context.Context, field graphql.CollectedField, obj *model2.Namespace) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Namespace",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Namespace_title(ctx context.Context, field graphql.CollectedField, obj *model2.Namespace) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2158,6 +2229,108 @@ func (ec *executionContext) _Namespace_title(ctx context.Context, field graphql.
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Namespace_createdAt(ctx context.Context, field graphql.CollectedField, obj *model2.Namespace) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Namespace",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Namespace_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model2.Namespace) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Namespace",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Namespace_isActive(ctx context.Context, field graphql.CollectedField, obj *model2.Namespace) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Namespace",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsActive, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Namespace_domainNames(ctx context.Context, field graphql.CollectedField, obj *model2.Namespace) (ret graphql.Marshaler) {
@@ -5324,8 +5497,28 @@ func (ec *executionContext) _Namespace(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "version":
+			out.Values[i] = ec._Namespace_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "title":
 			out.Values[i] = ec._Namespace_title(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._Namespace_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Namespace_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "isActive":
+			out.Values[i] = ec._Namespace_isActive(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "domainNames":
 			out.Values[i] = ec._Namespace_domainNames(ctx, field, obj)
 		default:
