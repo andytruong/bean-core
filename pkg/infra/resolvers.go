@@ -84,7 +84,12 @@ func (this *resolvers) getMutation() *mutationResolver {
 			panic(err)
 		}
 
-		mAccess, err := this.container.modules.Access().MutationResolver()
+		modAccess, err := this.container.modules.Access()
+		if nil != err {
+			panic(err)
+		}
+
+		mAccess, err := modAccess.MutationResolver()
 		if nil != err {
 			panic(err)
 		}

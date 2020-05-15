@@ -15,6 +15,6 @@ func (this AccessModule) MutationResolver() (*AccessMutationResolver, error) {
 	return &AccessMutationResolver{}, nil
 }
 
-func (this AccessModule) Install(tx *gorm.DB, driver string) error {
+func (this AccessModule) Migrate(tx *gorm.DB, driver string) error {
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"bean/pkg/util"
+	"bean/pkg/util/migrate"
 )
 
 func NewUserModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) (*UserModule, error) {
@@ -37,13 +38,13 @@ type UserModule struct {
 	Email    UserEmailResolver
 }
 
-func (this UserModule) Install(tx *gorm.DB, driver string) error {
+func (this UserModule) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
 	}
 
-	runner := util.MigrationRunner{
+	runner := migrate.Runner{
 		Tx:     tx,
 		Logger: this.logger,
 		Driver: driver,

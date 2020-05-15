@@ -7,11 +7,10 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/mattn/go-sqlite3"
 
-	"bean/pkg/util"
+	"bean/pkg/util/migrate"
 )
 
-func (this *Container) Install(ctx context.Context) error {
-
+func (this *Container) Migrate(ctx context.Context) error {
 	if db, err := this.dbs.master(); nil != err {
 		return err
 	} else {
@@ -20,16 +19,16 @@ func (this *Container) Install(ctx context.Context) error {
 		tx := db.BeginTx(ctx, &sql.TxOptions{})
 
 		// create migration table if not existing
-		if !tx.HasTable(util.Migration{}) {
-			if err := tx.CreateTable(util.Migration{}).Error; nil != err {
+		if !tx.HasTable(migrate.Migration{}) {
+			if err := tx.CreateTable(migrate.Migration{}).Error; nil != err {
 				tx.Rollback()
 				return err
 			}
 		}
 
 		// loop through modules
-		for _, mod := range this.modules.List() {
-			if err := mod.Install(tx, driver); nil != err {
+		for _, module := range this.modules.List() {
+			if err := module.Migrate(tx, driver); nil != err {
 				tx.Rollback()
 				return err
 			}
