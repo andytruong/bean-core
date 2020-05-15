@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"testing"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
@@ -61,10 +62,16 @@ func TestUserMutationResolver_UserCreate(t *testing.T) {
 	}
 
 	t.Run("test happy case, no error", func(t *testing.T) {
+		now := time.Now()
 		outcome, err := module.Mutation.UserCreate(context.Background(), input)
 		ass.NoError(err)
 		ass.Empty(outcome.Errors)
 		ass.Equal("https://foo.bar", string(*outcome.User.AvatarURI))
+
+		theUser, err := module.Query.User(context.Background(), outcome.User.ID)
+		ass.NoError(err)
+		ass.True(theUser.CreatedAt.UnixNano() >= now.UnixNano())
+		ass.Equal("https://foo.bar", string(*theUser.AvatarURI))
 	})
 
 	t.Run("error by email duplication", func(t *testing.T) {

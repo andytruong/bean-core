@@ -856,7 +856,7 @@ type UserName {
 }
 
 type UserEmails {
-    primary: UserEmail!
+    primary: UserEmail
     secondary: [UserEmail]
 }
 
@@ -3229,14 +3229,11 @@ func (ec *executionContext) _UserEmails_primary(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.UserEmail)
 	fc.Result = res
-	return ec.marshalNUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx, field.Selections, res)
+	return ec.marshalOUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserEmails_secondary(ctx context.Context, field graphql.CollectedField, obj *model.UserEmails) (ret graphql.Marshaler) {
@@ -5386,9 +5383,6 @@ func (ec *executionContext) _UserEmails(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = graphql.MarshalString("UserEmails")
 		case "primary":
 			out.Values[i] = ec._UserEmails_primary(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "secondary":
 			out.Values[i] = ec._UserEmails_secondary(ctx, field, obj)
 		default:
@@ -5837,20 +5831,6 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNUserEmail2beanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v model.UserEmail) graphql.Marshaler {
-	return ec._UserEmail(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v *model.UserEmail) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._UserEmail(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (dto1.UserEmailInput, error) {

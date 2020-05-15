@@ -15,7 +15,7 @@ type UserName {
 }
 
 type UserEmails {
-    primary: UserEmail!
+    primary: UserEmail
     secondary: [UserEmail]
 }
 

@@ -37,11 +37,16 @@ type (
 		db *gorm.DB
 	}
 
+	UserModelResolver struct {
+		db *gorm.DB
+	}
+
 	UserEmailResolver struct {
+		db *gorm.DB
 	}
 )
 
-func (u UserEmailResolver) Verified(ctx context.Context, obj *model.UserEmail) (bool, error) {
+func (this UserEmailResolver) Verified(ctx context.Context, obj *model.UserEmail) (bool, error) {
 	return obj.IsVerified, nil
 }
 
@@ -71,4 +76,47 @@ func (this *UserQueryResolver) User(ctx context.Context, id string) (*model.User
 	sv := service.UserQueryAPI{}
 
 	return sv.Load(this.db, id)
+}
+
+// TODO: dataloader
+func (this UserModelResolver) Name(ctx context.Context, user *model.User) (*model.UserName, error) {
+	name := model.UserName{}
+	err := this.db.
+		Where(model.UserName{UserId: user.ID}).
+		First(&name).
+		Error
+
+	if nil != err {
+		return nil, errors.Wrap(util.ErrorQuery, err.Error())
+	}
+
+	return &name, nil
+}
+
+// TODO: dataloader
+func (this UserModelResolver) Emails(ctx context.Context, user *model.User) (*model.UserEmails, error) {
+	emails := &model.UserEmails{}
+
+	var rows []*model.UserEmail
+	err := this.db.
+		Raw(`
+			     SELECT *, 1 AS is_verified FROM user_emails            WHERE user_id = ?
+		   UNION SELECT *, 0 AS is_verified FROM user_unverified_emails WHERE user_id = ?
+		`, user.ID, user.ID).
+		Find(&rows).
+		Error
+
+	if nil != err {
+		return nil, err
+	} else {
+		for _, row := range rows {
+			if row.IsPrimary {
+				emails.Primary = row
+			} else {
+				emails.Secondary = append(emails.Secondary, row)
+			}
+		}
+	}
+
+	return emails, nil
 }

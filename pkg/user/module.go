@@ -20,6 +20,8 @@ func NewUserModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) (*UserM
 		}
 
 		module.Query = UserQueryResolver{db: db}
+		module.Model = UserModelResolver{db: db}
+		module.Email = UserEmailResolver{db: db}
 
 		return module, nil
 	}
@@ -29,6 +31,8 @@ type UserModule struct {
 	logger   *zap.Logger
 	Mutation *UserMutationResolver
 	Query    UserQueryResolver
+	Model    UserModelResolver
+	Email    UserEmailResolver
 }
 
 func (this UserModule) Install(tx *gorm.DB, driver string) error {

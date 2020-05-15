@@ -7,6 +7,7 @@ type (
 	}
 )
 
+// TODO: Review https://blog.golang.org/go1.13-errors
 type Err string
 
 func (e Err) Error() string { return string(e) }
