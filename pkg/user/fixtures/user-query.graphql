@@ -1,0 +1,10 @@
+query {
+    user(id: "01E8C3D0JKMEEGAS91VT3VHD7D") {
+        id
+        name {  firstName lastName preferredName }
+        emails {
+            primary   { id value verified }
+            secondary { id value verified }
+        }
+    }
+}

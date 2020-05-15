@@ -1,0 +1,36 @@
+mutation {
+    userCreate(
+        input: {
+            name: {
+                firstName: "John",
+                lastName: "Doe",
+                preferredName: "Jo"
+            },
+            avatarUri: "https://foo.bar",
+            password: {
+                algorithm: "xxxxx",
+                hashedValue: "xxxxxx"
+            },
+            emails: {
+                primary: {
+                    verified: false,
+                    value: "john@doe.qa",
+                    isActive: true
+                },
+                secondary: [
+                    {
+                        verified: true,
+                        value: "john.doe@qa.local",
+                        isActive: false
+                    }
+                ]
+            }
+            isActive: true
+        }
+    ) {
+        errors { code fields}
+        user {
+            id
+        }
+    }
+}

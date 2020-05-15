@@ -94,6 +94,7 @@ func (this UserModelResolver) Name(ctx context.Context, user *model.User) (*mode
 }
 
 // TODO: dataloader
+// TODO: need a better resolver, we not always load secondary emails.
 func (this UserModelResolver) Emails(ctx context.Context, user *model.User) (*model.UserEmails, error) {
 	emails := &model.UserEmails{}
 
