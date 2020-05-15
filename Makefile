@@ -1,7 +1,7 @@
 migrate:
 	CONFIG=config.yaml go run cmd/main.go migrate
 
-run:
+server:
 	CONFIG=config.yaml go run cmd/main.go http-server
 
 generate-graphql:
@@ -22,7 +22,7 @@ dev-migrate:
 		DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable  \
 		go run cmd/main.go migrate
 
-dev-run:
+dev-server:
 	CONFIG=config.yaml \
 		DB_DRIVER=postgres \
 		DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable  \

@@ -47,7 +47,8 @@ CREATE TABLE user_emails
     created_at timestamp              NOT NULL,
     updated_at timestamp              NOT NULL,
     value      character varying(128) NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users (id)
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT user_unique_email UNIQUE (value)
 );
 
 CREATE INDEX user_email_fk ON user_emails (user_id);
