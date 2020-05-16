@@ -5,7 +5,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 
-	"bean/pkg/infra/gql"
+	"bean/pkg/namespace/model/dto"
 	"bean/pkg/util"
 )
 
@@ -20,6 +20,6 @@ type (
 	}
 )
 
-func (n NamespaceMutationResolver) NamespaceCreate(ctx context.Context, input gql.NamespaceCreateInput) (*gql.NamespaceCreateOutcome, error) {
+func (n NamespaceMutationResolver) NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	panic("implement me: NamespaceMutationResolver.NamespaceCreate()")
 }

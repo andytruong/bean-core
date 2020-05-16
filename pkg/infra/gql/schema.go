@@ -3,6 +3,13 @@
 package gql
 
 import (
+	model1 "bean/pkg/access/model"
+	dto1 "bean/pkg/access/model/dto"
+	model2 "bean/pkg/namespace/model"
+	"bean/pkg/namespace/model/dto"
+	"bean/pkg/user/model"
+	dto2 "bean/pkg/user/model/dto"
+	"bean/pkg/util"
 	"bytes"
 	"context"
 	"errors"
@@ -10,13 +17,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	model1 "bean/pkg/access/model"
-	"bean/pkg/access/model/dto"
-	model2 "bean/pkg/namespace/model"
-	"bean/pkg/user/model"
-	dto1 "bean/pkg/user/model/dto"
-	"bean/pkg/util"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -96,11 +96,11 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		NamespaceCreate func(childComplexity int, input NamespaceCreateInput) int
+		NamespaceCreate func(childComplexity int, input dto.NamespaceCreateInput) int
 		Ping            func(childComplexity int) int
-		SessionCreate   func(childComplexity int, input *dto.LoginInput) int
-		SessionDelete   func(childComplexity int, input *dto.LoginInput) int
-		UserCreate      func(childComplexity int, input *dto1.UserCreateInput) int
+		SessionCreate   func(childComplexity int, input *dto1.LoginInput) int
+		SessionDelete   func(childComplexity int, input *dto1.LoginInput) int
+		UserCreate      func(childComplexity int, input *dto2.UserCreateInput) int
 	}
 
 	Namespace struct {
@@ -119,7 +119,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		LoadSession func(childComplexity int, input *dto.ValidationInput) int
+		LoadSession func(childComplexity int, input *dto1.ValidationInput) int
 		Ping        func(childComplexity int) int
 		User        func(childComplexity int, id string) int
 	}
@@ -187,15 +187,15 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	Ping(ctx context.Context) (string, error)
-	NamespaceCreate(ctx context.Context, input NamespaceCreateInput) (*NamespaceCreateOutcome, error)
-	UserCreate(ctx context.Context, input *dto1.UserCreateInput) (*dto1.UserCreateOutcome, error)
-	SessionCreate(ctx context.Context, input *dto.LoginInput) (*dto.LoginOutcome, error)
-	SessionDelete(ctx context.Context, input *dto.LoginInput) (*dto.LogoutOutcome, error)
+	NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error)
+	UserCreate(ctx context.Context, input *dto2.UserCreateInput) (*dto2.UserCreateOutcome, error)
+	SessionCreate(ctx context.Context, input *dto1.LoginInput) (*dto1.LoginOutcome, error)
+	SessionDelete(ctx context.Context, input *dto1.LoginInput) (*dto1.LogoutOutcome, error)
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
 	User(ctx context.Context, id string) (*model.User, error)
-	LoadSession(ctx context.Context, input *dto.ValidationInput) (*dto.ValidationOutcome, error)
+	LoadSession(ctx context.Context, input *dto1.ValidationInput) (*dto1.ValidationOutcome, error)
 }
 type SessionResolver interface {
 	User(ctx context.Context, obj *model1.Session) (*model.User, error)
@@ -381,7 +381,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.NamespaceCreate(childComplexity, args["input"].(NamespaceCreateInput)), true
+		return e.complexity.Mutation.NamespaceCreate(childComplexity, args["input"].(dto.NamespaceCreateInput)), true
 
 	case "Mutation.ping":
 		if e.complexity.Mutation.Ping == nil {
@@ -400,7 +400,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SessionCreate(childComplexity, args["input"].(*dto.LoginInput)), true
+		return e.complexity.Mutation.SessionCreate(childComplexity, args["input"].(*dto1.LoginInput)), true
 
 	case "Mutation.sessionDelete":
 		if e.complexity.Mutation.SessionDelete == nil {
@@ -412,7 +412,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SessionDelete(childComplexity, args["input"].(*dto.LoginInput)), true
+		return e.complexity.Mutation.SessionDelete(childComplexity, args["input"].(*dto1.LoginInput)), true
 
 	case "Mutation.userCreate":
 		if e.complexity.Mutation.UserCreate == nil {
@@ -424,7 +424,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UserCreate(childComplexity, args["input"].(*dto1.UserCreateInput)), true
+		return e.complexity.Mutation.UserCreate(childComplexity, args["input"].(*dto2.UserCreateInput)), true
 
 	case "Namespace.createdAt":
 		if e.complexity.Namespace.CreatedAt == nil {
@@ -499,7 +499,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.LoadSession(childComplexity, args["input"].(*dto.ValidationInput)), true
+		return e.complexity.Query.LoadSession(childComplexity, args["input"].(*dto1.ValidationInput)), true
 
 	case "Query.ping":
 		if e.complexity.Query.Ping == nil {
@@ -1123,9 +1123,9 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Mutation_namespaceCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 NamespaceCreateInput
+	var arg0 dto.NamespaceCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNNamespaceCreateInput2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateInput(ctx, tmp)
+		arg0, err = ec.unmarshalNNamespaceCreateInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1137,9 +1137,9 @@ func (ec *executionContext) field_Mutation_namespaceCreate_args(ctx context.Cont
 func (ec *executionContext) field_Mutation_sessionCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto.LoginInput
+	var arg0 *dto1.LoginInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginInput(ctx, tmp)
+		arg0, err = ec.unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1151,9 +1151,9 @@ func (ec *executionContext) field_Mutation_sessionCreate_args(ctx context.Contex
 func (ec *executionContext) field_Mutation_sessionDelete_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto.LoginInput
+	var arg0 *dto1.LoginInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginInput(ctx, tmp)
+		arg0, err = ec.unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1165,9 +1165,9 @@ func (ec *executionContext) field_Mutation_sessionDelete_args(ctx context.Contex
 func (ec *executionContext) field_Mutation_userCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto1.UserCreateInput
+	var arg0 *dto2.UserCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserCreateInput(ctx, tmp)
+		arg0, err = ec.unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1193,9 +1193,9 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_loadSession_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto.ValidationInput
+	var arg0 *dto1.ValidationInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOValidationInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐValidationInput(ctx, tmp)
+		arg0, err = ec.unmarshalOValidationInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1585,7 +1585,7 @@ func (ec *executionContext) _Error_fields(ctx context.Context, field graphql.Col
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LoginOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.LoginOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoginOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.LoginOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1616,7 +1616,7 @@ func (ec *executionContext) _LoginOutcome_errors(ctx context.Context, field grap
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LoginOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto.LoginOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoginOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto1.LoginOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1647,7 +1647,7 @@ func (ec *executionContext) _LoginOutcome_session(ctx context.Context, field gra
 	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LogoutInput_hashedToken(ctx context.Context, field graphql.CollectedField, obj *dto.LogoutInput) (ret graphql.Marshaler) {
+func (ec *executionContext) _LogoutInput_hashedToken(ctx context.Context, field graphql.CollectedField, obj *dto1.LogoutInput) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1681,7 +1681,7 @@ func (ec *executionContext) _LogoutInput_hashedToken(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LogoutOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.LogoutOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _LogoutOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.LogoutOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1712,7 +1712,7 @@ func (ec *executionContext) _LogoutOutcome_errors(ctx context.Context, field gra
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LogoutOutcome_result(ctx context.Context, field graphql.CollectedField, obj *dto.LogoutOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _LogoutOutcome_result(ctx context.Context, field graphql.CollectedField, obj *dto1.LogoutOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1999,7 +1999,7 @@ func (ec *executionContext) _Mutation_namespaceCreate(ctx context.Context, field
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().NamespaceCreate(rctx, args["input"].(NamespaceCreateInput))
+		return ec.resolvers.Mutation().NamespaceCreate(rctx, args["input"].(dto.NamespaceCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2008,9 +2008,9 @@ func (ec *executionContext) _Mutation_namespaceCreate(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*NamespaceCreateOutcome)
+	res := resTmp.(*dto.NamespaceCreateOutcome)
 	fc.Result = res
-	return ec.marshalONamespaceCreateOutcome2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateOutcome(ctx, field.Selections, res)
+	return ec.marshalONamespaceCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2037,7 +2037,7 @@ func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UserCreate(rctx, args["input"].(*dto1.UserCreateInput))
+		return ec.resolvers.Mutation().UserCreate(rctx, args["input"].(*dto2.UserCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2046,9 +2046,9 @@ func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*dto1.UserCreateOutcome)
+	res := resTmp.(*dto2.UserCreateOutcome)
 	fc.Result = res
-	return ec.marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserCreateOutcome(ctx, field.Selections, res)
+	return ec.marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2075,7 +2075,7 @@ func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SessionCreate(rctx, args["input"].(*dto.LoginInput))
+		return ec.resolvers.Mutation().SessionCreate(rctx, args["input"].(*dto1.LoginInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2087,9 +2087,9 @@ func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.LoginOutcome)
+	res := resTmp.(*dto1.LoginOutcome)
 	fc.Result = res
-	return ec.marshalNLoginOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginOutcome(ctx, field.Selections, res)
+	return ec.marshalNLoginOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_sessionDelete(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2116,7 +2116,7 @@ func (ec *executionContext) _Mutation_sessionDelete(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SessionDelete(rctx, args["input"].(*dto.LoginInput))
+		return ec.resolvers.Mutation().SessionDelete(rctx, args["input"].(*dto1.LoginInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2128,9 +2128,9 @@ func (ec *executionContext) _Mutation_sessionDelete(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.LogoutOutcome)
+	res := resTmp.(*dto1.LogoutOutcome)
 	fc.Result = res
-	return ec.marshalNLogoutOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLogoutOutcome(ctx, field.Selections, res)
+	return ec.marshalNLogoutOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLogoutOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Namespace_id(ctx context.Context, field graphql.CollectedField, obj *model2.Namespace) (ret graphql.Marshaler) {
@@ -2365,7 +2365,7 @@ func (ec *executionContext) _Namespace_domainNames(ctx context.Context, field gr
 	return ec.marshalODomainNames2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainNames(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NamespaceCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *NamespaceCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _NamespaceCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.NamespaceCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2396,7 +2396,7 @@ func (ec *executionContext) _NamespaceCreateOutcome_errors(ctx context.Context, 
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐError(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NamespaceCreateOutcome_namespace(ctx context.Context, field graphql.CollectedField, obj *NamespaceCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _NamespaceCreateOutcome_namespace(ctx context.Context, field graphql.CollectedField, obj *dto.NamespaceCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2523,7 +2523,7 @@ func (ec *executionContext) _Query_loadSession(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().LoadSession(rctx, args["input"].(*dto.ValidationInput))
+		return ec.resolvers.Query().LoadSession(rctx, args["input"].(*dto1.ValidationInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2535,9 +2535,9 @@ func (ec *executionContext) _Query_loadSession(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.ValidationOutcome)
+	res := resTmp.(*dto1.ValidationOutcome)
 	fc.Result = res
-	return ec.marshalNValidationOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐValidationOutcome(ctx, field.Selections, res)
+	return ec.marshalNValidationOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3296,7 +3296,7 @@ func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.C
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserCreateOutcome_user(ctx context.Context, field graphql.CollectedField, obj *dto1.UserCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserCreateOutcome_user(ctx context.Context, field graphql.CollectedField, obj *dto2.UserCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3327,7 +3327,7 @@ func (ec *executionContext) _UserCreateOutcome_user(ctx context.Context, field g
 	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.UserCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto2.UserCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3717,7 +3717,7 @@ func (ec *executionContext) _UserName_preferredName(ctx context.Context, field g
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ValidationOutcome_status(ctx context.Context, field graphql.CollectedField, obj *dto.ValidationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _ValidationOutcome_status(ctx context.Context, field graphql.CollectedField, obj *dto1.ValidationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3751,7 +3751,7 @@ func (ec *executionContext) _ValidationOutcome_status(ctx context.Context, field
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ValidationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.ValidationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _ValidationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.ValidationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4837,8 +4837,8 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputDomainNameInput(ctx context.Context, obj interface{}) (DomainNameInput, error) {
-	var it DomainNameInput
+func (ec *executionContext) unmarshalInputDomainNameInput(ctx context.Context, obj interface{}) (dto.DomainNameInput, error) {
+	var it dto.DomainNameInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -4867,21 +4867,21 @@ func (ec *executionContext) unmarshalInputDomainNameInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputDomainNamesInput(ctx context.Context, obj interface{}) (DomainNamesInput, error) {
-	var it DomainNamesInput
+func (ec *executionContext) unmarshalInputDomainNamesInput(ctx context.Context, obj interface{}) (dto.DomainNamesInput, error) {
+	var it dto.DomainNamesInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
 		case "primary":
 			var err error
-			it.Primary, err = ec.unmarshalNDomainNameInput2ᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx, v)
+			it.Primary, err = ec.unmarshalNDomainNameInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "secondary":
 			var err error
-			it.Secondary, err = ec.unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx, v)
+			it.Secondary, err = ec.unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4891,8 +4891,8 @@ func (ec *executionContext) unmarshalInputDomainNamesInput(ctx context.Context, 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputLoginContextInput(ctx context.Context, obj interface{}) (dto.LoginContextInput, error) {
-	var it dto.LoginContextInput
+func (ec *executionContext) unmarshalInputLoginContextInput(ctx context.Context, obj interface{}) (dto1.LoginContextInput, error) {
+	var it dto1.LoginContextInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -4927,8 +4927,8 @@ func (ec *executionContext) unmarshalInputLoginContextInput(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj interface{}) (dto.LoginInput, error) {
-	var it dto.LoginInput
+func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj interface{}) (dto1.LoginInput, error) {
+	var it dto1.LoginInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -4953,7 +4953,7 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj in
 			}
 		case "context":
 			var err error
-			it.Context, err = ec.unmarshalOLoginContextInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginContextInput(ctx, v)
+			it.Context, err = ec.unmarshalOLoginContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginContextInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4963,8 +4963,8 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj in
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputNamespaceCreateContext(ctx context.Context, obj interface{}) (NamespaceCreateContext, error) {
-	var it NamespaceCreateContext
+func (ec *executionContext) unmarshalInputNamespaceCreateContext(ctx context.Context, obj interface{}) (dto.NamespaceCreateContext, error) {
+	var it dto.NamespaceCreateContext
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -4981,21 +4981,21 @@ func (ec *executionContext) unmarshalInputNamespaceCreateContext(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputNamespaceCreateInput(ctx context.Context, obj interface{}) (NamespaceCreateInput, error) {
-	var it NamespaceCreateInput
+func (ec *executionContext) unmarshalInputNamespaceCreateInput(ctx context.Context, obj interface{}) (dto.NamespaceCreateInput, error) {
+	var it dto.NamespaceCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
 		case "object":
 			var err error
-			it.Object, err = ec.unmarshalNNamespaceCreateInputObject2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateInputObject(ctx, v)
+			it.Object, err = ec.unmarshalNNamespaceCreateInputObject2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "context":
 			var err error
-			it.Context, err = ec.unmarshalNNamespaceCreateContext2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateContext(ctx, v)
+			it.Context, err = ec.unmarshalNNamespaceCreateContext2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5005,8 +5005,8 @@ func (ec *executionContext) unmarshalInputNamespaceCreateInput(ctx context.Conte
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputNamespaceCreateInputObject(ctx context.Context, obj interface{}) (NamespaceCreateInputObject, error) {
-	var it NamespaceCreateInputObject
+func (ec *executionContext) unmarshalInputNamespaceCreateInputObject(ctx context.Context, obj interface{}) (dto.NamespaceCreateInputObject, error) {
+	var it dto.NamespaceCreateInputObject
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -5019,7 +5019,7 @@ func (ec *executionContext) unmarshalInputNamespaceCreateInputObject(ctx context
 			}
 		case "domainNames":
 			var err error
-			it.DomainNames, err = ec.unmarshalODomainNamesInput2ᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNamesInput(ctx, v)
+			it.DomainNames, err = ec.unmarshalODomainNamesInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNamesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5029,27 +5029,27 @@ func (ec *executionContext) unmarshalInputNamespaceCreateInputObject(ctx context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, obj interface{}) (dto1.UserCreateInput, error) {
-	var it dto1.UserCreateInput
+func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, obj interface{}) (dto2.UserCreateInput, error) {
+	var it dto2.UserCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
 		case "name":
 			var err error
-			it.Name, err = ec.unmarshalNUserNameInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserNameInput(ctx, v)
+			it.Name, err = ec.unmarshalNUserNameInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserNameInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "emails":
 			var err error
-			it.Emails, err = ec.unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailsInput(ctx, v)
+			it.Emails, err = ec.unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailsInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "password":
 			var err error
-			it.Password, err = ec.unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserPasswordInput(ctx, v)
+			it.Password, err = ec.unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5071,8 +5071,8 @@ func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserEmailInput(ctx context.Context, obj interface{}) (dto1.UserEmailInput, error) {
-	var it dto1.UserEmailInput
+func (ec *executionContext) unmarshalInputUserEmailInput(ctx context.Context, obj interface{}) (dto2.UserEmailInput, error) {
+	var it dto2.UserEmailInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -5101,21 +5101,21 @@ func (ec *executionContext) unmarshalInputUserEmailInput(ctx context.Context, ob
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserEmailsInput(ctx context.Context, obj interface{}) (dto1.UserEmailsInput, error) {
-	var it dto1.UserEmailsInput
+func (ec *executionContext) unmarshalInputUserEmailsInput(ctx context.Context, obj interface{}) (dto2.UserEmailsInput, error) {
+	var it dto2.UserEmailsInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
 		case "primary":
 			var err error
-			it.Primary, err = ec.unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, v)
+			it.Primary, err = ec.unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "secondary":
 			var err error
-			it.Secondary, err = ec.unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, v)
+			it.Secondary, err = ec.unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5125,8 +5125,8 @@ func (ec *executionContext) unmarshalInputUserEmailsInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserNameInput(ctx context.Context, obj interface{}) (dto1.UserNameInput, error) {
-	var it dto1.UserNameInput
+func (ec *executionContext) unmarshalInputUserNameInput(ctx context.Context, obj interface{}) (dto2.UserNameInput, error) {
+	var it dto2.UserNameInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -5155,8 +5155,8 @@ func (ec *executionContext) unmarshalInputUserNameInput(ctx context.Context, obj
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserPasswordInput(ctx context.Context, obj interface{}) (dto1.UserPasswordInput, error) {
-	var it dto1.UserPasswordInput
+func (ec *executionContext) unmarshalInputUserPasswordInput(ctx context.Context, obj interface{}) (dto2.UserPasswordInput, error) {
+	var it dto2.UserPasswordInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -5179,8 +5179,8 @@ func (ec *executionContext) unmarshalInputUserPasswordInput(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputValidationInput(ctx context.Context, obj interface{}) (dto.ValidationInput, error) {
-	var it dto.ValidationInput
+func (ec *executionContext) unmarshalInputValidationInput(ctx context.Context, obj interface{}) (dto1.ValidationInput, error) {
+	var it dto1.ValidationInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -5314,7 +5314,7 @@ func (ec *executionContext) _Error(ctx context.Context, sel ast.SelectionSet, ob
 
 var loginOutcomeImplementors = []string{"LoginOutcome"}
 
-func (ec *executionContext) _LoginOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.LoginOutcome) graphql.Marshaler {
+func (ec *executionContext) _LoginOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.LoginOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, loginOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5340,7 +5340,7 @@ func (ec *executionContext) _LoginOutcome(ctx context.Context, sel ast.Selection
 
 var logoutInputImplementors = []string{"LogoutInput"}
 
-func (ec *executionContext) _LogoutInput(ctx context.Context, sel ast.SelectionSet, obj *dto.LogoutInput) graphql.Marshaler {
+func (ec *executionContext) _LogoutInput(ctx context.Context, sel ast.SelectionSet, obj *dto1.LogoutInput) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, logoutInputImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5367,7 +5367,7 @@ func (ec *executionContext) _LogoutInput(ctx context.Context, sel ast.SelectionS
 
 var logoutOutcomeImplementors = []string{"LogoutOutcome"}
 
-func (ec *executionContext) _LogoutOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.LogoutOutcome) graphql.Marshaler {
+func (ec *executionContext) _LogoutOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.LogoutOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, logoutOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5535,7 +5535,7 @@ func (ec *executionContext) _Namespace(ctx context.Context, sel ast.SelectionSet
 
 var namespaceCreateOutcomeImplementors = []string{"NamespaceCreateOutcome"}
 
-func (ec *executionContext) _NamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *NamespaceCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) _NamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.NamespaceCreateOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, namespaceCreateOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5810,7 +5810,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 
 var userCreateOutcomeImplementors = []string{"UserCreateOutcome"}
 
-func (ec *executionContext) _UserCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.UserCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) _UserCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto2.UserCreateOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userCreateOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5951,7 +5951,7 @@ func (ec *executionContext) _UserName(ctx context.Context, sel ast.SelectionSet,
 
 var validationOutcomeImplementors = []string{"ValidationOutcome"}
 
-func (ec *executionContext) _ValidationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.ValidationOutcome) graphql.Marshaler {
+func (ec *executionContext) _ValidationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.ValidationOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, validationOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -6251,15 +6251,15 @@ func (ec *executionContext) marshalNDomainName2ᚖbeanᚋpkgᚋnamespaceᚋmodel
 	return ec._DomainName(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNDomainNameInput2beanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx context.Context, v interface{}) (DomainNameInput, error) {
+func (ec *executionContext) unmarshalNDomainNameInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) (dto.DomainNameInput, error) {
 	return ec.unmarshalInputDomainNameInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNDomainNameInput2ᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx context.Context, v interface{}) (*DomainNameInput, error) {
+func (ec *executionContext) unmarshalNDomainNameInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) (*dto.DomainNameInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNDomainNameInput2beanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx, v)
+	res, err := ec.unmarshalNDomainNameInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx, v)
 	return &res, err
 }
 
@@ -6300,11 +6300,11 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) marshalNLoginOutcome2beanᚋpkgᚋaccessᚋdtoᚐLoginOutcome(ctx context.Context, sel ast.SelectionSet, v dto.LoginOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNLoginOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.LoginOutcome) graphql.Marshaler {
 	return ec._LoginOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNLoginOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.LoginOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNLoginOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.LoginOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -6314,11 +6314,11 @@ func (ec *executionContext) marshalNLoginOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐ
 	return ec._LoginOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNLogoutOutcome2beanᚋpkgᚋaccessᚋdtoᚐLogoutOutcome(ctx context.Context, sel ast.SelectionSet, v dto.LogoutOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNLogoutOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLogoutOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.LogoutOutcome) graphql.Marshaler {
 	return ec._LogoutOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNLogoutOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLogoutOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.LogoutOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNLogoutOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLogoutOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.LogoutOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -6342,31 +6342,31 @@ func (ec *executionContext) marshalNNamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodel�
 	return ec._Namespace(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNNamespaceCreateContext2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateContext(ctx context.Context, v interface{}) (NamespaceCreateContext, error) {
+func (ec *executionContext) unmarshalNNamespaceCreateContext2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx context.Context, v interface{}) (dto.NamespaceCreateContext, error) {
 	return ec.unmarshalInputNamespaceCreateContext(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNNamespaceCreateContext2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateContext(ctx context.Context, v interface{}) (*NamespaceCreateContext, error) {
+func (ec *executionContext) unmarshalNNamespaceCreateContext2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx context.Context, v interface{}) (*dto.NamespaceCreateContext, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNNamespaceCreateContext2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateContext(ctx, v)
+	res, err := ec.unmarshalNNamespaceCreateContext2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNNamespaceCreateInput2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateInput(ctx context.Context, v interface{}) (NamespaceCreateInput, error) {
+func (ec *executionContext) unmarshalNNamespaceCreateInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInput(ctx context.Context, v interface{}) (dto.NamespaceCreateInput, error) {
 	return ec.unmarshalInputNamespaceCreateInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateInputObject(ctx context.Context, v interface{}) (NamespaceCreateInputObject, error) {
+func (ec *executionContext) unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx context.Context, v interface{}) (dto.NamespaceCreateInputObject, error) {
 	return ec.unmarshalInputNamespaceCreateInputObject(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNNamespaceCreateInputObject2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateInputObject(ctx context.Context, v interface{}) (*NamespaceCreateInputObject, error) {
+func (ec *executionContext) unmarshalNNamespaceCreateInputObject2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx context.Context, v interface{}) (*dto.NamespaceCreateInputObject, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateInputObject(ctx, v)
+	res, err := ec.unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx, v)
 	return &res, err
 }
 
@@ -6398,15 +6398,15 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (dto1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (dto2.UserEmailInput, error) {
 	return ec.unmarshalInputUserEmailInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto2.UserEmailInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, v)
+	res, err := ec.unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx, v)
 	return &res, err
 }
 
@@ -6424,35 +6424,35 @@ func (ec *executionContext) marshalNUserName2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser
 	return ec._UserName(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNUserNameInput2beanᚋpkgᚋuserᚋdtoᚐUserNameInput(ctx context.Context, v interface{}) (dto1.UserNameInput, error) {
+func (ec *executionContext) unmarshalNUserNameInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserNameInput(ctx context.Context, v interface{}) (dto2.UserNameInput, error) {
 	return ec.unmarshalInputUserNameInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNUserNameInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserNameInput(ctx context.Context, v interface{}) (*dto1.UserNameInput, error) {
+func (ec *executionContext) unmarshalNUserNameInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserNameInput(ctx context.Context, v interface{}) (*dto2.UserNameInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNUserNameInput2beanᚋpkgᚋuserᚋdtoᚐUserNameInput(ctx, v)
+	res, err := ec.unmarshalNUserNameInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserNameInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNUserPasswordInput2beanᚋpkgᚋuserᚋdtoᚐUserPasswordInput(ctx context.Context, v interface{}) (dto1.UserPasswordInput, error) {
+func (ec *executionContext) unmarshalNUserPasswordInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx context.Context, v interface{}) (dto2.UserPasswordInput, error) {
 	return ec.unmarshalInputUserPasswordInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserPasswordInput(ctx context.Context, v interface{}) (*dto1.UserPasswordInput, error) {
+func (ec *executionContext) unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx context.Context, v interface{}) (*dto2.UserPasswordInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNUserPasswordInput2beanᚋpkgᚋuserᚋdtoᚐUserPasswordInput(ctx, v)
+	res, err := ec.unmarshalNUserPasswordInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalNValidationOutcome2beanᚋpkgᚋaccessᚋdtoᚐValidationOutcome(ctx context.Context, sel ast.SelectionSet, v dto.ValidationOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNValidationOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.ValidationOutcome) graphql.Marshaler {
 	return ec._ValidationOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNValidationOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐValidationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.ValidationOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNValidationOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.ValidationOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -6893,11 +6893,11 @@ func (ec *executionContext) marshalODomainName2ᚖbeanᚋpkgᚋnamespaceᚋmodel
 	return ec._DomainName(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalODomainNameInput2beanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx context.Context, v interface{}) (DomainNameInput, error) {
+func (ec *executionContext) unmarshalODomainNameInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) (dto.DomainNameInput, error) {
 	return ec.unmarshalInputDomainNameInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx context.Context, v interface{}) ([]*DomainNameInput, error) {
+func (ec *executionContext) unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) ([]*dto.DomainNameInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -6907,9 +6907,9 @@ func (ec *executionContext) unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋinfra�
 		}
 	}
 	var err error
-	res := make([]*DomainNameInput, len(vSlice))
+	res := make([]*dto.DomainNameInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalODomainNameInput2ᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalODomainNameInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -6917,11 +6917,11 @@ func (ec *executionContext) unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋinfra�
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalODomainNameInput2ᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx context.Context, v interface{}) (*DomainNameInput, error) {
+func (ec *executionContext) unmarshalODomainNameInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) (*dto.DomainNameInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalODomainNameInput2beanᚋpkgᚋinfraᚋgqlᚐDomainNameInput(ctx, v)
+	res, err := ec.unmarshalODomainNameInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx, v)
 	return &res, err
 }
 
@@ -6936,15 +6936,15 @@ func (ec *executionContext) marshalODomainNames2ᚖbeanᚋpkgᚋnamespaceᚋmode
 	return ec._DomainNames(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalODomainNamesInput2beanᚋpkgᚋinfraᚋgqlᚐDomainNamesInput(ctx context.Context, v interface{}) (DomainNamesInput, error) {
+func (ec *executionContext) unmarshalODomainNamesInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNamesInput(ctx context.Context, v interface{}) (dto.DomainNamesInput, error) {
 	return ec.unmarshalInputDomainNamesInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalODomainNamesInput2ᚖbeanᚋpkgᚋinfraᚋgqlᚐDomainNamesInput(ctx context.Context, v interface{}) (*DomainNamesInput, error) {
+func (ec *executionContext) unmarshalODomainNamesInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNamesInput(ctx context.Context, v interface{}) (*dto.DomainNamesInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalODomainNamesInput2beanᚋpkgᚋinfraᚋgqlᚐDomainNamesInput(ctx, v)
+	res, err := ec.unmarshalODomainNamesInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNamesInput(ctx, v)
 	return &res, err
 }
 
@@ -7086,27 +7086,27 @@ func (ec *executionContext) marshalOIP2ᚖstring(ctx context.Context, sel ast.Se
 	return ec.marshalOIP2string(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalOLoginContextInput2beanᚋpkgᚋaccessᚋdtoᚐLoginContextInput(ctx context.Context, v interface{}) (dto.LoginContextInput, error) {
+func (ec *executionContext) unmarshalOLoginContextInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginContextInput(ctx context.Context, v interface{}) (dto1.LoginContextInput, error) {
 	return ec.unmarshalInputLoginContextInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOLoginContextInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginContextInput(ctx context.Context, v interface{}) (*dto.LoginContextInput, error) {
+func (ec *executionContext) unmarshalOLoginContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginContextInput(ctx context.Context, v interface{}) (*dto1.LoginContextInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOLoginContextInput2beanᚋpkgᚋaccessᚋdtoᚐLoginContextInput(ctx, v)
+	res, err := ec.unmarshalOLoginContextInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginContextInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOLoginInput2beanᚋpkgᚋaccessᚋdtoᚐLoginInput(ctx context.Context, v interface{}) (dto.LoginInput, error) {
+func (ec *executionContext) unmarshalOLoginInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx context.Context, v interface{}) (dto1.LoginInput, error) {
 	return ec.unmarshalInputLoginInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginInput(ctx context.Context, v interface{}) (*dto.LoginInput, error) {
+func (ec *executionContext) unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx context.Context, v interface{}) (*dto1.LoginInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOLoginInput2beanᚋpkgᚋaccessᚋdtoᚐLoginInput(ctx, v)
+	res, err := ec.unmarshalOLoginInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx, v)
 	return &res, err
 }
 
@@ -7121,11 +7121,11 @@ func (ec *executionContext) marshalONamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodel�
 	return ec._Namespace(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalONamespaceCreateOutcome2beanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v NamespaceCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalONamespaceCreateOutcome2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto.NamespaceCreateOutcome) graphql.Marshaler {
 	return ec._NamespaceCreateOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalONamespaceCreateOutcome2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *NamespaceCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalONamespaceCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.NamespaceCreateOutcome) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -7267,23 +7267,23 @@ func (ec *executionContext) marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserCreateInput2beanᚋpkgᚋuserᚋdtoᚐUserCreateInput(ctx context.Context, v interface{}) (dto1.UserCreateInput, error) {
+func (ec *executionContext) unmarshalOUserCreateInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx context.Context, v interface{}) (dto2.UserCreateInput, error) {
 	return ec.unmarshalInputUserCreateInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserCreateInput(ctx context.Context, v interface{}) (*dto1.UserCreateInput, error) {
+func (ec *executionContext) unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx context.Context, v interface{}) (*dto2.UserCreateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOUserCreateInput2beanᚋpkgᚋuserᚋdtoᚐUserCreateInput(ctx, v)
+	res, err := ec.unmarshalOUserCreateInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOUserCreateOutcome2beanᚋpkgᚋuserᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.UserCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalOUserCreateOutcome2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto2.UserCreateOutcome) graphql.Marshaler {
 	return ec._UserCreateOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.UserCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto2.UserCreateOutcome) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -7341,11 +7341,11 @@ func (ec *executionContext) marshalOUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUse
 	return ec._UserEmail(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (dto1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalOUserEmailInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (dto2.UserEmailInput, error) {
 	return ec.unmarshalInputUserEmailInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) ([]*dto1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) ([]*dto2.UserEmailInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -7355,9 +7355,9 @@ func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋd
 		}
 	}
 	var err error
-	res := make([]*dto1.UserEmailInput, len(vSlice))
+	res := make([]*dto2.UserEmailInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -7365,11 +7365,11 @@ func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋd
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto2.UserEmailInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, v)
+	res, err := ec.unmarshalOUserEmailInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx, v)
 	return &res, err
 }
 
@@ -7384,27 +7384,27 @@ func (ec *executionContext) marshalOUserEmails2ᚖbeanᚋpkgᚋuserᚋmodelᚐUs
 	return ec._UserEmails(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserEmailsInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailsInput(ctx context.Context, v interface{}) (dto1.UserEmailsInput, error) {
+func (ec *executionContext) unmarshalOUserEmailsInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailsInput(ctx context.Context, v interface{}) (dto2.UserEmailsInput, error) {
 	return ec.unmarshalInputUserEmailsInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailsInput(ctx context.Context, v interface{}) (*dto1.UserEmailsInput, error) {
+func (ec *executionContext) unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailsInput(ctx context.Context, v interface{}) (*dto2.UserEmailsInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOUserEmailsInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailsInput(ctx, v)
+	res, err := ec.unmarshalOUserEmailsInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailsInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOValidationInput2beanᚋpkgᚋaccessᚋdtoᚐValidationInput(ctx context.Context, v interface{}) (dto.ValidationInput, error) {
+func (ec *executionContext) unmarshalOValidationInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationInput(ctx context.Context, v interface{}) (dto1.ValidationInput, error) {
 	return ec.unmarshalInputValidationInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOValidationInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐValidationInput(ctx context.Context, v interface{}) (*dto.ValidationInput, error) {
+func (ec *executionContext) unmarshalOValidationInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationInput(ctx context.Context, v interface{}) (*dto1.ValidationInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOValidationInput2beanᚋpkgᚋaccessᚋdtoᚐValidationInput(ctx, v)
+	res, err := ec.unmarshalOValidationInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationInput(ctx, v)
 	return &res, err
 }
 
