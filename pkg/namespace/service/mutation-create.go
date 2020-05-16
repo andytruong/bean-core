@@ -37,29 +37,77 @@ func (this *NamespaceCreateAPI) Create(tx *gorm.DB, input *dto.NamespaceCreateIn
 	}
 
 	// create domain
-	if err := this.createDomain(tx, namespace); nil != err {
+	if err := this.createDomains(tx, namespace, input); nil != err {
 		return nil, err
 	}
 
 	// create membership
-	if err := this.createMembership(tx, namespace); nil != err {
+	if err := this.createMembership(tx, namespace, input); nil != err {
 		return nil, err
 	}
 
 	return nil, nil
 }
 
-func (this *NamespaceCreateAPI) createDomain(tx *gorm.DB, namespace *model.Namespace) error {
-	if true {
-		panic("wip ::createDomain()")
+func (this *NamespaceCreateAPI) createDomains(tx *gorm.DB, namespace *model.Namespace, input *dto.NamespaceCreateInput) error {
+	if nil != input.Object.DomainNames.Primary {
+		err := this.createDomain(tx, namespace, input.Object.DomainNames.Primary)
+		if nil != err {
+			return err
+		}
+	}
+
+	if nil != input.Object.DomainNames.Secondary {
+		for _, in := range input.Object.DomainNames.Secondary {
+			err := this.createDomain(tx, namespace, in)
+			if nil != err {
+				return err
+			}
+		}
 	}
 
 	return nil
 }
 
-func (this *NamespaceCreateAPI) createMembership(tx *gorm.DB, namespace *model.Namespace) error {
-	if true {
-		panic("wip ::createMembership()")
+func (this *NamespaceCreateAPI) createDomain(tx *gorm.DB, namespace *model.Namespace, input *dto.DomainNameInput) error {
+	id, err := this.ID.ULID()
+	if nil != err {
+		return err
 	}
+
+	domain := model.DomainName{
+		ID:          id,
+		NamespaceId: namespace.ID,
+		Verified:    *input.Verified,
+		Value:       *input.Value,
+		CreatedAt:   time.Time{},
+		UpdatedAt:   time.Time{},
+		IsActive:    *input.IsActive,
+	}
+
+	return tx.Create(domain).Error
+}
+
+func (this *NamespaceCreateAPI) createMembership(tx *gorm.DB, namespace *model.Namespace, input *dto.NamespaceCreateInput) error {
+	if nil != input.Context {
+		id, err := this.ID.ULID()
+		if nil != err {
+			return err
+		}
+
+		mem := model.Membership{
+			ID:          id,
+			NamespaceID: namespace.ID,
+			UserID:      input.Context.UserID,
+			IsActive:    false,
+			CreatedAt:   nil,
+			UpdatedAt:   nil,
+		}
+
+		if err := tx.Create(mem).Error; nil != err {
+			return err
+		}
+	}
+
 	return nil
 }
