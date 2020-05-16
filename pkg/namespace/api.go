@@ -5,6 +5,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 
+	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/util"
 )
@@ -18,8 +19,16 @@ type (
 	NamespaceQueryResolver struct {
 		db *gorm.DB
 	}
+
+	NamespaceModelResolver struct {
+		db *gorm.DB
+	}
 )
 
-func (n NamespaceMutationResolver) NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
+func (this NamespaceMutationResolver) NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	panic("implement me: NamespaceMutationResolver.NamespaceCreate()")
+}
+
+func (this NamespaceModelResolver) DomainNames(ctx context.Context, obj *model.Namespace) (*model.DomainNames, error) {
+	panic("implement me")
 }

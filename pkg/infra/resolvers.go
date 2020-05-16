@@ -137,6 +137,15 @@ func (this *rootResolver) User() gql.UserResolver {
 	return module.Model
 }
 
+func (this *rootResolver) Namespace() gql.NamespaceResolver {
+	module, err := this.container.modules.Namespace()
+	if nil != err {
+		panic(err)
+	}
+
+	return module.Model
+}
+
 func (this *rootResolver) UserEmail() gql.UserEmailResolver {
 	module, err := this.container.modules.User()
 	if nil != err {

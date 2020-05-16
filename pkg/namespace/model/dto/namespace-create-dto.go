@@ -27,6 +27,7 @@ type NamespaceCreateInput struct {
 
 type NamespaceCreateInputObject struct {
 	Title       *string           `json:"title"`
+	Status      bool              `json:"status"`
 	DomainNames *DomainNamesInput `json:"domainNames"`
 }
 

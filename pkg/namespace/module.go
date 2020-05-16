@@ -29,7 +29,7 @@ func NewNamespaceModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) (*
 type NamespaceModule struct {
 	logger   *zap.Logger
 	Mutation NamespaceMutationResolver
-	Query    NamespaceQueryResolver
+	Model    NamespaceModelResolver
 }
 
 func (this NamespaceModule) Migrate(tx *gorm.DB, driver string) error {
