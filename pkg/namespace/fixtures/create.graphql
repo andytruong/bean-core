@@ -1,0 +1,34 @@
+mutation {
+    namespaceCreate(
+        input: {
+            object: {
+                title: "Testing",
+                status: true,
+                domainNames: {
+                    primary: {
+                        verified: true,
+                        value: "localhost:8484",
+                        isActive: true
+                    }
+                }
+            },
+            context: {
+                userId: "xxxxxxx"
+            }
+        },
+    ) {
+        errors { code fields}
+        namespace {
+            id
+            version
+            title
+            createdAt
+            updatedAt
+            isActive
+            domainNames {
+                primary    { isActive verified value createdAt }
+                secondary  { isActive verified value createdAt }
+            }
+        }
+    }
+}
