@@ -49,7 +49,7 @@ func (this *NamespaceCreateAPI) Create(tx *gorm.DB, input dto.NamespaceCreateInp
 	return nil, nil
 }
 
-func (this *NamespaceCreateAPI) createDomains(tx *gorm.DB, namespace *model.Namespace, input *dto.NamespaceCreateInput) error {
+func (this *NamespaceCreateAPI) createDomains(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
 	if nil != input.Object.DomainNames.Primary {
 		err := this.createDomain(tx, namespace, input.Object.DomainNames.Primary, true)
 		if nil != err {
@@ -89,7 +89,7 @@ func (this *NamespaceCreateAPI) createDomain(tx *gorm.DB, namespace *model.Names
 	return tx.Create(domain).Error
 }
 
-func (this *NamespaceCreateAPI) createMembership(tx *gorm.DB, namespace *model.Namespace, input *dto.NamespaceCreateInput) error {
+func (this *NamespaceCreateAPI) createMembership(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
 	if nil != input.Context {
 		id, err := this.ID.ULID()
 		if nil != err {
