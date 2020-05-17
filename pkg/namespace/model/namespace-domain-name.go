@@ -9,6 +9,7 @@ type DomainName struct {
 	Value       string    `json:"value"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
+	IsPrimary   bool      `json:"isPrimary"`
 	IsActive    bool      `json:"isActive"`
 }
 

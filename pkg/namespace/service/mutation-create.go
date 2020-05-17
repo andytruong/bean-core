@@ -14,7 +14,7 @@ type NamespaceCreateAPI struct {
 	ID *util.Identifier
 }
 
-func (this *NamespaceCreateAPI) Create(tx *gorm.DB, input *dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
+func (this *NamespaceCreateAPI) Create(tx *gorm.DB, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	namespace := &model.Namespace{
 		Title:     input.Object.Title,
 		IsActive:  input.Object.Status,
@@ -51,7 +51,7 @@ func (this *NamespaceCreateAPI) Create(tx *gorm.DB, input *dto.NamespaceCreateIn
 
 func (this *NamespaceCreateAPI) createDomains(tx *gorm.DB, namespace *model.Namespace, input *dto.NamespaceCreateInput) error {
 	if nil != input.Object.DomainNames.Primary {
-		err := this.createDomain(tx, namespace, input.Object.DomainNames.Primary)
+		err := this.createDomain(tx, namespace, input.Object.DomainNames.Primary, true)
 		if nil != err {
 			return err
 		}
@@ -59,7 +59,7 @@ func (this *NamespaceCreateAPI) createDomains(tx *gorm.DB, namespace *model.Name
 
 	if nil != input.Object.DomainNames.Secondary {
 		for _, in := range input.Object.DomainNames.Secondary {
-			err := this.createDomain(tx, namespace, in)
+			err := this.createDomain(tx, namespace, in, false)
 			if nil != err {
 				return err
 			}
@@ -69,7 +69,7 @@ func (this *NamespaceCreateAPI) createDomains(tx *gorm.DB, namespace *model.Name
 	return nil
 }
 
-func (this *NamespaceCreateAPI) createDomain(tx *gorm.DB, namespace *model.Namespace, input *dto.DomainNameInput) error {
+func (this *NamespaceCreateAPI) createDomain(tx *gorm.DB, namespace *model.Namespace, input *dto.DomainNameInput, isPrimary bool) error {
 	id, err := this.ID.ULID()
 	if nil != err {
 		return err
@@ -82,6 +82,7 @@ func (this *NamespaceCreateAPI) createDomain(tx *gorm.DB, namespace *model.Names
 		Value:       *input.Value,
 		CreatedAt:   time.Time{},
 		UpdatedAt:   time.Time{},
+		IsPrimary:   isPrimary,
 		IsActive:    *input.IsActive,
 	}
 
