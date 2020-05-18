@@ -69,6 +69,10 @@ func (this Uri) MarshalGQL(w io.Writer) {
 	fmt.Fprintf(w, `"%s"`, this)
 }
 
+func NilBool(input bool) *bool {
+	return &input
+}
+
 func NilString(input string) *string {
 	return &input
 }

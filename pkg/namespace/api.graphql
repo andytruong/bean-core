@@ -5,7 +5,6 @@ type Namespace {
     createdAt: Time!
     updatedAt: Time!
     isActive: Boolean!
-
     domainNames: DomainNames
 }
 
@@ -16,11 +15,11 @@ type DomainNames {
 
 type DomainName {
     id: ID!
-    verified: Boolean!
     value: String!
     createdAt: Time!
     updatedAt: Time!
     isActive: Boolean!
+    isVerified: Boolean!
 }
 
 type Membership {
@@ -28,6 +27,6 @@ type Membership {
     namespaceId: ID!
     userId: ID!
     isActive: Boolean!
-    createdAt: Time
-    updatedAt: Time
+    createdAt: Time!
+    updatedAt: Time!
 }

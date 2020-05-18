@@ -55,12 +55,12 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	DomainName struct {
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		IsActive  func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		Value     func(childComplexity int) int
-		Verified  func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
+		ID         func(childComplexity int) int
+		IsActive   func(childComplexity int) int
+		IsVerified func(childComplexity int) int
+		UpdatedAt  func(childComplexity int) int
+		Value      func(childComplexity int) int
 	}
 
 	DomainNames struct {
@@ -249,6 +249,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DomainName.IsActive(childComplexity), true
 
+	case "DomainName.isVerified":
+		if e.complexity.DomainName.IsVerified == nil {
+			break
+		}
+
+		return e.complexity.DomainName.IsVerified(childComplexity), true
+
 	case "DomainName.updatedAt":
 		if e.complexity.DomainName.UpdatedAt == nil {
 			break
@@ -262,13 +269,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DomainName.Value(childComplexity), true
-
-	case "DomainName.verified":
-		if e.complexity.DomainName.Verified == nil {
-			break
-		}
-
-		return e.complexity.DomainName.Verified(childComplexity), true
 
 	case "DomainNames.primary":
 		if e.complexity.DomainNames.Primary == nil {
@@ -892,7 +892,7 @@ input NamespaceCreateInput {
 
 input NamespaceCreateInputObject {
     title: String
-    status: Boolean!
+    isActive: Boolean!
     domainNames: DomainNamesInput
 }
 
@@ -923,7 +923,6 @@ type NamespaceCreateOutcome {
     createdAt: Time!
     updatedAt: Time!
     isActive: Boolean!
-
     domainNames: DomainNames
 }
 
@@ -934,11 +933,11 @@ type DomainNames {
 
 type DomainName {
     id: ID!
-    verified: Boolean!
     value: String!
     createdAt: Time!
     updatedAt: Time!
     isActive: Boolean!
+    isVerified: Boolean!
 }
 
 type Membership {
@@ -946,8 +945,8 @@ type Membership {
     namespaceId: ID!
     userId: ID!
     isActive: Boolean!
-    createdAt: Time
-    updatedAt: Time
+    createdAt: Time!
+    updatedAt: Time!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/user/api-entity.graphql", Input: `type User {
@@ -1292,40 +1291,6 @@ func (ec *executionContext) _DomainName_id(ctx context.Context, field graphql.Co
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainName_verified(ctx context.Context, field graphql.CollectedField, obj *model.DomainName) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "DomainName",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Verified, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _DomainName_value(ctx context.Context, field graphql.CollectedField, obj *model.DomainName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1446,6 +1411,40 @@ func (ec *executionContext) _DomainName_isActive(ctx context.Context, field grap
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.IsActive, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DomainName_isVerified(ctx context.Context, field graphql.CollectedField, obj *model.DomainName) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "DomainName",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsVerified, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1907,11 +1906,14 @@ func (ec *executionContext) _Membership_createdAt(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Membership_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
@@ -1938,11 +1940,14 @@ func (ec *executionContext) _Membership_updatedAt(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_ping(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5021,9 +5026,9 @@ func (ec *executionContext) unmarshalInputNamespaceCreateInputObject(ctx context
 			if err != nil {
 				return it, err
 			}
-		case "status":
+		case "isActive":
 			var err error
-			it.Status, err = ec.unmarshalNBoolean2bool(ctx, v)
+			it.IsActive, err = ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5231,11 +5236,6 @@ func (ec *executionContext) _DomainName(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "verified":
-			out.Values[i] = ec._DomainName_verified(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "value":
 			out.Values[i] = ec._DomainName_value(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -5253,6 +5253,11 @@ func (ec *executionContext) _DomainName(ctx context.Context, sel ast.SelectionSe
 			}
 		case "isActive":
 			out.Values[i] = ec._DomainName_isActive(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "isVerified":
+			out.Values[i] = ec._DomainName_isVerified(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -5434,8 +5439,14 @@ func (ec *executionContext) _Membership(ctx context.Context, sel ast.SelectionSe
 			}
 		case "createdAt":
 			out.Values[i] = ec._Membership_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "updatedAt":
 			out.Values[i] = ec._Membership_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7226,29 +7237,6 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOString2string(ctx, sel, *v)
-}
-
-func (ec *executionContext) unmarshalOTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
-	return graphql.UnmarshalTime(v)
-}
-
-func (ec *executionContext) marshalOTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
-	return graphql.MarshalTime(v)
-}
-
-func (ec *executionContext) unmarshalOTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOTime2timeᚐTime(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOTime2timeᚐTime(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOUri2beanᚋpkgᚋutilᚐUri(ctx context.Context, v interface{}) (util.Uri, error) {

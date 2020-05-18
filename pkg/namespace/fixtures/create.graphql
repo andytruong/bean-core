@@ -26,8 +26,8 @@ mutation {
             updatedAt
             isActive
             domainNames {
-                primary    { isActive verified value createdAt }
-                secondary  { isActive verified value createdAt }
+                primary    { isActive isVerified value createdAt }
+                secondary  { isActive isVerified value createdAt }
             }
         }
     }

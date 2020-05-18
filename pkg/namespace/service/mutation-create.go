@@ -17,7 +17,7 @@ type NamespaceCreateAPI struct {
 func (this *NamespaceCreateAPI) Create(tx *gorm.DB, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	namespace := &model.Namespace{
 		Title:     input.Object.Title,
-		IsActive:  input.Object.Status,
+		IsActive:  input.Object.IsActive,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -46,7 +46,10 @@ func (this *NamespaceCreateAPI) Create(tx *gorm.DB, input dto.NamespaceCreateInp
 		return nil, err
 	}
 
-	return nil, nil
+	return &dto.NamespaceCreateOutcome{
+		Errors:    nil,
+		Namespace: namespace,
+	}, nil
 }
 
 func (this *NamespaceCreateAPI) createDomains(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
@@ -78,7 +81,7 @@ func (this *NamespaceCreateAPI) createDomain(tx *gorm.DB, namespace *model.Names
 	domain := model.DomainName{
 		ID:          id,
 		NamespaceId: namespace.ID,
-		Verified:    *input.Verified,
+		IsVerified:  *input.Verified,
 		Value:       *input.Value,
 		CreatedAt:   time.Time{},
 		UpdatedAt:   time.Time{},
@@ -86,7 +89,7 @@ func (this *NamespaceCreateAPI) createDomain(tx *gorm.DB, namespace *model.Names
 		IsActive:    *input.IsActive,
 	}
 
-	return tx.Create(domain).Error
+	return tx.Table("namespace_domains").Create(domain).Error
 }
 
 func (this *NamespaceCreateAPI) createMembership(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
@@ -96,16 +99,16 @@ func (this *NamespaceCreateAPI) createMembership(tx *gorm.DB, namespace *model.N
 			return err
 		}
 
-		mem := model.Membership{
+		membership := model.Membership{
 			ID:          id,
 			NamespaceID: namespace.ID,
 			UserID:      input.Context.UserID,
 			IsActive:    false,
-			CreatedAt:   nil,
-			UpdatedAt:   nil,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
 		}
 
-		if err := tx.Create(mem).Error; nil != err {
+		if err := tx.Table("namespace_memberships").Create(membership).Error; nil != err {
 			return err
 		}
 	}

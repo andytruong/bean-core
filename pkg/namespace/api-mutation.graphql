@@ -10,7 +10,7 @@ input NamespaceCreateInput {
 
 input NamespaceCreateInputObject {
     title: String
-    status: Boolean!
+    isActive: Boolean!
     domainNames: DomainNamesInput
 }
 

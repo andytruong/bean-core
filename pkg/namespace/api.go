@@ -40,7 +40,7 @@ func (this NamespaceModelResolver) DomainNames(ctx context.Context, obj *model.N
 		Secondary: nil,
 	}
 
-	domainNames := []*model.DomainName{}
+	var domainNames []*model.DomainName
 	err := this.db.Where(model.DomainName{NamespaceId: obj.ID}).Find(&domainNames).Error
 	if nil != err {
 		return nil, err
