@@ -6,7 +6,7 @@ extend type Mutation {
 }
 
 input SessionCreateInput {
-    namespaceId: String
+    namespaceId: String!
     email: EmailAddress!
     hashedPassword: String!
     context: SessionCreateContextInput
@@ -21,6 +21,7 @@ input SessionCreateContextInput {
 
 type SessionCreateOutcome {
     errors: [Error!]
+    token: String
     session: Session
 }
 

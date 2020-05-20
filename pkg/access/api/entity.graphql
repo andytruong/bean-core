@@ -1,6 +1,5 @@
 type Session {
     id: ID!
-    hashedToken: String!
     user: User
     namespace: Namespace!
     scopes: [AccessScope]
@@ -10,7 +9,6 @@ type Session {
     updatedAt: Time!
     expiredAt: Time!
 }
-
 
 type SessionContext {
     ipAddress: IP

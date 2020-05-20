@@ -122,16 +122,15 @@ type ComplexityRoot struct {
 	}
 
 	Session struct {
-		Context     func(childComplexity int) int
-		CreatedAt   func(childComplexity int) int
-		ExpiredAt   func(childComplexity int) int
-		HashedToken func(childComplexity int) int
-		ID          func(childComplexity int) int
-		IsActive    func(childComplexity int) int
-		Namespace   func(childComplexity int) int
-		Scopes      func(childComplexity int) int
-		UpdatedAt   func(childComplexity int) int
-		User        func(childComplexity int) int
+		Context   func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		ExpiredAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		IsActive  func(childComplexity int) int
+		Namespace func(childComplexity int) int
+		Scopes    func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		User      func(childComplexity int) int
 	}
 
 	SessionContext struct {
@@ -144,6 +143,7 @@ type ComplexityRoot struct {
 	SessionCreateOutcome struct {
 		Errors  func(childComplexity int) int
 		Session func(childComplexity int) int
+		Token   func(childComplexity int) int
 	}
 
 	User struct {
@@ -545,13 +545,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Session.ExpiredAt(childComplexity), true
 
-	case "Session.hashedToken":
-		if e.complexity.Session.HashedToken == nil {
-			break
-		}
-
-		return e.complexity.Session.HashedToken(childComplexity), true
-
 	case "Session.id":
 		if e.complexity.Session.ID == nil {
 			break
@@ -635,6 +628,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SessionCreateOutcome.Session(childComplexity), true
+
+	case "SessionCreateOutcome.token":
+		if e.complexity.SessionCreateOutcome.Token == nil {
+			break
+		}
+
+		return e.complexity.SessionCreateOutcome.Token(childComplexity), true
 
 	case "User.avatarUri":
 		if e.complexity.User.AvatarURI == nil {
@@ -1045,7 +1045,6 @@ type UserCreateOutcome {
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/access/api/entity.graphql", Input: `type Session {
     id: ID!
-    hashedToken: String!
     user: User
     namespace: Namespace!
     scopes: [AccessScope]
@@ -1055,7 +1054,6 @@ type UserCreateOutcome {
     updatedAt: Time!
     expiredAt: Time!
 }
-
 
 type SessionContext {
     ipAddress: IP
@@ -1080,7 +1078,7 @@ extend type Mutation {
 }
 
 input SessionCreateInput {
-    namespaceId: String
+    namespaceId: String!
     email: EmailAddress!
     hashedPassword: String!
     context: SessionCreateContextInput
@@ -1095,6 +1093,7 @@ input SessionCreateContextInput {
 
 type SessionCreateOutcome {
     errors: [Error!]
+    token: String
     session: Session
 }
 
@@ -2656,40 +2655,6 @@ func (ec *executionContext) _Session_id(ctx context.Context, field graphql.Colle
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_hashedToken(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Session",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.HashedToken, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Session_user(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3106,6 +3071,37 @@ func (ec *executionContext) _SessionCreateOutcome_errors(ctx context.Context, fi
 	res := resTmp.([]*util.Error)
 	fc.Result = res
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SessionCreateOutcome_token(ctx context.Context, field graphql.CollectedField, obj *dto1.SessionCreateOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "SessionCreateOutcome",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Token, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto1.SessionCreateOutcome) (ret graphql.Marshaler) {
@@ -5082,7 +5078,7 @@ func (ec *executionContext) unmarshalInputSessionCreateInput(ctx context.Context
 		switch k {
 		case "namespaceId":
 			var err error
-			it.NamespaceID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.NamespaceID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5725,11 +5721,6 @@ func (ec *executionContext) _Session(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "hashedToken":
-			out.Values[i] = ec._Session_hashedToken(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "user":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -5833,6 +5824,8 @@ func (ec *executionContext) _SessionCreateOutcome(ctx context.Context, sel ast.S
 			out.Values[i] = graphql.MarshalString("SessionCreateOutcome")
 		case "errors":
 			out.Values[i] = ec._SessionCreateOutcome_errors(ctx, field, obj)
+		case "token":
+			out.Values[i] = ec._SessionCreateOutcome_token(ctx, field, obj)
 		case "session":
 			out.Values[i] = ec._SessionCreateOutcome_session(ctx, field, obj)
 		default:

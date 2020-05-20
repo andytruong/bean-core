@@ -50,7 +50,7 @@ func (this AccessModule) Migrate(tx *gorm.DB, driver string) error {
 func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 	hdl := handler.SessionCreateHandler{ID: this.id}
 	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
-	outcome, err := hdl.SessionCreate(ctx, txn, input)
+	outcome, err := hdl.Handle(ctx, txn, input)
 	if nil != err {
 		txn.Rollback()
 

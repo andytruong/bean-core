@@ -6,7 +6,7 @@ import (
 )
 
 type SessionCreateInput struct {
-	NamespaceID    *string                    `json:"namespaceId"`
+	NamespaceID    string                     `json:"namespaceId"`
 	Email          util.EmailAddress          `json:"email"`
 	HashedPassword string                     `json:"hashedPassword"`
 	Context        *SessionCreateContextInput `json:"context"`
@@ -21,5 +21,6 @@ type SessionCreateContextInput struct {
 
 type SessionCreateOutcome struct {
 	Errors  []*util.Error  `json:"errors"`
+	Token   *string        `json:"token"`
 	Session *model.Session `json:"session"`
 }
