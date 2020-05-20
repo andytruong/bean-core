@@ -1,11 +1,11 @@
+gql:
+	gqlgen generate
+
 migrate:
 	CONFIG=config.yaml go run cmd/main.go migrate
 
 server:
 	CONFIG=config.yaml go run cmd/main.go http-server
-
-generate-graphql:
-	gqlgen generate
 
 test:
 	go test ./... -v

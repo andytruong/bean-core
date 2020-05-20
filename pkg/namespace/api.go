@@ -27,6 +27,16 @@ type (
 	}
 )
 
+func (this NamespaceQueryResolver) Namespace(ctx context.Context, id string) (*model.Namespace, error) {
+	obj := &model.Namespace{}
+	err := this.db.First(&obj, "id = ?", id).Error
+	if nil != err {
+		return nil, err
+	}
+
+	return obj, nil
+}
+
 func (this NamespaceMutationResolver) NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	sv := service.NamespaceCreateAPI{ID: this.id}
 	tx := this.db.BeginTx(ctx, &sql.TxOptions{})

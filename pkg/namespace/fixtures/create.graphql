@@ -3,11 +3,11 @@ mutation {
         input: {
             object: {
                 title: "Testing",
-                status: true,
+                isActive: true,
                 domainNames: {
                     primary: {
                         verified: true,
-                        value: "localhost:8484",
+                        value: "local:8484",
                         isActive: true
                     }
                 }

@@ -30,11 +30,6 @@ type (
 		*access.AccessMutationResolver
 	}
 
-	queryResolver struct {
-		*access.AccessQueryResolver
-		user.UserQueryResolver
-	}
-
 	sessionResolver struct {
 		container *Container
 	}
@@ -56,14 +51,14 @@ func (this *resolvers) getQuery() *queryResolver {
 		this.mu.Lock()
 		defer this.mu.Unlock()
 
-		mUser, err := this.container.modules.User()
-		if nil != err {
-			panic(err)
-		}
+		mUser, _ := this.container.modules.User()
+		mNamespace, _ := this.container.modules.Namespace()
 
 		this.query = &queryResolver{
 			// AccessQueryResolver: this.container.modules.Access().MutationResolver(),
-			UserQueryResolver: mUser.Query,
+			UserQueryResolver:      mUser.Query,
+			NamespaceQueryResolver: mNamespace.Query,
+			// AccessQueryResolver:    nil,
 		}
 	}
 
@@ -103,9 +98,5 @@ func (this *resolvers) getSession() *sessionResolver {
 }
 
 func (this mutationResolver) Ping(ctx context.Context) (string, error) {
-	return "pong", nil
-}
-
-func (this queryResolver) Ping(ctx context.Context) (string, error) {
 	return "pong", nil
 }

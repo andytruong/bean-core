@@ -14,13 +14,12 @@ import (
 func Test_Create(t *testing.T) {
 	ass := assert.New(t)
 	input := fixtures.NamespaceCreateInputFixture()
+	db := util.MockDatabase()
+	module, err := NewNamespaceModule(db, util.MockLogger(), util.MockIdentifier())
+	ass.NoError(err)
+	util.MockInstall(module, db)
 
 	t.Run("happy case", func(t *testing.T) {
-		db := util.MockDatabase()
-		module, err := NewNamespaceModule(db, util.MockLogger(), util.MockIdentifier())
-		ass.NoError(err)
-		util.MockInstall(module, db)
-
 		now := time.Now()
 		outcome, err := module.Mutation.NamespaceCreate(context.Background(), input)
 		ass.NoError(err)
@@ -30,32 +29,40 @@ func Test_Create(t *testing.T) {
 		ass.True(outcome.Namespace.CreatedAt.UnixNano() >= now.UnixNano())
 		ass.True(outcome.Namespace.UpdatedAt.UnixNano() >= now.UnixNano())
 	})
+
+	t.Run("domain duplication", func(t *testing.T) {
+		// create again with same input
+		outcome, err := module.Mutation.NamespaceCreate(context.Background(), input)
+
+		ass.Nil(outcome)
+		ass.NotNil(err)
+		ass.Contains(err.Error(), "UNIQUE constraint failed: namespace_domains.value")
+	})
 }
 
-func Test_Create_Error(t *testing.T) {
-	t.Run("domain duplication", func(t *testing.T) {
-		ass := assert.New(t)
-		input := fixtures.NamespaceCreateInputFixture()
+func Test_Query(t *testing.T) {
+	ass := assert.New(t)
+	db := util.MockDatabase()
+	module, err := NewNamespaceModule(db, util.MockLogger(), util.MockIdentifier())
+	ass.NoError(err)
+	util.MockInstall(module, db)
 
-		db := util.MockDatabase()
-		module, err := NewNamespaceModule(db, util.MockLogger(), util.MockIdentifier())
+	var id string
+	input := fixtures.NamespaceCreateInputFixture()
+
+	{
+		// setup data for query
+
+		outcome, err := module.Mutation.NamespaceCreate(context.Background(), input)
 		ass.NoError(err)
-		util.MockInstall(module, db)
+		id = outcome.Namespace.ID
+	}
 
-		{
-			// create first
-			outcome, err := module.Mutation.NamespaceCreate(context.Background(), input)
-			ass.NoError(err)
-			ass.Nil(outcome.Errors)
-		}
-
-		{
-			// create again with same input
-			outcome, err := module.Mutation.NamespaceCreate(context.Background(), input)
-
-			ass.Nil(outcome)
-			ass.NotNil(err)
-			ass.Contains(err.Error(), "UNIQUE constraint failed: namespace_domains.value")
-		}
-	})
+	{
+		obj, err := module.Query.Namespace(context.Background(), id)
+		ass.NoError(err)
+		ass.Equal(obj.ID, id)
+		ass.Equal(obj.Title, input.Object.Title)
+		ass.Equal(obj.IsActive, input.Object.IsActive)
+	}
 }

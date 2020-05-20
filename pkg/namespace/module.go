@@ -15,7 +15,7 @@ func NewNamespaceModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) (*
 	module := &NamespaceModule{
 		logger:   logger,
 		Mutation: &NamespaceMutationResolver{db: db, id: id},
-		Query:    NamespaceQueryResolver{db: db},
+		Query:    &NamespaceQueryResolver{db: db},
 		Model:    NamespaceModelResolver{db: db},
 	}
 
@@ -25,7 +25,7 @@ func NewNamespaceModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) (*
 type NamespaceModule struct {
 	logger   *zap.Logger
 	Mutation *NamespaceMutationResolver
-	Query    NamespaceQueryResolver
+	Query    *NamespaceQueryResolver
 	Model    NamespaceModelResolver
 }
 
