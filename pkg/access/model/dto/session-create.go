@@ -5,21 +5,21 @@ import (
 	"bean/pkg/util"
 )
 
-type LoginInput struct {
-	NamespaceID    *string            `json:"namespaceId"`
-	Username       string             `json:"username"`
-	HashedPassword string             `json:"hashedPassword"`
-	Context        *LoginContextInput `json:"context"`
+type SessionCreateInput struct {
+	NamespaceID    *string                    `json:"namespaceId"`
+	Email          util.EmailAddress          `json:"email"`
+	HashedPassword string                     `json:"hashedPassword"`
+	Context        *SessionCreateContextInput `json:"context"`
 }
 
-type LoginContextInput struct {
+type SessionCreateContextInput struct {
 	IPAddress  *string           `json:"ipAddress"`
 	Country    *string           `json:"country"`
 	DeviceType *model.DeviceType `json:"deviceType"`
 	DeviceName *string           `json:"deviceName"`
 }
 
-type LoginOutcome struct {
+type SessionCreateOutcome struct {
 	Errors  []*util.Error  `json:"errors"`
 	Session *model.Session `json:"session"`
 }

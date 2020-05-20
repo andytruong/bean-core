@@ -2,24 +2,24 @@
 # SessionCreate // Login
 # ---------------------
 extend type Mutation {
-    sessionCreate(input: LoginInput): LoginOutcome!
+    sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
 }
 
-input LoginInput {
+input SessionCreateInput {
     namespaceId: String
-    username: String!
+    email: EmailAddress!
     hashedPassword: String!
-    context: LoginContextInput
+    context: SessionCreateContextInput
 }
 
-input LoginContextInput {
+input SessionCreateContextInput {
     ipAddress: IP
     country: CountryCode
     deviceType: DeviceType
     deviceName: String
 }
 
-type LoginOutcome {
+type SessionCreateOutcome {
     errors: [Error!]
     session: Session
 }
@@ -28,7 +28,7 @@ type LoginOutcome {
 # SessionDelete // Logout
 # ---------------------
 extend type Mutation {
-    sessionDelete(input: LoginInput): LogoutOutcome!
+    sessionDelete(input: SessionCreateInput): LogoutOutcome!
 }
 
 type LogoutInput {
@@ -39,7 +39,3 @@ type LogoutOutcome {
     errors: [Error!]
     result: Boolean
 }
-
-# ---------------------
-# TODO: one time login // forget password
-# ---------------------

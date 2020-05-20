@@ -6,6 +6,8 @@ import (
 
 type Session struct {
 	ID          string          `json:"id"`
+	UserId      string          `json:"userId"`
+	NamespaceId string          `json:"namespaceId"`
 	HashedToken string          `json:"hashedToken"`
 	Scopes      []*AccessScope  `json:"scopes"`
 	Context     *SessionContext `json:"context"`

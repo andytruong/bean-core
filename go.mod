@@ -17,5 +17,6 @@ require (
 	github.com/vektah/gqlparser/v2 v2.0.1
 	go.uber.org/zap v1.15.0
 	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	gopkg.in/yaml.v2 v2.2.4
 )

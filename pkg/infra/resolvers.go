@@ -27,11 +27,11 @@ func (r *mutationResolver) UserCreate(ctx context.Context, input *dto1.UserCreat
 	panic("not implemented")
 }
 
-func (r *mutationResolver) SessionCreate(ctx context.Context, input *dto2.LoginInput) (*dto2.LoginOutcome, error) {
+func (r *mutationResolver) SessionCreate(ctx context.Context, input *dto2.SessionCreateInput) (*dto2.SessionCreateOutcome, error) {
 	panic("not implemented")
 }
 
-func (r *mutationResolver) SessionDelete(ctx context.Context, input *dto2.LoginInput) (*dto2.LogoutOutcome, error) {
+func (r *mutationResolver) SessionDelete(ctx context.Context, input *dto2.SessionCreateInput) (*dto2.LogoutOutcome, error) {
 	panic("not implemented")
 }
 

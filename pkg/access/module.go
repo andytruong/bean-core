@@ -47,7 +47,7 @@ func (this AccessModule) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.LoginInput) (*dto.LoginOutcome, error) {
+func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 	hdl := handler.SessionCreateHandler{ID: this.id}
 	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
 	outcome, err := hdl.SessionCreate(ctx, txn, input)
@@ -60,7 +60,7 @@ func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.LoginInp
 	return outcome, txn.Commit().Error
 }
 
-func (this *AccessModule) SessionDelete(ctx context.Context, input *dto.LoginInput) (*dto.LogoutOutcome, error) {
+func (this *AccessModule) SessionDelete(ctx context.Context, input *dto.SessionCreateInput) (*dto.LogoutOutcome, error) {
 	panic("not implemented")
 }
 

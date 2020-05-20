@@ -73,11 +73,6 @@ type ComplexityRoot struct {
 		Fields func(childComplexity int) int
 	}
 
-	LoginOutcome struct {
-		Errors  func(childComplexity int) int
-		Session func(childComplexity int) int
-	}
-
 	LogoutInput struct {
 		HashedToken func(childComplexity int) int
 	}
@@ -99,8 +94,8 @@ type ComplexityRoot struct {
 	Mutation struct {
 		NamespaceCreate func(childComplexity int, input dto.NamespaceCreateInput) int
 		Ping            func(childComplexity int) int
-		SessionCreate   func(childComplexity int, input *dto1.LoginInput) int
-		SessionDelete   func(childComplexity int, input *dto1.LoginInput) int
+		SessionCreate   func(childComplexity int, input *dto1.SessionCreateInput) int
+		SessionDelete   func(childComplexity int, input *dto1.SessionCreateInput) int
 		UserCreate      func(childComplexity int, input *dto2.UserCreateInput) int
 	}
 
@@ -144,6 +139,11 @@ type ComplexityRoot struct {
 		DeviceName func(childComplexity int) int
 		DeviceType func(childComplexity int) int
 		IPAddress  func(childComplexity int) int
+	}
+
+	SessionCreateOutcome struct {
+		Errors  func(childComplexity int) int
+		Session func(childComplexity int) int
 	}
 
 	User struct {
@@ -191,8 +191,8 @@ type MutationResolver interface {
 	Ping(ctx context.Context) (string, error)
 	NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error)
 	UserCreate(ctx context.Context, input *dto2.UserCreateInput) (*dto2.UserCreateOutcome, error)
-	SessionCreate(ctx context.Context, input *dto1.LoginInput) (*dto1.LoginOutcome, error)
-	SessionDelete(ctx context.Context, input *dto1.LoginInput) (*dto1.LogoutOutcome, error)
+	SessionCreate(ctx context.Context, input *dto1.SessionCreateInput) (*dto1.SessionCreateOutcome, error)
+	SessionDelete(ctx context.Context, input *dto1.SessionCreateInput) (*dto1.LogoutOutcome, error)
 }
 type NamespaceResolver interface {
 	DomainNames(ctx context.Context, obj *model.Namespace) (*model.DomainNames, error)
@@ -300,20 +300,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Error.Fields(childComplexity), true
 
-	case "LoginOutcome.errors":
-		if e.complexity.LoginOutcome.Errors == nil {
-			break
-		}
-
-		return e.complexity.LoginOutcome.Errors(childComplexity), true
-
-	case "LoginOutcome.session":
-		if e.complexity.LoginOutcome.Session == nil {
-			break
-		}
-
-		return e.complexity.LoginOutcome.Session(childComplexity), true
-
 	case "LogoutInput.hashedToken":
 		if e.complexity.LogoutInput.HashedToken == nil {
 			break
@@ -406,7 +392,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SessionCreate(childComplexity, args["input"].(*dto1.LoginInput)), true
+		return e.complexity.Mutation.SessionCreate(childComplexity, args["input"].(*dto1.SessionCreateInput)), true
 
 	case "Mutation.sessionDelete":
 		if e.complexity.Mutation.SessionDelete == nil {
@@ -418,7 +404,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SessionDelete(childComplexity, args["input"].(*dto1.LoginInput)), true
+		return e.complexity.Mutation.SessionDelete(childComplexity, args["input"].(*dto1.SessionCreateInput)), true
 
 	case "Mutation.userCreate":
 		if e.complexity.Mutation.UserCreate == nil {
@@ -635,6 +621,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SessionContext.IPAddress(childComplexity), true
+
+	case "SessionCreateOutcome.errors":
+		if e.complexity.SessionCreateOutcome.Errors == nil {
+			break
+		}
+
+		return e.complexity.SessionCreateOutcome.Errors(childComplexity), true
+
+	case "SessionCreateOutcome.session":
+		if e.complexity.SessionCreateOutcome.Session == nil {
+			break
+		}
+
+		return e.complexity.SessionCreateOutcome.Session(childComplexity), true
 
 	case "User.avatarUri":
 		if e.complexity.User.AvatarURI == nil {
@@ -1076,24 +1076,24 @@ enum DeviceType {
 # SessionCreate // Login
 # ---------------------
 extend type Mutation {
-    sessionCreate(input: LoginInput): LoginOutcome!
+    sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
 }
 
-input LoginInput {
+input SessionCreateInput {
     namespaceId: String
-    username: String!
+    email: EmailAddress!
     hashedPassword: String!
-    context: LoginContextInput
+    context: SessionCreateContextInput
 }
 
-input LoginContextInput {
+input SessionCreateContextInput {
     ipAddress: IP
     country: CountryCode
     deviceType: DeviceType
     deviceName: String
 }
 
-type LoginOutcome {
+type SessionCreateOutcome {
     errors: [Error!]
     session: Session
 }
@@ -1102,7 +1102,7 @@ type LoginOutcome {
 # SessionDelete // Logout
 # ---------------------
 extend type Mutation {
-    sessionDelete(input: LoginInput): LogoutOutcome!
+    sessionDelete(input: SessionCreateInput): LogoutOutcome!
 }
 
 type LogoutInput {
@@ -1113,10 +1113,6 @@ type LogoutOutcome {
     errors: [Error!]
     result: Boolean
 }
-
-# ---------------------
-# TODO: one time login // forget password
-# ---------------------
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/access/api/query.graphql", Input: `# ---------------------
 # SessionLoad // Validation
@@ -1158,9 +1154,9 @@ func (ec *executionContext) field_Mutation_namespaceCreate_args(ctx context.Cont
 func (ec *executionContext) field_Mutation_sessionCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto1.LoginInput
+	var arg0 *dto1.SessionCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx, tmp)
+		arg0, err = ec.unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1172,9 +1168,9 @@ func (ec *executionContext) field_Mutation_sessionCreate_args(ctx context.Contex
 func (ec *executionContext) field_Mutation_sessionDelete_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto1.LoginInput
+	var arg0 *dto1.SessionCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx, tmp)
+		arg0, err = ec.unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1620,68 +1616,6 @@ func (ec *executionContext) _Error_fields(ctx context.Context, field graphql.Col
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LoginOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.LoginOutcome) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "LoginOutcome",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Errors, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*util.Error)
-	fc.Result = res
-	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _LoginOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto1.LoginOutcome) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "LoginOutcome",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Session, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model2.Session)
-	fc.Result = res
-	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _LogoutInput_hashedToken(ctx context.Context, field graphql.CollectedField, obj *dto1.LogoutInput) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2116,7 +2050,7 @@ func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SessionCreate(rctx, args["input"].(*dto1.LoginInput))
+		return ec.resolvers.Mutation().SessionCreate(rctx, args["input"].(*dto1.SessionCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2128,9 +2062,9 @@ func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto1.LoginOutcome)
+	res := resTmp.(*dto1.SessionCreateOutcome)
 	fc.Result = res
-	return ec.marshalNLoginOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginOutcome(ctx, field.Selections, res)
+	return ec.marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_sessionDelete(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2157,7 +2091,7 @@ func (ec *executionContext) _Mutation_sessionDelete(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SessionDelete(rctx, args["input"].(*dto1.LoginInput))
+		return ec.resolvers.Mutation().SessionDelete(rctx, args["input"].(*dto1.SessionCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3141,6 +3075,68 @@ func (ec *executionContext) _SessionContext_deviceName(ctx context.Context, fiel
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SessionCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.SessionCreateOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "SessionCreateOutcome",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*util.Error)
+	fc.Result = res
+	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto1.SessionCreateOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "SessionCreateOutcome",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Session, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model2.Session)
+	fc.Result = res
+	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model1.User) (ret graphql.Marshaler) {
@@ -4970,78 +4966,6 @@ func (ec *executionContext) unmarshalInputDomainNamesInput(ctx context.Context, 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputLoginContextInput(ctx context.Context, obj interface{}) (dto1.LoginContextInput, error) {
-	var it dto1.LoginContextInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "ipAddress":
-			var err error
-			it.IPAddress, err = ec.unmarshalOIP2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "country":
-			var err error
-			it.Country, err = ec.unmarshalOCountryCode2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "deviceType":
-			var err error
-			it.DeviceType, err = ec.unmarshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "deviceName":
-			var err error
-			it.DeviceName, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj interface{}) (dto1.LoginInput, error) {
-	var it dto1.LoginInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "namespaceId":
-			var err error
-			it.NamespaceID, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "username":
-			var err error
-			it.Username, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "hashedPassword":
-			var err error
-			it.HashedPassword, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "context":
-			var err error
-			it.Context, err = ec.unmarshalOLoginContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginContextInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputNamespaceCreateContext(ctx context.Context, obj interface{}) (dto.NamespaceCreateContext, error) {
 	var it dto.NamespaceCreateContext
 	var asMap = obj.(map[string]interface{})
@@ -5105,6 +5029,78 @@ func (ec *executionContext) unmarshalInputNamespaceCreateInputObject(ctx context
 		case "domainNames":
 			var err error
 			it.DomainNames, err = ec.unmarshalODomainNamesInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNamesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSessionCreateContextInput(ctx context.Context, obj interface{}) (dto1.SessionCreateContextInput, error) {
+	var it dto1.SessionCreateContextInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "ipAddress":
+			var err error
+			it.IPAddress, err = ec.unmarshalOIP2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "country":
+			var err error
+			it.Country, err = ec.unmarshalOCountryCode2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "deviceType":
+			var err error
+			it.DeviceType, err = ec.unmarshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "deviceName":
+			var err error
+			it.DeviceName, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSessionCreateInput(ctx context.Context, obj interface{}) (dto1.SessionCreateInput, error) {
+	var it dto1.SessionCreateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "namespaceId":
+			var err error
+			it.NamespaceID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "email":
+			var err error
+			it.Email, err = ec.unmarshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "hashedPassword":
+			var err error
+			it.HashedPassword, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "context":
+			var err error
+			it.Context, err = ec.unmarshalOSessionCreateContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateContextInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5386,32 +5382,6 @@ func (ec *executionContext) _Error(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = ec._Error_code(ctx, field, obj)
 		case "fields":
 			out.Values[i] = ec._Error_fields(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var loginOutcomeImplementors = []string{"LoginOutcome"}
-
-func (ec *executionContext) _LoginOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.LoginOutcome) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, loginOutcomeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("LoginOutcome")
-		case "errors":
-			out.Values[i] = ec._LoginOutcome_errors(ctx, field, obj)
-		case "session":
-			out.Values[i] = ec._LoginOutcome_session(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5839,6 +5809,32 @@ func (ec *executionContext) _SessionContext(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._SessionContext_deviceType(ctx, field, obj)
 		case "deviceName":
 			out.Values[i] = ec._SessionContext_deviceName(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var sessionCreateOutcomeImplementors = []string{"SessionCreateOutcome"}
+
+func (ec *executionContext) _SessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.SessionCreateOutcome) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sessionCreateOutcomeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SessionCreateOutcome")
+		case "errors":
+			out.Values[i] = ec._SessionCreateOutcome_errors(ctx, field, obj)
+		case "session":
+			out.Values[i] = ec._SessionCreateOutcome_session(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6411,20 +6407,6 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) marshalNLoginOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.LoginOutcome) graphql.Marshaler {
-	return ec._LoginOutcome(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNLoginOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.LoginOutcome) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._LoginOutcome(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNLogoutOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLogoutOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.LogoutOutcome) graphql.Marshaler {
 	return ec._LogoutOutcome(ctx, sel, &v)
 }
@@ -6479,6 +6461,20 @@ func (ec *executionContext) unmarshalNNamespaceCreateInputObject2ᚖbeanᚋpkg�
 	}
 	res, err := ec.unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalNSessionCreateOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.SessionCreateOutcome) graphql.Marshaler {
+	return ec._SessionCreateOutcome(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.SessionCreateOutcome) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._SessionCreateOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -7197,30 +7193,6 @@ func (ec *executionContext) marshalOIP2ᚖstring(ctx context.Context, sel ast.Se
 	return ec.marshalOIP2string(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalOLoginContextInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginContextInput(ctx context.Context, v interface{}) (dto1.LoginContextInput, error) {
-	return ec.unmarshalInputLoginContextInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOLoginContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginContextInput(ctx context.Context, v interface{}) (*dto1.LoginContextInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOLoginContextInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginContextInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOLoginInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx context.Context, v interface{}) (dto1.LoginInput, error) {
-	return ec.unmarshalInputLoginInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx context.Context, v interface{}) (*dto1.LoginInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOLoginInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalONamespace2beanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx context.Context, sel ast.SelectionSet, v model.Namespace) graphql.Marshaler {
 	return ec._Namespace(ctx, sel, &v)
 }
@@ -7263,6 +7235,30 @@ func (ec *executionContext) marshalOSessionContext2ᚖbeanᚋpkgᚋaccessᚋmode
 		return graphql.Null
 	}
 	return ec._SessionContext(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOSessionCreateContextInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateContextInput(ctx context.Context, v interface{}) (dto1.SessionCreateContextInput, error) {
+	return ec.unmarshalInputSessionCreateContextInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOSessionCreateContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateContextInput(ctx context.Context, v interface{}) (*dto1.SessionCreateContextInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOSessionCreateContextInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateContextInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOSessionCreateInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx context.Context, v interface{}) (dto1.SessionCreateInput, error) {
+	return ec.unmarshalInputSessionCreateInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx context.Context, v interface{}) (*dto1.SessionCreateInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOSessionCreateInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
