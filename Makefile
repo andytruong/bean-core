@@ -7,6 +7,9 @@ server:
 generate-graphql:
 	gqlgen generate
 
+test:
+	go test ./... -v
+
 # ---------------------
 # go mod commands
 # ---------------------

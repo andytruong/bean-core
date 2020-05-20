@@ -2,7 +2,6 @@ package namespace
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -43,21 +42,20 @@ func Test_Create_Error(t *testing.T) {
 		ass.NoError(err)
 		util.MockInstall(module, db)
 
-		// create first
 		{
+			// create first
 			outcome, err := module.Mutation.NamespaceCreate(context.Background(), input)
 			ass.NoError(err)
 			ass.Nil(outcome.Errors)
 		}
 
-		// create again with same input
 		{
+			// create again with same input
 			outcome, err := module.Mutation.NamespaceCreate(context.Background(), input)
-			ass.NoError(err)
 
-			fmt.Println("err", err, outcome)
-			// ass.NoError(err)
-			// ass.Nil(outcome.Errors)
+			ass.Nil(outcome)
+			ass.NotNil(err)
+			ass.Contains(err.Error(), "UNIQUE constraint failed: namespace_domains.value")
 		}
 	})
 }
