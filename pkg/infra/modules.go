@@ -33,7 +33,7 @@ func (this *modules) User() (*user.UserModule, error) {
 			return nil, err
 		}
 
-		this.user, err = user.NewUserModule(
+		this.user = user.NewUserModule(
 			db,
 			this.container.logger,
 			this.container.Identifier(),

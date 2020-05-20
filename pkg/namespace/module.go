@@ -9,7 +9,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
 
-	"bean/pkg/namespace/handler"
+	"bean/pkg/namespace/api/handler"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/util"
@@ -43,7 +43,7 @@ func (this NamespaceModule) Migrate(tx *gorm.DB, driver string) error {
 		Logger: this.logger,
 		Driver: driver,
 		Module: "namespace",
-		Dir:    path.Dir(filename) + "/migration/",
+		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 
 	return runner.Run()

@@ -967,7 +967,7 @@ type Membership {
     updatedAt: Time!
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/user/api-entity.graphql", Input: `type User {
+	&ast.Source{Name: "pkg/user/api/entity.graphql", Input: `type User {
     id: ID!
     name: UserName!
     emails: UserEmails
@@ -997,7 +997,7 @@ type UserEmail {
     isActive: Boolean!
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/user/api-mutation.graphql", Input: `# ---------------------
+	&ast.Source{Name: "pkg/user/api/mutation.graphql", Input: `# ---------------------
 # UserCreate
 # ---------------------
 extend type Mutation {
@@ -1039,7 +1039,7 @@ type UserCreateOutcome {
     errors: [Error]
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/user/api-query.graphql", Input: `extend type Query {
+	&ast.Source{Name: "pkg/user/api/query.graphql", Input: `extend type Query {
     user(id: ID!): User
 }
 `, BuiltIn: false},

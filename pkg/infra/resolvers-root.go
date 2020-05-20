@@ -15,12 +15,9 @@ func (this *rootResolver) Session() gql.SessionResolver {
 }
 
 func (this *rootResolver) User() gql.UserResolver {
-	module, err := this.container.modules.User()
-	if nil != err {
-		panic(err)
-	}
+	module, _ := this.container.modules.User()
 
-	return module.Model
+	return module
 }
 
 func (this *rootResolver) Namespace() gql.NamespaceResolver {
@@ -30,10 +27,7 @@ func (this *rootResolver) Namespace() gql.NamespaceResolver {
 }
 
 func (this *rootResolver) UserEmail() gql.UserEmailResolver {
-	module, err := this.container.modules.User()
-	if nil != err {
-		panic(err)
-	}
+	module, _ := this.container.modules.User()
 
-	return module.Email
+	return module
 }

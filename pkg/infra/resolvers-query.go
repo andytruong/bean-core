@@ -9,7 +9,7 @@ import (
 )
 
 type queryResolver struct {
-	user.UserQueryResolver
+	*user.UserModule
 	*namespace.NamespaceModule
 	*access.AccessQueryResolver
 }

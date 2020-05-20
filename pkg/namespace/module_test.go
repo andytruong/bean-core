@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"bean/pkg/namespace/fixtures"
+	"bean/pkg/namespace/api/fixtures"
 	"bean/pkg/util"
 )
 

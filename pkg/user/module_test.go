@@ -13,18 +13,11 @@ import (
 	"bean/pkg/util/password"
 )
 
-func TestNewUserModule(t *testing.T) {
-	ass := assert.New(t)
-	_, err := NewUserModule(util.MockDatabase(), util.MockLogger(), util.MockIdentifier())
-	ass.NoError(err)
-}
-
 func TestUserMutationResolver_UserCreate(t *testing.T) {
 	ass := assert.New(t)
 	db := util.MockDatabase()
-	module, err := NewUserModule(db, util.MockLogger(), util.MockIdentifier())
-	util.MockInstall(module, db)
-	ass.NoError(err)
+	mod := NewUserModule(db, util.MockLogger(), util.MockIdentifier())
+	util.MockInstall(mod, db)
 
 	passAlg, _ := password.Get("bcrypt")
 	pass, _ := passAlg.Encrypt("xxxxx")
@@ -63,12 +56,12 @@ func TestUserMutationResolver_UserCreate(t *testing.T) {
 
 	t.Run("test happy case, no error", func(t *testing.T) {
 		now := time.Now()
-		outcome, err := module.Mutation.UserCreate(context.Background(), input)
+		out, err := mod.UserCreate(context.Background(), input)
 		ass.NoError(err)
-		ass.Empty(outcome.Errors)
-		ass.Equal("https://foo.bar", string(*outcome.User.AvatarURI))
+		ass.Empty(out.Errors)
+		ass.Equal("https://foo.bar", string(*out.User.AvatarURI))
 
-		theUser, err := module.Query.User(context.Background(), outcome.User.ID)
+		theUser, err := mod.User(context.Background(), out.User.ID)
 		ass.NoError(err)
 		ass.True(theUser.CreatedAt.UnixNano() >= now.UnixNano())
 		ass.Equal("https://foo.bar", string(*theUser.AvatarURI))
