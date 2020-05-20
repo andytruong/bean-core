@@ -3,6 +3,8 @@ package access
 import (
 	"context"
 	"database/sql"
+	"path"
+	"runtime"
 
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
@@ -13,6 +15,7 @@ import (
 	namespace_model "bean/pkg/namespace/model"
 	user_model "bean/pkg/user/model"
 	"bean/pkg/util"
+	"bean/pkg/util/migrate"
 )
 
 func NewAccessModule() *AccessModule {
@@ -28,7 +31,20 @@ type AccessModule struct {
 }
 
 func (this AccessModule) Migrate(tx *gorm.DB, driver string) error {
-	return nil
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		return nil
+	}
+
+	runner := migrate.Runner{
+		Tx:     tx,
+		Logger: this.logger,
+		Driver: driver,
+		Module: "access",
+		Dir:    path.Dir(filename) + "/model/migration/",
+	}
+
+	return runner.Run()
 }
 
 func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.LoginInput) (*dto.LoginOutcome, error) {
