@@ -37,7 +37,7 @@ func NewContainer(path string) (*Container, error) {
 		access:    nil,
 	}
 
-	this.gql = resolvers{
+	this.graph = &graph{
 		container: this,
 		mu:        &sync.Mutex{},
 	}
@@ -67,7 +67,7 @@ type (
 
 		mu      *sync.Mutex
 		id      *util.Identifier
-		gql     resolvers
+		graph   *graph
 		dbs     databases
 		modules modules
 		logger  *zap.Logger
@@ -139,7 +139,7 @@ func (this *Container) replaceEnvVariables(inBytes []byte) ([]byte, error) {
 func (this *Container) ListenAndServe() error {
 	router := mux.NewRouter()
 	router.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
-		config := gql.Config{Resolvers: this.gql.getRoot()}
+		config := gql.Config{Resolvers: this.graph}
 		schema := gql.NewExecutableSchema(config)
 		server := handler.NewDefaultServer(schema)
 		server.ServeHTTP(w, r)
