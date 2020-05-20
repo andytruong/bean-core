@@ -52,7 +52,6 @@ func Test_Query(t *testing.T) {
 
 	{
 		// setup data for query
-
 		outcome, err := module.Mutation.NamespaceCreate(context.Background(), input)
 		ass.NoError(err)
 		id = outcome.Namespace.ID

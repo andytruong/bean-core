@@ -1,4 +1,4 @@
-package service
+package handler
 
 import (
 	"github.com/jinzhu/gorm"
@@ -6,10 +6,10 @@ import (
 	"bean/pkg/user/model"
 )
 
-type UserQueryAPI struct {
+type UserLoadHandler struct {
 }
 
-func (this *UserQueryAPI) Load(db *gorm.DB, id string) (*model.User, error) {
+func (this *UserLoadHandler) Load(db *gorm.DB, id string) (*model.User, error) {
 	user := &model.User{}
 	err := db.Where(&model.User{ID: id}).First(user).Error
 

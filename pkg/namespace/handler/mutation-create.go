@@ -1,4 +1,4 @@
-package service
+package handler
 
 import (
 	"time"
@@ -10,11 +10,11 @@ import (
 	"bean/pkg/util"
 )
 
-type NamespaceCreateAPI struct {
+type NamespaceCreateHandler struct {
 	ID *util.Identifier
 }
 
-func (this *NamespaceCreateAPI) Create(tx *gorm.DB, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
+func (this *NamespaceCreateHandler) Create(tx *gorm.DB, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	namespace := &model.Namespace{
 		Title:     input.Object.Title,
 		IsActive:  input.Object.IsActive,
@@ -52,7 +52,7 @@ func (this *NamespaceCreateAPI) Create(tx *gorm.DB, input dto.NamespaceCreateInp
 	}, nil
 }
 
-func (this *NamespaceCreateAPI) createDomains(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
+func (this *NamespaceCreateHandler) createDomains(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
 	if nil != input.Object.DomainNames.Primary {
 		err := this.createDomain(tx, namespace, input.Object.DomainNames.Primary, true)
 		if nil != err {
@@ -72,7 +72,7 @@ func (this *NamespaceCreateAPI) createDomains(tx *gorm.DB, namespace *model.Name
 	return nil
 }
 
-func (this *NamespaceCreateAPI) createDomain(tx *gorm.DB, namespace *model.Namespace, input *dto.DomainNameInput, isPrimary bool) error {
+func (this *NamespaceCreateHandler) createDomain(tx *gorm.DB, namespace *model.Namespace, input *dto.DomainNameInput, isPrimary bool) error {
 	id, err := this.ID.ULID()
 	if nil != err {
 		return err
@@ -92,7 +92,7 @@ func (this *NamespaceCreateAPI) createDomain(tx *gorm.DB, namespace *model.Names
 	return tx.Table("namespace_domains").Create(&domain).Error
 }
 
-func (this *NamespaceCreateAPI) createMembership(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
+func (this *NamespaceCreateHandler) createMembership(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
 	if nil != input.Context {
 		id, err := this.ID.ULID()
 		if nil != err {

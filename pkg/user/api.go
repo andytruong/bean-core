@@ -8,9 +8,9 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 
+	"bean/pkg/user/handler"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
-	"bean/pkg/user/service"
 	"bean/pkg/util"
 )
 
@@ -51,8 +51,8 @@ func (this UserEmailResolver) Verified(ctx context.Context, obj *model.UserEmail
 }
 
 func (this *UserMutationResolver) UserCreate(ctx context.Context, input *dto.UserCreateInput) (*dto.UserCreateOutcome, error) {
-	sv := service.UserCreateAPI{ID: this.id}
-	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
+	hdl := handler.UserCreateHandler{ID: this.id}
+	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
 
 	if uint8(len(input.Emails.Secondary)) > this.maxSecondaryEmailPerUser {
 		return nil, errors.Wrap(
@@ -61,21 +61,21 @@ func (this *UserMutationResolver) UserCreate(ctx context.Context, input *dto.Use
 		)
 	}
 
-	if outcome, err := sv.Create(tx, input); nil != err {
-		tx.Rollback()
+	if outcome, err := hdl.Create(txn, input); nil != err {
+		txn.Rollback()
 
 		return nil, err
 	} else {
-		tx.Commit()
+		txn.Commit()
 
 		return outcome, nil
 	}
 }
 
 func (this *UserQueryResolver) User(ctx context.Context, id string) (*model.User, error) {
-	sv := service.UserQueryAPI{}
+	hdl := handler.UserLoadHandler{}
 
-	return sv.Load(this.db, id)
+	return hdl.Load(this.db, id)
 }
 
 // TODO: dataloader

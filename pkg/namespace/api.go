@@ -6,9 +6,9 @@ import (
 
 	"github.com/jinzhu/gorm"
 
+	"bean/pkg/namespace/handler"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
-	"bean/pkg/namespace/service"
 	"bean/pkg/util"
 )
 
@@ -38,21 +38,21 @@ func (this NamespaceQueryResolver) Namespace(ctx context.Context, id string) (*m
 }
 
 func (this NamespaceMutationResolver) NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
-	sv := service.NamespaceCreateAPI{ID: this.id}
-	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
-	outcome, err := sv.Create(tx, input)
+	hdl := handler.NamespaceCreateHandler{ID: this.id}
+	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
+	out, err := hdl.Create(txn, input)
 
 	if nil != err {
-		tx.Rollback()
+		txn.Rollback()
 
 		return nil, err
 	} else {
-		return outcome, tx.Commit().Error
+		return out, txn.Commit().Error
 	}
 }
 
 func (this NamespaceModelResolver) DomainNames(ctx context.Context, namespace *model.Namespace) (*model.DomainNames, error) {
-	outcome := &model.DomainNames{
+	out := &model.DomainNames{
 		Primary:   nil,
 		Secondary: nil,
 	}
@@ -69,11 +69,11 @@ func (this NamespaceModelResolver) DomainNames(ctx context.Context, namespace *m
 
 	for _, domainName := range domainNames {
 		if domainName.IsPrimary {
-			outcome.Primary = domainName
+			out.Primary = domainName
 		} else {
-			outcome.Secondary = append(outcome.Secondary, domainName)
+			out.Secondary = append(out.Secondary, domainName)
 		}
 	}
 
-	return outcome, nil
+	return out, nil
 }

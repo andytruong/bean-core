@@ -1,4 +1,4 @@
-package service
+package handler
 
 import (
 	"time"
@@ -10,13 +10,11 @@ import (
 	"bean/pkg/util"
 )
 
-type (
-	UserCreateAPI struct {
-		ID *util.Identifier
-	}
-)
+type UserCreateHandler struct {
+	ID *util.Identifier
+}
 
-func (this *UserCreateAPI) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto.UserCreateOutcome, error) {
+func (this *UserCreateHandler) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto.UserCreateOutcome, error) {
 	// create base record
 	user := model.User{
 		AvatarURI: input.AvatarURI,
@@ -72,7 +70,7 @@ func (this *UserCreateAPI) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto
 	return &dto.UserCreateOutcome{User: &user}, nil
 }
 
-func (this *UserCreateAPI) createEmails(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
+func (this *UserCreateHandler) createEmails(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
 	if nil == input.Emails {
 		return nil
 	}
@@ -94,7 +92,7 @@ func (this *UserCreateAPI) createEmails(tx *gorm.DB, user *model.User, input *dt
 			UpdatedAt: time.Now(),
 			IsPrimary: true,
 		}
-		
+
 		if err := tx.Table(table).Create(&email).Error; nil != err {
 			return err
 		}
@@ -128,7 +126,7 @@ func (this *UserCreateAPI) createEmails(tx *gorm.DB, user *model.User, input *dt
 	return nil
 }
 
-func (this *UserCreateAPI) createName(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
+func (this *UserCreateHandler) createName(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
 	if nil != input.Name {
 		id, _ := this.ID.ULID()
 		name := model.UserName{
