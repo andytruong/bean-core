@@ -16,7 +16,6 @@ type (
 		mu        *sync.Mutex
 		root      *root
 		resolver  *resolver
-		session   *sessionResolver
 	}
 
 	root struct {
@@ -27,10 +26,6 @@ type (
 		*user.UserModule
 		*namespace.NamespaceModule
 		*access.AccessModule
-	}
-
-	sessionResolver struct {
-		container *Container
 	}
 )
 
@@ -62,19 +57,6 @@ func (this *resolvers) getResolver() *resolver {
 	}
 
 	return this.resolver
-}
-
-func (this *resolvers) getSession() *sessionResolver {
-	if nil == this.session {
-		this.mu.Lock()
-		defer this.mu.Unlock()
-
-		this.session = &sessionResolver{
-			container: this.container,
-		}
-	}
-
-	return this.session
 }
 
 func (this resolver) Ping(ctx context.Context) (string, error) {

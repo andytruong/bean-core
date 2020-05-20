@@ -11,7 +11,9 @@ func (this *root) Query() gql.QueryResolver {
 }
 
 func (this *root) Session() gql.SessionResolver {
-	return this.container.gql.getSession()
+	module, _ := this.container.modules.Access()
+
+	return module.SessionResolver
 }
 
 func (this *root) User() gql.UserResolver {
