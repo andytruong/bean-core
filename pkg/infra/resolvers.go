@@ -27,7 +27,7 @@ type (
 	mutationResolver struct {
 		*user.UserModule
 		*namespace.NamespaceModule
-		*access.AccessMutationResolver
+		*access.AccessModule
 	}
 
 	sessionResolver struct {
@@ -73,9 +73,9 @@ func (this *resolvers) getMutation() *mutationResolver {
 		modNamespace, _ := this.container.modules.Namespace()
 
 		this.mutation = &mutationResolver{
-			UserModule:             modUser,
-			AccessMutationResolver: modAccess.Mutation,
-			NamespaceModule:        modNamespace,
+			UserModule:      modUser,
+			AccessModule:    modAccess,
+			NamespaceModule: modNamespace,
 		}
 	}
 

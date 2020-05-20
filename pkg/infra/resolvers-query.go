@@ -11,7 +11,7 @@ import (
 type queryResolver struct {
 	*user.UserModule
 	*namespace.NamespaceModule
-	*access.AccessQueryResolver
+	*access.AccessModule
 }
 
 func (this queryResolver) Ping(ctx context.Context) (string, error) {

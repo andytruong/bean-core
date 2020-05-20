@@ -1,8 +1,8 @@
 schema:
-  - pkg/util/api*.graphql
+  - pkg/util/api/*.graphql
   - pkg/namespace/api/*.graphql
   - pkg/user/api/*.graphql
-  - pkg/access/api*.graphql
+  - pkg/access/api/*.graphql
 
 exec:
   filename: pkg/infra/gql/schema.go
