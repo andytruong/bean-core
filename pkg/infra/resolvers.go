@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"bean/pkg/access"
-	"bean/pkg/infra/gql"
 	"bean/pkg/namespace"
 	"bean/pkg/user"
 )
@@ -101,45 +100,6 @@ func (this *resolvers) getSession() *sessionResolver {
 	}
 
 	return this.session
-}
-
-func (this *rootResolver) Mutation() gql.MutationResolver {
-	return this.container.gql.getMutation()
-}
-
-func (this *rootResolver) Query() gql.QueryResolver {
-	return this.container.gql.getQuery()
-}
-
-func (this *rootResolver) Session() gql.SessionResolver {
-	return this.container.gql.getSession()
-}
-
-func (this *rootResolver) User() gql.UserResolver {
-	module, err := this.container.modules.User()
-	if nil != err {
-		panic(err)
-	}
-
-	return module.Model
-}
-
-func (this *rootResolver) Namespace() gql.NamespaceResolver {
-	module, err := this.container.modules.Namespace()
-	if nil != err {
-		panic(err)
-	}
-
-	return module.Model
-}
-
-func (this *rootResolver) UserEmail() gql.UserEmailResolver {
-	module, err := this.container.modules.User()
-	if nil != err {
-		panic(err)
-	}
-
-	return module.Email
 }
 
 func (this mutationResolver) Ping(ctx context.Context) (string, error) {

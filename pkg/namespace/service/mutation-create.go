@@ -32,7 +32,7 @@ func (this *NamespaceCreateAPI) Create(tx *gorm.DB, input dto.NamespaceCreateInp
 		namespace.Version = version
 	}
 
-	if err := tx.Create(namespace).Error; nil != err {
+	if err := tx.Create(&namespace).Error; nil != err {
 		return nil, err
 	}
 
@@ -83,13 +83,13 @@ func (this *NamespaceCreateAPI) createDomain(tx *gorm.DB, namespace *model.Names
 		NamespaceId: namespace.ID,
 		IsVerified:  *input.Verified,
 		Value:       *input.Value,
-		CreatedAt:   time.Time{},
-		UpdatedAt:   time.Time{},
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 		IsPrimary:   isPrimary,
 		IsActive:    *input.IsActive,
 	}
 
-	return tx.Table("namespace_domains").Create(domain).Error
+	return tx.Table("namespace_domains").Create(&domain).Error
 }
 
 func (this *NamespaceCreateAPI) createMembership(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {

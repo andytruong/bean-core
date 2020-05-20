@@ -30,18 +30,29 @@ type (
 func (this NamespaceMutationResolver) NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	sv := service.NamespaceCreateAPI{ID: this.id}
 	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
+	outcome, err := sv.Create(tx, input)
 
-	return sv.Create(tx, input)
+	if nil != err {
+		tx.Rollback()
+
+		return nil, err
+	} else {
+		return outcome, tx.Commit().Error
+	}
 }
 
-func (this NamespaceModelResolver) DomainNames(ctx context.Context, obj *model.Namespace) (*model.DomainNames, error) {
+func (this NamespaceModelResolver) DomainNames(ctx context.Context, namespace *model.Namespace) (*model.DomainNames, error) {
 	outcome := &model.DomainNames{
 		Primary:   nil,
 		Secondary: nil,
 	}
 
 	var domainNames []*model.DomainName
-	err := this.db.Where(model.DomainName{NamespaceId: obj.ID}).Find(&domainNames).Error
+	err := this.db.
+		Table("namespace_domains").
+		Where("namespace_id = ?", namespace.ID).
+		Find(&domainNames).
+		Error
 	if nil != err {
 		return nil, err
 	}

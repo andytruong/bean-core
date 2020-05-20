@@ -13,14 +13,10 @@ import (
 
 func NewNamespaceModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) (*NamespaceModule, error) {
 	module := &NamespaceModule{
-		logger: logger,
-		Mutation: &NamespaceMutationResolver{
-			db: db,
-			id: id,
-		},
-		Query: NamespaceQueryResolver{
-			db: db,
-		},
+		logger:   logger,
+		Mutation: &NamespaceMutationResolver{db: db, id: id},
+		Query:    NamespaceQueryResolver{db: db},
+		Model:    NamespaceModelResolver{db: db},
 	}
 
 	return module, nil
