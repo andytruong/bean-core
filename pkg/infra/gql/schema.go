@@ -3,11 +3,12 @@
 package gql
 
 import (
-	"bean/pkg/access/dto"
-	model1 "bean/pkg/access/model"
-	model2 "bean/pkg/namespace/model"
-	dto1 "bean/pkg/user/dto"
-	"bean/pkg/user/model"
+	model2 "bean/pkg/access/model"
+	dto1 "bean/pkg/access/model/dto"
+	"bean/pkg/namespace/model"
+	"bean/pkg/namespace/model/dto"
+	model1 "bean/pkg/user/model"
+	dto2 "bean/pkg/user/model/dto"
 	"bean/pkg/util"
 	"bytes"
 	"context"
@@ -42,6 +43,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Mutation() MutationResolver
+	Namespace() NamespaceResolver
 	Query() QueryResolver
 	Session() SessionResolver
 	User() UserResolver
@@ -53,12 +55,12 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	DomainName struct {
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		IsActive  func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		Value     func(childComplexity int) int
-		Verified  func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
+		ID         func(childComplexity int) int
+		IsActive   func(childComplexity int) int
+		IsVerified func(childComplexity int) int
+		UpdatedAt  func(childComplexity int) int
+		Value      func(childComplexity int) int
 	}
 
 	DomainNames struct {
@@ -95,20 +97,30 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		Ping          func(childComplexity int) int
-		SessionCreate func(childComplexity int, input *dto.LoginInput) int
-		SessionDelete func(childComplexity int, input *dto.LoginInput) int
-		UserCreate    func(childComplexity int, input *dto1.UserCreateInput) int
+		NamespaceCreate func(childComplexity int, input dto.NamespaceCreateInput) int
+		Ping            func(childComplexity int) int
+		SessionCreate   func(childComplexity int, input *dto1.LoginInput) int
+		SessionDelete   func(childComplexity int, input *dto1.LoginInput) int
+		UserCreate      func(childComplexity int, input *dto2.UserCreateInput) int
 	}
 
 	Namespace struct {
+		CreatedAt   func(childComplexity int) int
 		DomainNames func(childComplexity int) int
 		ID          func(childComplexity int) int
+		IsActive    func(childComplexity int) int
 		Title       func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
+		Version     func(childComplexity int) int
+	}
+
+	NamespaceCreateOutcome struct {
+		Errors    func(childComplexity int) int
+		Namespace func(childComplexity int) int
 	}
 
 	Query struct {
-		LoadSession func(childComplexity int, input *dto.ValidationInput) int
+		LoadSession func(childComplexity int, input *dto1.ValidationInput) int
 		Ping        func(childComplexity int) int
 		User        func(childComplexity int, id string) int
 	}
@@ -176,25 +188,29 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	Ping(ctx context.Context) (string, error)
-	UserCreate(ctx context.Context, input *dto1.UserCreateInput) (*dto1.UserCreateOutcome, error)
-	SessionCreate(ctx context.Context, input *dto.LoginInput) (*dto.LoginOutcome, error)
-	SessionDelete(ctx context.Context, input *dto.LoginInput) (*dto.LogoutOutcome, error)
+	NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error)
+	UserCreate(ctx context.Context, input *dto2.UserCreateInput) (*dto2.UserCreateOutcome, error)
+	SessionCreate(ctx context.Context, input *dto1.LoginInput) (*dto1.LoginOutcome, error)
+	SessionDelete(ctx context.Context, input *dto1.LoginInput) (*dto1.LogoutOutcome, error)
+}
+type NamespaceResolver interface {
+	DomainNames(ctx context.Context, obj *model.Namespace) (*model.DomainNames, error)
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
-	User(ctx context.Context, id string) (*model.User, error)
-	LoadSession(ctx context.Context, input *dto.ValidationInput) (*dto.ValidationOutcome, error)
+	User(ctx context.Context, id string) (*model1.User, error)
+	LoadSession(ctx context.Context, input *dto1.ValidationInput) (*dto1.ValidationOutcome, error)
 }
 type SessionResolver interface {
-	User(ctx context.Context, obj *model1.Session) (*model.User, error)
-	Namespace(ctx context.Context, obj *model1.Session) (*model2.Namespace, error)
+	User(ctx context.Context, obj *model2.Session) (*model1.User, error)
+	Namespace(ctx context.Context, obj *model2.Session) (*model.Namespace, error)
 }
 type UserResolver interface {
-	Name(ctx context.Context, obj *model.User) (*model.UserName, error)
-	Emails(ctx context.Context, obj *model.User) (*model.UserEmails, error)
+	Name(ctx context.Context, obj *model1.User) (*model1.UserName, error)
+	Emails(ctx context.Context, obj *model1.User) (*model1.UserEmails, error)
 }
 type UserEmailResolver interface {
-	Verified(ctx context.Context, obj *model.UserEmail) (bool, error)
+	Verified(ctx context.Context, obj *model1.UserEmail) (bool, error)
 }
 
 type executableSchema struct {
@@ -233,6 +249,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DomainName.IsActive(childComplexity), true
 
+	case "DomainName.isVerified":
+		if e.complexity.DomainName.IsVerified == nil {
+			break
+		}
+
+		return e.complexity.DomainName.IsVerified(childComplexity), true
+
 	case "DomainName.updatedAt":
 		if e.complexity.DomainName.UpdatedAt == nil {
 			break
@@ -246,13 +269,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DomainName.Value(childComplexity), true
-
-	case "DomainName.verified":
-		if e.complexity.DomainName.Verified == nil {
-			break
-		}
-
-		return e.complexity.DomainName.Verified(childComplexity), true
 
 	case "DomainNames.primary":
 		if e.complexity.DomainNames.Primary == nil {
@@ -359,6 +375,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Membership.UserID(childComplexity), true
 
+	case "Mutation.namespaceCreate":
+		if e.complexity.Mutation.NamespaceCreate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_namespaceCreate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NamespaceCreate(childComplexity, args["input"].(dto.NamespaceCreateInput)), true
+
 	case "Mutation.ping":
 		if e.complexity.Mutation.Ping == nil {
 			break
@@ -376,7 +404,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SessionCreate(childComplexity, args["input"].(*dto.LoginInput)), true
+		return e.complexity.Mutation.SessionCreate(childComplexity, args["input"].(*dto1.LoginInput)), true
 
 	case "Mutation.sessionDelete":
 		if e.complexity.Mutation.SessionDelete == nil {
@@ -388,7 +416,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SessionDelete(childComplexity, args["input"].(*dto.LoginInput)), true
+		return e.complexity.Mutation.SessionDelete(childComplexity, args["input"].(*dto1.LoginInput)), true
 
 	case "Mutation.userCreate":
 		if e.complexity.Mutation.UserCreate == nil {
@@ -400,7 +428,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UserCreate(childComplexity, args["input"].(*dto1.UserCreateInput)), true
+		return e.complexity.Mutation.UserCreate(childComplexity, args["input"].(*dto2.UserCreateInput)), true
+
+	case "Namespace.createdAt":
+		if e.complexity.Namespace.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Namespace.CreatedAt(childComplexity), true
 
 	case "Namespace.domainNames":
 		if e.complexity.Namespace.DomainNames == nil {
@@ -416,12 +451,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Namespace.ID(childComplexity), true
 
+	case "Namespace.isActive":
+		if e.complexity.Namespace.IsActive == nil {
+			break
+		}
+
+		return e.complexity.Namespace.IsActive(childComplexity), true
+
 	case "Namespace.title":
 		if e.complexity.Namespace.Title == nil {
 			break
 		}
 
 		return e.complexity.Namespace.Title(childComplexity), true
+
+	case "Namespace.updatedAt":
+		if e.complexity.Namespace.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Namespace.UpdatedAt(childComplexity), true
+
+	case "Namespace.version":
+		if e.complexity.Namespace.Version == nil {
+			break
+		}
+
+		return e.complexity.Namespace.Version(childComplexity), true
+
+	case "NamespaceCreateOutcome.errors":
+		if e.complexity.NamespaceCreateOutcome.Errors == nil {
+			break
+		}
+
+		return e.complexity.NamespaceCreateOutcome.Errors(childComplexity), true
+
+	case "NamespaceCreateOutcome.namespace":
+		if e.complexity.NamespaceCreateOutcome.Namespace == nil {
+			break
+		}
+
+		return e.complexity.NamespaceCreateOutcome.Namespace(childComplexity), true
 
 	case "Query.loadSession":
 		if e.complexity.Query.LoadSession == nil {
@@ -433,7 +503,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.LoadSession(childComplexity, args["input"].(*dto.ValidationInput)), true
+		return e.complexity.Query.LoadSession(childComplexity, args["input"].(*dto1.ValidationInput)), true
 
 	case "Query.ping":
 		if e.complexity.Query.Ping == nil {
@@ -810,9 +880,49 @@ enum AccessScope {
     Authenticated
 }
 `, BuiltIn: false},
+	&ast.Source{Name: "pkg/namespace/api-mutation.graphql", Input: `extend type Mutation {
+    namespaceCreate(input: NamespaceCreateInput!): NamespaceCreateOutcome
+    # TODO: create membership
+}
+
+input NamespaceCreateInput {
+    object: NamespaceCreateInputObject!
+    context: NamespaceCreateContext!
+}
+
+input NamespaceCreateInputObject {
+    title: String
+    isActive: Boolean!
+    domainNames: DomainNamesInput
+}
+
+input NamespaceCreateContext {
+    userId: ID!
+}
+
+input DomainNamesInput {
+    primary: DomainNameInput!
+    secondary: [DomainNameInput]
+}
+
+input DomainNameInput {
+    verified: Boolean
+    value: String
+    isActive: Boolean
+}
+
+type NamespaceCreateOutcome {
+    errors: [Error]
+    namespace: Namespace
+}
+`, BuiltIn: false},
 	&ast.Source{Name: "pkg/namespace/api.graphql", Input: `type Namespace {
     id: ID!
+    version: ID!
     title: String
+    createdAt: Time!
+    updatedAt: Time!
+    isActive: Boolean!
     domainNames: DomainNames
 }
 
@@ -823,11 +933,11 @@ type DomainNames {
 
 type DomainName {
     id: ID!
-    verified: Boolean!
     value: String!
     createdAt: Time!
     updatedAt: Time!
     isActive: Boolean!
+    isVerified: Boolean!
 }
 
 type Membership {
@@ -835,8 +945,8 @@ type Membership {
     namespaceId: ID!
     userId: ID!
     isActive: Boolean!
-    createdAt: Time
-    updatedAt: Time
+    createdAt: Time!
+    updatedAt: Time!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/user/api-entity.graphql", Input: `type User {
@@ -1013,12 +1123,26 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_namespaceCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 dto.NamespaceCreateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNNamespaceCreateInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_sessionCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto.LoginInput
+	var arg0 *dto1.LoginInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginInput(ctx, tmp)
+		arg0, err = ec.unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1030,9 +1154,9 @@ func (ec *executionContext) field_Mutation_sessionCreate_args(ctx context.Contex
 func (ec *executionContext) field_Mutation_sessionDelete_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto.LoginInput
+	var arg0 *dto1.LoginInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginInput(ctx, tmp)
+		arg0, err = ec.unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1044,9 +1168,9 @@ func (ec *executionContext) field_Mutation_sessionDelete_args(ctx context.Contex
 func (ec *executionContext) field_Mutation_userCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto1.UserCreateInput
+	var arg0 *dto2.UserCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserCreateInput(ctx, tmp)
+		arg0, err = ec.unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1072,9 +1196,9 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_loadSession_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto.ValidationInput
+	var arg0 *dto1.ValidationInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOValidationInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐValidationInput(ctx, tmp)
+		arg0, err = ec.unmarshalOValidationInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1133,7 +1257,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _DomainName_id(ctx context.Context, field graphql.CollectedField, obj *model2.DomainName) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainName_id(ctx context.Context, field graphql.CollectedField, obj *model.DomainName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1167,41 +1291,7 @@ func (ec *executionContext) _DomainName_id(ctx context.Context, field graphql.Co
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainName_verified(ctx context.Context, field graphql.CollectedField, obj *model2.DomainName) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "DomainName",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Verified, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _DomainName_value(ctx context.Context, field graphql.CollectedField, obj *model2.DomainName) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainName_value(ctx context.Context, field graphql.CollectedField, obj *model.DomainName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1235,7 +1325,7 @@ func (ec *executionContext) _DomainName_value(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainName_createdAt(ctx context.Context, field graphql.CollectedField, obj *model2.DomainName) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainName_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.DomainName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1269,7 +1359,7 @@ func (ec *executionContext) _DomainName_createdAt(ctx context.Context, field gra
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainName_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model2.DomainName) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainName_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.DomainName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1303,7 +1393,7 @@ func (ec *executionContext) _DomainName_updatedAt(ctx context.Context, field gra
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainName_isActive(ctx context.Context, field graphql.CollectedField, obj *model2.DomainName) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainName_isActive(ctx context.Context, field graphql.CollectedField, obj *model.DomainName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1337,7 +1427,41 @@ func (ec *executionContext) _DomainName_isActive(ctx context.Context, field grap
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainNames_primary(ctx context.Context, field graphql.CollectedField, obj *model2.DomainNames) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainName_isVerified(ctx context.Context, field graphql.CollectedField, obj *model.DomainName) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "DomainName",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsVerified, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DomainNames_primary(ctx context.Context, field graphql.CollectedField, obj *model.DomainNames) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1366,12 +1490,12 @@ func (ec *executionContext) _DomainNames_primary(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model2.DomainName)
+	res := resTmp.(*model.DomainName)
 	fc.Result = res
 	return ec.marshalNDomainName2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainName(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainNames_secondary(ctx context.Context, field graphql.CollectedField, obj *model2.DomainNames) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainNames_secondary(ctx context.Context, field graphql.CollectedField, obj *model.DomainNames) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1397,7 +1521,7 @@ func (ec *executionContext) _DomainNames_secondary(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model2.DomainName)
+	res := resTmp.([]*model.DomainName)
 	fc.Result = res
 	return ec.marshalODomainName2ᚕᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainName(ctx, field.Selections, res)
 }
@@ -1464,7 +1588,7 @@ func (ec *executionContext) _Error_fields(ctx context.Context, field graphql.Col
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LoginOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.LoginOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoginOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.LoginOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1495,7 +1619,7 @@ func (ec *executionContext) _LoginOutcome_errors(ctx context.Context, field grap
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LoginOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto.LoginOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _LoginOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto1.LoginOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1521,12 +1645,12 @@ func (ec *executionContext) _LoginOutcome_session(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model1.Session)
+	res := resTmp.(*model2.Session)
 	fc.Result = res
 	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LogoutInput_hashedToken(ctx context.Context, field graphql.CollectedField, obj *dto.LogoutInput) (ret graphql.Marshaler) {
+func (ec *executionContext) _LogoutInput_hashedToken(ctx context.Context, field graphql.CollectedField, obj *dto1.LogoutInput) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1560,7 +1684,7 @@ func (ec *executionContext) _LogoutInput_hashedToken(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LogoutOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.LogoutOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _LogoutOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.LogoutOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1591,7 +1715,7 @@ func (ec *executionContext) _LogoutOutcome_errors(ctx context.Context, field gra
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LogoutOutcome_result(ctx context.Context, field graphql.CollectedField, obj *dto.LogoutOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _LogoutOutcome_result(ctx context.Context, field graphql.CollectedField, obj *dto1.LogoutOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1622,7 +1746,7 @@ func (ec *executionContext) _LogoutOutcome_result(ctx context.Context, field gra
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_id(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_id(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1656,7 +1780,7 @@ func (ec *executionContext) _Membership_id(ctx context.Context, field graphql.Co
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_namespaceId(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_namespaceId(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1690,7 +1814,7 @@ func (ec *executionContext) _Membership_namespaceId(ctx context.Context, field g
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_userId(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_userId(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1724,7 +1848,7 @@ func (ec *executionContext) _Membership_userId(ctx context.Context, field graphq
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_isActive(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_isActive(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1758,7 +1882,7 @@ func (ec *executionContext) _Membership_isActive(ctx context.Context, field grap
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_createdAt(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1782,14 +1906,17 @@ func (ec *executionContext) _Membership_createdAt(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1813,11 +1940,14 @@ func (ec *executionContext) _Membership_updatedAt(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_ping(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1854,6 +1984,44 @@ func (ec *executionContext) _Mutation_ping(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_namespaceCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_namespaceCreate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NamespaceCreate(rctx, args["input"].(dto.NamespaceCreateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*dto.NamespaceCreateOutcome)
+	fc.Result = res
+	return ec.marshalONamespaceCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1878,7 +2046,7 @@ func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UserCreate(rctx, args["input"].(*dto1.UserCreateInput))
+		return ec.resolvers.Mutation().UserCreate(rctx, args["input"].(*dto2.UserCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1887,9 +2055,9 @@ func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*dto1.UserCreateOutcome)
+	res := resTmp.(*dto2.UserCreateOutcome)
 	fc.Result = res
-	return ec.marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserCreateOutcome(ctx, field.Selections, res)
+	return ec.marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1916,7 +2084,7 @@ func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SessionCreate(rctx, args["input"].(*dto.LoginInput))
+		return ec.resolvers.Mutation().SessionCreate(rctx, args["input"].(*dto1.LoginInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1928,9 +2096,9 @@ func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.LoginOutcome)
+	res := resTmp.(*dto1.LoginOutcome)
 	fc.Result = res
-	return ec.marshalNLoginOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginOutcome(ctx, field.Selections, res)
+	return ec.marshalNLoginOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_sessionDelete(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1957,7 +2125,7 @@ func (ec *executionContext) _Mutation_sessionDelete(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SessionDelete(rctx, args["input"].(*dto.LoginInput))
+		return ec.resolvers.Mutation().SessionDelete(rctx, args["input"].(*dto1.LoginInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1969,12 +2137,12 @@ func (ec *executionContext) _Mutation_sessionDelete(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.LogoutOutcome)
+	res := resTmp.(*dto1.LogoutOutcome)
 	fc.Result = res
-	return ec.marshalNLogoutOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLogoutOutcome(ctx, field.Selections, res)
+	return ec.marshalNLogoutOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLogoutOutcome(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Namespace_id(ctx context.Context, field graphql.CollectedField, obj *model2.Namespace) (ret graphql.Marshaler) {
+func (ec *executionContext) _Namespace_id(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2008,7 +2176,41 @@ func (ec *executionContext) _Namespace_id(ctx context.Context, field graphql.Col
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Namespace_title(ctx context.Context, field graphql.CollectedField, obj *model2.Namespace) (ret graphql.Marshaler) {
+func (ec *executionContext) _Namespace_version(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Namespace",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Namespace_title(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2039,7 +2241,7 @@ func (ec *executionContext) _Namespace_title(ctx context.Context, field graphql.
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Namespace_domainNames(ctx context.Context, field graphql.CollectedField, obj *model2.Namespace) (ret graphql.Marshaler) {
+func (ec *executionContext) _Namespace_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2056,7 +2258,109 @@ func (ec *executionContext) _Namespace_domainNames(ctx context.Context, field gr
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DomainNames, nil
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Namespace_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Namespace",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Namespace_isActive(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Namespace",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsActive, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Namespace_domainNames(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Namespace",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Namespace().DomainNames(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2065,9 +2369,71 @@ func (ec *executionContext) _Namespace_domainNames(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model2.DomainNames)
+	res := resTmp.(*model.DomainNames)
 	fc.Result = res
 	return ec.marshalODomainNames2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainNames(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NamespaceCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.NamespaceCreateOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NamespaceCreateOutcome",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*util.Error)
+	fc.Result = res
+	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐError(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NamespaceCreateOutcome_namespace(ctx context.Context, field graphql.CollectedField, obj *dto.NamespaceCreateOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NamespaceCreateOutcome",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Namespace)
+	fc.Result = res
+	return ec.marshalONamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_ping(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2137,7 +2503,7 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*model1.User)
 	fc.Result = res
 	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
@@ -2166,7 +2532,7 @@ func (ec *executionContext) _Query_loadSession(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().LoadSession(rctx, args["input"].(*dto.ValidationInput))
+		return ec.resolvers.Query().LoadSession(rctx, args["input"].(*dto1.ValidationInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2178,9 +2544,9 @@ func (ec *executionContext) _Query_loadSession(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.ValidationOutcome)
+	res := resTmp.(*dto1.ValidationOutcome)
 	fc.Result = res
-	return ec.marshalNValidationOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐValidationOutcome(ctx, field.Selections, res)
+	return ec.marshalNValidationOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2252,7 +2618,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_id(ctx context.Context, field graphql.CollectedField, obj *model1.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_id(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2286,7 +2652,7 @@ func (ec *executionContext) _Session_id(ctx context.Context, field graphql.Colle
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_hashedToken(ctx context.Context, field graphql.CollectedField, obj *model1.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_hashedToken(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2320,7 +2686,7 @@ func (ec *executionContext) _Session_hashedToken(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_user(ctx context.Context, field graphql.CollectedField, obj *model1.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_user(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2346,12 +2712,12 @@ func (ec *executionContext) _Session_user(ctx context.Context, field graphql.Col
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*model1.User)
 	fc.Result = res
 	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_namespace(ctx context.Context, field graphql.CollectedField, obj *model1.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_namespace(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2380,12 +2746,12 @@ func (ec *executionContext) _Session_namespace(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model2.Namespace)
+	res := resTmp.(*model.Namespace)
 	fc.Result = res
 	return ec.marshalNNamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_scopes(ctx context.Context, field graphql.CollectedField, obj *model1.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_scopes(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2411,12 +2777,12 @@ func (ec *executionContext) _Session_scopes(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model1.AccessScope)
+	res := resTmp.([]*model2.AccessScope)
 	fc.Result = res
 	return ec.marshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_context(ctx context.Context, field graphql.CollectedField, obj *model1.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_context(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2442,12 +2808,12 @@ func (ec *executionContext) _Session_context(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model1.SessionContext)
+	res := resTmp.(*model2.SessionContext)
 	fc.Result = res
 	return ec.marshalOSessionContext2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSessionContext(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_isActive(ctx context.Context, field graphql.CollectedField, obj *model1.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_isActive(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2481,7 +2847,7 @@ func (ec *executionContext) _Session_isActive(ctx context.Context, field graphql
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_createdAt(ctx context.Context, field graphql.CollectedField, obj *model1.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_createdAt(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2515,7 +2881,7 @@ func (ec *executionContext) _Session_createdAt(ctx context.Context, field graphq
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model1.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2549,7 +2915,7 @@ func (ec *executionContext) _Session_updatedAt(ctx context.Context, field graphq
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_expiredAt(ctx context.Context, field graphql.CollectedField, obj *model1.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_expiredAt(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2583,7 +2949,7 @@ func (ec *executionContext) _Session_expiredAt(ctx context.Context, field graphq
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionContext_ipAddress(ctx context.Context, field graphql.CollectedField, obj *model1.SessionContext) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionContext_ipAddress(ctx context.Context, field graphql.CollectedField, obj *model2.SessionContext) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2614,7 +2980,7 @@ func (ec *executionContext) _SessionContext_ipAddress(ctx context.Context, field
 	return ec.marshalOIP2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionContext_country(ctx context.Context, field graphql.CollectedField, obj *model1.SessionContext) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionContext_country(ctx context.Context, field graphql.CollectedField, obj *model2.SessionContext) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2645,7 +3011,7 @@ func (ec *executionContext) _SessionContext_country(ctx context.Context, field g
 	return ec.marshalOCountryCode2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionContext_deviceType(ctx context.Context, field graphql.CollectedField, obj *model1.SessionContext) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionContext_deviceType(ctx context.Context, field graphql.CollectedField, obj *model2.SessionContext) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2671,12 +3037,12 @@ func (ec *executionContext) _SessionContext_deviceType(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model1.DeviceType)
+	res := resTmp.(*model2.DeviceType)
 	fc.Result = res
 	return ec.marshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionContext_deviceName(ctx context.Context, field graphql.CollectedField, obj *model1.SessionContext) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionContext_deviceName(ctx context.Context, field graphql.CollectedField, obj *model2.SessionContext) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2707,7 +3073,7 @@ func (ec *executionContext) _SessionContext_deviceName(ctx context.Context, fiel
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model1.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2741,7 +3107,7 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *model1.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2770,12 +3136,12 @@ func (ec *executionContext) _User_name(ctx context.Context, field graphql.Collec
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.UserName)
+	res := resTmp.(*model1.UserName)
 	fc.Result = res
 	return ec.marshalNUserName2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserName(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_emails(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_emails(ctx context.Context, field graphql.CollectedField, obj *model1.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2801,12 +3167,12 @@ func (ec *executionContext) _User_emails(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.UserEmails)
+	res := resTmp.(*model1.UserEmails)
 	fc.Result = res
 	return ec.marshalOUserEmails2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmails(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_avatarUri(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_avatarUri(ctx context.Context, field graphql.CollectedField, obj *model1.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2837,7 +3203,7 @@ func (ec *executionContext) _User_avatarUri(ctx context.Context, field graphql.C
 	return ec.marshalOUri2ᚖbeanᚋpkgᚋutilᚐUri(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_isActive(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_isActive(ctx context.Context, field graphql.CollectedField, obj *model1.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2871,7 +3237,7 @@ func (ec *executionContext) _User_isActive(ctx context.Context, field graphql.Co
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.CollectedField, obj *model1.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2905,7 +3271,7 @@ func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.C
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model1.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2939,7 +3305,7 @@ func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.C
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserCreateOutcome_user(ctx context.Context, field graphql.CollectedField, obj *dto1.UserCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserCreateOutcome_user(ctx context.Context, field graphql.CollectedField, obj *dto2.UserCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2965,12 +3331,12 @@ func (ec *executionContext) _UserCreateOutcome_user(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*model1.User)
 	fc.Result = res
 	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.UserCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto2.UserCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3001,7 +3367,7 @@ func (ec *executionContext) _UserCreateOutcome_errors(ctx context.Context, field
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐError(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmail_id(ctx context.Context, field graphql.CollectedField, obj *model.UserEmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmail_id(ctx context.Context, field graphql.CollectedField, obj *model1.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3035,7 +3401,7 @@ func (ec *executionContext) _UserEmail_id(ctx context.Context, field graphql.Col
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmail_verified(ctx context.Context, field graphql.CollectedField, obj *model.UserEmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmail_verified(ctx context.Context, field graphql.CollectedField, obj *model1.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3069,7 +3435,7 @@ func (ec *executionContext) _UserEmail_verified(ctx context.Context, field graph
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmail_value(ctx context.Context, field graphql.CollectedField, obj *model.UserEmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmail_value(ctx context.Context, field graphql.CollectedField, obj *model1.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3103,7 +3469,7 @@ func (ec *executionContext) _UserEmail_value(ctx context.Context, field graphql.
 	return ec.marshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmail_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.UserEmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmail_createdAt(ctx context.Context, field graphql.CollectedField, obj *model1.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3137,7 +3503,7 @@ func (ec *executionContext) _UserEmail_createdAt(ctx context.Context, field grap
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmail_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.UserEmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmail_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model1.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3171,7 +3537,7 @@ func (ec *executionContext) _UserEmail_updatedAt(ctx context.Context, field grap
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmail_isActive(ctx context.Context, field graphql.CollectedField, obj *model.UserEmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmail_isActive(ctx context.Context, field graphql.CollectedField, obj *model1.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3205,7 +3571,7 @@ func (ec *executionContext) _UserEmail_isActive(ctx context.Context, field graph
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmails_primary(ctx context.Context, field graphql.CollectedField, obj *model.UserEmails) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmails_primary(ctx context.Context, field graphql.CollectedField, obj *model1.UserEmails) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3231,12 +3597,12 @@ func (ec *executionContext) _UserEmails_primary(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.UserEmail)
+	res := resTmp.(*model1.UserEmail)
 	fc.Result = res
 	return ec.marshalOUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmails_secondary(ctx context.Context, field graphql.CollectedField, obj *model.UserEmails) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmails_secondary(ctx context.Context, field graphql.CollectedField, obj *model1.UserEmails) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3262,12 +3628,12 @@ func (ec *executionContext) _UserEmails_secondary(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.UserEmail)
+	res := resTmp.([]*model1.UserEmail)
 	fc.Result = res
 	return ec.marshalOUserEmail2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserName_firstName(ctx context.Context, field graphql.CollectedField, obj *model.UserName) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserName_firstName(ctx context.Context, field graphql.CollectedField, obj *model1.UserName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3298,7 +3664,7 @@ func (ec *executionContext) _UserName_firstName(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserName_lastName(ctx context.Context, field graphql.CollectedField, obj *model.UserName) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserName_lastName(ctx context.Context, field graphql.CollectedField, obj *model1.UserName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3329,7 +3695,7 @@ func (ec *executionContext) _UserName_lastName(ctx context.Context, field graphq
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserName_preferredName(ctx context.Context, field graphql.CollectedField, obj *model.UserName) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserName_preferredName(ctx context.Context, field graphql.CollectedField, obj *model1.UserName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3360,7 +3726,7 @@ func (ec *executionContext) _UserName_preferredName(ctx context.Context, field g
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ValidationOutcome_status(ctx context.Context, field graphql.CollectedField, obj *dto.ValidationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _ValidationOutcome_status(ctx context.Context, field graphql.CollectedField, obj *dto1.ValidationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3394,7 +3760,7 @@ func (ec *executionContext) _ValidationOutcome_status(ctx context.Context, field
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ValidationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.ValidationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _ValidationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.ValidationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4480,8 +4846,62 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputLoginContextInput(ctx context.Context, obj interface{}) (dto.LoginContextInput, error) {
-	var it dto.LoginContextInput
+func (ec *executionContext) unmarshalInputDomainNameInput(ctx context.Context, obj interface{}) (dto.DomainNameInput, error) {
+	var it dto.DomainNameInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "verified":
+			var err error
+			it.Verified, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "value":
+			var err error
+			it.Value, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isActive":
+			var err error
+			it.IsActive, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputDomainNamesInput(ctx context.Context, obj interface{}) (dto.DomainNamesInput, error) {
+	var it dto.DomainNamesInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "primary":
+			var err error
+			it.Primary, err = ec.unmarshalNDomainNameInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "secondary":
+			var err error
+			it.Secondary, err = ec.unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLoginContextInput(ctx context.Context, obj interface{}) (dto1.LoginContextInput, error) {
+	var it dto1.LoginContextInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -4516,8 +4936,8 @@ func (ec *executionContext) unmarshalInputLoginContextInput(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj interface{}) (dto.LoginInput, error) {
-	var it dto.LoginInput
+func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj interface{}) (dto1.LoginInput, error) {
+	var it dto1.LoginInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -4542,7 +4962,7 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj in
 			}
 		case "context":
 			var err error
-			it.Context, err = ec.unmarshalOLoginContextInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginContextInput(ctx, v)
+			it.Context, err = ec.unmarshalOLoginContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginContextInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4552,27 +4972,99 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj in
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, obj interface{}) (dto1.UserCreateInput, error) {
-	var it dto1.UserCreateInput
+func (ec *executionContext) unmarshalInputNamespaceCreateContext(ctx context.Context, obj interface{}) (dto.NamespaceCreateContext, error) {
+	var it dto.NamespaceCreateContext
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "userId":
+			var err error
+			it.UserID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputNamespaceCreateInput(ctx context.Context, obj interface{}) (dto.NamespaceCreateInput, error) {
+	var it dto.NamespaceCreateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "object":
+			var err error
+			it.Object, err = ec.unmarshalNNamespaceCreateInputObject2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "context":
+			var err error
+			it.Context, err = ec.unmarshalNNamespaceCreateContext2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputNamespaceCreateInputObject(ctx context.Context, obj interface{}) (dto.NamespaceCreateInputObject, error) {
+	var it dto.NamespaceCreateInputObject
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "title":
+			var err error
+			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isActive":
+			var err error
+			it.IsActive, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "domainNames":
+			var err error
+			it.DomainNames, err = ec.unmarshalODomainNamesInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNamesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, obj interface{}) (dto2.UserCreateInput, error) {
+	var it dto2.UserCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
 		case "name":
 			var err error
-			it.Name, err = ec.unmarshalNUserNameInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserNameInput(ctx, v)
+			it.Name, err = ec.unmarshalNUserNameInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserNameInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "emails":
 			var err error
-			it.Emails, err = ec.unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailsInput(ctx, v)
+			it.Emails, err = ec.unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailsInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "password":
 			var err error
-			it.Password, err = ec.unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserPasswordInput(ctx, v)
+			it.Password, err = ec.unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4594,8 +5086,8 @@ func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserEmailInput(ctx context.Context, obj interface{}) (dto1.UserEmailInput, error) {
-	var it dto1.UserEmailInput
+func (ec *executionContext) unmarshalInputUserEmailInput(ctx context.Context, obj interface{}) (dto2.UserEmailInput, error) {
+	var it dto2.UserEmailInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -4624,21 +5116,21 @@ func (ec *executionContext) unmarshalInputUserEmailInput(ctx context.Context, ob
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserEmailsInput(ctx context.Context, obj interface{}) (dto1.UserEmailsInput, error) {
-	var it dto1.UserEmailsInput
+func (ec *executionContext) unmarshalInputUserEmailsInput(ctx context.Context, obj interface{}) (dto2.UserEmailsInput, error) {
+	var it dto2.UserEmailsInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
 		case "primary":
 			var err error
-			it.Primary, err = ec.unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, v)
+			it.Primary, err = ec.unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "secondary":
 			var err error
-			it.Secondary, err = ec.unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, v)
+			it.Secondary, err = ec.unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4648,8 +5140,8 @@ func (ec *executionContext) unmarshalInputUserEmailsInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserNameInput(ctx context.Context, obj interface{}) (dto1.UserNameInput, error) {
-	var it dto1.UserNameInput
+func (ec *executionContext) unmarshalInputUserNameInput(ctx context.Context, obj interface{}) (dto2.UserNameInput, error) {
+	var it dto2.UserNameInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -4678,8 +5170,8 @@ func (ec *executionContext) unmarshalInputUserNameInput(ctx context.Context, obj
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserPasswordInput(ctx context.Context, obj interface{}) (dto1.UserPasswordInput, error) {
-	var it dto1.UserPasswordInput
+func (ec *executionContext) unmarshalInputUserPasswordInput(ctx context.Context, obj interface{}) (dto2.UserPasswordInput, error) {
+	var it dto2.UserPasswordInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -4702,8 +5194,8 @@ func (ec *executionContext) unmarshalInputUserPasswordInput(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputValidationInput(ctx context.Context, obj interface{}) (dto.ValidationInput, error) {
-	var it dto.ValidationInput
+func (ec *executionContext) unmarshalInputValidationInput(ctx context.Context, obj interface{}) (dto1.ValidationInput, error) {
+	var it dto1.ValidationInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -4730,7 +5222,7 @@ func (ec *executionContext) unmarshalInputValidationInput(ctx context.Context, o
 
 var domainNameImplementors = []string{"DomainName"}
 
-func (ec *executionContext) _DomainName(ctx context.Context, sel ast.SelectionSet, obj *model2.DomainName) graphql.Marshaler {
+func (ec *executionContext) _DomainName(ctx context.Context, sel ast.SelectionSet, obj *model.DomainName) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, domainNameImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4741,11 +5233,6 @@ func (ec *executionContext) _DomainName(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = graphql.MarshalString("DomainName")
 		case "id":
 			out.Values[i] = ec._DomainName_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "verified":
-			out.Values[i] = ec._DomainName_verified(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4769,6 +5256,11 @@ func (ec *executionContext) _DomainName(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "isVerified":
+			out.Values[i] = ec._DomainName_isVerified(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4782,7 +5274,7 @@ func (ec *executionContext) _DomainName(ctx context.Context, sel ast.SelectionSe
 
 var domainNamesImplementors = []string{"DomainNames"}
 
-func (ec *executionContext) _DomainNames(ctx context.Context, sel ast.SelectionSet, obj *model2.DomainNames) graphql.Marshaler {
+func (ec *executionContext) _DomainNames(ctx context.Context, sel ast.SelectionSet, obj *model.DomainNames) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, domainNamesImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4837,7 +5329,7 @@ func (ec *executionContext) _Error(ctx context.Context, sel ast.SelectionSet, ob
 
 var loginOutcomeImplementors = []string{"LoginOutcome"}
 
-func (ec *executionContext) _LoginOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.LoginOutcome) graphql.Marshaler {
+func (ec *executionContext) _LoginOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.LoginOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, loginOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4863,7 +5355,7 @@ func (ec *executionContext) _LoginOutcome(ctx context.Context, sel ast.Selection
 
 var logoutInputImplementors = []string{"LogoutInput"}
 
-func (ec *executionContext) _LogoutInput(ctx context.Context, sel ast.SelectionSet, obj *dto.LogoutInput) graphql.Marshaler {
+func (ec *executionContext) _LogoutInput(ctx context.Context, sel ast.SelectionSet, obj *dto1.LogoutInput) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, logoutInputImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4890,7 +5382,7 @@ func (ec *executionContext) _LogoutInput(ctx context.Context, sel ast.SelectionS
 
 var logoutOutcomeImplementors = []string{"LogoutOutcome"}
 
-func (ec *executionContext) _LogoutOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.LogoutOutcome) graphql.Marshaler {
+func (ec *executionContext) _LogoutOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.LogoutOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, logoutOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4916,7 +5408,7 @@ func (ec *executionContext) _LogoutOutcome(ctx context.Context, sel ast.Selectio
 
 var membershipImplementors = []string{"Membership"}
 
-func (ec *executionContext) _Membership(ctx context.Context, sel ast.SelectionSet, obj *model2.Membership) graphql.Marshaler {
+func (ec *executionContext) _Membership(ctx context.Context, sel ast.SelectionSet, obj *model.Membership) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, membershipImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4947,8 +5439,14 @@ func (ec *executionContext) _Membership(ctx context.Context, sel ast.SelectionSe
 			}
 		case "createdAt":
 			out.Values[i] = ec._Membership_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "updatedAt":
 			out.Values[i] = ec._Membership_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4980,6 +5478,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "namespaceCreate":
+			out.Values[i] = ec._Mutation_namespaceCreate(ctx, field)
 		case "userCreate":
 			out.Values[i] = ec._Mutation_userCreate(ctx, field)
 		case "sessionCreate":
@@ -5005,7 +5505,7 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 var namespaceImplementors = []string{"Namespace"}
 
-func (ec *executionContext) _Namespace(ctx context.Context, sel ast.SelectionSet, obj *model2.Namespace) graphql.Marshaler {
+func (ec *executionContext) _Namespace(ctx context.Context, sel ast.SelectionSet, obj *model.Namespace) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, namespaceImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5017,12 +5517,67 @@ func (ec *executionContext) _Namespace(ctx context.Context, sel ast.SelectionSet
 		case "id":
 			out.Values[i] = ec._Namespace_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "version":
+			out.Values[i] = ec._Namespace_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "title":
 			out.Values[i] = ec._Namespace_title(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._Namespace_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Namespace_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "isActive":
+			out.Values[i] = ec._Namespace_isActive(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "domainNames":
-			out.Values[i] = ec._Namespace_domainNames(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Namespace_domainNames(ctx, field, obj)
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var namespaceCreateOutcomeImplementors = []string{"NamespaceCreateOutcome"}
+
+func (ec *executionContext) _NamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.NamespaceCreateOutcome) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, namespaceCreateOutcomeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NamespaceCreateOutcome")
+		case "errors":
+			out.Values[i] = ec._NamespaceCreateOutcome_errors(ctx, field, obj)
+		case "namespace":
+			out.Values[i] = ec._NamespaceCreateOutcome_namespace(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5105,7 +5660,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 
 var sessionImplementors = []string{"Session"}
 
-func (ec *executionContext) _Session(ctx context.Context, sel ast.SelectionSet, obj *model1.Session) graphql.Marshaler {
+func (ec *executionContext) _Session(ctx context.Context, sel ast.SelectionSet, obj *model2.Session) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, sessionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5186,7 +5741,7 @@ func (ec *executionContext) _Session(ctx context.Context, sel ast.SelectionSet, 
 
 var sessionContextImplementors = []string{"SessionContext"}
 
-func (ec *executionContext) _SessionContext(ctx context.Context, sel ast.SelectionSet, obj *model1.SessionContext) graphql.Marshaler {
+func (ec *executionContext) _SessionContext(ctx context.Context, sel ast.SelectionSet, obj *model2.SessionContext) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, sessionContextImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5216,7 +5771,7 @@ func (ec *executionContext) _SessionContext(ctx context.Context, sel ast.Selecti
 
 var userImplementors = []string{"User"}
 
-func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
+func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model1.User) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5285,7 +5840,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 
 var userCreateOutcomeImplementors = []string{"UserCreateOutcome"}
 
-func (ec *executionContext) _UserCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.UserCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) _UserCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto2.UserCreateOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userCreateOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5311,7 +5866,7 @@ func (ec *executionContext) _UserCreateOutcome(ctx context.Context, sel ast.Sele
 
 var userEmailImplementors = []string{"UserEmail"}
 
-func (ec *executionContext) _UserEmail(ctx context.Context, sel ast.SelectionSet, obj *model.UserEmail) graphql.Marshaler {
+func (ec *executionContext) _UserEmail(ctx context.Context, sel ast.SelectionSet, obj *model1.UserEmail) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userEmailImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5372,7 +5927,7 @@ func (ec *executionContext) _UserEmail(ctx context.Context, sel ast.SelectionSet
 
 var userEmailsImplementors = []string{"UserEmails"}
 
-func (ec *executionContext) _UserEmails(ctx context.Context, sel ast.SelectionSet, obj *model.UserEmails) graphql.Marshaler {
+func (ec *executionContext) _UserEmails(ctx context.Context, sel ast.SelectionSet, obj *model1.UserEmails) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userEmailsImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5398,7 +5953,7 @@ func (ec *executionContext) _UserEmails(ctx context.Context, sel ast.SelectionSe
 
 var userNameImplementors = []string{"UserName"}
 
-func (ec *executionContext) _UserName(ctx context.Context, sel ast.SelectionSet, obj *model.UserName) graphql.Marshaler {
+func (ec *executionContext) _UserName(ctx context.Context, sel ast.SelectionSet, obj *model1.UserName) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userNameImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5426,7 +5981,7 @@ func (ec *executionContext) _UserName(ctx context.Context, sel ast.SelectionSet,
 
 var validationOutcomeImplementors = []string{"ValidationOutcome"}
 
-func (ec *executionContext) _ValidationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.ValidationOutcome) graphql.Marshaler {
+func (ec *executionContext) _ValidationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.ValidationOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, validationOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5712,11 +6267,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNDomainName2beanᚋpkgᚋnamespaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v model2.DomainName) graphql.Marshaler {
+func (ec *executionContext) marshalNDomainName2beanᚋpkgᚋnamespaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v model.DomainName) graphql.Marshaler {
 	return ec._DomainName(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNDomainName2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v *model2.DomainName) graphql.Marshaler {
+func (ec *executionContext) marshalNDomainName2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v *model.DomainName) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5724,6 +6279,18 @@ func (ec *executionContext) marshalNDomainName2ᚖbeanᚋpkgᚋnamespaceᚋmodel
 		return graphql.Null
 	}
 	return ec._DomainName(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNDomainNameInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) (dto.DomainNameInput, error) {
+	return ec.unmarshalInputDomainNameInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNDomainNameInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) (*dto.DomainNameInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNDomainNameInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx context.Context, v interface{}) (util.EmailAddress, error) {
@@ -5763,11 +6330,11 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) marshalNLoginOutcome2beanᚋpkgᚋaccessᚋdtoᚐLoginOutcome(ctx context.Context, sel ast.SelectionSet, v dto.LoginOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNLoginOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.LoginOutcome) graphql.Marshaler {
 	return ec._LoginOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNLoginOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.LoginOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNLoginOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.LoginOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5777,11 +6344,11 @@ func (ec *executionContext) marshalNLoginOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐ
 	return ec._LoginOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNLogoutOutcome2beanᚋpkgᚋaccessᚋdtoᚐLogoutOutcome(ctx context.Context, sel ast.SelectionSet, v dto.LogoutOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNLogoutOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLogoutOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.LogoutOutcome) graphql.Marshaler {
 	return ec._LogoutOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNLogoutOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLogoutOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.LogoutOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNLogoutOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLogoutOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.LogoutOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5791,11 +6358,11 @@ func (ec *executionContext) marshalNLogoutOutcome2ᚖbeanᚋpkgᚋaccessᚋdto�
 	return ec._LogoutOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNNamespace2beanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx context.Context, sel ast.SelectionSet, v model2.Namespace) graphql.Marshaler {
+func (ec *executionContext) marshalNNamespace2beanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx context.Context, sel ast.SelectionSet, v model.Namespace) graphql.Marshaler {
 	return ec._Namespace(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNNamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx context.Context, sel ast.SelectionSet, v *model2.Namespace) graphql.Marshaler {
+func (ec *executionContext) marshalNNamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx context.Context, sel ast.SelectionSet, v *model.Namespace) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5803,6 +6370,34 @@ func (ec *executionContext) marshalNNamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodel�
 		return graphql.Null
 	}
 	return ec._Namespace(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNNamespaceCreateContext2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx context.Context, v interface{}) (dto.NamespaceCreateContext, error) {
+	return ec.unmarshalInputNamespaceCreateContext(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNNamespaceCreateContext2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx context.Context, v interface{}) (*dto.NamespaceCreateContext, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNNamespaceCreateContext2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalNNamespaceCreateInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInput(ctx context.Context, v interface{}) (dto.NamespaceCreateInput, error) {
+	return ec.unmarshalInputNamespaceCreateInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx context.Context, v interface{}) (dto.NamespaceCreateInputObject, error) {
+	return ec.unmarshalInputNamespaceCreateInputObject(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNNamespaceCreateInputObject2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx context.Context, v interface{}) (*dto.NamespaceCreateInputObject, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -5833,23 +6428,23 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (dto1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (dto2.UserEmailInput, error) {
 	return ec.unmarshalInputUserEmailInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto2.UserEmailInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, v)
+	res, err := ec.unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalNUserName2beanᚋpkgᚋuserᚋmodelᚐUserName(ctx context.Context, sel ast.SelectionSet, v model.UserName) graphql.Marshaler {
+func (ec *executionContext) marshalNUserName2beanᚋpkgᚋuserᚋmodelᚐUserName(ctx context.Context, sel ast.SelectionSet, v model1.UserName) graphql.Marshaler {
 	return ec._UserName(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNUserName2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserName(ctx context.Context, sel ast.SelectionSet, v *model.UserName) graphql.Marshaler {
+func (ec *executionContext) marshalNUserName2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserName(ctx context.Context, sel ast.SelectionSet, v *model1.UserName) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5859,35 +6454,35 @@ func (ec *executionContext) marshalNUserName2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser
 	return ec._UserName(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNUserNameInput2beanᚋpkgᚋuserᚋdtoᚐUserNameInput(ctx context.Context, v interface{}) (dto1.UserNameInput, error) {
+func (ec *executionContext) unmarshalNUserNameInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserNameInput(ctx context.Context, v interface{}) (dto2.UserNameInput, error) {
 	return ec.unmarshalInputUserNameInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNUserNameInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserNameInput(ctx context.Context, v interface{}) (*dto1.UserNameInput, error) {
+func (ec *executionContext) unmarshalNUserNameInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserNameInput(ctx context.Context, v interface{}) (*dto2.UserNameInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNUserNameInput2beanᚋpkgᚋuserᚋdtoᚐUserNameInput(ctx, v)
+	res, err := ec.unmarshalNUserNameInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserNameInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNUserPasswordInput2beanᚋpkgᚋuserᚋdtoᚐUserPasswordInput(ctx context.Context, v interface{}) (dto1.UserPasswordInput, error) {
+func (ec *executionContext) unmarshalNUserPasswordInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx context.Context, v interface{}) (dto2.UserPasswordInput, error) {
 	return ec.unmarshalInputUserPasswordInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserPasswordInput(ctx context.Context, v interface{}) (*dto1.UserPasswordInput, error) {
+func (ec *executionContext) unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx context.Context, v interface{}) (*dto2.UserPasswordInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalNUserPasswordInput2beanᚋpkgᚋuserᚋdtoᚐUserPasswordInput(ctx, v)
+	res, err := ec.unmarshalNUserPasswordInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalNValidationOutcome2beanᚋpkgᚋaccessᚋdtoᚐValidationOutcome(ctx context.Context, sel ast.SelectionSet, v dto.ValidationOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNValidationOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.ValidationOutcome) graphql.Marshaler {
 	return ec._ValidationOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNValidationOutcome2ᚖbeanᚋpkgᚋaccessᚋdtoᚐValidationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.ValidationOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNValidationOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.ValidationOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -6123,16 +6718,16 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) unmarshalOAccessScope2beanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, v interface{}) (model1.AccessScope, error) {
-	var res model1.AccessScope
+func (ec *executionContext) unmarshalOAccessScope2beanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, v interface{}) (model2.AccessScope, error) {
+	var res model2.AccessScope
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOAccessScope2beanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, sel ast.SelectionSet, v model1.AccessScope) graphql.Marshaler {
+func (ec *executionContext) marshalOAccessScope2beanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, sel ast.SelectionSet, v model2.AccessScope) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, v interface{}) ([]*model1.AccessScope, error) {
+func (ec *executionContext) unmarshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, v interface{}) ([]*model2.AccessScope, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -6142,7 +6737,7 @@ func (ec *executionContext) unmarshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmo
 		}
 	}
 	var err error
-	res := make([]*model1.AccessScope, len(vSlice))
+	res := make([]*model2.AccessScope, len(vSlice))
 	for i := range vSlice {
 		res[i], err = ec.unmarshalOAccessScope2ᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx, vSlice[i])
 		if err != nil {
@@ -6152,7 +6747,7 @@ func (ec *executionContext) unmarshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmo
 	return res, nil
 }
 
-func (ec *executionContext) marshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, sel ast.SelectionSet, v []*model1.AccessScope) graphql.Marshaler {
+func (ec *executionContext) marshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, sel ast.SelectionSet, v []*model2.AccessScope) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -6192,7 +6787,7 @@ func (ec *executionContext) marshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmode
 	return ret
 }
 
-func (ec *executionContext) unmarshalOAccessScope2ᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, v interface{}) (*model1.AccessScope, error) {
+func (ec *executionContext) unmarshalOAccessScope2ᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, v interface{}) (*model2.AccessScope, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -6200,7 +6795,7 @@ func (ec *executionContext) unmarshalOAccessScope2ᚖbeanᚋpkgᚋaccessᚋmodel
 	return &res, err
 }
 
-func (ec *executionContext) marshalOAccessScope2ᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, sel ast.SelectionSet, v *model1.AccessScope) graphql.Marshaler {
+func (ec *executionContext) marshalOAccessScope2ᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, sel ast.SelectionSet, v *model2.AccessScope) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -6253,16 +6848,16 @@ func (ec *executionContext) marshalOCountryCode2ᚖstring(ctx context.Context, s
 	return ec.marshalOCountryCode2string(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalODeviceType2beanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx context.Context, v interface{}) (model1.DeviceType, error) {
-	var res model1.DeviceType
+func (ec *executionContext) unmarshalODeviceType2beanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx context.Context, v interface{}) (model2.DeviceType, error) {
+	var res model2.DeviceType
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalODeviceType2beanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx context.Context, sel ast.SelectionSet, v model1.DeviceType) graphql.Marshaler {
+func (ec *executionContext) marshalODeviceType2beanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx context.Context, sel ast.SelectionSet, v model2.DeviceType) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx context.Context, v interface{}) (*model1.DeviceType, error) {
+func (ec *executionContext) unmarshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx context.Context, v interface{}) (*model2.DeviceType, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -6270,18 +6865,18 @@ func (ec *executionContext) unmarshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodel�
 	return &res, err
 }
 
-func (ec *executionContext) marshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx context.Context, sel ast.SelectionSet, v *model1.DeviceType) graphql.Marshaler {
+func (ec *executionContext) marshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx context.Context, sel ast.SelectionSet, v *model2.DeviceType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalODomainName2beanᚋpkgᚋnamespaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v model2.DomainName) graphql.Marshaler {
+func (ec *executionContext) marshalODomainName2beanᚋpkgᚋnamespaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v model.DomainName) graphql.Marshaler {
 	return ec._DomainName(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalODomainName2ᚕᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v []*model2.DomainName) graphql.Marshaler {
+func (ec *executionContext) marshalODomainName2ᚕᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v []*model.DomainName) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -6321,22 +6916,66 @@ func (ec *executionContext) marshalODomainName2ᚕᚖbeanᚋpkgᚋnamespaceᚋmo
 	return ret
 }
 
-func (ec *executionContext) marshalODomainName2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v *model2.DomainName) graphql.Marshaler {
+func (ec *executionContext) marshalODomainName2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v *model.DomainName) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._DomainName(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalODomainNames2beanᚋpkgᚋnamespaceᚋmodelᚐDomainNames(ctx context.Context, sel ast.SelectionSet, v model2.DomainNames) graphql.Marshaler {
+func (ec *executionContext) unmarshalODomainNameInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) (dto.DomainNameInput, error) {
+	return ec.unmarshalInputDomainNameInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) ([]*dto.DomainNameInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*dto.DomainNameInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalODomainNameInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalODomainNameInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) (*dto.DomainNameInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalODomainNameInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNameInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalODomainNames2beanᚋpkgᚋnamespaceᚋmodelᚐDomainNames(ctx context.Context, sel ast.SelectionSet, v model.DomainNames) graphql.Marshaler {
 	return ec._DomainNames(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalODomainNames2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainNames(ctx context.Context, sel ast.SelectionSet, v *model2.DomainNames) graphql.Marshaler {
+func (ec *executionContext) marshalODomainNames2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐDomainNames(ctx context.Context, sel ast.SelectionSet, v *model.DomainNames) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._DomainNames(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalODomainNamesInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNamesInput(ctx context.Context, v interface{}) (dto.DomainNamesInput, error) {
+	return ec.unmarshalInputDomainNamesInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalODomainNamesInput2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNamesInput(ctx context.Context, v interface{}) (*dto.DomainNamesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalODomainNamesInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐDomainNamesInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalOError2beanᚋpkgᚋutilᚐError(ctx context.Context, sel ast.SelectionSet, v util.Error) graphql.Marshaler {
@@ -6477,46 +7116,68 @@ func (ec *executionContext) marshalOIP2ᚖstring(ctx context.Context, sel ast.Se
 	return ec.marshalOIP2string(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalOLoginContextInput2beanᚋpkgᚋaccessᚋdtoᚐLoginContextInput(ctx context.Context, v interface{}) (dto.LoginContextInput, error) {
+func (ec *executionContext) unmarshalOLoginContextInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginContextInput(ctx context.Context, v interface{}) (dto1.LoginContextInput, error) {
 	return ec.unmarshalInputLoginContextInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOLoginContextInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginContextInput(ctx context.Context, v interface{}) (*dto.LoginContextInput, error) {
+func (ec *executionContext) unmarshalOLoginContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginContextInput(ctx context.Context, v interface{}) (*dto1.LoginContextInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOLoginContextInput2beanᚋpkgᚋaccessᚋdtoᚐLoginContextInput(ctx, v)
+	res, err := ec.unmarshalOLoginContextInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginContextInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOLoginInput2beanᚋpkgᚋaccessᚋdtoᚐLoginInput(ctx context.Context, v interface{}) (dto.LoginInput, error) {
+func (ec *executionContext) unmarshalOLoginInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx context.Context, v interface{}) (dto1.LoginInput, error) {
 	return ec.unmarshalInputLoginInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐLoginInput(ctx context.Context, v interface{}) (*dto.LoginInput, error) {
+func (ec *executionContext) unmarshalOLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx context.Context, v interface{}) (*dto1.LoginInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOLoginInput2beanᚋpkgᚋaccessᚋdtoᚐLoginInput(ctx, v)
+	res, err := ec.unmarshalOLoginInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLoginInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOSession2beanᚋpkgᚋaccessᚋmodelᚐSession(ctx context.Context, sel ast.SelectionSet, v model1.Session) graphql.Marshaler {
+func (ec *executionContext) marshalONamespace2beanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx context.Context, sel ast.SelectionSet, v model.Namespace) graphql.Marshaler {
+	return ec._Namespace(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalONamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx context.Context, sel ast.SelectionSet, v *model.Namespace) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Namespace(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalONamespaceCreateOutcome2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto.NamespaceCreateOutcome) graphql.Marshaler {
+	return ec._NamespaceCreateOutcome(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalONamespaceCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.NamespaceCreateOutcome) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NamespaceCreateOutcome(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSession2beanᚋpkgᚋaccessᚋmodelᚐSession(ctx context.Context, sel ast.SelectionSet, v model2.Session) graphql.Marshaler {
 	return ec._Session(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx context.Context, sel ast.SelectionSet, v *model1.Session) graphql.Marshaler {
+func (ec *executionContext) marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx context.Context, sel ast.SelectionSet, v *model2.Session) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Session(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOSessionContext2beanᚋpkgᚋaccessᚋmodelᚐSessionContext(ctx context.Context, sel ast.SelectionSet, v model1.SessionContext) graphql.Marshaler {
+func (ec *executionContext) marshalOSessionContext2beanᚋpkgᚋaccessᚋmodelᚐSessionContext(ctx context.Context, sel ast.SelectionSet, v model2.SessionContext) graphql.Marshaler {
 	return ec._SessionContext(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOSessionContext2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSessionContext(ctx context.Context, sel ast.SelectionSet, v *model1.SessionContext) graphql.Marshaler {
+func (ec *executionContext) marshalOSessionContext2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSessionContext(ctx context.Context, sel ast.SelectionSet, v *model2.SessionContext) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -6578,29 +7239,6 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return ec.marshalOString2string(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalOTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
-	return graphql.UnmarshalTime(v)
-}
-
-func (ec *executionContext) marshalOTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
-	return graphql.MarshalTime(v)
-}
-
-func (ec *executionContext) unmarshalOTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOTime2timeᚐTime(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOTime2timeᚐTime(ctx, sel, *v)
-}
-
 func (ec *executionContext) unmarshalOUri2beanᚋpkgᚋutilᚐUri(ctx context.Context, v interface{}) (util.Uri, error) {
 	var res util.Uri
 	return res, res.UnmarshalGQL(v)
@@ -6625,45 +7263,45 @@ func (ec *executionContext) marshalOUri2ᚖbeanᚋpkgᚋutilᚐUri(ctx context.C
 	return v
 }
 
-func (ec *executionContext) marshalOUser2beanᚋpkgᚋuserᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2beanᚋpkgᚋuserᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model1.User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model1.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserCreateInput2beanᚋpkgᚋuserᚋdtoᚐUserCreateInput(ctx context.Context, v interface{}) (dto1.UserCreateInput, error) {
+func (ec *executionContext) unmarshalOUserCreateInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx context.Context, v interface{}) (dto2.UserCreateInput, error) {
 	return ec.unmarshalInputUserCreateInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserCreateInput(ctx context.Context, v interface{}) (*dto1.UserCreateInput, error) {
+func (ec *executionContext) unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx context.Context, v interface{}) (*dto2.UserCreateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOUserCreateInput2beanᚋpkgᚋuserᚋdtoᚐUserCreateInput(ctx, v)
+	res, err := ec.unmarshalOUserCreateInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOUserCreateOutcome2beanᚋpkgᚋuserᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.UserCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalOUserCreateOutcome2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto2.UserCreateOutcome) graphql.Marshaler {
 	return ec._UserCreateOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.UserCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto2.UserCreateOutcome) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._UserCreateOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOUserEmail2beanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v model.UserEmail) graphql.Marshaler {
+func (ec *executionContext) marshalOUserEmail2beanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v model1.UserEmail) graphql.Marshaler {
 	return ec._UserEmail(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOUserEmail2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v []*model.UserEmail) graphql.Marshaler {
+func (ec *executionContext) marshalOUserEmail2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v []*model1.UserEmail) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -6703,18 +7341,18 @@ func (ec *executionContext) marshalOUserEmail2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐ
 	return ret
 }
 
-func (ec *executionContext) marshalOUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v *model.UserEmail) graphql.Marshaler {
+func (ec *executionContext) marshalOUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v *model1.UserEmail) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._UserEmail(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (dto1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalOUserEmailInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (dto2.UserEmailInput, error) {
 	return ec.unmarshalInputUserEmailInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) ([]*dto1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) ([]*dto2.UserEmailInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -6724,9 +7362,9 @@ func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋd
 		}
 	}
 	var err error
-	res := make([]*dto1.UserEmailInput, len(vSlice))
+	res := make([]*dto2.UserEmailInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -6734,46 +7372,46 @@ func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋd
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto1.UserEmailInput, error) {
+func (ec *executionContext) unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto2.UserEmailInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOUserEmailInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailInput(ctx, v)
+	res, err := ec.unmarshalOUserEmailInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOUserEmails2beanᚋpkgᚋuserᚋmodelᚐUserEmails(ctx context.Context, sel ast.SelectionSet, v model.UserEmails) graphql.Marshaler {
+func (ec *executionContext) marshalOUserEmails2beanᚋpkgᚋuserᚋmodelᚐUserEmails(ctx context.Context, sel ast.SelectionSet, v model1.UserEmails) graphql.Marshaler {
 	return ec._UserEmails(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOUserEmails2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmails(ctx context.Context, sel ast.SelectionSet, v *model.UserEmails) graphql.Marshaler {
+func (ec *executionContext) marshalOUserEmails2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmails(ctx context.Context, sel ast.SelectionSet, v *model1.UserEmails) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._UserEmails(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserEmailsInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailsInput(ctx context.Context, v interface{}) (dto1.UserEmailsInput, error) {
+func (ec *executionContext) unmarshalOUserEmailsInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailsInput(ctx context.Context, v interface{}) (dto2.UserEmailsInput, error) {
 	return ec.unmarshalInputUserEmailsInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋdtoᚐUserEmailsInput(ctx context.Context, v interface{}) (*dto1.UserEmailsInput, error) {
+func (ec *executionContext) unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailsInput(ctx context.Context, v interface{}) (*dto2.UserEmailsInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOUserEmailsInput2beanᚋpkgᚋuserᚋdtoᚐUserEmailsInput(ctx, v)
+	res, err := ec.unmarshalOUserEmailsInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailsInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOValidationInput2beanᚋpkgᚋaccessᚋdtoᚐValidationInput(ctx context.Context, v interface{}) (dto.ValidationInput, error) {
+func (ec *executionContext) unmarshalOValidationInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationInput(ctx context.Context, v interface{}) (dto1.ValidationInput, error) {
 	return ec.unmarshalInputValidationInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOValidationInput2ᚖbeanᚋpkgᚋaccessᚋdtoᚐValidationInput(ctx context.Context, v interface{}) (*dto.ValidationInput, error) {
+func (ec *executionContext) unmarshalOValidationInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationInput(ctx context.Context, v interface{}) (*dto1.ValidationInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOValidationInput2beanᚋpkgᚋaccessᚋdtoᚐValidationInput(ctx, v)
+	res, err := ec.unmarshalOValidationInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationInput(ctx, v)
 	return &res, err
 }
 

@@ -5,11 +5,9 @@ import (
 	"sync"
 
 	"bean/pkg/access"
-	"bean/pkg/access/model"
 	"bean/pkg/infra/gql"
-	namespace_model "bean/pkg/namespace/model"
+	"bean/pkg/namespace"
 	"bean/pkg/user"
-	user_model "bean/pkg/user/model"
 )
 
 type (
@@ -29,6 +27,7 @@ type (
 
 	mutationResolver struct {
 		*user.UserMutationResolver
+		*namespace.NamespaceMutationResolver
 		*access.AccessMutationResolver
 	}
 
@@ -77,19 +76,14 @@ func (this *resolvers) getMutation() *mutationResolver {
 		this.mu.Lock()
 		defer this.mu.Unlock()
 
-		modUser, err := this.container.modules.User()
-		if nil != err {
-			panic(err)
-		}
-
-		mAccess, err := this.container.modules.Access().MutationResolver()
-		if nil != err {
-			panic(err)
-		}
+		modUser, _ := this.container.modules.User()
+		modAccess, _ := this.container.modules.Access()
+		modNamespace, _ := this.container.modules.Namespace()
 
 		this.mutation = &mutationResolver{
-			UserMutationResolver:   modUser.Mutation,
-			AccessMutationResolver: mAccess,
+			UserMutationResolver:      modUser.Mutation,
+			AccessMutationResolver:    modAccess.Mutation,
+			NamespaceMutationResolver: modNamespace.Mutation,
 		}
 	}
 
@@ -130,6 +124,15 @@ func (this *rootResolver) User() gql.UserResolver {
 	return module.Model
 }
 
+func (this *rootResolver) Namespace() gql.NamespaceResolver {
+	module, err := this.container.modules.Namespace()
+	if nil != err {
+		panic(err)
+	}
+
+	return module.Model
+}
+
 func (this *rootResolver) UserEmail() gql.UserEmailResolver {
 	module, err := this.container.modules.User()
 	if nil != err {
@@ -145,12 +148,4 @@ func (this mutationResolver) Ping(ctx context.Context) (string, error) {
 
 func (this queryResolver) Ping(ctx context.Context) (string, error) {
 	return "pong", nil
-}
-
-func (this sessionResolver) User(ctx context.Context, obj *model.Session) (*user_model.User, error) {
-	panic("implement me")
-}
-
-func (this sessionResolver) Namespace(ctx context.Context, obj *model.Session) (*namespace_model.Namespace, error) {
-	panic("implement me")
 }

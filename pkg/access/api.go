@@ -3,7 +3,7 @@ package access
 import (
 	"context"
 
-	"bean/pkg/access/dto"
+	"bean/pkg/access/model/dto"
 )
 
 type AccessMutationResolver struct {

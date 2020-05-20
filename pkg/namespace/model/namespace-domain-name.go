@@ -3,12 +3,14 @@ package model
 import "time"
 
 type DomainName struct {
-	ID        string    `json:"id"`
-	Verified  bool      `json:"verified"`
-	Value     string    `json:"value"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	IsActive  bool      `json:"isActive"`
+	ID          string    `json:"id"`
+	NamespaceId string    `json:"namespaceId"`
+	Value       string    `json:"value"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	IsPrimary   bool      `json:"isPrimary"`
+	IsVerified  bool      `json:"isVerified"`
+	IsActive    bool      `json:"isActive"`
 }
 
 type DomainNames struct {

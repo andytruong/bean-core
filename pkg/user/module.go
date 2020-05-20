@@ -1,11 +1,14 @@
 package user
 
 import (
+	"path"
+	"runtime"
+
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
 
-	"bean/pkg/user/service"
 	"bean/pkg/util"
+	"bean/pkg/util/migrate"
 )
 
 func NewUserModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) (*UserModule, error) {
@@ -35,8 +38,19 @@ type UserModule struct {
 	Email    UserEmailResolver
 }
 
-func (this UserModule) Install(tx *gorm.DB, driver string) error {
-	api := service.NewUserInstallAPI(this.logger)
+func (this UserModule) Migrate(tx *gorm.DB, driver string) error {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		return nil
+	}
 
-	return api.Run(tx, driver)
+	runner := migrate.Runner{
+		Tx:     tx,
+		Logger: this.logger,
+		Driver: driver,
+		Module: "user",
+		Dir:    path.Dir(filename) + "/migration/",
+	}
+
+	return runner.Run()
 }

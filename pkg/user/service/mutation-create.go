@@ -5,8 +5,8 @@ import (
 
 	"github.com/jinzhu/gorm"
 
-	"bean/pkg/user/dto"
 	"bean/pkg/user/model"
+	"bean/pkg/user/model/dto"
 	"bean/pkg/util"
 )
 

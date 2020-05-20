@@ -1,0 +1,35 @@
+extend type Mutation {
+    namespaceCreate(input: NamespaceCreateInput!): NamespaceCreateOutcome
+    # TODO: create membership
+}
+
+input NamespaceCreateInput {
+    object: NamespaceCreateInputObject!
+    context: NamespaceCreateContext!
+}
+
+input NamespaceCreateInputObject {
+    title: String
+    isActive: Boolean!
+    domainNames: DomainNamesInput
+}
+
+input NamespaceCreateContext {
+    userId: ID!
+}
+
+input DomainNamesInput {
+    primary: DomainNameInput!
+    secondary: [DomainNameInput]
+}
+
+input DomainNameInput {
+    verified: Boolean
+    value: String
+    isActive: Boolean
+}
+
+type NamespaceCreateOutcome {
+    errors: [Error]
+    namespace: Namespace
+}

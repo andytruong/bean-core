@@ -4,6 +4,8 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
+
+	"bean/pkg/util/migrate"
 )
 
 func MockDatabase() *gorm.DB {
@@ -26,14 +28,14 @@ func MockIdentifier() *Identifier {
 func MockInstall(module Module, db *gorm.DB) {
 	tx := db.Begin()
 
-	if !tx.HasTable(Migration{}) {
-		if err := tx.CreateTable(Migration{}).Error; nil != err {
+	if !tx.HasTable(migrate.Migration{}) {
+		if err := tx.CreateTable(migrate.Migration{}).Error; nil != err {
 			tx.Rollback()
 			panic(err)
 		}
 	}
 
-	if err := module.Install(tx, "sqlite3"); nil != err {
+	if err := module.Migrate(tx, "sqlite3"); nil != err {
 		tx.Rollback()
 		panic(err)
 	}
