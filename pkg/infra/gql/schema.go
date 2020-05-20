@@ -894,7 +894,7 @@ enum AccessScope {
     Authenticated
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/namespace/api-mutation.graphql", Input: `extend type Mutation {
+	&ast.Source{Name: "pkg/namespace/api/api-mutation.graphql", Input: `extend type Mutation {
     namespaceCreate(input: NamespaceCreateInput!): NamespaceCreateOutcome
     # TODO: create membership
 }
@@ -930,11 +930,11 @@ type NamespaceCreateOutcome {
     namespace: Namespace
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/namespace/api-query.graphql", Input: `extend type Query {
+	&ast.Source{Name: "pkg/namespace/api/api-query.graphql", Input: `extend type Query {
     namespace(id: ID!): Namespace
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/namespace/api.graphql", Input: `type Namespace {
+	&ast.Source{Name: "pkg/namespace/api/api.graphql", Input: `type Namespace {
     id: ID!
     version: ID!
     title: String

@@ -9,11 +9,12 @@ import (
 type AccessMutationResolver struct {
 }
 
-func (r *AccessMutationResolver) SessionCreate(ctx context.Context, input *dto.LoginInput) (*dto.LoginOutcome, error) {
+func (this *AccessMutationResolver) SessionCreate(ctx context.Context, input *dto.LoginInput) (*dto.LoginOutcome, error) {
+
 	panic("not implemented")
 }
 
-func (r *AccessMutationResolver) SessionDelete(ctx context.Context, input *dto.LoginInput) (*dto.LogoutOutcome, error) {
+func (this *AccessMutationResolver) SessionDelete(ctx context.Context, input *dto.LoginInput) (*dto.LogoutOutcome, error) {
 	panic("not implemented")
 }
 

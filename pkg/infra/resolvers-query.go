@@ -10,7 +10,7 @@ import (
 
 type queryResolver struct {
 	user.UserQueryResolver
-	*namespace.NamespaceQueryResolver
+	*namespace.NamespaceModule
 	*access.AccessQueryResolver
 }
 

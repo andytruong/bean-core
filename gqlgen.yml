@@ -1,6 +1,6 @@
 schema:
   - pkg/util/api*.graphql
-  - pkg/namespace/api*.graphql
+  - pkg/namespace/api/*.graphql
   - pkg/user/api*.graphql
   - pkg/access/api*.graphql
 

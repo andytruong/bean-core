@@ -26,7 +26,7 @@ type (
 
 	mutationResolver struct {
 		*user.UserMutationResolver
-		*namespace.NamespaceMutationResolver
+		*namespace.NamespaceModule
 		*access.AccessMutationResolver
 	}
 
@@ -56,8 +56,8 @@ func (this *resolvers) getQuery() *queryResolver {
 
 		this.query = &queryResolver{
 			// AccessQueryResolver: this.container.modules.Access().MutationResolver(),
-			UserQueryResolver:      mUser.Query,
-			NamespaceQueryResolver: mNamespace.Query,
+			UserQueryResolver: mUser.Query,
+			NamespaceModule:   mNamespace,
 			// AccessQueryResolver:    nil,
 		}
 	}
@@ -75,9 +75,9 @@ func (this *resolvers) getMutation() *mutationResolver {
 		modNamespace, _ := this.container.modules.Namespace()
 
 		this.mutation = &mutationResolver{
-			UserMutationResolver:      modUser.Mutation,
-			AccessMutationResolver:    modAccess.Mutation,
-			NamespaceMutationResolver: modNamespace.Mutation,
+			UserMutationResolver:   modUser.Mutation,
+			AccessMutationResolver: modAccess.Mutation,
+			NamespaceModule:        modNamespace,
 		}
 	}
 
