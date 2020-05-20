@@ -21,7 +21,7 @@ func Test_Create(t *testing.T) {
 
 	t.Run("happy case", func(t *testing.T) {
 		now := time.Now()
-		outcome, err := module.Mutation.NamespaceCreate(context.Background(), input)
+		outcome, err := module.NamespaceCreate(context.Background(), input)
 		ass.NoError(err)
 		ass.Nil(outcome.Errors)
 		ass.Equal(input.Object.Title, outcome.Namespace.Title)
@@ -32,7 +32,7 @@ func Test_Create(t *testing.T) {
 
 	t.Run("domain duplication", func(t *testing.T) {
 		// create again with same input
-		outcome, err := module.Mutation.NamespaceCreate(context.Background(), input)
+		outcome, err := module.NamespaceCreate(context.Background(), input)
 
 		ass.Nil(outcome)
 		ass.NotNil(err)
@@ -52,13 +52,13 @@ func Test_Query(t *testing.T) {
 
 	{
 		// setup data for query
-		outcome, err := module.Mutation.NamespaceCreate(context.Background(), input)
+		outcome, err := module.NamespaceCreate(context.Background(), input)
 		ass.NoError(err)
 		id = outcome.Namespace.ID
 	}
 
 	{
-		obj, err := module.Query.Namespace(context.Background(), id)
+		obj, err := module.Namespace(context.Background(), id)
 		ass.NoError(err)
 		ass.Equal(obj.ID, id)
 		ass.Equal(obj.Title, input.Object.Title)
