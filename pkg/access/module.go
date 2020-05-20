@@ -5,14 +5,13 @@ import (
 )
 
 func NewAccessModule() *AccessModule {
-	return &AccessModule{}
+	return &AccessModule{
+		Mutation: &AccessMutationResolver{},
+	}
 }
 
 type AccessModule struct {
-}
-
-func (this AccessModule) MutationResolver() (*AccessMutationResolver, error) {
-	return &AccessMutationResolver{}, nil
+	Mutation *AccessMutationResolver
 }
 
 func (this AccessModule) Migrate(tx *gorm.DB, driver string) error {
