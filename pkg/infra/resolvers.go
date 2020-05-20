@@ -14,17 +14,16 @@ type (
 	resolvers struct {
 		container *Container
 		mu        *sync.Mutex
-		root      *rootResolver
-		query     *queryResolver
-		mutation  *mutationResolver
+		root      *root
+		resolver  *resolver
 		session   *sessionResolver
 	}
 
-	rootResolver struct {
+	root struct {
 		container *Container
 	}
 
-	mutationResolver struct {
+	resolver struct {
 		*user.UserModule
 		*namespace.NamespaceModule
 		*access.AccessModule
@@ -35,36 +34,19 @@ type (
 	}
 )
 
-func (this *resolvers) getRoot() *rootResolver {
+func (this *resolvers) getRoot() *root {
 	if nil == this.root {
 		this.mu.Lock()
 		defer this.mu.Unlock()
 
-		this.root = &rootResolver{container: this.container}
+		this.root = &root{container: this.container}
 	}
 
 	return this.root
 }
 
-func (this *resolvers) getQuery() *queryResolver {
-	if this.query == nil {
-		this.mu.Lock()
-		defer this.mu.Unlock()
-
-		mUser, _ := this.container.modules.User()
-		mNamespace, _ := this.container.modules.Namespace()
-
-		this.query = &queryResolver{
-			UserModule:      mUser,
-			NamespaceModule: mNamespace,
-		}
-	}
-
-	return this.query
-}
-
-func (this *resolvers) getMutation() *mutationResolver {
-	if nil == this.mutation {
+func (this *resolvers) getResolver() *resolver {
+	if nil == this.resolver {
 		this.mu.Lock()
 		defer this.mu.Unlock()
 
@@ -72,14 +54,14 @@ func (this *resolvers) getMutation() *mutationResolver {
 		modAccess, _ := this.container.modules.Access()
 		modNamespace, _ := this.container.modules.Namespace()
 
-		this.mutation = &mutationResolver{
+		this.resolver = &resolver{
 			UserModule:      modUser,
 			AccessModule:    modAccess,
 			NamespaceModule: modNamespace,
 		}
 	}
 
-	return this.mutation
+	return this.resolver
 }
 
 func (this *resolvers) getSession() *sessionResolver {
@@ -95,6 +77,6 @@ func (this *resolvers) getSession() *sessionResolver {
 	return this.session
 }
 
-func (this mutationResolver) Ping(ctx context.Context) (string, error) {
+func (this resolver) Ping(ctx context.Context) (string, error) {
 	return "pong", nil
 }

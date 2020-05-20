@@ -854,7 +854,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	&ast.Source{Name: "pkg/util/api-scalar.graphql", Input: `scalar Time
+	&ast.Source{Name: "pkg/util/api/scalar.graphql", Input: `scalar Time
 scalar Uri
 scalar IP
 scalar CountryCode
@@ -1043,7 +1043,7 @@ type UserCreateOutcome {
     user(id: ID!): User
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/access/api-entity.graphql", Input: `type Session {
+	&ast.Source{Name: "pkg/access/api/entity.graphql", Input: `type Session {
     id: ID!
     hashedToken: String!
     user: User
@@ -1072,7 +1072,7 @@ enum DeviceType {
     TV
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/access/api-mutation.graphql", Input: `# ---------------------
+	&ast.Source{Name: "pkg/access/api/mutation.graphql", Input: `# ---------------------
 # SessionCreate // Login
 # ---------------------
 extend type Mutation {
@@ -1118,7 +1118,7 @@ type LogoutOutcome {
 # TODO: one time login // forget password
 # ---------------------
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/access/api-query.graphql", Input: `# ---------------------
+	&ast.Source{Name: "pkg/access/api/query.graphql", Input: `# ---------------------
 # SessionLoad // Validation
 # ---------------------
 extend type Query {
