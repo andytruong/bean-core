@@ -2,10 +2,12 @@ package access
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
 
+	"bean/pkg/access/api/handler"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	namespace_model "bean/pkg/namespace/model"
@@ -30,8 +32,16 @@ func (this AccessModule) Migrate(tx *gorm.DB, driver string) error {
 }
 
 func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.LoginInput) (*dto.LoginOutcome, error) {
+	hdl := handler.SessionCreateHandler{ID: this.id}
+	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
+	outcome, err := hdl.SessionCreate(ctx, txn, input)
+	if nil != err {
+		txn.Rollback()
 
-	panic("not implemented")
+		return nil, err
+	}
+
+	return outcome, txn.Commit().Error
 }
 
 func (this *AccessModule) SessionDelete(ctx context.Context, input *dto.LoginInput) (*dto.LogoutOutcome, error) {

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,11 +10,13 @@ import (
 
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
+	"bean/pkg/user"
 	"bean/pkg/util"
 )
 
 type SessionCreateHandler struct {
-	ID *util.Identifier
+	ID         *util.Identifier
+	UserModule *user.UserModule
 }
 
 func (this SessionCreateHandler) SessionCreate(ctx context.Context, tx *gorm.DB, input *dto.LoginInput) (*dto.LoginOutcome, error) {
@@ -22,10 +25,16 @@ func (this SessionCreateHandler) SessionCreate(ctx context.Context, tx *gorm.DB,
 			return nil, err
 		} else {
 			// find user object
+			user, err := this.UserModule.User(ctx, input.Username)
+			if nil != err {
+				return nil, errors.New("user not found")
+			}
+
+			fmt.Println("USER: ", user)
+
 			// compare the input password
 			// find membership
 			// create session
-
 			// input.NamespaceID
 			// input.Username
 			// input.HashedPassword
@@ -36,9 +45,9 @@ func (this SessionCreateHandler) SessionCreate(ctx context.Context, tx *gorm.DB,
 				Scopes:      nil,
 				Context:     nil,
 				IsActive:    false,
-				CreatedAt:   time.Time{},
-				UpdatedAt:   time.Time{},
-				ExpiredAt:   time.Time{},
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+				ExpiredAt:   time.Now(),
 			}
 
 			fmt.Println("session", session)
