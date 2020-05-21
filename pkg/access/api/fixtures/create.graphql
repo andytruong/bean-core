@@ -1,12 +1,12 @@
 mutation {
     sessionCreate(
         input: {
-            namespaceId: "01E8S1NDJVSQJ1H1K59BSBJWM2",
+            namespaceId: "01E8VTBXRCCZJFDJVGDW3Q3GEB",
             email: "john.doe@qa.local",
             hashedPassword: "xxxxxx"
         }
     ) {
-        errors { code fields }
+        errors { code fields message }
         token
         session {
             id
