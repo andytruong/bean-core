@@ -16,14 +16,12 @@ import (
 	"bean/pkg/util/migrate"
 )
 
-func NewNamespaceModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) (*NamespaceModule, error) {
-	module := &NamespaceModule{
+func NewNamespaceModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) *NamespaceModule {
+	return &NamespaceModule{
 		logger: logger,
 		db:     db,
 		id:     id,
 	}
-
-	return module, nil
 }
 
 type NamespaceModule struct {
