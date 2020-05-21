@@ -5,7 +5,7 @@ CREATE TABLE access_session
     user_id      character varying(26)             NOT NULL,
     namespace_id character varying(26)             NOT NULL,
     hashed_token character varying(128)            NOT NULL,
-    -- TODO: scopes
+    scopes       character varying(256),
     -- TODO: context
     is_active    boolean                           NOT NULL,
     created_at   timestamp                         NOT NULL,

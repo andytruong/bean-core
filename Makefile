@@ -1,8 +1,9 @@
-server: migrate
+server:
 	CONFIG=config.yaml go run cmd/main.go http-server
 
 gql:
 	gqlgen generate
+	rm pkg/infra/resolvers.go
 
 migrate: gql
 	CONFIG=config.yaml go run cmd/main.go migrate

@@ -1,20 +1,41 @@
 package model
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"time"
 )
 
 type Session struct {
-	ID          string          `json:"id"`
-	UserId      string          `json:"userId"`
-	NamespaceId string          `json:"namespaceId"`
-	HashedToken string          `json:"hashedToken"`
-	Scopes      []*AccessScope  `json:"scopes"`
-	Context     *SessionContext `json:"context"`
-	IsActive    bool            `json:"isActive"`
-	CreatedAt   time.Time       `json:"createdAt"`
-	UpdatedAt   time.Time       `json:"updatedAt"`
-	ExpiredAt   time.Time       `json:"expiredAt"`
+	ID          string    `json:"id"`
+	Version     string    `json:"version"`
+	UserId      string    `json:"userId"`
+	NamespaceId string    `json:"namespaceId"`
+	HashedToken string    `json:"hashedToken"`
+	Scopes      ScopeList `json:"scopes",sql:"type:text"`
+	IsActive    bool      `json:"isActive"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	ExpiredAt   time.Time `json:"expiredAt"`
+}
+
+type ScopeList []*AccessScope
+
+func (this ScopeList) Value() (driver.Value, error) {
+	bytes, err := json.Marshal(this)
+	return string(bytes), err
+}
+
+func (this *ScopeList) Scan(input interface{}) error {
+	switch value := input.(type) {
+	case string:
+		return json.Unmarshal([]byte(value), this)
+	case []byte:
+		return json.Unmarshal(value, this)
+	default:
+		return errors.New("not supported")
+	}
 }
 
 type SessionContext struct {

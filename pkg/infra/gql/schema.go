@@ -116,10 +116,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		LoadSession func(childComplexity int, input *dto1.ValidationInput) int
-		Namespace   func(childComplexity int, id string) int
-		Ping        func(childComplexity int) int
-		User        func(childComplexity int, id string) int
+		Namespace func(childComplexity int, id string) int
+		Ping      func(childComplexity int) int
+		Session   func(childComplexity int, token string) int
+		User      func(childComplexity int, id string) int
 	}
 
 	Session struct {
@@ -132,6 +132,7 @@ type ComplexityRoot struct {
 		Scopes    func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 		User      func(childComplexity int) int
+		Version   func(childComplexity int) int
 	}
 
 	SessionContext struct {
@@ -202,11 +203,13 @@ type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
 	Namespace(ctx context.Context, id string) (*model.Namespace, error)
 	User(ctx context.Context, id string) (*model1.User, error)
-	LoadSession(ctx context.Context, input *dto1.ValidationInput) (*dto1.ValidationOutcome, error)
+	Session(ctx context.Context, token string) (*model2.Session, error)
 }
 type SessionResolver interface {
 	User(ctx context.Context, obj *model2.Session) (*model1.User, error)
 	Namespace(ctx context.Context, obj *model2.Session) (*model.Namespace, error)
+	Scopes(ctx context.Context, obj *model2.Session) ([]*model2.AccessScope, error)
+	Context(ctx context.Context, obj *model2.Session) (*model2.SessionContext, error)
 }
 type UserResolver interface {
 	Name(ctx context.Context, obj *model1.User) (*model1.UserName, error)
@@ -489,18 +492,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NamespaceCreateOutcome.Namespace(childComplexity), true
 
-	case "Query.loadSession":
-		if e.complexity.Query.LoadSession == nil {
-			break
-		}
-
-		args, err := ec.field_Query_loadSession_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.LoadSession(childComplexity, args["input"].(*dto1.ValidationInput)), true
-
 	case "Query.namespace":
 		if e.complexity.Query.Namespace == nil {
 			break
@@ -519,6 +510,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Ping(childComplexity), true
+
+	case "Query.session":
+		if e.complexity.Query.Session == nil {
+			break
+		}
+
+		args, err := ec.field_Query_session_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Session(childComplexity, args["token"].(string)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -594,6 +597,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Session.User(childComplexity), true
+
+	case "Session.version":
+		if e.complexity.Session.Version == nil {
+			break
+		}
+
+		return e.complexity.Session.Version(childComplexity), true
 
 	case "SessionContext.country":
 		if e.complexity.SessionContext.Country == nil {
@@ -1054,6 +1064,7 @@ type UserCreateOutcome {
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/access/api/entity.graphql", Input: `type Session {
     id: ID!
+    version: ID!
     user: User
     namespace: Namespace!
     scopes: [AccessScope]
@@ -1126,7 +1137,7 @@ type LogoutOutcome {
 # SessionLoad // Validation
 # ---------------------
 extend type Query {
-    loadSession(input: ValidationInput): ValidationOutcome!
+    session(token: ID!): Session
 }
 
 input ValidationInput {
@@ -1215,20 +1226,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_loadSession_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *dto1.ValidationInput
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOValidationInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_namespace_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1240,6 +1237,20 @@ func (ec *executionContext) field_Query_namespace_args(ctx context.Context, rawA
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_session_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["token"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["token"] = arg0
 	return args, nil
 }
 
@@ -2554,7 +2565,7 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_loadSession(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_session(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2570,7 +2581,7 @@ func (ec *executionContext) _Query_loadSession(ctx context.Context, field graphq
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_loadSession_args(ctx, rawArgs)
+	args, err := ec.field_Query_session_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -2578,21 +2589,18 @@ func (ec *executionContext) _Query_loadSession(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().LoadSession(rctx, args["input"].(*dto1.ValidationInput))
+		return ec.resolvers.Query().Session(rctx, args["token"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto1.ValidationOutcome)
+	res := resTmp.(*model2.Session)
 	fc.Result = res
-	return ec.marshalNValidationOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationOutcome(ctx, field.Selections, res)
+	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2698,6 +2706,40 @@ func (ec *executionContext) _Session_id(ctx context.Context, field graphql.Colle
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Session_version(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Session",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Session_user(ctx context.Context, field graphql.CollectedField, obj *model2.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2774,13 +2816,13 @@ func (ec *executionContext) _Session_scopes(ctx context.Context, field graphql.C
 		Object:   "Session",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Scopes, nil
+		return ec.resolvers.Session().Scopes(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2805,13 +2847,13 @@ func (ec *executionContext) _Session_context(ctx context.Context, field graphql.
 		Object:   "Session",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Context, nil
+		return ec.resolvers.Session().Context(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5724,7 +5766,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_user(ctx, field)
 				return res
 			})
-		case "loadSession":
+		case "session":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -5732,10 +5774,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_loadSession(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
+				res = ec._Query_session(ctx, field)
 				return res
 			})
 		case "__type":
@@ -5769,6 +5808,11 @@ func (ec *executionContext) _Session(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "version":
+			out.Values[i] = ec._Session_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "user":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -5795,9 +5839,27 @@ func (ec *executionContext) _Session(ctx context.Context, sel ast.SelectionSet, 
 				return res
 			})
 		case "scopes":
-			out.Values[i] = ec._Session_scopes(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Session_scopes(ctx, field, obj)
+				return res
+			})
 		case "context":
-			out.Values[i] = ec._Session_context(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Session_context(ctx, field, obj)
+				return res
+			})
 		case "isActive":
 			out.Values[i] = ec._Session_isActive(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6594,20 +6656,6 @@ func (ec *executionContext) unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋm
 	}
 	res, err := ec.unmarshalNUserPasswordInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx, v)
 	return &res, err
-}
-
-func (ec *executionContext) marshalNValidationOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.ValidationOutcome) graphql.Marshaler {
-	return ec._ValidationOutcome(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNValidationOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.ValidationOutcome) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._ValidationOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -7518,18 +7566,6 @@ func (ec *executionContext) unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋmod
 		return nil, nil
 	}
 	res, err := ec.unmarshalOUserEmailsInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailsInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOValidationInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationInput(ctx context.Context, v interface{}) (dto1.ValidationInput, error) {
-	return ec.unmarshalInputValidationInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOValidationInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationInput(ctx context.Context, v interface{}) (*dto1.ValidationInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOValidationInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐValidationInput(ctx, v)
 	return &res, err
 }
 

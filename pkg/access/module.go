@@ -69,7 +69,7 @@ func (this *AccessModule) SessionDelete(ctx context.Context, input *dto.SessionC
 	panic("not implemented")
 }
 
-func (this AccessModule) LoadSession(ctx context.Context, input *dto.ValidationInput) (*dto.ValidationOutcome, error) {
+func (this AccessModule) Session(ctx context.Context, token string) (*model.Session, error) {
 	panic("wip")
 }
 
@@ -78,6 +78,14 @@ type ModuleResolver struct {
 
 func (this ModuleResolver) User(ctx context.Context, obj *model.Session) (*user_model.User, error) {
 	panic("implement me")
+}
+
+func (this ModuleResolver) Context(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
+	panic("implement me")
+}
+
+func (this ModuleResolver) Scopes(ctx context.Context, obj *model.Session) ([]*model.AccessScope, error) {
+	return obj.Scopes, nil
 }
 
 func (this ModuleResolver) Namespace(ctx context.Context, obj *model.Session) (*namespace_model.Namespace, error) {

@@ -12,22 +12,13 @@ import (
 type Identifier struct {
 }
 
-func (this *Identifier) HashInt64(entityType string, current time.Time) (string, error) {
+func (this *Identifier) HashInt64(salt string, current time.Time) (string, error) {
 	data := hashids.NewData()
-	data.Salt = "QEjpevoA7yN1V:" + entityType
+	data.Salt = salt
 	data.MinLength = 7
 	hash, _ := hashids.NewWithData(data)
 
 	return hash.EncodeInt64([]int64{current.Unix()})
-}
-
-func (this *Identifier) HashHex(entityType string, hex string) (string, error) {
-	data := hashids.NewData()
-	data.Salt = "QEjpevoA7yN1V:" + entityType
-	data.MinLength = 7
-	hash, _ := hashids.NewWithData(data)
-
-	return hash.EncodeHex(hex)
 }
 
 func (this *Identifier) ULID() (string, error) {

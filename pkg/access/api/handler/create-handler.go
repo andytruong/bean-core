@@ -30,12 +30,6 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 			return nil, errors.New("user not found")
 		}
 
-		if !email.IsVerified {
-			return &dto.SessionCreateOutcome{
-				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.email"}, "email address was not verified"),
-			}, nil
-		}
-
 		if !email.IsActive {
 			return &dto.SessionCreateOutcome{
 				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.email"}, "email address is not active"),
@@ -44,17 +38,32 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 	}
 
 	eg := errgroup.Group{}
+	outcome := &dto.SessionCreateOutcome{}
 
 	// password validation
 	eg.Go(func() error {
 		pass := mUser.UserPassword{}
-		return tx.First(&pass, "value = ? AND is_active = ?", input.Email, true).Error
+		err := tx.First(&pass, "user_id = ? AND hashed_value = ? AND is_active = ?", email.UserId, input.Email, true).Error
+
+		if err == gorm.ErrRecordNotFound {
+			outcome.Errors = util.NewErrors(util.ErrorCodeInput, []string{"input.namespaceId"}, "invalid password")
+			return nil
+		}
+
+		return err
 	})
 
 	// membership validation
 	eg.Go(func() error {
 		membership := mNamespace.Membership{}
-		return tx.First(&membership, "namespace_id = ? AND user_id = ?", input.NamespaceID, email.UserId).Error
+		err := tx.Table("namespace_memberships").First(&membership, "namespace_id = ? AND user_id = ?", input.NamespaceID, email.UserId).Error
+
+		if err == gorm.ErrRecordNotFound {
+			outcome.Errors = util.NewErrors(util.ErrorCodeInput, []string{"input.namespaceId"}, "membership not found")
+			return nil
+		}
+
+		return err
 	})
 
 	err := eg.Wait()
@@ -68,25 +77,27 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 func (this SessionCreateHandler) createSession(tx *gorm.DB, userId string, namespaceId string) (*dto.SessionCreateOutcome, error) {
 	if id, err := this.ID.ULID(); nil != err {
 		return nil, err
+	} else if version, err := this.ID.ULID(); nil != err {
+		return nil, err
 	} else if token, err := this.ID.UUID(); nil != err {
 		return nil, err
-	} else if hashedToken, err := this.ID.HashHex("access.token", token); nil != err {
+	} else if hashedToken, err := this.ID.HashInt64(token, time.Now()); nil != err {
 		return nil, err
 	} else {
 		session := &model.Session{
 			ID:          id,
+			Version:     version,
 			UserId:      userId,
 			NamespaceId: namespaceId,
 			HashedToken: hashedToken,
 			Scopes:      nil, // TODO
-			Context:     nil, // TODO
 			IsActive:    true,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 			ExpiredAt:   time.Now(),
 		}
 
-		if err := tx.Create(&session).Error; nil != err {
+		if err := tx.Table("access_session").Create(&session).Error; nil != err {
 			return nil, err
 		}
 

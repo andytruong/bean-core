@@ -1,5 +1,6 @@
 type Session {
     id: ID!
+    version: ID!
     user: User
     namespace: Namespace!
     scopes: [AccessScope]
