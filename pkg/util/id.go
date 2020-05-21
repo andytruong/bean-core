@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/base64"
 	"math/rand"
 	"time"
 
@@ -12,9 +13,13 @@ import (
 type Identifier struct {
 }
 
-func (this *Identifier) Hash(entityType string, current time.Time) (string, error) {
+func (this *Identifier) Encode(input string) string {
+	return base64.StdEncoding.EncodeToString([]byte(input))
+}
+
+func (this *Identifier) HashInt64(salt string, current time.Time) (string, error) {
 	data := hashids.NewData()
-	data.Salt = "QEjpevoA7yN1V:" + entityType
+	data.Salt = salt
 	data.MinLength = 7
 	hash, _ := hashids.NewWithData(data)
 

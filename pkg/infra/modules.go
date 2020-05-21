@@ -64,7 +64,28 @@ func (this *modules) Namespace() (*namespace.NamespaceModule, error) {
 
 func (this *modules) Access() (*access.AccessModule, error) {
 	if nil == this.access {
-		this.access = access.NewAccessModule()
+		db, err := this.container.dbs.master()
+		if nil != err {
+			return nil, err
+		}
+
+		mUser, err := this.User()
+		if nil != err {
+			return nil, err
+		}
+
+		mNamespace, err := this.Namespace()
+		if nil != err {
+			return nil, err
+		}
+
+		this.access = access.NewAccessModule(
+			db,
+			this.container.Identifier(),
+			this.container.logger,
+			mUser,
+			mNamespace,
+		)
 	}
 
 	return this.access, nil
