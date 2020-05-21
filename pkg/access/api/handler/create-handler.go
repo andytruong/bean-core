@@ -81,15 +81,13 @@ func (this SessionCreateHandler) createSession(tx *gorm.DB, userId string, names
 		return nil, err
 	} else if token, err := this.ID.UUID(); nil != err {
 		return nil, err
-	} else if hashedToken, err := this.ID.HashInt64(token, time.Now()); nil != err {
-		return nil, err
 	} else {
 		session := &model.Session{
 			ID:          id,
 			Version:     version,
 			UserId:      userId,
 			NamespaceId: namespaceId,
-			HashedToken: hashedToken,
+			HashedToken: this.ID.Encode(token),
 			Scopes:      nil, // TODO
 			IsActive:    true,
 			CreatedAt:   time.Now(),

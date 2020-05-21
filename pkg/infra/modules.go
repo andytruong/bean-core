@@ -69,10 +69,22 @@ func (this *modules) Access() (*access.AccessModule, error) {
 			return nil, err
 		}
 
+		mUser, err := this.User()
+		if nil != err {
+			return nil, err
+		}
+
+		mNamespace, err := this.Namespace()
+		if nil != err {
+			return nil, err
+		}
+
 		this.access = access.NewAccessModule(
 			db,
 			this.container.Identifier(),
 			this.container.logger,
+			mUser,
+			mNamespace,
 		)
 	}
 

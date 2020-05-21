@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/base64"
 	"math/rand"
 	"time"
 
@@ -10,6 +11,10 @@ import (
 )
 
 type Identifier struct {
+}
+
+func (this *Identifier) Encode(input string) string {
+	return base64.StdEncoding.EncodeToString([]byte(input))
 }
 
 func (this *Identifier) HashInt64(salt string, current time.Time) (string, error) {

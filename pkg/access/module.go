@@ -12,28 +12,50 @@ import (
 	"bean/pkg/access/api/handler"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
+	"bean/pkg/namespace"
 	namespace_model "bean/pkg/namespace/model"
+	"bean/pkg/user"
 	user_model "bean/pkg/user/model"
 	"bean/pkg/util"
 	"bean/pkg/util/migrate"
 )
 
-func NewAccessModule(db *gorm.DB, id *util.Identifier, logger *zap.Logger) *AccessModule {
-	return &AccessModule{
-		logger: logger,
-		db:     db,
-		id:     id,
-		SessionResolver: ModuleResolver{
-		},
+func NewAccessModule(
+	db *gorm.DB,
+	id *util.Identifier,
+	logger *zap.Logger,
+	userModule *user.UserModule,
+	namespaceModule *namespace.NamespaceModule,
+) *AccessModule {
+	module := &AccessModule{
+		logger:          logger,
+		db:              db,
+		id:              id,
+		userModule:      userModule,
+		namespaceModule: namespaceModule,
 	}
+
+	module.SessionResolver = ModelResolver{module: module}
+
+	return module
 }
 
-type AccessModule struct {
-	logger          *zap.Logger
-	db              *gorm.DB
-	id              *util.Identifier
-	SessionResolver ModuleResolver
-}
+type (
+	AccessModule struct {
+		logger          *zap.Logger
+		db              *gorm.DB
+		id              *util.Identifier
+		SessionResolver ModelResolver
+
+		// depends on user module
+		userModule      *user.UserModule
+		namespaceModule *namespace.NamespaceModule
+	}
+
+	ModelResolver struct {
+		module *AccessModule
+	}
+)
 
 func (this AccessModule) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
@@ -70,24 +92,26 @@ func (this *AccessModule) SessionDelete(ctx context.Context, input *dto.SessionC
 }
 
 func (this AccessModule) Session(ctx context.Context, token string) (*model.Session, error) {
-	panic("wip")
+	hdl := handler.SessionLoadHandler{
+		ID: this.id,
+		DB: this.db,
+	}
+
+	return hdl.Handle(ctx, token)
 }
 
-type ModuleResolver struct {
+func (this ModelResolver) User(ctx context.Context, obj *model.Session) (*user_model.User, error) {
+	return this.module.userModule.User(ctx, obj.UserId)
 }
 
-func (this ModuleResolver) User(ctx context.Context, obj *model.Session) (*user_model.User, error) {
+func (this ModelResolver) Context(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
 	panic("implement me")
 }
 
-func (this ModuleResolver) Context(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
-	panic("implement me")
-}
-
-func (this ModuleResolver) Scopes(ctx context.Context, obj *model.Session) ([]*model.AccessScope, error) {
+func (this ModelResolver) Scopes(ctx context.Context, obj *model.Session) ([]*model.AccessScope, error) {
 	return obj.Scopes, nil
 }
 
-func (this ModuleResolver) Namespace(ctx context.Context, obj *model.Session) (*namespace_model.Namespace, error) {
-	panic("implement me")
+func (this ModelResolver) Namespace(ctx context.Context, obj *model.Session) (*namespace_model.Namespace, error) {
+	return this.module.namespaceModule.Namespace(ctx, obj.NamespaceId)
 }
