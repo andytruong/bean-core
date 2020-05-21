@@ -18,8 +18,13 @@ import (
 	"bean/pkg/util/migrate"
 )
 
-func NewAccessModule() *AccessModule {
+func NewAccessModule(db *gorm.DB, id *util.Identifier, logger *zap.Logger) *AccessModule {
 	return &AccessModule{
+		logger: logger,
+		db:     db,
+		id:     id,
+		SessionResolver: ModuleResolver{
+		},
 	}
 }
 

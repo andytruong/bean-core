@@ -1,19 +1,16 @@
+server: migrate
+	CONFIG=config.yaml go run cmd/main.go http-server
+
 gql:
 	gqlgen generate
 
-migrate:
+migrate: gql
 	CONFIG=config.yaml go run cmd/main.go migrate
-
-server:
-	CONFIG=config.yaml go run cmd/main.go http-server
 
 test:
 	go test ./... -v
 
-# ---------------------
-# go mod commands
-# ---------------------
-tidy:
+clean:
 	go mod tidy
 
 # ---------------------
@@ -30,11 +27,3 @@ dev-server:
 		DB_DRIVER=postgres \
 		DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable  \
 		go run cmd/main.go http-server
-
-# ---------------------
-# todo
-# ---------------------
-# cmd: migrate
-# cmd: docker build
-# cmd: deploy
-# cmd: help

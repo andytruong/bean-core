@@ -1,0 +1,15 @@
+mutation {
+    sessionCreate(
+        input: {
+            namespaceId: "01E8S1NDJVSQJ1H1K59BSBJWM2",
+            email: "john.doe@qa.local",
+            hashedPassword: "xxxxxx"
+        }
+    ) {
+        errors { code fields }
+        token
+        session {
+            id
+        }
+    }
+}
