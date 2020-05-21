@@ -8,6 +8,7 @@ import (
 
 type ErrorCode string
 
+
 const (
 	ErrorCodeInput        ErrorCode = "Input"
 	ErrorCodeConfig       ErrorCode = "Config"

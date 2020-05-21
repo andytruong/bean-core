@@ -15,6 +15,7 @@ type Mutation {
 type Error {
     code: ErrorCode
     fields: [String!]
+    message: String!
 }
 
 enum ErrorCode   {

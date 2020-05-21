@@ -30,8 +30,16 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 			return nil, errors.New("user not found")
 		}
 
+		if !email.IsVerified {
+			return &dto.SessionCreateOutcome{
+				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.email"}, "email address was not verified"),
+			}, nil
+		}
+
 		if !email.IsActive {
-			return nil, errors.New("invalid user")
+			return &dto.SessionCreateOutcome{
+				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.email"}, "email address is not active"),
+			}, nil
 		}
 	}
 

@@ -69,8 +69,9 @@ type ComplexityRoot struct {
 	}
 
 	Error struct {
-		Code   func(childComplexity int) int
-		Fields func(childComplexity int) int
+		Code    func(childComplexity int) int
+		Fields  func(childComplexity int) int
+		Message func(childComplexity int) int
 	}
 
 	LogoutInput struct {
@@ -299,6 +300,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Error.Fields(childComplexity), true
+
+	case "Error.message":
+		if e.complexity.Error.Message == nil {
+			break
+		}
+
+		return e.complexity.Error.Message(childComplexity), true
 
 	case "LogoutInput.hashedToken":
 		if e.complexity.LogoutInput.HashedToken == nil {
@@ -871,6 +879,7 @@ type Mutation {
 type Error {
     code: ErrorCode
     fields: [String!]
+    message: String!
 }
 
 enum ErrorCode   {
@@ -1613,6 +1622,40 @@ func (ec *executionContext) _Error_fields(ctx context.Context, field graphql.Col
 	res := resTmp.([]string)
 	fc.Result = res
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Error_message(ctx context.Context, field graphql.CollectedField, obj *util.Error) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Error",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LogoutInput_hashedToken(ctx context.Context, field graphql.CollectedField, obj *dto1.LogoutInput) (ret graphql.Marshaler) {
@@ -5378,6 +5421,11 @@ func (ec *executionContext) _Error(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = ec._Error_code(ctx, field, obj)
 		case "fields":
 			out.Values[i] = ec._Error_fields(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._Error_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
