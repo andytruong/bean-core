@@ -98,4 +98,22 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 }
 
 func Test_Query(t *testing.T) {
+	ctx := context.Background()
+	ass := assert.New(t)
+	this := module()
+
+	iUser := fUser.NewUserCreateInputFixture()
+	oUser, _ := this.userModule.UserCreate(ctx, iUser)
+	iNamespace := fNamespace.NamespaceCreateInputFixture()
+	iNamespace.Context.UserID = oUser.User.ID
+	oNamespace, _ := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
+	input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+
+	outcome, err := this.SessionCreate(ctx, input)
+	ass.NoError(err)
+
+	session, err := this.Session(ctx, *outcome.Token)
+	ass.NoError(err)
+	ass.Equal(session.NamespaceId, oNamespace.Namespace.ID)
+	ass.Equal(session.UserId, oUser.User.ID)
 }
