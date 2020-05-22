@@ -2,7 +2,6 @@ package access
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -42,6 +41,7 @@ func Test_Create(t *testing.T) {
 
 	// create namespace
 	iNamespace := fNamespace.NamespaceCreateInputFixture()
+	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, err := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
 	ass.NoError(err)
 
@@ -66,22 +66,35 @@ func Test_Create(t *testing.T) {
 		ass.Equal(outcome.Errors[0].Fields, []string{"input.namespaceId"})
 	})
 
-	t.Run("test membership not found", func(t *testing.T) {
-		// TODO: …
-	})
-
 	t.Run("test ok", func(t *testing.T) {
 		outcome, err := this.SessionCreate(ctx, input)
 		ass.NoError(err)
-
-		if false {
-			ass.Equal(oUser.User.ID, outcome.Session.UserId)
-			ass.Equal(oNamespace.Namespace.ID, outcome.Session.NamespaceId)
-		} else {
-			// TODO: having error invalid password
-			fmt.Println("outcome", outcome.Errors[0], oUser.User.ID)
-		}
+		ass.Equal(oUser.User.ID, outcome.Session.UserId)
+		ass.Equal(oNamespace.Namespace.ID, outcome.Session.NamespaceId)
+		ass.Len(outcome.Errors, 0)
 	})
+}
+
+func Test_SessionCreate_MembershipNotFound(t *testing.T) {
+	ctx := context.Background()
+	ass := assert.New(t)
+	this := module()
+
+	// create user
+	iUser := fUser.NewUserCreateInputFixture()
+
+	// create namespace
+	iNamespace := fNamespace.NamespaceCreateInputFixture()
+	oNamespace, err := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
+	ass.NoError(err)
+
+	// base input
+	input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+
+	outcome, err := this.SessionCreate(ctx, input)
+	ass.Error(err)
+	ass.Nil(outcome)
+	ass.Contains(err.Error(), "user not found")
 }
 
 func Test_Query(t *testing.T) {

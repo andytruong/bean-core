@@ -43,8 +43,7 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 	// password validation
 	eg.Go(func() error {
 		pass := mUser.UserPassword{}
-		err := tx.First(&pass, "user_id = ? AND hashed_value = ? AND is_active = ?", email.UserId, input.Email, true).Error
-
+		err := tx.First(&pass, "user_id = ? AND hashed_value = ? AND is_active = ?", email.UserId, input.HashedPassword, true).Error
 		if err == gorm.ErrRecordNotFound {
 			outcome.Errors = util.NewErrors(util.ErrorCodeInput, []string{"input.namespaceId"}, "invalid password")
 			return nil
