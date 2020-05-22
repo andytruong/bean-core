@@ -26,6 +26,12 @@ dev-migrate:
 		DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable  \
 		go run cmd/main.go migrate
 
+docker-db-start:
+	docker run --rm -d --name=hi-pg -p 5432:5432 -e "POSTGRES_PASSWORD=and1bean" postgres:12-alpine
+
+docker-db-stop:
+	docker stop hi-pg
+
 dev-server:
 	CONFIG=config.yaml \
 		DB_DRIVER=postgres \
