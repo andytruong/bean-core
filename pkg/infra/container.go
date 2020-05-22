@@ -15,6 +15,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
+	"bean/pkg/access"
 	"bean/pkg/infra/gql"
 	"bean/pkg/util"
 )
@@ -64,6 +65,7 @@ type (
 		Version    string                    `yaml:"version"`
 		Databases  map[string]DatabaseConfig `yaml:"databases"`
 		HttpServer HttpServerConfig          `yaml:"http-server"`
+		Modules    ModulesConfig             `json:"modules"`
 
 		mu      *sync.Mutex
 		id      *util.Identifier
@@ -92,6 +94,10 @@ type (
 		Title   string `yaml:"title"`
 		Enabled bool   `yaml:"enabled"`
 		Path    string `yaml:"path"`
+	}
+
+	ModulesConfig struct {
+		Access *access.Config `yaml:"access"`
 	}
 )
 

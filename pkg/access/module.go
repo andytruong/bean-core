@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"path"
 	"runtime"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
@@ -26,8 +27,10 @@ func NewAccessModule(
 	logger *zap.Logger,
 	userModule *user.UserModule,
 	namespaceModule *namespace.NamespaceModule,
+	config *Config,
 ) *AccessModule {
 	module := &AccessModule{
+		config:          config,
 		logger:          logger,
 		db:              db,
 		id:              id,
@@ -42,6 +45,7 @@ func NewAccessModule(
 
 type (
 	AccessModule struct {
+		config          *Config
 		logger          *zap.Logger
 		db              *gorm.DB
 		id              *util.Identifier
@@ -50,6 +54,10 @@ type (
 		// depends on user module
 		userModule      *user.UserModule
 		namespaceModule *namespace.NamespaceModule
+	}
+
+	Config struct {
+		SessionTimeout time.Duration `yaml:"sessionTimeout"`
 	}
 
 	ModelResolver struct {
@@ -75,7 +83,15 @@ func (this AccessModule) Migrate(tx *gorm.DB, driver string) error {
 }
 
 func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
-	hdl := handler.SessionCreateHandler{ID: this.id}
+	timeout, _ := time.ParseDuration("128h")
+	if nil != this.config {
+		timeout = this.config.SessionTimeout
+	}
+
+	hdl := handler.SessionCreateHandler{
+		ID:             this.id,
+		SessionTimeout: timeout,
+	}
 	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
 	outcome, err := hdl.Handle(ctx, txn, input)
 	if nil != err {
@@ -87,8 +103,21 @@ func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.SessionC
 	return outcome, txn.Commit().Error
 }
 
-func (this *AccessModule) SessionDelete(ctx context.Context, input *dto.SessionCreateInput) (*dto.LogoutOutcome, error) {
-	panic("not implemented")
+func (this *AccessModule) SessionArchive(ctx context.Context, token string) (*dto.SessionDeleteOutcome, error) {
+	session, err := this.Session(ctx, token)
+	if nil != err {
+		return &dto.SessionDeleteOutcome{
+			Errors: util.NewErrors(util.ErrorCodeInput, []string{"token"}, err.Error()),
+			Result: false,
+		}, nil
+	}
+
+	hdl := handler.SessionDeleteHandler{
+		ID: this.id,
+		DB: this.db,
+	}
+
+	return hdl.Handle(ctx, session)
 }
 
 func (this AccessModule) Session(ctx context.Context, token string) (*model.Session, error) {

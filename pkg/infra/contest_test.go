@@ -23,10 +23,10 @@ func TestContainer(t *testing.T) {
 	ass := assert.New(t)
 	container := NewMockContainer()
 	id := container.Identifier()
-
 	ass.NotNil(t, id)
 
 	sv, err := container.modules.User()
 	ass.NoError(err)
 	ass.NotNil(sv)
+	ass.Equal(container.Modules.Access.SessionTimeout.String(), "128h0m0s")
 }

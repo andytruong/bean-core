@@ -3,6 +3,7 @@ package access
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -16,12 +17,11 @@ import (
 
 func module() *AccessModule {
 	db := util.MockDatabase()
-
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
 	mUser := user.NewUserModule(db, logger, id)
 	mNamespace := namespace.NewNamespaceModule(db, logger, id)
-	module := NewAccessModule(db, id, logger, mUser, mNamespace)
+	module := NewAccessModule(db, id, logger, mUser, mNamespace, nil)
 	util.MockInstall(mUser, db)
 	util.MockInstall(mNamespace, db)
 	util.MockInstall(module, db)
@@ -110,8 +110,52 @@ func Test_Query(t *testing.T) {
 	outcome, err := this.SessionCreate(ctx, input)
 	ass.NoError(err)
 
+	// can load session without issue
 	session, err := this.Session(ctx, *outcome.Token)
 	ass.NoError(err)
 	ass.Equal(session.NamespaceId, oNamespace.Namespace.ID)
 	ass.Equal(session.UserId, oUser.User.ID)
+
+	{
+		// change session expiration time
+		oneMinDuration, _ := time.ParseDuration("129h")
+		session.ExpiredAt = session.ExpiredAt.Add(-1 * oneMinDuration)
+		err := this.db.Table("access_session").Save(&session).Error
+		ass.NoError(err)
+
+		// load again -> error: session expired
+		_, err = this.Session(ctx, *outcome.Token)
+		ass.Error(err)
+		ass.Equal(err.Error(), "session expired")
+	}
+}
+
+func Test_Archive(t *testing.T) {
+	ctx := context.Background()
+	ass := assert.New(t)
+	this := module()
+
+	iUser := fUser.NewUserCreateInputFixture()
+	oUser, _ := this.userModule.UserCreate(ctx, iUser)
+	iNamespace := fNamespace.NamespaceCreateInputFixture()
+	iNamespace.Context.UserID = oUser.User.ID
+	oNamespace, _ := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
+	input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+
+	sessionOutcome, err := this.SessionCreate(ctx, input)
+	ass.NoError(err)
+
+	{
+		// can archive session without issue
+		outcome, err := this.SessionArchive(ctx, *sessionOutcome.Token)
+		ass.NoError(err)
+		ass.Equal(outcome.Result, true)
+	}
+
+	{
+		// archive again -> should have error
+		outcome, err := this.SessionArchive(ctx, *sessionOutcome.Token)
+		ass.NoError(err)
+		ass.Equal(outcome.Result, false)
+	}
 }

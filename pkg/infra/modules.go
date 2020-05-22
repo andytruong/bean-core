@@ -85,6 +85,7 @@ func (this *modules) Access() (*access.AccessModule, error) {
 			this.container.logger,
 			mUser,
 			mNamespace,
+			this.container.Modules.Access,
 		)
 	}
 
