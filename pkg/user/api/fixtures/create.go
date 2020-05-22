@@ -24,12 +24,12 @@ func NewUserCreateInputFixture() *dto.UserCreateInput {
 			},
 			Secondary: []*dto.UserEmailInput{
 				{
-					Verified: false,
+					Verified: true,
 					Value:    "john@doe.qa",
 					IsActive: true,
 				},
 				{
-					Verified: true,
+					Verified: false,
 					Value:    "john.doe@internet.qa",
 					IsActive: true,
 				},

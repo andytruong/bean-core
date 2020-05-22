@@ -71,6 +71,10 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 		return nil, err
 	}
 
+	if nil != outcome.Errors {
+		return outcome, nil
+	}
+
 	return this.createSession(tx, email.UserId, input.NamespaceID)
 }
 
