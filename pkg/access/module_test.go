@@ -45,18 +45,15 @@ func Test_Create(t *testing.T) {
 	oNamespace, err := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
 	ass.NoError(err)
 
-	// base input
-	input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-
 	t.Run("test email inactive", func(t *testing.T) {
-		input := input
+		input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 		input.Email = iUser.Emails.Secondary[1].Value
 		_, err := this.SessionCreate(ctx, input)
 		ass.Equal(err.Error(), "user not found")
 	})
 
 	t.Run("test password unmatched", func(t *testing.T) {
-		input := input
+		input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 		input.HashedPassword = "invalid-password"
 		outcome, err := this.SessionCreate(ctx, input)
 
@@ -67,6 +64,7 @@ func Test_Create(t *testing.T) {
 	})
 
 	t.Run("test ok", func(t *testing.T) {
+		input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 		outcome, err := this.SessionCreate(ctx, input)
 		ass.NoError(err)
 		ass.Equal(oUser.User.ID, outcome.Session.UserId)
