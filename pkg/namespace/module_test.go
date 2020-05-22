@@ -15,8 +15,7 @@ func Test_Create(t *testing.T) {
 	ass := assert.New(t)
 	input := fixtures.NamespaceCreateInputFixture()
 	db := util.MockDatabase()
-	module, err := NewNamespaceModule(db, util.MockLogger(), util.MockIdentifier())
-	ass.NoError(err)
+	module := NewNamespaceModule(db, util.MockLogger(), util.MockIdentifier())
 	util.MockInstall(module, db)
 
 	t.Run("happy case", func(t *testing.T) {
@@ -43,8 +42,7 @@ func Test_Create(t *testing.T) {
 func Test_Query(t *testing.T) {
 	ass := assert.New(t)
 	db := util.MockDatabase()
-	module, err := NewNamespaceModule(db, util.MockLogger(), util.MockIdentifier())
-	ass.NoError(err)
+	module := NewNamespaceModule(db, util.MockLogger(), util.MockIdentifier())
 	util.MockInstall(module, db)
 
 	var id string

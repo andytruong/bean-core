@@ -11,6 +11,9 @@ migrate: gql
 test:
 	go test ./... -v
 
+build:
+	go build -o /tmp/go-bean cmd/main.go
+
 clean:
 	go mod tidy
 

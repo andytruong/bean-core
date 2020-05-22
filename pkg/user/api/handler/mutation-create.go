@@ -59,9 +59,9 @@ func (this *UserCreateHandler) Create(tx *gorm.DB, input *dto.UserCreateInput) (
 			UserId:      user.ID,
 			Algorithm:   input.Password.Algorithm,
 			HashedValue: input.Password.HashedValue,
-			CreatedAt:   time.Time{},
-			UpdatedAt:   time.Time{},
-			IsActive:    false,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			IsActive:    true,
 		}
 
 		tx.Save(pass)
