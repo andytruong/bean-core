@@ -31,5 +31,9 @@ func (this SessionLoadHandler) Handle(ctx context.Context, token string) (*model
 		return nil, errors.New("session expired")
 	}
 
+	if !session.IsActive {
+		return nil, errors.New("session archived")
+	}
+
 	return session, nil
 }

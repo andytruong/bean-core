@@ -74,15 +74,6 @@ type ComplexityRoot struct {
 		Message func(childComplexity int) int
 	}
 
-	LogoutInput struct {
-		HashedToken func(childComplexity int) int
-	}
-
-	LogoutOutcome struct {
-		Errors func(childComplexity int) int
-		Result func(childComplexity int) int
-	}
-
 	Membership struct {
 		CreatedAt   func(childComplexity int) int
 		ID          func(childComplexity int) int
@@ -95,8 +86,8 @@ type ComplexityRoot struct {
 	Mutation struct {
 		NamespaceCreate func(childComplexity int, input dto.NamespaceCreateInput) int
 		Ping            func(childComplexity int) int
+		SessionArchive  func(childComplexity int, token string) int
 		SessionCreate   func(childComplexity int, input *dto1.SessionCreateInput) int
-		SessionDelete   func(childComplexity int, input *dto1.SessionCreateInput) int
 		UserCreate      func(childComplexity int, input *dto2.UserCreateInput) int
 	}
 
@@ -148,6 +139,11 @@ type ComplexityRoot struct {
 		Token   func(childComplexity int) int
 	}
 
+	SessionDeleteOutcome struct {
+		Errors func(childComplexity int) int
+		Result func(childComplexity int) int
+	}
+
 	User struct {
 		AvatarURI func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
@@ -194,7 +190,7 @@ type MutationResolver interface {
 	NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error)
 	UserCreate(ctx context.Context, input *dto2.UserCreateInput) (*dto2.UserCreateOutcome, error)
 	SessionCreate(ctx context.Context, input *dto1.SessionCreateInput) (*dto1.SessionCreateOutcome, error)
-	SessionDelete(ctx context.Context, input *dto1.SessionCreateInput) (*dto1.LogoutOutcome, error)
+	SessionArchive(ctx context.Context, token string) (*dto1.SessionDeleteOutcome, error)
 }
 type NamespaceResolver interface {
 	DomainNames(ctx context.Context, obj *model.Namespace) (*model.DomainNames, error)
@@ -311,27 +307,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Error.Message(childComplexity), true
 
-	case "LogoutInput.hashedToken":
-		if e.complexity.LogoutInput.HashedToken == nil {
-			break
-		}
-
-		return e.complexity.LogoutInput.HashedToken(childComplexity), true
-
-	case "LogoutOutcome.errors":
-		if e.complexity.LogoutOutcome.Errors == nil {
-			break
-		}
-
-		return e.complexity.LogoutOutcome.Errors(childComplexity), true
-
-	case "LogoutOutcome.result":
-		if e.complexity.LogoutOutcome.Result == nil {
-			break
-		}
-
-		return e.complexity.LogoutOutcome.Result(childComplexity), true
-
 	case "Membership.createdAt":
 		if e.complexity.Membership.CreatedAt == nil {
 			break
@@ -393,6 +368,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Ping(childComplexity), true
 
+	case "Mutation.sessionArchive":
+		if e.complexity.Mutation.SessionArchive == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_sessionArchive_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SessionArchive(childComplexity, args["token"].(string)), true
+
 	case "Mutation.sessionCreate":
 		if e.complexity.Mutation.SessionCreate == nil {
 			break
@@ -404,18 +391,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SessionCreate(childComplexity, args["input"].(*dto1.SessionCreateInput)), true
-
-	case "Mutation.sessionDelete":
-		if e.complexity.Mutation.SessionDelete == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_sessionDelete_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SessionDelete(childComplexity, args["input"].(*dto1.SessionCreateInput)), true
 
 	case "Mutation.userCreate":
 		if e.complexity.Mutation.UserCreate == nil {
@@ -653,6 +628,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SessionCreateOutcome.Token(childComplexity), true
+
+	case "SessionDeleteOutcome.errors":
+		if e.complexity.SessionDeleteOutcome.Errors == nil {
+			break
+		}
+
+		return e.complexity.SessionDeleteOutcome.Errors(childComplexity), true
+
+	case "SessionDeleteOutcome.result":
+		if e.complexity.SessionDeleteOutcome.Result == nil {
+			break
+		}
+
+		return e.complexity.SessionDeleteOutcome.Result(childComplexity), true
 
 	case "User.avatarUri":
 		if e.complexity.User.AvatarURI == nil {
@@ -1121,16 +1110,12 @@ type SessionCreateOutcome {
 # SessionDelete // Logout
 # ---------------------
 extend type Mutation {
-    sessionDelete(input: SessionCreateInput): LogoutOutcome!
+    sessionArchive(token: String!): SessionDeleteOutcome!
 }
 
-type LogoutInput {
-    hashedToken: String!
-}
-
-type LogoutOutcome {
+type SessionDeleteOutcome {
     errors: [Error!]
-    result: Boolean
+    result: Boolean!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/access/api/query.graphql", Input: `# ---------------------
@@ -1170,21 +1155,21 @@ func (ec *executionContext) field_Mutation_namespaceCreate_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_sessionCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_sessionArchive_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto1.SessionCreateInput
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["token"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["token"] = arg0
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_sessionDelete_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_sessionCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *dto1.SessionCreateInput
@@ -1669,102 +1654,6 @@ func (ec *executionContext) _Error_message(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LogoutInput_hashedToken(ctx context.Context, field graphql.CollectedField, obj *dto1.LogoutInput) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "LogoutInput",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.HashedToken, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _LogoutOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.LogoutOutcome) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "LogoutOutcome",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Errors, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*util.Error)
-	fc.Result = res
-	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _LogoutOutcome_result(ctx context.Context, field graphql.CollectedField, obj *dto1.LogoutOutcome) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "LogoutOutcome",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Result, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Membership_id(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2120,7 +2009,7 @@ func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field g
 	return ec.marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_sessionDelete(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_sessionArchive(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2136,7 +2025,7 @@ func (ec *executionContext) _Mutation_sessionDelete(ctx context.Context, field g
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_sessionDelete_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_sessionArchive_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -2144,7 +2033,7 @@ func (ec *executionContext) _Mutation_sessionDelete(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SessionDelete(rctx, args["input"].(*dto1.SessionCreateInput))
+		return ec.resolvers.Mutation().SessionArchive(rctx, args["token"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2156,9 +2045,9 @@ func (ec *executionContext) _Mutation_sessionDelete(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto1.LogoutOutcome)
+	res := resTmp.(*dto1.SessionDeleteOutcome)
 	fc.Result = res
-	return ec.marshalNLogoutOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLogoutOutcome(ctx, field.Selections, res)
+	return ec.marshalNSessionDeleteOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionDeleteOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Namespace_id(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
@@ -3218,6 +3107,71 @@ func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, f
 	res := resTmp.(*model2.Session)
 	fc.Result = res
 	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SessionDeleteOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.SessionDeleteOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "SessionDeleteOutcome",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*util.Error)
+	fc.Result = res
+	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SessionDeleteOutcome_result(ctx context.Context, field graphql.CollectedField, obj *dto1.SessionDeleteOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "SessionDeleteOutcome",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Result, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model1.User) (ret graphql.Marshaler) {
@@ -5479,59 +5433,6 @@ func (ec *executionContext) _Error(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
-var logoutInputImplementors = []string{"LogoutInput"}
-
-func (ec *executionContext) _LogoutInput(ctx context.Context, sel ast.SelectionSet, obj *dto1.LogoutInput) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, logoutInputImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("LogoutInput")
-		case "hashedToken":
-			out.Values[i] = ec._LogoutInput_hashedToken(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var logoutOutcomeImplementors = []string{"LogoutOutcome"}
-
-func (ec *executionContext) _LogoutOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.LogoutOutcome) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, logoutOutcomeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("LogoutOutcome")
-		case "errors":
-			out.Values[i] = ec._LogoutOutcome_errors(ctx, field, obj)
-		case "result":
-			out.Values[i] = ec._LogoutOutcome_result(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var membershipImplementors = []string{"Membership"}
 
 func (ec *executionContext) _Membership(ctx context.Context, sel ast.SelectionSet, obj *model.Membership) graphql.Marshaler {
@@ -5613,8 +5514,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "sessionDelete":
-			out.Values[i] = ec._Mutation_sessionDelete(ctx, field)
+		case "sessionArchive":
+			out.Values[i] = ec._Mutation_sessionArchive(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -5938,6 +5839,35 @@ func (ec *executionContext) _SessionCreateOutcome(ctx context.Context, sel ast.S
 			out.Values[i] = ec._SessionCreateOutcome_token(ctx, field, obj)
 		case "session":
 			out.Values[i] = ec._SessionCreateOutcome_session(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var sessionDeleteOutcomeImplementors = []string{"SessionDeleteOutcome"}
+
+func (ec *executionContext) _SessionDeleteOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.SessionDeleteOutcome) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sessionDeleteOutcomeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SessionDeleteOutcome")
+		case "errors":
+			out.Values[i] = ec._SessionDeleteOutcome_errors(ctx, field, obj)
+		case "result":
+			out.Values[i] = ec._SessionDeleteOutcome_result(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6510,20 +6440,6 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) marshalNLogoutOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐLogoutOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.LogoutOutcome) graphql.Marshaler {
-	return ec._LogoutOutcome(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNLogoutOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐLogoutOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.LogoutOutcome) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._LogoutOutcome(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNNamespace2beanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx context.Context, sel ast.SelectionSet, v model.Namespace) graphql.Marshaler {
 	return ec._Namespace(ctx, sel, &v)
 }
@@ -6578,6 +6494,20 @@ func (ec *executionContext) marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccess�
 		return graphql.Null
 	}
 	return ec._SessionCreateOutcome(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSessionDeleteOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionDeleteOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.SessionDeleteOutcome) graphql.Marshaler {
+	return ec._SessionDeleteOutcome(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSessionDeleteOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionDeleteOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.SessionDeleteOutcome) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._SessionDeleteOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {

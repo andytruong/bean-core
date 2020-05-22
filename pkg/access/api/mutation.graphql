@@ -29,14 +29,10 @@ type SessionCreateOutcome {
 # SessionDelete // Logout
 # ---------------------
 extend type Mutation {
-    sessionDelete(input: SessionCreateInput): LogoutOutcome!
+    sessionArchive(token: String!): SessionDeleteOutcome!
 }
 
-type LogoutInput {
-    hashedToken: String!
-}
-
-type LogoutOutcome {
+type SessionDeleteOutcome {
     errors: [Error!]
-    result: Boolean
+    result: Boolean!
 }

@@ -103,8 +103,21 @@ func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.SessionC
 	return outcome, txn.Commit().Error
 }
 
-func (this *AccessModule) SessionDelete(ctx context.Context, input *dto.SessionCreateInput) (*dto.LogoutOutcome, error) {
-	panic("not implemented")
+func (this *AccessModule) SessionArchive(ctx context.Context, token string) (*dto.SessionDeleteOutcome, error) {
+	session, err := this.Session(ctx, token)
+	if nil != err {
+		return &dto.SessionDeleteOutcome{
+			Errors: util.NewErrors(util.ErrorCodeInput, []string{"token"}, err.Error()),
+			Result: false,
+		}, nil
+	}
+
+	hdl := handler.SessionDeleteHandler{
+		ID: this.id,
+		DB: this.db,
+	}
+
+	return hdl.Handle(ctx, session)
 }
 
 func (this AccessModule) Session(ctx context.Context, token string) (*model.Session, error) {

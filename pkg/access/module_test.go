@@ -129,3 +129,33 @@ func Test_Query(t *testing.T) {
 		ass.Equal(err.Error(), "session expired")
 	}
 }
+
+func Test_Archive(t *testing.T) {
+	ctx := context.Background()
+	ass := assert.New(t)
+	this := module()
+
+	iUser := fUser.NewUserCreateInputFixture()
+	oUser, _ := this.userModule.UserCreate(ctx, iUser)
+	iNamespace := fNamespace.NamespaceCreateInputFixture()
+	iNamespace.Context.UserID = oUser.User.ID
+	oNamespace, _ := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
+	input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+
+	sessionOutcome, err := this.SessionCreate(ctx, input)
+	ass.NoError(err)
+
+	{
+		// can archive session without issue
+		outcome, err := this.SessionArchive(ctx, *sessionOutcome.Token)
+		ass.NoError(err)
+		ass.Equal(outcome.Result, true)
+	}
+
+	{
+		// archive again -> should have error
+		outcome, err := this.SessionArchive(ctx, *sessionOutcome.Token)
+		ass.NoError(err)
+		ass.Equal(outcome.Result, false)
+	}
+}
