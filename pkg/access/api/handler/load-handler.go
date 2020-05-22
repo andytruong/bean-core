@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jinzhu/gorm"
 
@@ -24,6 +25,10 @@ func (this SessionLoadHandler) Handle(ctx context.Context, token string) (*model
 
 	if err == gorm.ErrRecordNotFound {
 		return nil, errors.New("session not found: " + this.ID.Encode(token))
+	}
+
+	if session.ExpiredAt.Unix() <= time.Now().Unix() {
+		return nil, errors.New("session expired")
 	}
 
 	return session, nil

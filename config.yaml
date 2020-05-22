@@ -18,3 +18,7 @@ databases:
   slave:
     driver: "${DB_SLAVE_URL:sqlite3}"
     url:    "${DB_SLAVE_URL:dev.sqlite}"
+
+modules:
+  access:
+    sessionTimeout: "128h"

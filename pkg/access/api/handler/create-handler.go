@@ -11,14 +11,13 @@ import (
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	mNamespace "bean/pkg/namespace/model"
-	"bean/pkg/user"
 	mUser "bean/pkg/user/model"
 	"bean/pkg/util"
 )
 
 type SessionCreateHandler struct {
-	ID         *util.Identifier
-	UserModule *user.UserModule
+	ID             *util.Identifier
+	SessionTimeout time.Duration
 }
 
 func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
@@ -95,7 +94,7 @@ func (this SessionCreateHandler) createSession(tx *gorm.DB, userId string, names
 			IsActive:    true,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
-			ExpiredAt:   time.Now(),
+			ExpiredAt:   time.Now().Add(this.SessionTimeout),
 		}
 
 		if err := tx.Table("access_session").Create(&session).Error; nil != err {
