@@ -34,7 +34,7 @@ CREATE TABLE namespace_config
     created_at   timestamp              NOT NULL,
     updated_at   timestamp              NOT NULL,
     FOREIGN KEY (namespace_id) REFERENCES namespaces (id),
-    CONSTRAINT namespace_config_unique UNIQUE (bucket, key)
+    CONSTRAINT namespace_config_unique UNIQUE (namespace_id, bucket, key)
 );
 
 CREATE TABLE namespace_memberships
