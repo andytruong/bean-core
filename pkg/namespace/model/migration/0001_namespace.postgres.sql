@@ -1,14 +1,13 @@
 CREATE TABLE namespaces
 (
     id         character varying(26)  NOT NULL,
-    version    character varying(26)  NOT NULL,
+    version    character varying(26)  NOT NULL UNIQUE,
     is_active  boolean                NOT NULL,
     created_at timestamp              NOT NULL,
     updated_at timestamp              NOT NULL,
     deleted_at timestamp,
     title      character varying(255) NOT NULL,
-    CONSTRAINT namespace_id PRIMARY KEY (id),
-    CONSTRAINT namespace_version UNIQUE (version)
+    CONSTRAINT namespace_id PRIMARY KEY (id)
 );
 
 CREATE TABLE namespace_domains
@@ -20,9 +19,22 @@ CREATE TABLE namespace_domains
     is_verified  boolean                NOT NULL,
     created_at   timestamp              NOT NULL,
     updated_at   timestamp              NOT NULL,
-    value        character varying(256) NOT NULL,
+    value        character varying(256) NOT NULL UNIQUE,
+    FOREIGN KEY (namespace_id) REFERENCES namespaces (id)
+);
+
+CREATE TABLE namespace_config
+(
+    id           character varying(26)  NOT NULL PRIMARY KEY,
+    version      character varying(26)  NOT NULL UNIQUE,
+    namespace_id character varying(26)  NOT NULL,
+    bucket       character varying(128) NOT NULL,
+    key          character varying(128) NOT NULL,
+    value        json                   NOT NULL,
+    created_at   timestamp              NOT NULL,
+    updated_at   timestamp              NOT NULL,
     FOREIGN KEY (namespace_id) REFERENCES namespaces (id),
-    CONSTRAINT namespace_unique_domain UNIQUE (value)
+    CONSTRAINT namespace_config_unique UNIQUE (bucket, key)
 );
 
 CREATE TABLE namespace_memberships

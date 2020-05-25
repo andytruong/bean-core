@@ -6,6 +6,7 @@ type Namespace {
     updatedAt: Time!
     isActive: Boolean!
     domainNames: DomainNames
+    features: NamespaceFeature
 }
 
 type DomainNames {
@@ -20,6 +21,10 @@ type DomainName {
     updatedAt: Time!
     isActive: Boolean!
     isVerified: Boolean!
+}
+
+type NamespaceFeature {
+    register: Boolean!
 }
 
 type Membership {

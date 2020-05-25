@@ -1,6 +1,5 @@
 extend type Mutation {
     namespaceCreate(input: NamespaceCreateInput!): NamespaceCreateOutcome
-    # TODO: create membership
 }
 
 input NamespaceCreateInput {
@@ -12,6 +11,11 @@ input NamespaceCreateInputObject {
     title: String
     isActive: Boolean!
     domainNames: DomainNamesInput
+    features: NamespaceFeaturesInput!
+}
+
+input NamespaceFeaturesInput {
+    register: Boolean!
 }
 
 input NamespaceCreateContext {
