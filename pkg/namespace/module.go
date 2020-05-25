@@ -79,3 +79,7 @@ func (this NamespaceModule) Features(ctx context.Context, namespace *model.Names
 	hdl := handler.NamespaceQueryFeaturesHandler{DB: this.db}
 	return hdl.Features(ctx, namespace)
 }
+
+func (this NamespaceModule) NamespaceUpdate(ctx context.Context, input dto.NamespaceUpdateInput) (*bool, error) {
+	panic("implement me")
+}

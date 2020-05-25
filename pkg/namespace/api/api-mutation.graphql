@@ -37,3 +37,24 @@ type NamespaceCreateOutcome {
     errors: [Error]
     namespace: Namespace
 }
+
+# ---------------------
+# Update namespace
+# ---------------------
+extend type Mutation {
+    namespaceUpdate(input: NamespaceUpdateInput!): Boolean
+}
+
+input NamespaceUpdateInput {
+    namespaceId: ID!
+    namespaceVersion: ID!
+    object: NamespaceUpdateInputObject
+}
+
+input NamespaceUpdateInputObject {
+    features: NamespaceUpdateInputFeatures
+}
+
+input NamespaceUpdateInputFeatures {
+    register: Boolean
+}
