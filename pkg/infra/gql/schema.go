@@ -107,7 +107,7 @@ type ComplexityRoot struct {
 		Namespace func(childComplexity int) int
 	}
 
-	NamespaceFeature struct {
+	NamespaceFeatures struct {
 		Register func(childComplexity int) int
 	}
 
@@ -199,7 +199,7 @@ type MutationResolver interface {
 }
 type NamespaceResolver interface {
 	DomainNames(ctx context.Context, obj *model.Namespace) (*model.DomainNames, error)
-	Features(ctx context.Context, obj *model.Namespace) (*NamespaceFeature, error)
+	Features(ctx context.Context, obj *model.Namespace) (*model.NamespaceFeatures, error)
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
@@ -480,12 +480,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NamespaceCreateOutcome.Namespace(childComplexity), true
 
-	case "NamespaceFeature.register":
-		if e.complexity.NamespaceFeature.Register == nil {
+	case "NamespaceFeatures.register":
+		if e.complexity.NamespaceFeatures.Register == nil {
 			break
 		}
 
-		return e.complexity.NamespaceFeature.Register(childComplexity), true
+		return e.complexity.NamespaceFeatures.Register(childComplexity), true
 
 	case "Query.namespace":
 		if e.complexity.Query.Namespace == nil {
@@ -974,7 +974,7 @@ type NamespaceCreateOutcome {
     updatedAt: Time!
     isActive: Boolean!
     domainNames: DomainNames
-    features: NamespaceFeature
+    features: NamespaceFeatures
 }
 
 type DomainNames {
@@ -991,7 +991,7 @@ type DomainName {
     isVerified: Boolean!
 }
 
-type NamespaceFeature {
+type NamespaceFeatures {
     register: Boolean!
 }
 
@@ -2337,9 +2337,9 @@ func (ec *executionContext) _Namespace_features(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*NamespaceFeature)
+	res := resTmp.(*model.NamespaceFeatures)
 	fc.Result = res
-	return ec.marshalONamespaceFeature2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceFeature(ctx, field.Selections, res)
+	return ec.marshalONamespaceFeatures2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespaceFeatures(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NamespaceCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.NamespaceCreateOutcome) (ret graphql.Marshaler) {
@@ -2404,7 +2404,7 @@ func (ec *executionContext) _NamespaceCreateOutcome_namespace(ctx context.Contex
 	return ec.marshalONamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NamespaceFeature_register(ctx context.Context, field graphql.CollectedField, obj *NamespaceFeature) (ret graphql.Marshaler) {
+func (ec *executionContext) _NamespaceFeatures_register(ctx context.Context, field graphql.CollectedField, obj *model.NamespaceFeatures) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2412,7 +2412,7 @@ func (ec *executionContext) _NamespaceFeature_register(ctx context.Context, fiel
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "NamespaceFeature",
+		Object:   "NamespaceFeatures",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -5745,19 +5745,19 @@ func (ec *executionContext) _NamespaceCreateOutcome(ctx context.Context, sel ast
 	return out
 }
 
-var namespaceFeatureImplementors = []string{"NamespaceFeature"}
+var namespaceFeaturesImplementors = []string{"NamespaceFeatures"}
 
-func (ec *executionContext) _NamespaceFeature(ctx context.Context, sel ast.SelectionSet, obj *NamespaceFeature) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, namespaceFeatureImplementors)
+func (ec *executionContext) _NamespaceFeatures(ctx context.Context, sel ast.SelectionSet, obj *model.NamespaceFeatures) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, namespaceFeaturesImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("NamespaceFeature")
+			out.Values[i] = graphql.MarshalString("NamespaceFeatures")
 		case "register":
-			out.Values[i] = ec._NamespaceFeature_register(ctx, field, obj)
+			out.Values[i] = ec._NamespaceFeatures_register(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7394,15 +7394,15 @@ func (ec *executionContext) marshalONamespaceCreateOutcome2ᚖbeanᚋpkgᚋnames
 	return ec._NamespaceCreateOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalONamespaceFeature2beanᚋpkgᚋinfraᚋgqlᚐNamespaceFeature(ctx context.Context, sel ast.SelectionSet, v NamespaceFeature) graphql.Marshaler {
-	return ec._NamespaceFeature(ctx, sel, &v)
+func (ec *executionContext) marshalONamespaceFeatures2beanᚋpkgᚋnamespaceᚋmodelᚐNamespaceFeatures(ctx context.Context, sel ast.SelectionSet, v model.NamespaceFeatures) graphql.Marshaler {
+	return ec._NamespaceFeatures(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalONamespaceFeature2ᚖbeanᚋpkgᚋinfraᚋgqlᚐNamespaceFeature(ctx context.Context, sel ast.SelectionSet, v *NamespaceFeature) graphql.Marshaler {
+func (ec *executionContext) marshalONamespaceFeatures2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespaceFeatures(ctx context.Context, sel ast.SelectionSet, v *model.NamespaceFeatures) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._NamespaceFeature(ctx, sel, v)
+	return ec._NamespaceFeatures(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOSession2beanᚋpkgᚋaccessᚋmodelᚐSession(ctx context.Context, sel ast.SelectionSet, v model2.Session) graphql.Marshaler {

@@ -9,7 +9,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
 
-	"bean/pkg/infra/gql"
 	"bean/pkg/namespace/api/handler"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
@@ -78,6 +77,6 @@ func (this NamespaceModule) DomainNames(ctx context.Context, namespace *model.Na
 	return hdl.DomainNames(ctx, namespace)
 }
 
-func (this NamespaceModule) Features(ctx context.Context, namespace *model.Namespace) (*gql.NamespaceFeature, error) {
+func (this NamespaceModule) Features(ctx context.Context, namespace *model.Namespace) (*model.NamespaceFeatures, error) {
 	panic("implement me")
 }
