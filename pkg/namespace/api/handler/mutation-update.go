@@ -31,7 +31,7 @@ func (this NamespaceUpdateHandler) NamespaceUpdate(
 	}
 
 	namespace.Version = version
-	if err := tx.Update(&namespace).Error; nil != err {
+	if err := tx.Save(namespace).Error; nil != err {
 		return nil, err
 	}
 

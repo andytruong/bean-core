@@ -89,5 +89,12 @@ func (this NamespaceModule) NamespaceUpdate(ctx context.Context, input dto.Names
 	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
 	hdl := handler.NamespaceUpdateHandler{ID: this.id}
 
-	return hdl.NamespaceUpdate(tx, namespace, input)
+	outcome, err := hdl.NamespaceUpdate(tx, namespace, input)
+
+	if nil != err {
+		tx.Rollback()
+		return nil, err
+	} else {
+		return outcome, tx.Commit().Error
+	}
 }

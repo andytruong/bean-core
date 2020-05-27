@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jinzhu/gorm"
 
@@ -43,7 +42,6 @@ func (this NamespaceQueryFeaturesHandler) Features(ctx context.Context, namespac
 		default:
 			panic("unknown bucket: " + config.Bucket)
 		}
-		fmt.Println("config", config.Bucket)
 	}
 
 	return features, nil
