@@ -46,6 +46,11 @@ func (this *NamespaceCreateHandler) Create(tx *gorm.DB, input dto.NamespaceCreat
 		return nil, err
 	}
 
+	// save features
+	if err := this.createFeatures(tx, namespace, input); nil != err {
+		return nil, err
+	}
+
 	return &dto.NamespaceCreateOutcome{
 		Errors:    nil,
 		Namespace: namespace,
@@ -114,4 +119,40 @@ func (this *NamespaceCreateHandler) createMembership(tx *gorm.DB, namespace *mod
 	}
 
 	return nil
+}
+
+func (this *NamespaceCreateHandler) createFeatures(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
+	if input.Object.Features.Register {
+		return this.createFeature(tx, namespace, "default", "register", []byte("true"))
+	} else {
+		return this.createFeature(tx, namespace, "default", "register", []byte("false"))
+	}
+}
+
+func (this *NamespaceCreateHandler) createFeature(
+	tx *gorm.DB,
+	namespace *model.Namespace, bucket string, key string, value []byte,
+) error {
+	id, err := this.ID.ULID()
+	if nil != err {
+		return err
+	}
+
+	version, err := this.ID.ULID()
+	if nil != err {
+		return err
+	}
+
+	config := model.NamespaceConfig{
+		Id:          id,
+		Version:     version,
+		NamespaceId: namespace.ID,
+		Bucket:      bucket,
+		Key:         key,
+		Value:       value,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	return tx.Table("namespace_config").Create(&config).Error
 }

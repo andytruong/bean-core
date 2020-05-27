@@ -3,7 +3,7 @@ server:
 
 gql:
 	gqlgen generate
-	rm pkg/infra/resolvers.go
+	rm pkg/infra/__tmp__resolvers.go
 
 migrate: gql
 	CONFIG=config.yaml go run cmd/main.go migrate

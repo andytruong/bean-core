@@ -64,7 +64,6 @@ func (this NamespaceModule) NamespaceCreate(ctx context.Context, input dto.Names
 
 	if nil != err {
 		txn.Rollback()
-
 		return nil, err
 	} else {
 		return outcome, txn.Commit().Error
@@ -73,6 +72,29 @@ func (this NamespaceModule) NamespaceCreate(ctx context.Context, input dto.Names
 
 func (this NamespaceModule) DomainNames(ctx context.Context, namespace *model.Namespace) (*model.DomainNames, error) {
 	hdl := handler.DomainQueryHandler{DB: this.db}
-
 	return hdl.DomainNames(ctx, namespace)
+}
+
+func (this NamespaceModule) Features(ctx context.Context, namespace *model.Namespace) (*model.NamespaceFeatures, error) {
+	hdl := handler.NamespaceQueryFeaturesHandler{DB: this.db}
+	return hdl.Features(ctx, namespace)
+}
+
+func (this NamespaceModule) NamespaceUpdate(ctx context.Context, input dto.NamespaceUpdateInput) (*bool, error) {
+	namespace, err := this.Namespace(ctx, input.NamespaceID)
+	if nil != err {
+		return nil, err
+	}
+
+	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
+	hdl := handler.NamespaceUpdateHandler{ID: this.id}
+
+	outcome, err := hdl.NamespaceUpdate(tx, namespace, input)
+
+	if nil != err {
+		tx.Rollback()
+		return nil, err
+	} else {
+		return outcome, tx.Commit().Error
+	}
 }

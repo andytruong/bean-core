@@ -8,7 +8,7 @@ exec:
   filename: pkg/infra/gql/schema.go
 
 model:
-  filename: pkg/infra/gql/model.go
+  filename: pkg/infra/gql/__tmp__model.go
 
 models:
   EmailAddress:
@@ -17,7 +17,7 @@ models:
     model: bean/pkg/util.Uri
 
 resolver:
-  filename: pkg/infra/resolvers.go
+  filename: pkg/infra/__tmp__resolvers.go
   type: Resolver
 
 autobind:
