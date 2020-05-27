@@ -35,6 +35,11 @@ func (this NamespaceUpdateHandler) NamespaceUpdate(
 		return nil, err
 	}
 
+	err = this.updateFeatures(tx, namespace, input)
+	if nil != err {
+		return nil, err
+	}
+
 	return util.NilBool(true), nil
 }
 
