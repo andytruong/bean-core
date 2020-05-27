@@ -30,6 +30,7 @@ const (
 	ErrorConfig          = Err("configuration error")
 	ErrorNilPointer      = Err("nil pointer error")
 	ErrorQuery           = Err("query error")
+	ErrorVersionConflict = Err("version conflict")
 )
 
 func NilPointerErrorValidate(values ...interface{}) error {

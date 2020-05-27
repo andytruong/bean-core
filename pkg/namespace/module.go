@@ -81,5 +81,13 @@ func (this NamespaceModule) Features(ctx context.Context, namespace *model.Names
 }
 
 func (this NamespaceModule) NamespaceUpdate(ctx context.Context, input dto.NamespaceUpdateInput) (*bool, error) {
-	panic("implement me")
+	namespace, err := this.Namespace(ctx, input.NamespaceID)
+	if nil != err {
+		return nil, err
+	}
+
+	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
+	hdl := handler.NamespaceUpdateHandler{ID: this.id}
+
+	return hdl.NamespaceUpdate(tx, namespace, input)
 }

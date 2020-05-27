@@ -129,7 +129,10 @@ func (this *NamespaceCreateHandler) createFeatures(tx *gorm.DB, namespace *model
 	}
 }
 
-func (this *NamespaceCreateHandler) createFeature(tx *gorm.DB, namespace *model.Namespace, bucket string, key string, value []byte) error {
+func (this *NamespaceCreateHandler) createFeature(
+	tx *gorm.DB,
+	namespace *model.Namespace, bucket string, key string, value []byte,
+) error {
 	id, err := this.ID.ULID()
 	if nil != err {
 		return err
