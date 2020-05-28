@@ -40,6 +40,7 @@ CREATE TABLE namespace_config
 CREATE TABLE namespace_memberships
 (
     id           character varying(26) NOT NULL PRIMARY KEY,
+    version      character varying(26) NOT NULL UNIQUE,
     namespace_id character varying(26) NOT NULL,
     user_id      character varying(26) NOT NULL,
     is_active    boolean               NOT NULL,

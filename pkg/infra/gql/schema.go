@@ -82,6 +82,7 @@ type ComplexityRoot struct {
 		Namespace func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 		User      func(childComplexity int) int
+		Version   func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -368,6 +369,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Membership.User(childComplexity), true
+
+	case "Membership.version":
+		if e.complexity.Membership.Version == nil {
+			break
+		}
+
+		return e.complexity.Membership.Version(childComplexity), true
 
 	case "Mutation.namespaceCreate":
 		if e.complexity.Mutation.NamespaceCreate == nil {
@@ -1091,6 +1099,7 @@ type NamespaceFeatures {
 
 type Membership {
     id: ID!
+    version: ID!
     namespace: Namespace!
     user: User!
     isActive: Boolean!
@@ -1823,6 +1832,40 @@ func (ec *executionContext) _Membership_id(ctx context.Context, field graphql.Co
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Membership_version(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Membership",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5920,6 +5963,11 @@ func (ec *executionContext) _Membership(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = graphql.MarshalString("Membership")
 		case "id":
 			out.Values[i] = ec._Membership_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "version":
+			out.Values[i] = ec._Membership_version(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
