@@ -18,16 +18,22 @@ import (
 
 func NewNamespaceModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) *NamespaceModule {
 	return &NamespaceModule{
-		logger: logger,
-		db:     db,
-		id:     id,
+		logger:     logger,
+		db:         db,
+		id:         id,
+		membership: newMembershipResolver(),
 	}
 }
 
 type NamespaceModule struct {
-	logger *zap.Logger
-	db     *gorm.DB
-	id     *util.Identifier
+	logger     *zap.Logger
+	db         *gorm.DB
+	id         *util.Identifier
+	membership MembershipResolver
+}
+
+func (this *NamespaceModule) MembershipResolver() MembershipResolver {
+	return this.membership
 }
 
 func (this NamespaceModule) Migrate(tx *gorm.DB, driver string) error {

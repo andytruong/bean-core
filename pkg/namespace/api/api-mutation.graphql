@@ -1,3 +1,6 @@
+# ---------------------
+# Create namespace
+# ---------------------
 extend type Mutation {
     namespaceCreate(input: NamespaceCreateInput!): NamespaceCreateOutcome
 }
@@ -34,7 +37,7 @@ input DomainNameInput {
 }
 
 type NamespaceCreateOutcome {
-    errors: [Error]
+    errors: [Error!]
     namespace: Namespace
 }
 

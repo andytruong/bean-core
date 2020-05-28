@@ -15,7 +15,7 @@ import (
 func Test_Create(t *testing.T) {
 	ass := assert.New(t)
 	input := fixtures.NamespaceCreateInputFixture()
-	db := util.MockDatabase()
+	db := util.MockDatabase().LogMode(false)
 	module := NewNamespaceModule(db, util.MockLogger(), util.MockIdentifier())
 	util.MockInstall(module, db)
 

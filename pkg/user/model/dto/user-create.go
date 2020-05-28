@@ -36,6 +36,6 @@ type UserPasswordInput struct {
 }
 
 type UserCreateOutcome struct {
-	User   *model.User   `json:"user"`
-	Errors []*util.Error `json:"errors"`
+	Errors []util.Error `json:"errors"`
+	User   *model.User  `json:"user"`
 }

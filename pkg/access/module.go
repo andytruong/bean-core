@@ -14,9 +14,7 @@ import (
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	"bean/pkg/namespace"
-	namespace_model "bean/pkg/namespace/model"
 	"bean/pkg/user"
-	user_model "bean/pkg/user/model"
 	"bean/pkg/util"
 	"bean/pkg/util/migrate"
 )
@@ -58,10 +56,6 @@ type (
 
 	Config struct {
 		SessionTimeout time.Duration `yaml:"sessionTimeout"`
-	}
-
-	ModelResolver struct {
-		module *AccessModule
 	}
 )
 
@@ -127,20 +121,4 @@ func (this AccessModule) Session(ctx context.Context, token string) (*model.Sess
 	}
 
 	return hdl.Handle(ctx, token)
-}
-
-func (this ModelResolver) User(ctx context.Context, obj *model.Session) (*user_model.User, error) {
-	return this.module.userModule.User(ctx, obj.UserId)
-}
-
-func (this ModelResolver) Context(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
-	panic("implement me")
-}
-
-func (this ModelResolver) Scopes(ctx context.Context, obj *model.Session) ([]*model.AccessScope, error) {
-	return obj.Scopes, nil
-}
-
-func (this ModelResolver) Namespace(ctx context.Context, obj *model.Session) (*namespace_model.Namespace, error) {
-	return this.module.namespaceModule.Namespace(ctx, obj.NamespaceId)
 }

@@ -37,5 +37,5 @@ input UserPasswordInput {
 
 type UserCreateOutcome {
     user: User
-    errors: [Error]
+    errors: [Error!]
 }
