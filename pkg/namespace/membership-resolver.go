@@ -4,19 +4,26 @@ import (
 	"context"
 
 	"bean/pkg/namespace/model"
+	"bean/pkg/user"
 	mUser "bean/pkg/user/model"
 )
 
-func newMembershipResolver() MembershipResolver {
-	return MembershipResolver{}
+func newMembershipResolver(namespaceModule *NamespaceModule, userModule *user.UserModule) MembershipResolver {
+	return MembershipResolver{
+		namespaceModule: namespaceModule,
+		userModule:      userModule,
+	}
 }
 
-type MembershipResolver struct{}
+type MembershipResolver struct {
+	namespaceModule *NamespaceModule
+	userModule      *user.UserModule
+}
 
 func (this MembershipResolver) Namespace(ctx context.Context, obj *model.Membership) (*model.Namespace, error) {
-	panic("implement me")
+	return this.namespaceModule.Namespace(ctx, obj.NamespaceID)
 }
 
 func (this MembershipResolver) User(ctx context.Context, obj *model.Membership) (*mUser.User, error) {
-	panic("implement me")
+	return this.userModule.User(ctx, obj.UserID)
 }
