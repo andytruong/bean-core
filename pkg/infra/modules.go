@@ -52,10 +52,16 @@ func (this *modules) Namespace() (*namespace.NamespaceModule, error) {
 			return nil, err
 		}
 
+		mUser, err := this.User()
+		if nil != err {
+			return nil, err
+		}
+
 		this.namespace = namespace.NewNamespaceModule(
 			db,
 			this.container.logger,
 			this.container.Identifier(),
+			mUser,
 		)
 	}
 
