@@ -29,8 +29,8 @@ type NamespaceFeatures {
 
 type Membership {
     id: ID!
-    namespaceId: ID!
-    userId: ID!
+    namespace: Namespace!
+    user: User!
     isActive: Boolean!
     createdAt: Time!
     updatedAt: Time!
