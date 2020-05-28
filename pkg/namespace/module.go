@@ -104,3 +104,7 @@ func (this NamespaceModule) NamespaceUpdate(ctx context.Context, input dto.Names
 		return outcome, tx.Commit().Error
 	}
 }
+
+func (this NamespaceModule) NamespaceMembershipCreate(ctx context.Context, input dto.NamespaceMembershipCreateInput) (*dto.NamespaceMembershipCreateOutcome, error) {
+	panic("implement me")
+}
