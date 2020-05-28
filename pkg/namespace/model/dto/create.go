@@ -37,6 +37,6 @@ type NamespaceCreateContext struct {
 }
 
 type NamespaceCreateOutcome struct {
-	Errors    []*util.Error    `json:"errors"`
+	Errors    []util.Error     `json:"errors"`
 	Namespace *model.Namespace `json:"namespace"`
 }

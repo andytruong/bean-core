@@ -42,6 +42,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Membership() MembershipResolver
 	Mutation() MutationResolver
 	Namespace() NamespaceResolver
 	Query() QueryResolver
@@ -75,12 +76,12 @@ type ComplexityRoot struct {
 	}
 
 	Membership struct {
-		CreatedAt   func(childComplexity int) int
-		ID          func(childComplexity int) int
-		IsActive    func(childComplexity int) int
-		NamespaceID func(childComplexity int) int
-		UpdatedAt   func(childComplexity int) int
-		UserID      func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		IsActive  func(childComplexity int) int
+		Namespace func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		User      func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -191,6 +192,10 @@ type ComplexityRoot struct {
 	}
 }
 
+type MembershipResolver interface {
+	Namespace(ctx context.Context, obj *model.Membership) (*model.Namespace, error)
+	User(ctx context.Context, obj *model.Membership) (*model1.User, error)
+}
 type MutationResolver interface {
 	Ping(ctx context.Context) (string, error)
 	NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error)
@@ -336,12 +341,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Membership.IsActive(childComplexity), true
 
-	case "Membership.namespaceId":
-		if e.complexity.Membership.NamespaceID == nil {
+	case "Membership.namespace":
+		if e.complexity.Membership.Namespace == nil {
 			break
 		}
 
-		return e.complexity.Membership.NamespaceID(childComplexity), true
+		return e.complexity.Membership.Namespace(childComplexity), true
 
 	case "Membership.updatedAt":
 		if e.complexity.Membership.UpdatedAt == nil {
@@ -350,12 +355,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Membership.UpdatedAt(childComplexity), true
 
-	case "Membership.userId":
-		if e.complexity.Membership.UserID == nil {
+	case "Membership.user":
+		if e.complexity.Membership.User == nil {
 			break
 		}
 
-		return e.complexity.Membership.UserID(childComplexity), true
+		return e.complexity.Membership.User(childComplexity), true
 
 	case "Mutation.namespaceCreate":
 		if e.complexity.Mutation.NamespaceCreate == nil {
@@ -936,7 +941,10 @@ enum AccessScope {
     Authenticated
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/namespace/api/api-mutation.graphql", Input: `extend type Mutation {
+	&ast.Source{Name: "pkg/namespace/api/api-mutation.graphql", Input: `# ---------------------
+# Create namespace
+# ---------------------
+extend type Mutation {
     namespaceCreate(input: NamespaceCreateInput!): NamespaceCreateOutcome
 }
 
@@ -972,7 +980,7 @@ input DomainNameInput {
 }
 
 type NamespaceCreateOutcome {
-    errors: [Error]
+    errors: [Error!]
     namespace: Namespace
 }
 
@@ -1032,8 +1040,8 @@ type NamespaceFeatures {
 
 type Membership {
     id: ID!
-    namespaceId: ID!
-    userId: ID!
+    namespace: Namespace!
+    user: User!
     isActive: Boolean!
     createdAt: Time!
     updatedAt: Time!
@@ -1108,7 +1116,7 @@ input UserPasswordInput {
 
 type UserCreateOutcome {
     user: User
-    errors: [Error]
+    errors: [Error!]
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/user/api/query.graphql", Input: `extend type Query {
@@ -1766,7 +1774,7 @@ func (ec *executionContext) _Membership_id(ctx context.Context, field graphql.Co
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_namespaceId(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_namespace(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1777,13 +1785,13 @@ func (ec *executionContext) _Membership_namespaceId(ctx context.Context, field g
 		Object:   "Membership",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.NamespaceID, nil
+		return ec.resolvers.Membership().Namespace(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1795,12 +1803,12 @@ func (ec *executionContext) _Membership_namespaceId(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.Namespace)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNNamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_userId(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_user(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1811,13 +1819,13 @@ func (ec *executionContext) _Membership_userId(ctx context.Context, field graphq
 		Object:   "Membership",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.UserID, nil
+		return ec.resolvers.Membership().User(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1829,9 +1837,9 @@ func (ec *executionContext) _Membership_userId(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model1.User)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Membership_isActive(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
@@ -2455,9 +2463,9 @@ func (ec *executionContext) _NamespaceCreateOutcome_errors(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*util.Error)
+	res := resTmp.([]util.Error)
 	fc.Result = res
-	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐError(ctx, field.Selections, res)
+	return ec.marshalOError2ᚕbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NamespaceCreateOutcome_namespace(ctx context.Context, field graphql.CollectedField, obj *dto.NamespaceCreateOutcome) (ret graphql.Marshaler) {
@@ -3644,9 +3652,9 @@ func (ec *executionContext) _UserCreateOutcome_errors(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*util.Error)
+	res := resTmp.([]util.Error)
 	fc.Result = res
-	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐError(ctx, field.Selections, res)
+	return ec.marshalOError2ᚕbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserEmail_id(ctx context.Context, field graphql.CollectedField, obj *model1.UserEmail) (ret graphql.Marshaler) {
@@ -5718,32 +5726,50 @@ func (ec *executionContext) _Membership(ctx context.Context, sel ast.SelectionSe
 		case "id":
 			out.Values[i] = ec._Membership_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
-		case "namespaceId":
-			out.Values[i] = ec._Membership_namespaceId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "userId":
-			out.Values[i] = ec._Membership_userId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+		case "namespace":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Membership_namespace(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "user":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Membership_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "isActive":
 			out.Values[i] = ec._Membership_isActive(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Membership_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Membership_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -6857,6 +6883,20 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
+func (ec *executionContext) marshalNUser2beanᚋpkgᚋuserᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model1.User) graphql.Marshaler {
+	return ec._User(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model1.User) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._User(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNUserEmailInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (dto2.UserEmailInput, error) {
 	return ec.unmarshalInputUserEmailInput(ctx, v)
 }
@@ -7393,11 +7433,7 @@ func (ec *executionContext) unmarshalODomainNamesInput2ᚖbeanᚋpkgᚋnamespace
 	return &res, err
 }
 
-func (ec *executionContext) marshalOError2beanᚋpkgᚋutilᚐError(ctx context.Context, sel ast.SelectionSet, v util.Error) graphql.Marshaler {
-	return ec._Error(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐError(ctx context.Context, sel ast.SelectionSet, v []*util.Error) graphql.Marshaler {
+func (ec *executionContext) marshalOError2ᚕbeanᚋpkgᚋutilᚐErrorᚄ(ctx context.Context, sel ast.SelectionSet, v []util.Error) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -7424,7 +7460,7 @@ func (ec *executionContext) marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐError(ctx co
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOError2ᚖbeanᚋpkgᚋutilᚐError(ctx, sel, v[i])
+			ret[i] = ec.marshalNError2beanᚋpkgᚋutilᚐError(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -7475,13 +7511,6 @@ func (ec *executionContext) marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx
 	}
 	wg.Wait()
 	return ret
-}
-
-func (ec *executionContext) marshalOError2ᚖbeanᚋpkgᚋutilᚐError(ctx context.Context, sel ast.SelectionSet, v *util.Error) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Error(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOErrorCode2beanᚋpkgᚋutilᚐErrorCode(ctx context.Context, v interface{}) (util.ErrorCode, error) {
