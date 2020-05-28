@@ -12,17 +12,24 @@ import (
 	"bean/pkg/namespace/api/handler"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
+	"bean/pkg/user"
 	"bean/pkg/util"
 	"bean/pkg/util/migrate"
 )
 
-func NewNamespaceModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) *NamespaceModule {
-	return &NamespaceModule{
-		logger:     logger,
-		db:         db,
-		id:         id,
-		membership: newMembershipResolver(),
+func NewNamespaceModule(
+	db *gorm.DB, logger *zap.Logger, id *util.Identifier,
+	userModule *user.UserModule,
+) *NamespaceModule {
+	this := &NamespaceModule{
+		logger: logger,
+		db:     db,
+		id:     id,
 	}
+
+	this.membership = newMembershipResolver(this, userModule)
+
+	return this
 }
 
 type NamespaceModule struct {

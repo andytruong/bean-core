@@ -9,6 +9,7 @@ import (
 
 	"bean/pkg/namespace/api/fixtures"
 	"bean/pkg/namespace/model/dto"
+	"bean/pkg/user"
 	"bean/pkg/util"
 )
 
@@ -16,7 +17,10 @@ func Test_Create(t *testing.T) {
 	ass := assert.New(t)
 	input := fixtures.NamespaceCreateInputFixture()
 	db := util.MockDatabase().LogMode(false)
-	module := NewNamespaceModule(db, util.MockLogger(), util.MockIdentifier())
+	logger := util.MockLogger()
+	id := util.MockIdentifier()
+	mUser := user.NewUserModule(db, logger, id)
+	module := NewNamespaceModule(db, logger, id, mUser)
 	util.MockInstall(module, db)
 
 	t.Run("happy case", func(t *testing.T) {
@@ -43,7 +47,10 @@ func Test_Create(t *testing.T) {
 func Test_Query(t *testing.T) {
 	ass := assert.New(t)
 	db := util.MockDatabase()
-	module := NewNamespaceModule(db, util.MockLogger(), util.MockIdentifier())
+	logger := util.MockLogger()
+	identifier := util.MockIdentifier()
+	mUser := user.NewUserModule(db, logger, identifier)
+	module := NewNamespaceModule(db, logger, identifier, mUser)
 	util.MockInstall(module, db)
 
 	var id string
@@ -69,7 +76,10 @@ func Test_Update(t *testing.T) {
 	ass := assert.New(t)
 	input := fixtures.NamespaceCreateInputFixture()
 	db := util.MockDatabase()
-	module := NewNamespaceModule(db, util.MockLogger(), util.MockIdentifier())
+	logger := util.MockLogger()
+	identifier := util.MockIdentifier()
+	mUser := user.NewUserModule(db, logger, identifier)
+	module := NewNamespaceModule(db, logger, identifier, mUser)
 	util.MockInstall(module, db)
 
 	// create namespace so we have something to update
