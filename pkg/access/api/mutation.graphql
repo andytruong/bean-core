@@ -2,37 +2,38 @@
 # SessionCreate // Login
 # ---------------------
 extend type Mutation {
-    sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
+	sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
 }
 
 input SessionCreateInput {
-    namespaceId: String!
-    email: EmailAddress!
-    hashedPassword: String!
-    context: SessionCreateContextInput
+	namespaceId: String!
+	email: EmailAddress!
+	hashedPassword: String!
+	context: SessionCreateContextInput
 }
 
 input SessionCreateContextInput {
-    ipAddress: IP
-    country: CountryCode
-    deviceType: DeviceType
-    deviceName: String
+	ipAddress: IP
+	country: CountryCode
+	deviceType: DeviceType
+	deviceName: String
 }
 
 type SessionCreateOutcome {
-    errors: [Error!]
-    token: String
-    session: Session
+	errors: [Error!]
+	session: Session
+	token: String
+	jwt: String
 }
 
 # ---------------------
 # SessionDelete // Logout
 # ---------------------
 extend type Mutation {
-    sessionArchive(token: String!): SessionDeleteOutcome!
+	sessionArchive(token: String!): SessionDeleteOutcome!
 }
 
 type SessionDeleteOutcome {
-    errors: [Error!]
-    result: Boolean!
+	errors: [Error!]
+	result: Boolean!
 }
