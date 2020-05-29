@@ -145,15 +145,15 @@ func Test_Archive(t *testing.T) {
 	sessionOutcome, err := this.SessionCreate(ctx, input)
 	ass.NoError(err)
 
+	// can archive session without issue
 	{
-		// can archive session without issue
 		outcome, err := this.SessionArchive(ctx, *sessionOutcome.Token)
 		ass.NoError(err)
 		ass.Equal(outcome.Result, true)
 	}
 
+	// archive again -> should have error
 	{
-		// archive again -> should have error
 		outcome, err := this.SessionArchive(ctx, *sessionOutcome.Token)
 		ass.NoError(err)
 		ass.Equal(outcome.Result, false)

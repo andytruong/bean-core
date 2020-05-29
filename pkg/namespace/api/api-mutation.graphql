@@ -63,10 +63,10 @@ input NamespaceUpdateInputFeatures {
 }
 
 # ---------------------
-# Membership
+# Membership -> Create
 # ---------------------
 extend type Mutation {
-    namespaceMembershipCreate(input: NamespaceMembershipCreateInput!): NamespaceMembershipCreateOutcome
+    namespaceMembershipCreate(input: NamespaceMembershipCreateInput!): NamespaceMembershipCreateOutcome!
 }
 
 input NamespaceMembershipCreateInput {
@@ -78,4 +78,17 @@ input NamespaceMembershipCreateInput {
 type NamespaceMembershipCreateOutcome {
     errors: [Error!]
     membership: Membership
+}
+
+# ---------------------
+# Membership -> Update
+# ---------------------
+extend type Mutation {
+    namespaceMembershipUpdate(input: NamespaceMembershipUpdateInput!): NamespaceMembershipCreateOutcome!
+}
+
+input NamespaceMembershipUpdateInput {
+    id: ID!
+    version: ID!
+    isActive: Boolean!
 }

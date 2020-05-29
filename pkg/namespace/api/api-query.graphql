@@ -1,3 +1,4 @@
 extend type Query {
-    namespace(id: ID!): Namespace
+	namespace(id: ID!): Namespace
+	membership(id: ID!, version: ID): Membership
 }
