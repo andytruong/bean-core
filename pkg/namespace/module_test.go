@@ -10,6 +10,7 @@ import (
 	"bean/pkg/namespace/api/fixtures"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/user"
+	uFixtures "bean/pkg/user/api/fixtures"
 	"bean/pkg/util"
 )
 
@@ -116,4 +117,49 @@ func Test_Update(t *testing.T) {
 
 		ass.Equal(err, util.ErrorVersionConflict)
 	})
+}
+
+func Test_Membership(t *testing.T) {
+	ass := assert.New(t)
+	db := util.MockDatabase()
+	logger := util.MockLogger()
+	identifier := util.MockIdentifier()
+	mUser := user.NewUserModule(db, logger, identifier)
+	module := NewNamespaceModule(db, logger, identifier, mUser)
+	util.MockInstall(module, db)
+
+	// setup data for query
+	// -------
+	// create namespace
+	iNamespace := fixtures.NamespaceCreateInputFixture()
+	oNamespace, err := module.NamespaceCreate(context.Background(), iNamespace)
+	ass.NoError(err)
+
+	// create user
+	iUser := uFixtures.NewUserCreateInputFixture()
+	oUser, err := mUser.UserCreate(context.Background(), iUser)
+	ass.NoError(err)
+
+	// create membership
+	{
+		input := dto.NamespaceMembershipCreateInput{
+			NamespaceID: oNamespace.Namespace.ID,
+			UserID:      oUser.User.ID,
+			IsActive:    false,
+		}
+
+		outcome, err := module.NamespaceMembershipCreate(
+			context.Background(),
+			input,
+		)
+
+		ass.NoError(err)
+		ass.Len(outcome.Errors, 0)
+		ass.Equal(outcome.Membership.NamespaceID, oNamespace.Namespace.ID)
+		ass.False(outcome.Membership.IsActive)
+
+		{
+			// update membership
+		}
+	}
 }
