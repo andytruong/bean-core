@@ -149,3 +149,36 @@ func (this NamespaceModule) NamespaceMembershipCreate(
 
 	return hdl.NamespaceMembershipCreate(ctx, input, namespace, user)
 }
+
+func (this NamespaceModule) Membership(ctx context.Context, id string, version *string) (*model.Membership, error) {
+	obj := &model.Membership{}
+
+	err := this.db.
+		Table("namespace_memberships").
+		First(&obj, "id = ?", id).
+		Error
+
+	if nil != err {
+		return nil, err
+	} else if nil != version {
+		if obj.Version != *version {
+			return nil, util.ErrorVersionConflict
+		}
+	}
+
+	return obj, nil
+}
+
+func (this NamespaceModule) NamespaceMembershipUpdate(ctx context.Context, input dto.NamespaceMembershipUpdateInput) (*dto.NamespaceMembershipCreateOutcome, error) {
+	membership, err := this.Membership(ctx, input.Id, util.NilString(input.Version))
+	if nil != err {
+		return nil, err
+	}
+
+	hdl := handler.MembershipUpdateHandler{
+		ID: this.id,
+		DB: this.db,
+	}
+
+	return hdl.NamespaceMembershipUpdate(ctx, input, membership)
+}

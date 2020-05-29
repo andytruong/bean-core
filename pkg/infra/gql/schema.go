@@ -88,6 +88,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		NamespaceCreate           func(childComplexity int, input dto.NamespaceCreateInput) int
 		NamespaceMembershipCreate func(childComplexity int, input dto.NamespaceMembershipCreateInput) int
+		NamespaceMembershipUpdate func(childComplexity int, input dto.NamespaceMembershipUpdateInput) int
 		NamespaceUpdate           func(childComplexity int, input dto.NamespaceUpdateInput) int
 		Ping                      func(childComplexity int) int
 		SessionArchive            func(childComplexity int, token string) int
@@ -121,10 +122,11 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Namespace func(childComplexity int, id string) int
-		Ping      func(childComplexity int) int
-		Session   func(childComplexity int, token string) int
-		User      func(childComplexity int, id string) int
+		Membership func(childComplexity int, id string, version *string) int
+		Namespace  func(childComplexity int, id string) int
+		Ping       func(childComplexity int) int
+		Session    func(childComplexity int, token string) int
+		User       func(childComplexity int, id string) int
 	}
 
 	Session struct {
@@ -208,6 +210,7 @@ type MutationResolver interface {
 	NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error)
 	NamespaceUpdate(ctx context.Context, input dto.NamespaceUpdateInput) (*bool, error)
 	NamespaceMembershipCreate(ctx context.Context, input dto.NamespaceMembershipCreateInput) (*dto.NamespaceMembershipCreateOutcome, error)
+	NamespaceMembershipUpdate(ctx context.Context, input dto.NamespaceMembershipUpdateInput) (*dto.NamespaceMembershipCreateOutcome, error)
 	UserCreate(ctx context.Context, input *dto2.UserCreateInput) (*dto2.UserCreateOutcome, error)
 	SessionCreate(ctx context.Context, input *dto1.SessionCreateInput) (*dto1.SessionCreateOutcome, error)
 	SessionArchive(ctx context.Context, token string) (*dto1.SessionDeleteOutcome, error)
@@ -219,6 +222,7 @@ type NamespaceResolver interface {
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
 	Namespace(ctx context.Context, id string) (*model.Namespace, error)
+	Membership(ctx context.Context, id string, version *string) (*model.Membership, error)
 	User(ctx context.Context, id string) (*model1.User, error)
 	Session(ctx context.Context, token string) (*model2.Session, error)
 }
@@ -401,6 +405,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.NamespaceMembershipCreate(childComplexity, args["input"].(dto.NamespaceMembershipCreateInput)), true
 
+	case "Mutation.namespaceMembershipUpdate":
+		if e.complexity.Mutation.NamespaceMembershipUpdate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_namespaceMembershipUpdate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NamespaceMembershipUpdate(childComplexity, args["input"].(dto.NamespaceMembershipUpdateInput)), true
+
 	case "Mutation.namespaceUpdate":
 		if e.complexity.Mutation.NamespaceUpdate == nil {
 			break
@@ -546,6 +562,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NamespaceMembershipCreateOutcome.Membership(childComplexity), true
+
+	case "Query.membership":
+		if e.complexity.Query.Membership == nil {
+			break
+		}
+
+		args, err := ec.field_Query_membership_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Membership(childComplexity, args["id"].(string), args["version"].(*string)), true
 
 	case "Query.namespace":
 		if e.complexity.Query.Namespace == nil {
@@ -1047,10 +1075,10 @@ input NamespaceUpdateInputFeatures {
 }
 
 # ---------------------
-# Membership
+# Membership -> Create
 # ---------------------
 extend type Mutation {
-    namespaceMembershipCreate(input: NamespaceMembershipCreateInput!): NamespaceMembershipCreateOutcome
+    namespaceMembershipCreate(input: NamespaceMembershipCreateInput!): NamespaceMembershipCreateOutcome!
 }
 
 input NamespaceMembershipCreateInput {
@@ -1063,9 +1091,23 @@ type NamespaceMembershipCreateOutcome {
     errors: [Error!]
     membership: Membership
 }
+
+# ---------------------
+# Membership -> Update
+# ---------------------
+extend type Mutation {
+    namespaceMembershipUpdate(input: NamespaceMembershipUpdateInput!): NamespaceMembershipCreateOutcome!
+}
+
+input NamespaceMembershipUpdateInput {
+    id: ID!
+    version: ID!
+    isActive: Boolean!
+}
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/namespace/api/api-query.graphql", Input: `extend type Query {
-    namespace(id: ID!): Namespace
+	namespace(id: ID!): Namespace
+	membership(id: ID!, version: ID): Membership
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/namespace/api/api.graphql", Input: `type Namespace {
@@ -1301,6 +1343,20 @@ func (ec *executionContext) field_Mutation_namespaceMembershipCreate_args(ctx co
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_namespaceMembershipUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 dto.NamespaceMembershipUpdateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNNamespaceMembershipUpdateInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceMembershipUpdateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_namespaceUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1368,6 +1424,28 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_membership_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["version"]; ok {
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["version"] = arg1
 	return args, nil
 }
 
@@ -2193,11 +2271,55 @@ func (ec *executionContext) _Mutation_namespaceMembershipCreate(ctx context.Cont
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*dto.NamespaceMembershipCreateOutcome)
 	fc.Result = res
-	return ec.marshalONamespaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceMembershipCreateOutcome(ctx, field.Selections, res)
+	return ec.marshalNNamespaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceMembershipCreateOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_namespaceMembershipUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_namespaceMembershipUpdate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NamespaceMembershipUpdate(rctx, args["input"].(dto.NamespaceMembershipUpdateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto.NamespaceMembershipCreateOutcome)
+	fc.Result = res
+	return ec.marshalNNamespaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceMembershipCreateOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2811,6 +2933,44 @@ func (ec *executionContext) _Query_namespace(ctx context.Context, field graphql.
 	res := resTmp.(*model.Namespace)
 	fc.Result = res
 	return ec.marshalONamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_membership(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_membership_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Membership(rctx, args["id"].(string), args["version"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Membership)
+	fc.Result = res
+	return ec.marshalOMembership2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐMembership(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5524,6 +5684,36 @@ func (ec *executionContext) unmarshalInputNamespaceMembershipCreateInput(ctx con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputNamespaceMembershipUpdateInput(ctx context.Context, obj interface{}) (dto.NamespaceMembershipUpdateInput, error) {
+	var it dto.NamespaceMembershipUpdateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.Id, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "version":
+			var err error
+			it.Version, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isActive":
+			var err error
+			it.IsActive, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNamespaceUpdateInput(ctx context.Context, obj interface{}) (dto.NamespaceUpdateInput, error) {
 	var it dto.NamespaceUpdateInput
 	var asMap = obj.(map[string]interface{})
@@ -6051,6 +6241,14 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_namespaceUpdate(ctx, field)
 		case "namespaceMembershipCreate":
 			out.Values[i] = ec._Mutation_namespaceMembershipCreate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "namespaceMembershipUpdate":
+			out.Values[i] = ec._Mutation_namespaceMembershipUpdate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "userCreate":
 			out.Values[i] = ec._Mutation_userCreate(ctx, field)
 		case "sessionCreate":
@@ -6262,6 +6460,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_namespace(ctx, field)
+				return res
+			})
+		case "membership":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_membership(ctx, field)
 				return res
 			})
 		case "user":
@@ -7098,6 +7307,24 @@ func (ec *executionContext) unmarshalNNamespaceMembershipCreateInput2beanᚋpkg�
 	return ec.unmarshalInputNamespaceMembershipCreateInput(ctx, v)
 }
 
+func (ec *executionContext) marshalNNamespaceMembershipCreateOutcome2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceMembershipCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto.NamespaceMembershipCreateOutcome) graphql.Marshaler {
+	return ec._NamespaceMembershipCreateOutcome(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNNamespaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceMembershipCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.NamespaceMembershipCreateOutcome) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._NamespaceMembershipCreateOutcome(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNNamespaceMembershipUpdateInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceMembershipUpdateInput(ctx context.Context, v interface{}) (dto.NamespaceMembershipUpdateInput, error) {
+	return ec.unmarshalInputNamespaceMembershipUpdateInput(ctx, v)
+}
+
 func (ec *executionContext) unmarshalNNamespaceUpdateInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceUpdateInput(ctx context.Context, v interface{}) (dto.NamespaceUpdateInput, error) {
 	return ec.unmarshalInputNamespaceUpdateInput(ctx, v)
 }
@@ -7812,6 +8039,29 @@ func (ec *executionContext) marshalOErrorCode2ᚖbeanᚋpkgᚋutilᚐErrorCode(c
 	return v
 }
 
+func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {
+	return graphql.UnmarshalID(v)
+}
+
+func (ec *executionContext) marshalOID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	return graphql.MarshalID(v)
+}
+
+func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOID2string(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOID2string(ctx, sel, *v)
+}
+
 func (ec *executionContext) unmarshalOIP2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalString(v)
 }
@@ -7877,17 +8127,6 @@ func (ec *executionContext) marshalONamespaceFeatures2ᚖbeanᚋpkgᚋnamespace�
 		return graphql.Null
 	}
 	return ec._NamespaceFeatures(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalONamespaceMembershipCreateOutcome2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceMembershipCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto.NamespaceMembershipCreateOutcome) graphql.Marshaler {
-	return ec._NamespaceMembershipCreateOutcome(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalONamespaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceMembershipCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.NamespaceMembershipCreateOutcome) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._NamespaceMembershipCreateOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalONamespaceUpdateInputFeatures2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceUpdateInputFeatures(ctx context.Context, v interface{}) (dto.NamespaceUpdateInputFeatures, error) {

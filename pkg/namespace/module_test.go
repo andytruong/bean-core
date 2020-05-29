@@ -2,7 +2,6 @@ package namespace
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -243,9 +242,46 @@ func Test_Membership(t *testing.T) {
 			membership = outcome.Membership
 		}
 
-		// WIP: change status to ON
-		if false {
-			fmt.Println("membership: ", membership.ID)
+		// load membership
+		{
+			// without version
+			{
+				obj, err := module.Membership(context.Background(), membership.ID, nil)
+				ass.NoError(err)
+				ass.False(obj.IsActive)
+			}
+
+			// with version
+			{
+				obj, err := module.Membership(context.Background(), membership.ID, &membership.Version)
+				ass.NoError(err)
+				ass.False(obj.IsActive)
+			}
+
+			// with invalid version
+			{
+				obj, err := module.Membership(context.Background(), membership.ID, util.NilString("InvalidVersion"))
+				ass.Error(err)
+				ass.Equal(err.Error(), util.ErrorVersionConflict.Error())
+				ass.Nil(obj)
+			}
+		}
+
+		// change status to ON
+		{
+			outcome, err := module.NamespaceMembershipUpdate(
+				context.Background(),
+				dto.NamespaceMembershipUpdateInput{
+					Id:       membership.ID,
+					Version:  membership.Version,
+					IsActive: true,
+				},
+			)
+
+			ass.NoError(err)
+			ass.Len(outcome.Errors, 0)
+			ass.True(outcome.Membership.IsActive)
+			ass.NotEqual(outcome.Membership.Version, membership.Version)
 		}
 	})
 }
