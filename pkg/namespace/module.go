@@ -45,6 +45,10 @@ func (this *NamespaceModule) MembershipResolver() MembershipResolver {
 	return this.membership
 }
 
+func (this *NamespaceModule) Dependencies() []util.Module {
+	return []util.Module{this.userModule}
+}
+
 func (this NamespaceModule) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
