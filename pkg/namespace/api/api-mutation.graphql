@@ -61,3 +61,21 @@ input NamespaceUpdateInputObject {
 input NamespaceUpdateInputFeatures {
     register: Boolean
 }
+
+# ---------------------
+# Membership
+# ---------------------
+extend type Mutation {
+    namespaceMembershipCreate(input: NamespaceMembershipCreateInput!): NamespaceMembershipCreateOutcome
+}
+
+input NamespaceMembershipCreateInput {
+    namespaceId: ID!
+    userId: ID!
+    isActive: Boolean!
+}
+
+type NamespaceMembershipCreateOutcome {
+    errors: [Error!]
+    membership: Membership
+}

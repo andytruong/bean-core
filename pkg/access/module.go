@@ -59,6 +59,13 @@ type (
 	}
 )
 
+func (this AccessModule) Dependencies() []util.Module {
+	return []util.Module{
+		this.userModule,
+		this.namespaceModule,
+	}
+}
+
 func (this AccessModule) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {

@@ -31,12 +31,15 @@ func NewUserModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) *UserMo
 	}
 }
 
-// TODO: Use data-loader
 type UserModule struct {
 	logger                   *zap.Logger
 	db                       *gorm.DB
 	id                       *util.Identifier
 	maxSecondaryEmailPerUser uint8
+}
+
+func (this UserModule) Dependencies() []util.Module {
+	return nil
 }
 
 func (this UserModule) Migrate(tx *gorm.DB, driver string) error {

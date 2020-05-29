@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/jinzhu/gorm"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"bean/pkg/namespace/api/handler"
@@ -22,9 +23,10 @@ func NewNamespaceModule(
 	userModule *user.UserModule,
 ) *NamespaceModule {
 	this := &NamespaceModule{
-		logger: logger,
-		db:     db,
-		id:     id,
+		logger:     logger,
+		db:         db,
+		id:         id,
+		userModule: userModule,
 	}
 
 	this.membership = newMembershipResolver(this, userModule)
@@ -36,11 +38,16 @@ type NamespaceModule struct {
 	logger     *zap.Logger
 	db         *gorm.DB
 	id         *util.Identifier
+	userModule *user.UserModule
 	membership MembershipResolver
 }
 
 func (this *NamespaceModule) MembershipResolver() MembershipResolver {
 	return this.membership
+}
+
+func (this *NamespaceModule) Dependencies() []util.Module {
+	return []util.Module{this.userModule}
 }
 
 func (this NamespaceModule) Migrate(tx *gorm.DB, driver string) error {
@@ -110,4 +117,35 @@ func (this NamespaceModule) NamespaceUpdate(ctx context.Context, input dto.Names
 	} else {
 		return outcome, tx.Commit().Error
 	}
+}
+
+func (this NamespaceModule) NamespaceMembershipCreate(
+	ctx context.Context,
+	input dto.NamespaceMembershipCreateInput,
+) (*dto.NamespaceMembershipCreateOutcome, error) {
+	namespace, err := this.Namespace(ctx, input.NamespaceID)
+	if nil != err {
+		return nil, err
+	}
+
+	user, err := this.userModule.User(ctx, input.UserID)
+	if nil != err {
+		return nil, err
+	}
+
+	features, err := this.Features(ctx, namespace)
+	if nil != err {
+		return nil, err
+	}
+
+	if !features.Register {
+		return nil, errors.Wrap(util.ErrorConfig, "register is off")
+	}
+
+	hdl := handler.MembershipCreateHandler{
+		ID: this.id,
+		DB: this.db,
+	}
+
+	return hdl.NamespaceMembershipCreate(ctx, input, namespace, user)
 }

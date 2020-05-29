@@ -7,5 +7,6 @@ import (
 type (
 	Module interface {
 		Migrate(tx *gorm.DB, driver string) error
+		Dependencies() []Module
 	}
 )
