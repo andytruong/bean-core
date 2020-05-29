@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/jinzhu/gorm"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"bean/pkg/namespace/api/handler"
@@ -118,7 +119,10 @@ func (this NamespaceModule) NamespaceUpdate(ctx context.Context, input dto.Names
 	}
 }
 
-func (this NamespaceModule) NamespaceMembershipCreate(ctx context.Context, input dto.NamespaceMembershipCreateInput) (*dto.NamespaceMembershipCreateOutcome, error) {
+func (this NamespaceModule) NamespaceMembershipCreate(
+	ctx context.Context,
+	input dto.NamespaceMembershipCreateInput,
+) (*dto.NamespaceMembershipCreateOutcome, error) {
 	namespace, err := this.Namespace(ctx, input.NamespaceID)
 	if nil != err {
 		return nil, err
@@ -127,6 +131,15 @@ func (this NamespaceModule) NamespaceMembershipCreate(ctx context.Context, input
 	user, err := this.userModule.User(ctx, input.UserID)
 	if nil != err {
 		return nil, err
+	}
+
+	features, err := this.Features(ctx, namespace)
+	if nil != err {
+		return nil, err
+	}
+
+	if !features.Register {
+		return nil, errors.Wrap(util.ErrorConfig, "register is off")
 	}
 
 	hdl := handler.MembershipCreateHandler{

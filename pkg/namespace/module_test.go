@@ -2,12 +2,14 @@ package namespace
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"bean/pkg/namespace/api/fixtures"
+	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/user"
 	uFixtures "bean/pkg/user/api/fixtures"
@@ -140,8 +142,58 @@ func Test_Membership(t *testing.T) {
 	oUser, err := mUser.UserCreate(context.Background(), iUser)
 	ass.NoError(err)
 
-	// create membership
-	{
+	t.Run("create membership", func(t *testing.T) {
+		// change feature ON
+		{
+			ok, err := module.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
+				NamespaceID:      oNamespace.Namespace.ID,
+				NamespaceVersion: oNamespace.Namespace.Version,
+				Object: &dto.NamespaceUpdateInputObject{
+					Features: &dto.NamespaceUpdateInputFeatures{
+						Register: util.NilBool(true),
+					},
+				},
+			})
+
+			ass.NoError(err)
+			ass.True(*ok)
+		}
+
+		input := dto.NamespaceMembershipCreateInput{
+			NamespaceID: oNamespace.Namespace.ID,
+			UserID:      oUser.User.ID,
+			IsActive:    false,
+		}
+
+		outcome, err := module.NamespaceMembershipCreate(context.Background(), input)
+
+		ass.NoError(err)
+		ass.Len(outcome.Errors, 0)
+		ass.Equal(outcome.Membership.NamespaceID, oNamespace.Namespace.ID)
+		ass.False(outcome.Membership.IsActive)
+	})
+
+	t.Run("create failed of feature is off", func(t *testing.T) {
+		namespace, err := module.Namespace(context.Background(), oNamespace.Namespace.ID)
+		ass.NoError(err)
+
+		// change feature off
+		{
+			ok, err := module.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
+				NamespaceID:      namespace.ID,
+				NamespaceVersion: namespace.Version,
+				Object: &dto.NamespaceUpdateInputObject{
+					Features: &dto.NamespaceUpdateInputFeatures{
+						Register: util.NilBool(false),
+					},
+				},
+			})
+
+			ass.NoError(err)
+			ass.True(*ok)
+		}
+
+		// create
 		input := dto.NamespaceMembershipCreateInput{
 			NamespaceID: oNamespace.Namespace.ID,
 			UserID:      oUser.User.ID,
@@ -153,13 +205,47 @@ func Test_Membership(t *testing.T) {
 			input,
 		)
 
-		ass.NoError(err)
-		ass.Len(outcome.Errors, 0)
-		ass.Equal(outcome.Membership.NamespaceID, oNamespace.Namespace.ID)
-		ass.False(outcome.Membership.IsActive)
+		// check error
+		ass.Contains(err.Error(), util.ErrorConfig.Error())
+		ass.Contains(err.Error(), "register is off")
+		ass.Nil(outcome)
+	})
 
+	t.Run("update membership", func(t *testing.T) {
+		membership := &model.Membership{}
+
+		// change feature ON
 		{
-			// update membership
+			ok, err := module.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
+				NamespaceID:      oNamespace.Namespace.ID,
+				NamespaceVersion: oNamespace.Namespace.Version,
+				Object: &dto.NamespaceUpdateInputObject{
+					Features: &dto.NamespaceUpdateInputFeatures{
+						Register: util.NilBool(true),
+					},
+				},
+			})
+
+			ass.NoError(err)
+			ass.True(*ok)
 		}
-	}
+
+		// create a membership with status OFF.
+		{
+			input := dto.NamespaceMembershipCreateInput{
+				NamespaceID: oNamespace.Namespace.ID,
+				UserID:      oUser.User.ID,
+				IsActive:    false,
+			}
+
+			outcome, err := module.NamespaceMembershipCreate(context.Background(), input)
+			ass.NoError(err)
+			membership = outcome.Membership
+		}
+
+		// WIP: change status to ON
+		if false {
+			fmt.Println("membership: ", membership.ID)
+		}
+	})
 }
