@@ -28,6 +28,7 @@ func main() {
 		Commands: []*cli.Command{
 			cmd.HttpServerCommand(container),
 			cmd.MigrationCommand(container),
+			cmd.KeyGenCommand(container),
 		},
 	}
 

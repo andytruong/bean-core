@@ -22,3 +22,9 @@ databases:
 modules:
   access:
     sessionTimeout: "128h"
+    jwt:
+      algorithm: "RS512"
+      timeout: "5m"
+      publicKey: "…"
+      privateKey: "…"
+      privatePass: "…"

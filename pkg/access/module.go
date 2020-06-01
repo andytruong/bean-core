@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
 
@@ -128,4 +129,22 @@ func (this AccessModule) Session(ctx context.Context, token string) (*model.Sess
 	}
 
 	return hdl.Handle(ctx, token)
+}
+
+func (this AccessModule) Jwt(ctx context.Context, obj *dto.SessionCreateOutcome) (*string, error) {
+	claims := util.Claims{
+		StandardClaims: jwt.StandardClaims{
+			Issuer:    "access",
+			Id:        obj.Session.ID,
+			IssuedAt:  time.Now().UnixNano(),
+			ExpiresAt: time.Now().Add(5 * time.Minute).UnixNano(),
+			Subject:   obj.Session.UserId,
+			Audience:  obj.Session.NamespaceId,
+		},
+	}
+
+	mySigningKey := []byte("AllYourBase")
+	signedString, err := jwt.NewWithClaims(jwt.SigningMethodHS512, claims).SignedString(mySigningKey)
+
+	return util.NilString(signedString), err
 }

@@ -52,4 +52,3 @@ func (e *DeviceType) UnmarshalGQL(v interface{}) error {
 func (e DeviceType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
-

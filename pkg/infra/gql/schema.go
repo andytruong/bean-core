@@ -47,6 +47,7 @@ type ResolverRoot interface {
 	Namespace() NamespaceResolver
 	Query() QueryResolver
 	Session() SessionResolver
+	SessionCreateOutcome() SessionCreateOutcomeResolver
 	User() UserResolver
 	UserEmail() UserEmailResolver
 }
@@ -151,6 +152,7 @@ type ComplexityRoot struct {
 
 	SessionCreateOutcome struct {
 		Errors  func(childComplexity int) int
+		Jwt     func(childComplexity int) int
 		Session func(childComplexity int) int
 		Token   func(childComplexity int) int
 	}
@@ -231,6 +233,9 @@ type SessionResolver interface {
 	Namespace(ctx context.Context, obj *model2.Session) (*model.Namespace, error)
 	Scopes(ctx context.Context, obj *model2.Session) ([]*model2.AccessScope, error)
 	Context(ctx context.Context, obj *model2.Session) (*model2.SessionContext, error)
+}
+type SessionCreateOutcomeResolver interface {
+	Jwt(ctx context.Context, obj *dto1.SessionCreateOutcome) (*string, error)
 }
 type UserResolver interface {
 	Name(ctx context.Context, obj *model1.User) (*model1.UserName, error)
@@ -723,6 +728,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SessionCreateOutcome.Errors(childComplexity), true
 
+	case "SessionCreateOutcome.jwt":
+		if e.complexity.SessionCreateOutcome.Jwt == nil {
+			break
+		}
+
+		return e.complexity.SessionCreateOutcome.Jwt(childComplexity), true
+
 	case "SessionCreateOutcome.session":
 		if e.complexity.SessionCreateOutcome.Session == nil {
 			break
@@ -974,40 +986,41 @@ scalar Uri
 scalar IP
 scalar CountryCode
 scalar EmailAddress
+scalar JWT
 
 type Query {
-    ping: String!
+	ping: String!
 }
 
 type Mutation {
-    ping: String!
+	ping: String!
 }
 
 type Error {
-    code: ErrorCode
-    fields: [String!]
-    message: String!
+	code: ErrorCode
+	fields: [String!]
+	message: String!
 }
 
 enum ErrorCode   {
-    # Input errors
-    # ---------------------
-    Input
+	# Input errors
+	# ---------------------
+	Input
 
-    # internal errors
-    # ---------------------
-    Config
-    Runtime
+	# internal errors
+	# ---------------------
+	Config
+	Runtime
 
-    # Server errors
-    # ---------------------
-    DB_Timeout
-    DB_Constraint
+	# Server errors
+	# ---------------------
+	DB_Timeout
+	DB_Constraint
 }
 
 enum AccessScope {
-    Anonymous
-    Authenticated
+	Anonymous
+	Authenticated
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/namespace/api/api-mutation.graphql", Input: `# ---------------------
@@ -1257,39 +1270,40 @@ enum DeviceType {
 # SessionCreate // Login
 # ---------------------
 extend type Mutation {
-    sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
+	sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
 }
 
 input SessionCreateInput {
-    namespaceId: String!
-    email: EmailAddress!
-    hashedPassword: String!
-    context: SessionCreateContextInput
+	namespaceId: String!
+	email: EmailAddress!
+	hashedPassword: String!
+	context: SessionCreateContextInput
 }
 
 input SessionCreateContextInput {
-    ipAddress: IP
-    country: CountryCode
-    deviceType: DeviceType
-    deviceName: String
+	ipAddress: IP
+	country: CountryCode
+	deviceType: DeviceType
+	deviceName: String
 }
 
 type SessionCreateOutcome {
-    errors: [Error!]
-    token: String
-    session: Session
+	errors: [Error!]
+	session: Session
+	token: String
+	jwt: JWT
 }
 
 # ---------------------
 # SessionDelete // Logout
 # ---------------------
 extend type Mutation {
-    sessionArchive(token: String!): SessionDeleteOutcome!
+	sessionArchive(token: String!): SessionDeleteOutcome!
 }
 
 type SessionDeleteOutcome {
-    errors: [Error!]
-    result: Boolean!
+	errors: [Error!]
+	result: Boolean!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/access/api/query.graphql", Input: `# ---------------------
@@ -3604,6 +3618,37 @@ func (ec *executionContext) _SessionCreateOutcome_errors(ctx context.Context, fi
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto1.SessionCreateOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "SessionCreateOutcome",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Session, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model2.Session)
+	fc.Result = res
+	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _SessionCreateOutcome_token(ctx context.Context, field graphql.CollectedField, obj *dto1.SessionCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3635,7 +3680,7 @@ func (ec *executionContext) _SessionCreateOutcome_token(ctx context.Context, fie
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto1.SessionCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionCreateOutcome_jwt(ctx context.Context, field graphql.CollectedField, obj *dto1.SessionCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3646,13 +3691,13 @@ func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, f
 		Object:   "SessionCreateOutcome",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Session, nil
+		return ec.resolvers.SessionCreateOutcome().Jwt(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3661,9 +3706,9 @@ func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, f
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model2.Session)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
+	return ec.marshalOJWT2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SessionDeleteOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.SessionDeleteOutcome) (ret graphql.Marshaler) {
@@ -6652,10 +6697,21 @@ func (ec *executionContext) _SessionCreateOutcome(ctx context.Context, sel ast.S
 			out.Values[i] = graphql.MarshalString("SessionCreateOutcome")
 		case "errors":
 			out.Values[i] = ec._SessionCreateOutcome_errors(ctx, field, obj)
-		case "token":
-			out.Values[i] = ec._SessionCreateOutcome_token(ctx, field, obj)
 		case "session":
 			out.Values[i] = ec._SessionCreateOutcome_session(ctx, field, obj)
+		case "token":
+			out.Values[i] = ec._SessionCreateOutcome_token(ctx, field, obj)
+		case "jwt":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._SessionCreateOutcome_jwt(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8083,6 +8139,29 @@ func (ec *executionContext) marshalOIP2ᚖstring(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 	return ec.marshalOIP2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOJWT2string(ctx context.Context, v interface{}) (string, error) {
+	return graphql.UnmarshalString(v)
+}
+
+func (ec *executionContext) marshalOJWT2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOJWT2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOJWT2string(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOJWT2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOJWT2string(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalOMembership2beanᚋpkgᚋnamespaceᚋmodelᚐMembership(ctx context.Context, sel ast.SelectionSet, v model.Membership) graphql.Marshaler {

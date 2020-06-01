@@ -25,6 +25,12 @@ type (
 	}
 )
 
+func (this *graph) SessionCreateOutcome() gql.SessionCreateOutcomeResolver {
+	module, _ := this.container.modules.Access()
+
+	return module
+}
+
 func (this *graph) Membership() gql.MembershipResolver {
 	module, _ := this.container.modules.Namespace()
 

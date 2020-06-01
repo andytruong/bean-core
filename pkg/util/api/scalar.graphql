@@ -3,38 +3,39 @@ scalar Uri
 scalar IP
 scalar CountryCode
 scalar EmailAddress
+scalar JWT
 
 type Query {
-    ping: String!
+	ping: String!
 }
 
 type Mutation {
-    ping: String!
+	ping: String!
 }
 
 type Error {
-    code: ErrorCode
-    fields: [String!]
-    message: String!
+	code: ErrorCode
+	fields: [String!]
+	message: String!
 }
 
 enum ErrorCode   {
-    # Input errors
-    # ---------------------
-    Input
+	# Input errors
+	# ---------------------
+	Input
 
-    # internal errors
-    # ---------------------
-    Config
-    Runtime
+	# internal errors
+	# ---------------------
+	Config
+	Runtime
 
-    # Server errors
-    # ---------------------
-    DB_Timeout
-    DB_Constraint
+	# Server errors
+	# ---------------------
+	DB_Timeout
+	DB_Constraint
 }
 
 enum AccessScope {
-    Anonymous
-    Authenticated
+	Anonymous
+	Authenticated
 }
