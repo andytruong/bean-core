@@ -11,3 +11,20 @@ type Membership struct {
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
+
+type MembershipConnection struct {
+	Edges    []*MembershipEdge `json:"edges"`
+	Nodes    []*MembershipEdge `json:"nodes"`
+	PageInfo *MembershipInfo   `json:"pageInfo"`
+}
+
+type MembershipEdge struct {
+	Node *Membership `json:"node"`
+}
+
+type MembershipInfo struct {
+	EndCursor       *string `json:"endCursor"`
+	HasNextPage     bool    `json:"hasNextPage"`
+	HasPreviousPage bool    `json:"hasPreviousPage"`
+	StartCursor     *string `json:"startCursor"`
+}

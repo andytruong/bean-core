@@ -15,6 +15,7 @@ import (
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/user"
 	"bean/pkg/util"
+	"bean/pkg/util/api"
 	"bean/pkg/util/migrate"
 )
 
@@ -181,4 +182,14 @@ func (this NamespaceModule) NamespaceMembershipUpdate(ctx context.Context, input
 	}
 
 	return hdl.NamespaceMembershipUpdate(ctx, input, membership)
+}
+
+func (this NamespaceModule) Memberships(
+	ctx context.Context,
+	first int,
+	after *string,
+	filters dto.MembershipsFilter,
+	sort *api.Sorts,
+) (*model.MembershipConnection, error) {
+	panic("implement me")
 }
