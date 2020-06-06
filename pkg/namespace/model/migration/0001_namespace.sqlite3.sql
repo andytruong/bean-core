@@ -46,6 +46,9 @@ CREATE TABLE namespace_memberships
     is_active    boolean               NOT NULL,
     created_at   timestamp             NOT NULL,
     updated_at   timestamp             NOT NULL,
+    logged_in_at timestamp,
     FOREIGN KEY (namespace_id) REFERENCES namespaces (id),
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
+
+CREATE INDEX namespace_memberships_login ON namespace_memberships (logged_in_at);

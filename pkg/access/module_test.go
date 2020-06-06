@@ -33,10 +33,6 @@ func module() *AccessModule {
 		if nil != err {
 			panic(err)
 		}
-
-		config.Modules.Access.Jwt.PrivateKey = "../../" + config.Modules.Access.Jwt.PrivateKey
-		config.Modules.Access.Jwt.PublicKey = "../../" + config.Modules.Access.Jwt.PublicKey
-		config.Modules.Access.Jwt.Timeout = 5 * time.Minute
 	}
 
 	db := util.MockDatabase()

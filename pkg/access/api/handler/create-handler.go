@@ -10,6 +10,7 @@ import (
 
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
+	"bean/pkg/namespace"
 	mNamespace "bean/pkg/namespace/model"
 	mUser "bean/pkg/user/model"
 	"bean/pkg/util"
@@ -18,6 +19,7 @@ import (
 type SessionCreateHandler struct {
 	ID             *util.Identifier
 	SessionTimeout time.Duration
+	Namespace      *namespace.NamespaceModule
 }
 
 func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
@@ -38,6 +40,7 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 
 	eg := errgroup.Group{}
 	outcome := &dto.SessionCreateOutcome{}
+	membership := &mNamespace.Membership{}
 
 	// password validation
 	eg.Go(func() error {
@@ -53,8 +56,10 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 
 	// membership validation
 	eg.Go(func() error {
-		membership := mNamespace.Membership{}
-		err := tx.Table("namespace_memberships").First(&membership, "namespace_id = ? AND user_id = ?", input.NamespaceID, email.UserId).Error
+		err := tx.
+			Table("namespace_memberships").
+			First(&membership, "namespace_id = ? AND user_id = ?", input.NamespaceID, email.UserId).
+			Error
 
 		if err == gorm.ErrRecordNotFound {
 			outcome.Errors = util.NewErrors(util.ErrorCodeInput, []string{"input.namespaceId"}, "membership not found")
@@ -73,10 +78,15 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 		return outcome, nil
 	}
 
-	return this.createSession(tx, email.UserId, input.NamespaceID)
+	return this.createSession(tx, email.UserId, input.NamespaceID, membership)
 }
 
-func (this SessionCreateHandler) createSession(tx *gorm.DB, userId string, namespaceId string) (*dto.SessionCreateOutcome, error) {
+func (this SessionCreateHandler) createSession(
+	tx *gorm.DB,
+	userId string,
+	namespaceId string,
+	membership *mNamespace.Membership,
+) (*dto.SessionCreateOutcome, error) {
 	if id, err := this.ID.ULID(); nil != err {
 		return nil, err
 	} else if version, err := this.ID.ULID(); nil != err {
@@ -99,6 +109,12 @@ func (this SessionCreateHandler) createSession(tx *gorm.DB, userId string, names
 
 		if err := tx.Table("access_session").Create(&session).Error; nil != err {
 			return nil, err
+		} else {
+			// update membership -> last-time-login
+			err := this.Namespace.MembershipResolver().UpdateLastLoginTime(tx, membership)
+			if nil != err {
+				return nil, err
+			}
 		}
 
 		return &dto.SessionCreateOutcome{

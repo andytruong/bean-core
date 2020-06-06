@@ -6,6 +6,7 @@ import (
 	"net/mail"
 	"net/url"
 	"strings"
+	"time"
 
 	"bean/pkg/util/migrate"
 )
@@ -91,4 +92,8 @@ func NilString(input string) *string {
 
 func NilUri(input Uri) *Uri {
 	return &input
+}
+
+func NilTime(time time.Time) *time.Time {
+	return &time
 }
