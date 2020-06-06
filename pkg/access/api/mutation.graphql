@@ -23,7 +23,6 @@ type SessionCreateOutcome {
 	errors: [Error!]
 	session: Session
 	token: String
-	jwt: JWT
 }
 
 # ---------------------

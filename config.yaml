@@ -14,17 +14,16 @@ http-server:
 databases:
   master:
     driver: "${DB_DRIVER:sqlite3}"
-    url:    "${DB_MASTER_URL:dev.sqlite}"
+    url:    "${DB_MASTER_URL:resources/dev.sqlite}"
   slave:
     driver: "${DB_SLAVE_URL:sqlite3}"
-    url:    "${DB_SLAVE_URL:dev.sqlite}"
+    url:    "${DB_SLAVE_URL:resources/dev.sqlite}"
 
 modules:
   access:
     sessionTimeout: "128h"
     jwt:
       algorithm: "RS512"
+      publicKey: "resources/keys/id_rsa.pub"
+      privateKey: "resources/keys/id_rsa"
       timeout: "5m"
-      publicKey: "…"
-      privateKey: "…"
-      privatePass: "…"

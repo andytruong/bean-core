@@ -7,7 +7,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
 
@@ -29,7 +28,7 @@ func NewAccessModule(
 	config *Config,
 ) *AccessModule {
 	module := &AccessModule{
-		config:          config,
+		config:          config.init(),
 		logger:          logger,
 		db:              db,
 		id:              id,
@@ -37,7 +36,10 @@ func NewAccessModule(
 		namespaceModule: namespaceModule,
 	}
 
-	module.SessionResolver = ModelResolver{module: module}
+	module.SessionResolver = ModelResolver{
+		module: module,
+		config: config,
+	}
 
 	return module
 }
@@ -53,10 +55,6 @@ type (
 		// depends on user module
 		userModule      *user.UserModule
 		namespaceModule *namespace.NamespaceModule
-	}
-
-	Config struct {
-		SessionTimeout time.Duration `yaml:"sessionTimeout"`
 	}
 )
 
@@ -129,22 +127,4 @@ func (this AccessModule) Session(ctx context.Context, token string) (*model.Sess
 	}
 
 	return hdl.Handle(ctx, token)
-}
-
-func (this AccessModule) Jwt(ctx context.Context, obj *dto.SessionCreateOutcome) (*string, error) {
-	claims := util.Claims{
-		StandardClaims: jwt.StandardClaims{
-			Issuer:    "access",
-			Id:        obj.Session.ID,
-			IssuedAt:  time.Now().UnixNano(),
-			ExpiresAt: time.Now().Add(5 * time.Minute).UnixNano(),
-			Subject:   obj.Session.UserId,
-			Audience:  obj.Session.NamespaceId,
-		},
-	}
-
-	mySigningKey := []byte("AllYourBase")
-	signedString, err := jwt.NewWithClaims(jwt.SigningMethodHS512, claims).SignedString(mySigningKey)
-
-	return util.NilString(signedString), err
 }

@@ -1,27 +1,28 @@
 type Session {
-    id: ID!
-    version: ID!
-    user: User
-    namespace: Namespace!
-    scopes: [AccessScope]
-    context: SessionContext
-    isActive: Boolean!
-    createdAt: Time!
-    updatedAt: Time!
-    expiredAt: Time!
+	id: ID!
+	version: ID!
+	user: User
+	namespace: Namespace!
+	scopes: [AccessScope]
+	context: SessionContext
+	isActive: Boolean!
+	createdAt: Time!
+	updatedAt: Time!
+	expiredAt: Time!
+	jwt: JWT!
 }
 
 type SessionContext {
-    ipAddress: IP
-    country: CountryCode
-    deviceType: DeviceType
-    deviceName: String
+	ipAddress: IP
+	country: CountryCode
+	deviceType: DeviceType
+	deviceName: String
 }
 
 enum DeviceType {
-    Desktop
-    Laptop
-    SmartPhone
-    Tablet
-    TV
+	Desktop
+	Laptop
+	SmartPhone
+	Tablet
+	TV
 }

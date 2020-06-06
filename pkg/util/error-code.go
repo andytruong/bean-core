@@ -8,13 +8,13 @@ import (
 
 type ErrorCode string
 
-
 const (
 	ErrorCodeInput        ErrorCode = "Input"
 	ErrorCodeConfig       ErrorCode = "Config"
 	ErrorCodeRuntime      ErrorCode = "Runtime"
 	ErrorCodeDbTimeout    ErrorCode = "DB_Timeout"
 	ErrorCodeDbConstraint ErrorCode = "DB_Constraint"
+	ErrorToBeImplemented  ErrorCode = "TOBE_IMPLEMENTED"
 )
 
 var AllErrorCode = []ErrorCode{
