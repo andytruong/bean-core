@@ -1,5 +1,8 @@
 version: "1.0-SNAPSHOT"
 
+# ---------------------
+# Server configuration
+# ---------------------
 http-server:
   address: ":8484"
   readTimeout:  15s
@@ -11,6 +14,9 @@ http-server:
       enabled: true
       path: /
 
+# ---------------------
+# Database connections
+# ---------------------
 databases:
   master:
     driver: "${DB_DRIVER:sqlite3}"
@@ -19,9 +25,19 @@ databases:
     driver: "${DB_SLAVE_URL:sqlite3}"
     url:    "${DB_SLAVE_URL:resources/dev.sqlite}"
 
+# ---------------------
+# Modules configuration
+#
+# Each module may have its own config
+# ---------------------
 modules:
+  # ---------------------
+  # Access module
+  # ---------------------
   access:
     timeout: "128h"
+    # Algorithm is `RS512` because we don't need providing private-key for services to verify the claims.
+    # To avoid configuration issues, path to keys should be absolute.
     jwt:
       algorithm: "RS512"
       publicKey: "${JWT_PUBLIC_KEY:resources/keys/id_rsa.pub}"
