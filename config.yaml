@@ -21,9 +21,9 @@ databases:
 
 modules:
   access:
-    sessionTimeout: "128h"
+    timeout: "128h"
     jwt:
       algorithm: "RS512"
-      publicKey: "resources/keys/id_rsa.pub"
-      privateKey: "resources/keys/id_rsa"
-      timeout: "5m"
+      publicKey: "${JWT_PUBLIC_KEY:resources/keys/id_rsa.pub}"
+      privateKey: "${JWT_PRIVATE_KEY:resources/keys/id_rsa}"
+      timeout: "${JWT_TIMEOUT:5m}"

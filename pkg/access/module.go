@@ -37,6 +37,7 @@ func NewAccessModule(
 	}
 
 	module.SessionResolver = ModelResolver{
+		logger: logger,
 		module: module,
 		config: config,
 	}

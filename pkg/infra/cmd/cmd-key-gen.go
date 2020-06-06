@@ -6,31 +6,63 @@ import (
 	"crypto/x509"
 	"encoding/asn1"
 	"encoding/pem"
+	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 
 	"bean/pkg/infra"
+	"bean/pkg/util"
 )
 
 func KeyGenCommand(container *infra.Container) *cli.Command {
 	return &cli.Command{
 		Name: "gen-key",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "verify",
+				Value: false,
+				Usage: "Set to true to verify generated key pair.",
+			},
+		},
 		Action: func(ctx *cli.Context) error {
-			pk, err := rsa.GenerateKey(rand.Reader, 2048)
-
-			if err != nil {
-				return errors.Wrap(err, "failed to generate private key")
-			} else if err := writePrivateKey(pk); nil != err {
-				return errors.Wrap(err, "failed to write private key")
-			} else if err := writePublicKey(pk.PublicKey); nil != err {
-				return errors.Wrap(err, "failed to write publi key")
+			if ctx.Bool("verify") {
+				return verify()
 			}
 
-			return nil
+			return generate()
 		},
 	}
+}
+
+func verify() error {
+	// public key
+	pub, err := util.ParseRsaPublicKeyFromFile("resources/keys/id_rsa.pub")
+	if nil != pub && err == nil {
+		fmt.Println("Public key: 🆗 ")
+	} else {
+		fmt.Println("Public key: 🙅 ")
+	}
+
+	// private key
+	// …
+
+	return nil
+}
+
+func generate() error {
+	pk, err := rsa.GenerateKey(rand.Reader, 2048)
+
+	if err != nil {
+		return errors.Wrap(err, "failed to generate private key")
+	} else if err := writePrivateKey(pk); nil != err {
+		return errors.Wrap(err, "failed to write private key")
+	} else if err := writePublicKey(pk.PublicKey); nil != err {
+		return errors.Wrap(err, "failed to write publi key")
+	}
+
+	return nil
 }
 
 func writePrivateKey(pk *rsa.PrivateKey) error {

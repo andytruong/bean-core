@@ -1,8 +1,12 @@
 package util
 
 import (
+	"crypto/rsa"
+	"encoding/asn1"
+	"encoding/pem"
 	"fmt"
 	"io"
+	"io/ioutil"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -57,4 +61,20 @@ func (this Claims) MarshalGQL(w io.Writer) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, this)
 	ss, err := token.SignedString(mySigningKey)
 	fmt.Fprintf(w, "%v %v", ss, err)
+}
+
+func ParseRsaPublicKeyFromFile(path string) (*rsa.PublicKey, error) {
+	content, err := ioutil.ReadFile(path)
+	if nil != err {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(content)
+	key := &rsa.PublicKey{}
+	_, err = asn1.Unmarshal(block.Bytes, key)
+	if nil != err {
+		return nil, err
+	}
+
+	return key, nil
 }

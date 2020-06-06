@@ -14,23 +14,26 @@ import (
 
 type (
 	Config struct {
-		SessionTimeout time.Duration `yaml:"sessionTimeout"`
+		SessionTimeout time.Duration `yaml:"timeout"`
 		Jwt            JwtConfig     `yaml:"jwt"`
 
 		mutex      *sync.Mutex
 		privateKey interface{}
+		publicKey  interface{}
 	}
 
 	JwtConfig struct {
-		Algorithm  string `yaml:"algorithm"`
-		PrivateKey string `yaml:"privateKey"`
-		PublicKey  string `yaml:"publicKey"`
-		Timeout    time.Duration
+		Algorithm  string        `yaml:"algorithm"`
+		PrivateKey util.FilePath `yaml:"privateKey"`
+		PublicKey  util.FilePath `yaml:"publicKey"`
+		Timeout    time.Duration `yaml:"timeout"`
 	}
 )
 
 func (this *Config) init() *Config {
-	this.mutex = &sync.Mutex{}
+	if nil == this.mutex {
+		this.mutex = &sync.Mutex{}
+	}
 
 	// go time to validate configuration
 	// …
@@ -48,12 +51,12 @@ func (this *Config) signMethod() jwt.SigningMethod {
 	}
 }
 
-func (this *Config) signKey() (interface{}, error) {
+func (this *Config) GetSignKey() (interface{}, error) {
 	if nil == this.privateKey {
 		this.mutex.Lock()
 		defer this.mutex.Unlock()
 
-		file, err := ioutil.ReadFile(this.Jwt.PrivateKey)
+		file, err := ioutil.ReadFile(this.Jwt.PrivateKey.String())
 		if nil != err {
 			return nil, err
 		}
@@ -67,4 +70,20 @@ func (this *Config) signKey() (interface{}, error) {
 	}
 
 	return this.privateKey, nil
+}
+
+func (this *Config) GetParseKey() (interface{}, error) {
+	if nil == this.publicKey {
+		this.mutex.Lock()
+		defer this.mutex.Unlock()
+
+		pub, err := util.ParseRsaPublicKeyFromFile(this.Jwt.PublicKey.String())
+		if err != nil {
+			return nil, err
+		} else {
+			this.publicKey = pub
+		}
+	}
+
+	return this.publicKey, nil
 }

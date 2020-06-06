@@ -36,6 +36,7 @@ func module() *AccessModule {
 
 		config.Modules.Access.Jwt.PrivateKey = "../../" + config.Modules.Access.Jwt.PrivateKey
 		config.Modules.Access.Jwt.PublicKey = "../../" + config.Modules.Access.Jwt.PublicKey
+		config.Modules.Access.Jwt.Timeout = 5 * time.Minute
 	}
 
 	db := util.MockDatabase()
@@ -54,7 +55,7 @@ func module() *AccessModule {
 func Test_Config(t *testing.T) {
 	ass := assert.New(t)
 	this := module()
-	key, err := this.config.signKey()
+	key, err := this.config.GetSignKey()
 	ass.NoError(err)
 	ass.NotNil(key)
 }
@@ -101,9 +102,22 @@ func Test_Create(t *testing.T) {
 		ass.Equal(oNamespace.Namespace.ID, outcome.Session.NamespaceId)
 		ass.Len(outcome.Errors, 0)
 
-		signedString, err := this.SessionResolver.Jwt(ctx, outcome.Session)
-		ass.NoError(err)
-		ass.Contains(signedString, "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.")
+		{
+			// check that with outcome.Session we can generate JWT
+			signedString, err := this.SessionResolver.Jwt(ctx, outcome.Session)
+			ass.NoError(err)
+			ass.Contains(signedString, "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.")
+
+			{
+				// check that JWT is valid
+				claims, err := this.SessionResolver.JwtValidation(signedString)
+				ass.NoError(err)
+				ass.NotNil(claims)
+				ass.Equal(claims.SessionId(), outcome.Session.ID)
+				ass.Equal(claims.UserId(), outcome.Session.UserId)
+				ass.Equal(claims.NamespaceId(), outcome.Session.NamespaceId)
+			}
+		}
 	})
 }
 

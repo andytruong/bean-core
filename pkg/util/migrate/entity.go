@@ -16,7 +16,7 @@ func NewMigration(module string, name string) Migration {
 		CreatedAt: time.Now(),
 	}
 
-	this.Name = strings.TrimPrefix(this.Name, rootDirectory())
+	this.Name = strings.TrimPrefix(this.Name, RootDirectory())
 	this.Name = strings.TrimPrefix(this.Name, "/")
 
 	return this
@@ -29,7 +29,7 @@ type Migration struct {
 }
 
 func (this Migration) RealPath() string {
-	return rootDirectory() + "/" + this.Name
+	return RootDirectory() + "/" + this.Name
 }
 
 func (this Migration) DriverMatch(driver string) bool {
@@ -56,7 +56,7 @@ func (this *Migration) Save(tx *gorm.DB) error {
 	return tx.Create(this).Error
 }
 
-func rootDirectory() string {
+func RootDirectory() string {
 	_, filename, _, _ := runtime.Caller(0)
 	dir := path.Dir(filename)
 	dir = path.Dir(dir)

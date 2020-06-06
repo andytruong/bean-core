@@ -1,13 +1,18 @@
 package infra
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
@@ -112,11 +117,7 @@ func (this *Container) parseFile(path string) error {
 
 func (this *Container) ListenAndServe() error {
 	router := mux.NewRouter()
-
-	cnf := gql.Config{Resolvers: this.graph}
-	schema := gql.NewExecutableSchema(cnf)
-	hdl := handler.NewDefaultServer(schema)
-	router.HandleFunc("/query", hdl.ServeHTTP)
+	router.HandleFunc("/query", this.HandleQueryRequest())
 
 	if this.HttpServer.GraphQL.Playround.Enabled {
 		hdl := playground.Handler(this.HttpServer.GraphQL.Playround.Title, "/query")
@@ -135,6 +136,55 @@ func (this *Container) ListenAndServe() error {
 	this.logger.Info("🚀 HTTP server is running", zap.String("address", this.HttpServer.Address))
 
 	return server.ListenAndServe()
+}
+
+// Handle request to /query.
+//  Verify JWT authorization if provided.
+func (this *Container) HandleQueryRequest() func(http.ResponseWriter, *http.Request) {
+	cnf := gql.Config{Resolvers: this.graph}
+	schema := gql.NewExecutableSchema(cnf)
+	hdl := handler.NewDefaultServer(schema)
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := this.BeforeServeHTTP(r)
+		if nil != err {
+			w.WriteHeader(http.StatusForbidden)
+
+			body := graphql.Response{
+				Errors: gqlerror.List{
+					{
+						Message: err.Error(),
+					},
+				},
+			}
+
+			content, _ := json.Marshal(body)
+
+			w.Write(content)
+		} else {
+			hdl.ServeHTTP(w, r)
+		}
+	}
+}
+
+func (this *Container) BeforeServeHTTP(r *http.Request) error {
+	authHeader := r.Header.Get("Authorization")
+	if "" != authHeader {
+		module, err := this.modules.Access()
+		if nil != err {
+			return errors.Wrap(err, util.ErrorCodeConfig.String())
+		}
+
+		claims, err := module.SessionResolver.JwtValidation(authHeader)
+		if err != nil {
+			return err
+		} else if nil != claims {
+			ctx := context.WithValue(r.Context(), "bean.claims", claims)
+			r = r.WithContext(ctx)
+		}
+	}
+
+	return nil
 }
 
 func (this *Container) Identifier() *util.Identifier {

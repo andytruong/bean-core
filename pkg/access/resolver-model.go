@@ -2,10 +2,13 @@ package access
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"bean/pkg/access/model"
 	namespace_model "bean/pkg/namespace/model"
@@ -14,6 +17,7 @@ import (
 )
 
 type ModelResolver struct {
+	logger *zap.Logger
 	module *AccessModule
 	config *Config
 }
@@ -35,7 +39,7 @@ func (this ModelResolver) Namespace(ctx context.Context, obj *model.Session) (*n
 }
 
 func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (string, error) {
-	key, err := this.config.signKey()
+	key, err := this.config.GetSignKey()
 	if nil != err {
 		return "", errors.Wrap(util.ErrorConfig, err.Error())
 	}
@@ -44,8 +48,8 @@ func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (stri
 		StandardClaims: jwt.StandardClaims{
 			Issuer:    "access",
 			Id:        session.ID,
-			IssuedAt:  time.Now().UnixNano(),
-			ExpiresAt: time.Now().Add(this.config.Jwt.Timeout).UnixNano(),
+			IssuedAt:  time.Now().Unix(),
+			ExpiresAt: time.Now().Add(this.config.Jwt.Timeout).Unix(),
 			Subject:   session.UserId,
 			Audience:  session.NamespaceId,
 		},
@@ -60,4 +64,27 @@ func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (stri
 	}
 
 	return signedString, err
+}
+
+func (this ModelResolver) JwtValidation(authHeader string) (*util.Claims, error) {
+	chunks := strings.Split(authHeader, " ")
+	authHeader = chunks[len(chunks)-1]
+
+	if parts := strings.Split(authHeader, "."); 3 == len(parts) {
+		token, err := jwt.ParseWithClaims(
+			authHeader,
+			&util.Claims{},
+			func(token *jwt.Token) (interface{}, error) {
+				return this.config.GetParseKey()
+			},
+		)
+
+		if nil != err {
+			return nil, err
+		} else {
+			return token.Claims.(*util.Claims), nil
+		}
+	}
+
+	return nil, fmt.Errorf("ivnalid authentication header")
 }

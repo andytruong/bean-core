@@ -6,6 +6,8 @@ import (
 	"net/mail"
 	"net/url"
 	"strings"
+
+	"bean/pkg/util/migrate"
 )
 
 type (
@@ -13,12 +15,22 @@ type (
 	ULID         string
 	EmailAddress string
 	Uri          string
+	FilePath     string
 
 	// Useful for simple DB query.
 	ValueWrapper struct {
 		Value string
 	}
 )
+
+func (this FilePath) String() string {
+	out := string(this)
+	if strings.HasPrefix(out, "/") {
+		return out
+	}
+
+	return migrate.RootDirectory() + "/" + out
+}
 
 func (this EmailAddress) LowerCaseValue() EmailAddress {
 	stringRaw := string(this)
