@@ -112,12 +112,11 @@ func (this *Container) parseFile(path string) error {
 
 func (this *Container) ListenAndServe() error {
 	router := mux.NewRouter()
-	router.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
-		config := gql.Config{Resolvers: this.graph}
-		schema := gql.NewExecutableSchema(config)
-		server := handler.NewDefaultServer(schema)
-		server.ServeHTTP(w, r)
-	})
+
+	cnf := gql.Config{Resolvers: this.graph}
+	schema := gql.NewExecutableSchema(cnf)
+	hdl := handler.NewDefaultServer(schema)
+	router.HandleFunc("/query", hdl.ServeHTTP)
 
 	if this.HttpServer.GraphQL.Playround.Enabled {
 		hdl := playground.Handler(this.HttpServer.GraphQL.Playround.Title, "/query")
