@@ -9,6 +9,8 @@ import (
 type DeviceType string
 
 const (
+	// which source: user/password, sso(microsoft, google, github, facebook, twitter, …)
+	// two-step login
 	DeviceTypeDesktop    DeviceType = "Desktop"
 	DeviceTypeLaptop     DeviceType = "Laptop"
 	DeviceTypeSmartPhone DeviceType = "SmartPhone"
@@ -52,4 +54,3 @@ func (e *DeviceType) UnmarshalGQL(v interface{}) error {
 func (e DeviceType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
-

@@ -19,4 +19,5 @@ require (
 	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	gopkg.in/yaml.v2 v2.2.4
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 )

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
 
 	"bean/pkg/access/api/fixtures"
 	"bean/pkg/namespace"
@@ -16,17 +17,46 @@ import (
 )
 
 func module() *AccessModule {
+	configRaw, err := util.ParseFile("../../config.yaml")
+	if nil != err {
+		panic(err)
+	}
+
+	config := &struct {
+		Modules struct {
+			Access *Config `yaml:"access"`
+		} `yaml:"modules"`
+	}{}
+
+	{
+		err := yaml.Unmarshal(configRaw, &config)
+		if nil != err {
+			panic(err)
+		}
+
+		config.Modules.Access.Jwt.PrivateKey = "../../" + config.Modules.Access.Jwt.PrivateKey
+		config.Modules.Access.Jwt.PublicKey = "../../" + config.Modules.Access.Jwt.PublicKey
+	}
+
 	db := util.MockDatabase()
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
 	mUser := user.NewUserModule(db, logger, id)
 	mNamespace := namespace.NewNamespaceModule(db, logger, id, mUser)
-	module := NewAccessModule(db, id, logger, mUser, mNamespace, nil)
+	module := NewAccessModule(db, id, logger, mUser, mNamespace, config.Modules.Access)
 	util.MockInstall(mUser, db)
 	util.MockInstall(mNamespace, db)
 	util.MockInstall(module, db)
 
 	return module
+}
+
+func Test_Config(t *testing.T) {
+	ass := assert.New(t)
+	this := module()
+	key, err := this.config.signKey()
+	ass.NoError(err)
+	ass.NotNil(key)
 }
 
 func Test_Create(t *testing.T) {

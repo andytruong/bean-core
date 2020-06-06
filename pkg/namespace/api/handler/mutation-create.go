@@ -104,8 +104,14 @@ func (this *NamespaceCreateHandler) createMembership(tx *gorm.DB, namespace *mod
 			return err
 		}
 
+		version, err := this.ID.ULID()
+		if nil != err {
+			return err
+		}
+
 		membership := model.Membership{
 			ID:          id,
+			Version:     version,
 			NamespaceID: namespace.ID,
 			UserID:      input.Context.UserID,
 			IsActive:    false,

@@ -14,6 +14,9 @@ test:
 build:
 	go build -o /tmp/go-bean cmd/main.go
 
+gen-key:
+	CONFIG=config.yaml go run cmd/main.go gen-key
+
 clean:
 	go mod tidy
 

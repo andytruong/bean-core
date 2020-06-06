@@ -28,7 +28,7 @@ func NewAccessModule(
 	config *Config,
 ) *AccessModule {
 	module := &AccessModule{
-		config:          config,
+		config:          config.init(),
 		logger:          logger,
 		db:              db,
 		id:              id,
@@ -36,7 +36,10 @@ func NewAccessModule(
 		namespaceModule: namespaceModule,
 	}
 
-	module.SessionResolver = ModelResolver{module: module}
+	module.SessionResolver = ModelResolver{
+		module: module,
+		config: config,
+	}
 
 	return module
 }
@@ -52,10 +55,6 @@ type (
 		// depends on user module
 		userModule      *user.UserModule
 		namespaceModule *namespace.NamespaceModule
-	}
-
-	Config struct {
-		SessionTimeout time.Duration `yaml:"sessionTimeout"`
 	}
 )
 
