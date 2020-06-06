@@ -100,6 +100,10 @@ func Test_Create(t *testing.T) {
 		ass.Equal(oUser.User.ID, outcome.Session.UserId)
 		ass.Equal(oNamespace.Namespace.ID, outcome.Session.NamespaceId)
 		ass.Len(outcome.Errors, 0)
+
+		signedString, err := this.SessionResolver.Jwt(ctx, outcome.Session)
+		ass.NoError(err)
+		ass.Contains(signedString, "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.")
 	})
 }
 
