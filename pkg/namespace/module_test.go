@@ -17,7 +17,7 @@ import (
 
 func Test_Create(t *testing.T) {
 	ass := assert.New(t)
-	input := fixtures.NamespaceCreateInputFixture()
+	input := fixtures.NamespaceCreateInputFixture(false)
 	db := util.MockDatabase().LogMode(false)
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
@@ -56,7 +56,7 @@ func Test_Query(t *testing.T) {
 	util.MockInstall(module, db)
 
 	var id string
-	input := fixtures.NamespaceCreateInputFixture()
+	input := fixtures.NamespaceCreateInputFixture(false)
 
 	{
 		// setup data for query
@@ -76,7 +76,7 @@ func Test_Query(t *testing.T) {
 
 func Test_Update(t *testing.T) {
 	ass := assert.New(t)
-	input := fixtures.NamespaceCreateInputFixture()
+	input := fixtures.NamespaceCreateInputFixture(false)
 	db := util.MockDatabase()
 	logger := util.MockLogger()
 	identifier := util.MockIdentifier()
@@ -120,7 +120,7 @@ func Test_Update(t *testing.T) {
 	})
 }
 
-func Test_Membership(t *testing.T) {
+func Test_Membership_Create(t *testing.T) {
 	ass := assert.New(t)
 	db := util.MockDatabase()
 	logger := util.MockLogger()
@@ -132,7 +132,7 @@ func Test_Membership(t *testing.T) {
 	// setup data for query
 	// -------
 	// create namespace
-	iNamespace := fixtures.NamespaceCreateInputFixture()
+	iNamespace := fixtures.NamespaceCreateInputFixture(false)
 	oNamespace, err := module.NamespaceCreate(context.Background(), iNamespace)
 	ass.NoError(err)
 
@@ -209,25 +209,42 @@ func Test_Membership(t *testing.T) {
 		ass.Contains(err.Error(), "register is off")
 		ass.Nil(outcome)
 	})
+}
+
+func Test_Membership_Update(t *testing.T) {
+	ass := assert.New(t)
+	db := util.MockDatabase()
+	logger := util.MockLogger()
+	identifier := util.MockIdentifier()
+	mUser := user.NewUserModule(db, logger, identifier)
+	module := NewNamespaceModule(db, logger, identifier, mUser)
+	util.MockInstall(module, db)
+
+	// setup data for query
+	// -------
+	// create namespace
+	iNamespace := fixtures.NamespaceCreateInputFixture(true)
+	oNamespace, err := module.NamespaceCreate(context.Background(), iNamespace)
+	ass.NoError(err)
+
+	// create user
+	iUser := uFixtures.NewUserCreateInputFixture()
+	oUser, err := mUser.UserCreate(context.Background(), iUser)
+	ass.NoError(err)
+
+	t.Run("create membership", func(t *testing.T) {
+		input := dto.NamespaceMembershipCreateInput{
+			NamespaceID: oNamespace.Namespace.ID,
+			UserID:      oUser.User.ID,
+			IsActive:    false,
+		}
+
+		_, err := module.NamespaceMembershipCreate(context.Background(), input)
+		ass.NoError(err)
+	})
 
 	t.Run("update membership", func(t *testing.T) {
 		membership := &model.Membership{}
-
-		// change feature ON
-		{
-			ok, err := module.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
-				NamespaceID:      oNamespace.Namespace.ID,
-				NamespaceVersion: oNamespace.Namespace.Version,
-				Object: &dto.NamespaceUpdateInputObject{
-					Features: &dto.NamespaceUpdateInputFeatures{
-						Register: util.NilBool(true),
-					},
-				},
-			})
-
-			ass.NoError(err)
-			ass.True(*ok)
-		}
 
 		// create a membership with status OFF.
 		{

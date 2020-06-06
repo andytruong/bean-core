@@ -67,7 +67,7 @@ func Test_Create(t *testing.T) {
 	ass.NoError(err)
 
 	// create namespace
-	iNamespace := fNamespace.NamespaceCreateInputFixture()
+	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, err := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
 	ass.NoError(err)
@@ -126,7 +126,7 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 	iUser := fUser.NewUserCreateInputFixture()
 
 	// create namespace
-	iNamespace := fNamespace.NamespaceCreateInputFixture()
+	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	oNamespace, err := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
 	ass.NoError(err)
 
@@ -146,7 +146,7 @@ func Test_Query(t *testing.T) {
 
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := this.userModule.UserCreate(ctx, iUser)
-	iNamespace := fNamespace.NamespaceCreateInputFixture()
+	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, _ := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
 	input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
@@ -181,7 +181,7 @@ func Test_Archive(t *testing.T) {
 
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := this.userModule.UserCreate(ctx, iUser)
-	iNamespace := fNamespace.NamespaceCreateInputFixture()
+	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, _ := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
 	input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
