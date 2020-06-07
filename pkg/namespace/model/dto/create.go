@@ -7,11 +7,12 @@ import (
 )
 
 type NamespaceCreateInput struct {
-	Object  *NamespaceCreateInputObject `json:"object"`
-	Context *NamespaceCreateContext     `json:"context"`
+	Object  NamespaceCreateInputObject `json:"object"`
+	Context NamespaceCreateContext     `json:"context"`
 }
 
 type NamespaceCreateInputObject struct {
+	Kind        model.NamespaceKind    `json:"kind"`
 	Title       *string                `json:"title"`
 	Language    api.Language           `json:"language"`
 	IsActive    bool                   `json:"isActive"`
@@ -35,7 +36,8 @@ type NamespaceFeaturesInput struct {
 }
 
 type NamespaceCreateContext struct {
-	UserID string `json:"userId"`
+	UserID      string  `json:"userId"`
+	NamespaceID *string `json:"namespaceId"`
 }
 
 type NamespaceCreateOutcome struct {

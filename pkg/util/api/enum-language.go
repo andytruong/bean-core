@@ -14,6 +14,7 @@ const (
 	LanguageUnitedStates  Language = "US"
 	LanguageUnitedKingdom Language = "UK"
 	LanguageVietnam       Language = "VN"
+	LanguageDefault       Language = "US"
 )
 
 var AllLanguage = []Language{

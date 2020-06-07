@@ -11,6 +11,7 @@ input NamespaceCreateInput {
 }
 
 input NamespaceCreateInputObject {
+	kind: NamespaceKind!
 	title: String
 	language: Language!
 	isActive: Boolean!
@@ -24,6 +25,7 @@ input NamespaceFeaturesInput {
 
 input NamespaceCreateContext {
 	userId: ID!
+	namespaceId: ID
 }
 
 input DomainNamesInput {

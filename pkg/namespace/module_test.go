@@ -14,6 +14,7 @@ import (
 	uFixtures "bean/pkg/user/api/fixtures"
 	"bean/pkg/util"
 	"bean/pkg/util/api"
+	"bean/pkg/util/connect"
 )
 
 func Test_Create(t *testing.T) {
@@ -22,26 +23,50 @@ func Test_Create(t *testing.T) {
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
 	mUser := user.NewUserModule(db, logger, id)
-	module := NewNamespaceModule(db, logger, id, mUser)
-	util.MockInstall(module, db)
+	this := NewNamespaceModule(db, logger, id, mUser)
+	util.MockInstall(this, db)
 
 	input := fixtures.NamespaceCreateInputFixture(false)
 
 	t.Run("happy case", func(t *testing.T) {
 		now := time.Now()
-		outcome, err := module.NamespaceCreate(context.Background(), input)
+		outcome, err := this.NamespaceCreate(context.Background(), input)
 		ass.NoError(err)
 		ass.Nil(outcome.Errors)
-		ass.Equal(input.Object.Title, outcome.Namespace.Title)
+		ass.Equal(model.NamespaceKindOrganisation, outcome.Namespace.Kind)
+		ass.Equal(*input.Object.Title, outcome.Namespace.Title)
 		ass.Equal(input.Object.IsActive, outcome.Namespace.IsActive)
 		ass.True(outcome.Namespace.CreatedAt.UnixNano() >= now.UnixNano())
 		ass.True(outcome.Namespace.UpdatedAt.UnixNano() >= now.UnixNano())
 		ass.Equal(outcome.Namespace.Language, api.LanguageAustralia)
+
+		// check that owner role is created
+		// -------
+		ownerNS := &model.Namespace{}
+		err = db.First(&ownerNS, "parent_id = ?", outcome.Namespace.ID).Error
+		ass.NoError(err)
+		ass.Equal(ownerNS.Title, "owner")
+		ass.Equal(ownerNS.Kind, model.NamespaceKindRole)
+		ass.Equal(ownerNS.Language, api.LanguageDefault)
+
+		// check that memberships are setup correctly.
+		counter := 0
+		db.
+			Table(connect.TableNamespaceMemberships).
+			Where("user_id = ? AND namespace_id = ?", input.Context.UserID, outcome.Namespace.ID).
+			Count(&counter)
+		ass.Equal(1, counter)
+
+		db.
+			Table(connect.TableNamespaceMemberships).
+			Where("user_id = ? AND namespace_id = ?", input.Context.UserID, ownerNS.ID).
+			Count(&counter)
+		ass.Equal(1, counter)
 	})
 
 	t.Run("domain duplication", func(t *testing.T) {
 		// create again with same input
-		outcome, err := module.NamespaceCreate(context.Background(), input)
+		outcome, err := this.NamespaceCreate(context.Background(), input)
 
 		ass.Nil(outcome)
 		ass.NotNil(err)
@@ -72,7 +97,7 @@ func Test_Query(t *testing.T) {
 		obj, err := module.Namespace(context.Background(), id)
 		ass.NoError(err)
 		ass.Equal(obj.ID, id)
-		ass.Equal(obj.Title, input.Object.Title)
+		ass.Equal(obj.Title, *input.Object.Title)
 		ass.Equal(obj.IsActive, input.Object.IsActive)
 	}
 }

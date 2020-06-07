@@ -1,13 +1,16 @@
 CREATE TABLE namespaces
 (
     id         character varying(26)  NOT NULL PRIMARY KEY,
+    parent_id  character varying(26),
     version    character varying(26)  NOT NULL UNIQUE,
+    kind       character varying(26)  NOT NULL,
     is_active  boolean                NOT NULL,
     created_at timestamp              NOT NULL,
     updated_at timestamp              NOT NULL,
     deleted_at timestamp,
     title      character varying(255) NOT NULL,
-    language   character varying(16)
+    language   character varying(16),
+    FOREIGN KEY (parent_id) REFERENCES namespaces (id)
 );
 
 CREATE TABLE namespace_domains
@@ -22,8 +25,6 @@ CREATE TABLE namespace_domains
     value        character varying(256) NOT NULL UNIQUE,
     FOREIGN KEY (namespace_id) REFERENCES namespaces (id)
 );
-
-CREATE INDEX namespace_domains_value ON namespace_domains (value);
 
 CREATE TABLE namespace_config
 (
@@ -53,4 +54,5 @@ CREATE TABLE namespace_memberships
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
-CREATE INDEX namespace_memberships_login ON namespace_memberships (logged_in_at);
+-- store last login
+CREATE INDEX namespace_memberships_login ON namespace_memberships USING btree (logged_in_at DESC NULLS LAST);
