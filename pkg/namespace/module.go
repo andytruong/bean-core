@@ -15,6 +15,7 @@ import (
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/user"
 	"bean/pkg/util"
+	"bean/pkg/util/connect"
 	"bean/pkg/util/migrate"
 )
 
@@ -154,7 +155,7 @@ func (this NamespaceModule) Membership(ctx context.Context, id string, version *
 	obj := &model.Membership{}
 
 	err := this.db.
-		Table("namespace_memberships").
+		Table(connect.TableNamespaceMemberships).
 		First(&obj, "id = ?", id).
 		Error
 

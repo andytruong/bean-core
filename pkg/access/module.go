@@ -88,7 +88,7 @@ func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.SessionC
 	if nil != this.config {
 		timeout = this.config.SessionTimeout
 	}
-	
+
 	hdl := handler.SessionCreateHandler{
 		ID:             this.id,
 		SessionTimeout: timeout,

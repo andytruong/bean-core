@@ -10,6 +10,7 @@ import (
 	"bean/pkg/user"
 	mUser "bean/pkg/user/model"
 	"bean/pkg/util"
+	"bean/pkg/util/connect"
 )
 
 func newMembershipResolver(namespaceModule *NamespaceModule, userModule *user.UserModule) MembershipResolver {
@@ -49,7 +50,7 @@ func (this MembershipResolver) UpdateLastLoginTime(db *gorm.DB, membership *mode
 	membership.LoggedInAt = util.NilTime(time.Now())
 
 	return db.
-		Table("namespace_memberships").
+		Table(connect.TableNamespaceMemberships).
 		Save(&membership).
 		Error
 }

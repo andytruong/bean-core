@@ -14,6 +14,7 @@ import (
 	"bean/pkg/user"
 	fUser "bean/pkg/user/api/fixtures"
 	"bean/pkg/util"
+	"bean/pkg/util/connect"
 )
 
 func module() *AccessModule {
@@ -164,7 +165,7 @@ func Test_Query(t *testing.T) {
 		// change session expiration time
 		oneMinDuration, _ := time.ParseDuration("129h")
 		session.ExpiredAt = session.ExpiredAt.Add(-1 * oneMinDuration)
-		err := this.db.Table("access_session").Save(&session).Error
+		err := this.db.Table(connect.TableAccessSession).Save(&session).Error
 		ass.NoError(err)
 
 		// load again -> error: session expired

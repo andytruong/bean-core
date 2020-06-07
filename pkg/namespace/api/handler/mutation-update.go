@@ -8,6 +8,7 @@ import (
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/util"
+	"bean/pkg/util/connect"
 )
 
 type NamespaceUpdateHandler struct {
@@ -68,7 +69,7 @@ func (this *NamespaceUpdateHandler) updateFeature(
 	}
 
 	return tx.
-		Table("namespace_config").
+		Table(connect.TableNamespaceConfig).
 		Where("namespace_id = ? AND bucket = ? AND key = ?", namespace.ID, bucket, key).
 		Update(&model.NamespaceConfig{
 			Version:   version,

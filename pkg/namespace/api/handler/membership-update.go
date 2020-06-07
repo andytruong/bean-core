@@ -8,6 +8,7 @@ import (
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/util"
+	"bean/pkg/util/connect"
 )
 
 type MembershipUpdateHandler struct {
@@ -31,7 +32,7 @@ func (this MembershipUpdateHandler) NamespaceMembershipUpdate(
 
 	{
 		err := this.DB.
-			Table("namespace_memberships").
+			Table(connect.TableNamespaceMemberships).
 			Save(&membership).
 			Error
 

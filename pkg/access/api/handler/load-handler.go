@@ -9,6 +9,7 @@ import (
 
 	"bean/pkg/access/model"
 	"bean/pkg/util"
+	"bean/pkg/util/connect"
 )
 
 type SessionLoadHandler struct {
@@ -19,7 +20,7 @@ type SessionLoadHandler struct {
 func (this SessionLoadHandler) Handle(ctx context.Context, token string) (*model.Session, error) {
 	session := &model.Session{}
 	err := this.DB.
-		Table("access_session").
+		Table(connect.TableAccessSession).
 		First(&session, "hashed_token = ?", this.ID.Encode(token)).
 		Error
 

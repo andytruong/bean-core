@@ -14,6 +14,7 @@ import (
 	mNamespace "bean/pkg/namespace/model"
 	mUser "bean/pkg/user/model"
 	"bean/pkg/util"
+	"bean/pkg/util/connect"
 )
 
 type SessionCreateHandler struct {
@@ -57,7 +58,7 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 	// membership validation
 	eg.Go(func() error {
 		err := tx.
-			Table("namespace_memberships").
+			Table(connect.TableNamespaceMemberships).
 			First(&membership, "namespace_id = ? AND user_id = ?", input.NamespaceID, email.UserId).
 			Error
 
@@ -107,7 +108,7 @@ func (this SessionCreateHandler) createSession(
 			ExpiredAt:   time.Now().Add(this.SessionTimeout),
 		}
 
-		if err := tx.Table("access_session").Create(&session).Error; nil != err {
+		if err := tx.Table(connect.TableAccessSession).Create(&session).Error; nil != err {
 			return nil, err
 		} else {
 			// update membership -> last-time-login

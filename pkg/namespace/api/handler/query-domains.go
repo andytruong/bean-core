@@ -6,6 +6,7 @@ import (
 	"github.com/jinzhu/gorm"
 
 	"bean/pkg/namespace/model"
+	"bean/pkg/util/connect"
 )
 
 type DomainQueryHandler struct {
@@ -20,7 +21,7 @@ func (this DomainQueryHandler) DomainNames(ctx context.Context, namespace *model
 
 	var domainNames []*model.DomainName
 	err := this.DB.
-		Table("namespace_domains").
+		Table(connect.TableNamespaceDomains).
 		Where("namespace_id = ?", namespace.ID).
 		Find(&domainNames).
 		Error

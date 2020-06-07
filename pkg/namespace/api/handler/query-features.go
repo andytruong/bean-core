@@ -6,6 +6,7 @@ import (
 	"github.com/jinzhu/gorm"
 
 	"bean/pkg/namespace/model"
+	"bean/pkg/util/connect"
 )
 
 type NamespaceQueryFeaturesHandler struct {
@@ -19,7 +20,7 @@ func (this NamespaceQueryFeaturesHandler) Features(ctx context.Context, namespac
 
 	var configList []model.NamespaceConfig
 	err := this.DB.
-		Table("namespace_config").
+		Table(connect.TableNamespaceConfig).
 		Find(&configList, "namespace_id = ?", namespace.ID).Error
 
 	if nil != err {

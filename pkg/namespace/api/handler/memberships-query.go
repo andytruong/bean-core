@@ -67,7 +67,7 @@ func (this MembershipsQueryHandler) buildNoLimitQuery(
 	filters dto.MembershipsFilter,
 ) (*gorm.DB, error) {
 	query := this.DB.
-		Table("namespace_memberships").
+		Table(connect.TableNamespaceMemberships).
 		Where("namespace_memberships.user_id = ?", filters.UserID).
 		Where("namespace_memberships.is_active = ?", filters.IsActive).
 		Order("namespace_memberships.logged_in_at DESC")

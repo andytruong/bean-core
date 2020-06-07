@@ -9,6 +9,7 @@ import (
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	"bean/pkg/util"
+	"bean/pkg/util/connect"
 )
 
 type SessionDeleteHandler struct {
@@ -24,7 +25,7 @@ func (this SessionDeleteHandler) Handle(ctx context.Context, session *model.Sess
 		session.IsActive = false
 		session.Version = version
 		session.UpdatedAt = time.Now()
-		err := this.DB.Table("access_session").Save(&session).Error
+		err := this.DB.Table(connect.TableAccessSession).Save(&session).Error
 		if nil != err {
 			return nil, err
 		}

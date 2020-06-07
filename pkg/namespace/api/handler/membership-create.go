@@ -10,6 +10,7 @@ import (
 	"bean/pkg/namespace/model/dto"
 	mUser "bean/pkg/user/model"
 	"bean/pkg/util"
+	"bean/pkg/util/connect"
 )
 
 type MembershipCreateHandler struct {
@@ -43,7 +44,7 @@ func (this MembershipCreateHandler) NamespaceMembershipCreate(
 		UpdatedAt:   time.Now(),
 	}
 
-	err = this.DB.Table("namespace_memberships").Create(&membership).Error
+	err = this.DB.Table(connect.TableNamespaceMemberships).Create(&membership).Error
 	if nil != err {
 		return nil, err
 	}
