@@ -197,3 +197,11 @@ func (this NamespaceModule) Memberships(
 
 	return hdl.Memberships(first, after, filters)
 }
+
+func (this NamespaceModule) Parent(ctx context.Context, obj *model.Namespace) (*model.Namespace, error) {
+	if nil == obj.ParentID {
+		return nil, nil
+	}
+
+	return this.Namespace(ctx, *obj.ParentID)
+}

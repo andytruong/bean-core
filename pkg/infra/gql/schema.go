@@ -123,6 +123,7 @@ type ComplexityRoot struct {
 		IsActive    func(childComplexity int) int
 		Kind        func(childComplexity int) int
 		Language    func(childComplexity int) int
+		Parent      func(childComplexity int) int
 		Title       func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
 		Version     func(childComplexity int) int
@@ -246,6 +247,8 @@ type MutationResolver interface {
 type NamespaceResolver interface {
 	DomainNames(ctx context.Context, obj *model.Namespace) (*model.DomainNames, error)
 	Features(ctx context.Context, obj *model.Namespace) (*model.NamespaceFeatures, error)
+
+	Parent(ctx context.Context, obj *model.Namespace) (*model.Namespace, error)
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
@@ -607,6 +610,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Namespace.Language(childComplexity), true
+
+	case "Namespace.parent":
+		if e.complexity.Namespace.Parent == nil {
+			break
+		}
+
+		return e.complexity.Namespace.Parent(childComplexity), true
 
 	case "Namespace.title":
 		if e.complexity.Namespace.Title == nil {
@@ -1165,6 +1175,7 @@ type Namespace {
 	domainNames: DomainNames
 	features: NamespaceFeatures
 	language: Language!
+	parent: Namespace
 }
 
 type DomainNames {
@@ -3259,6 +3270,37 @@ func (ec *executionContext) _Namespace_language(ctx context.Context, field graph
 	res := resTmp.(api.Language)
 	fc.Result = res
 	return ec.marshalNLanguage2beanᚋpkgᚋutilᚋapiᚐLanguage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Namespace_parent(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Namespace",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Namespace().Parent(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Namespace)
+	fc.Result = res
+	return ec.marshalONamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NamespaceCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.NamespaceCreateOutcome) (ret graphql.Marshaler) {
@@ -7225,6 +7267,17 @@ func (ec *executionContext) _Namespace(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "parent":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Namespace_parent(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
