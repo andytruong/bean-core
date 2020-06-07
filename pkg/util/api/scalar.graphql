@@ -40,9 +40,9 @@ enum AccessScope {
 	Authenticated
 }
 
-enum Sorts {
-	CreatedAtAsc
-	CreatedAtDesc
-	UpdatedAtAsc
-	UpdatedAtDesc
+enum Language {
+	Australia
+	UnitedStates
+	UnitedKingdom
+	Vietnam
 }

@@ -31,6 +31,10 @@ func (this NamespaceUpdateHandler) NamespaceUpdate(
 		return nil, err
 	}
 
+	if nil != input.Object.Language {
+		namespace.Language = *input.Object.Language
+	}
+
 	namespace.Version = version
 	if err := tx.Save(namespace).Error; nil != err {
 		return nil, err

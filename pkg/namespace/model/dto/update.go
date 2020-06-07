@@ -1,5 +1,7 @@
 package dto
 
+import "bean/pkg/util/api"
+
 type NamespaceUpdateInput struct {
 	NamespaceID      string                      `json:"namespaceId"`
 	NamespaceVersion string                      `json:"namespaceVersion"`
@@ -12,4 +14,5 @@ type NamespaceUpdateInputFeatures struct {
 
 type NamespaceUpdateInputObject struct {
 	Features *NamespaceUpdateInputFeatures `json:"features"`
+	Language *api.Language                 `json:"language"`
 }
