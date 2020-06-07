@@ -97,7 +97,7 @@ func Test_Query(t *testing.T) {
 		obj, err := module.Namespace(context.Background(), id)
 		ass.NoError(err)
 		ass.Equal(obj.ID, id)
-		ass.Equal(obj.Title, input.Object.Title)
+		ass.Equal(obj.Title, *input.Object.Title)
 		ass.Equal(obj.IsActive, input.Object.IsActive)
 	}
 }

@@ -1208,7 +1208,7 @@ input NamespaceCreateInput {
 }
 
 input NamespaceCreateInputObject {
-	kind: String!
+	kind: NamespaceKind!
 	title: String
 	language: Language!
 	isActive: Boolean!
@@ -1222,6 +1222,7 @@ input NamespaceFeaturesInput {
 
 input NamespaceCreateContext {
 	userId: ID!
+	namespaceId: ID
 }
 
 input DomainNamesInput {
@@ -6319,6 +6320,12 @@ func (ec *executionContext) unmarshalInputNamespaceCreateContext(ctx context.Con
 			if err != nil {
 				return it, err
 			}
+		case "namespaceId":
+			var err error
+			it.NamespaceID, err = ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -6357,7 +6364,7 @@ func (ec *executionContext) unmarshalInputNamespaceCreateInputObject(ctx context
 		switch k {
 		case "kind":
 			var err error
-			it.Kind, err = ec.unmarshalNString2string(ctx, v)
+			it.Kind, err = ec.unmarshalNNamespaceKind2beanᚋpkgᚋnamespaceᚋmodelᚐNamespaceKind(ctx, v)
 			if err != nil {
 				return it, err
 			}
