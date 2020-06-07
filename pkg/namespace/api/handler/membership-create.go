@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -14,12 +13,12 @@ import (
 )
 
 type MembershipCreateHandler struct {
-	ID *util.Identifier
-	DB *gorm.DB
+	ID         *util.Identifier
+	MaxManager int
 }
 
 func (this MembershipCreateHandler) NamespaceMembershipCreate(
-	ctx context.Context,
+	tx *gorm.DB,
 	input dto.NamespaceMembershipCreateInput,
 	namespace *model.Namespace,
 	user *mUser.User,
@@ -44,13 +43,73 @@ func (this MembershipCreateHandler) NamespaceMembershipCreate(
 		UpdatedAt:   time.Now(),
 	}
 
-	err = this.DB.Table(connect.TableNamespaceMemberships).Create(&membership).Error
+	err = tx.Table(connect.TableNamespaceMemberships).Create(&membership).Error
 	if nil != err {
 		return nil, err
+	} else if errors, err := this.createRelationships(tx, membership, input.ManagerMemberIds); nil != err {
+		return nil, err
+	} else {
+		return &dto.NamespaceMembershipCreateOutcome{
+			Errors:     errors,
+			Membership: membership,
+		}, nil
+	}
+}
+
+func (this MembershipCreateHandler) createRelationships(tx *gorm.DB, membership *model.Membership, managerMemberIds []string) ([]*util.Error, error) {
+	if len(managerMemberIds) > this.MaxManager {
+		return util.NewErrors(util.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "exceeded limitation"), nil
 	}
 
-	return &dto.NamespaceMembershipCreateOutcome{
-		Errors:     nil,
-		Membership: membership,
-	}, nil
+	// validate manager in same namespace
+	{
+		counter := 0
+		err := tx.
+			Table(connect.TableNamespaceMemberships).
+			Where("namespace_id = ?", membership.NamespaceID).
+			Where("id IN (?)", managerMemberIds).
+			Where("is_active = ?", true).
+			Count(&counter).
+			Error
+
+		if nil != err {
+			return nil, err
+		} else if counter != len(managerMemberIds) {
+			return util.NewErrors(util.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "one ore more IDs are invalid"), nil
+		}
+	}
+
+	// create relationship with managers
+	for _, managerMemberId := range managerMemberIds {
+		err := this.createRelationship(tx, membership, managerMemberId)
+		if nil != err {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+func (this MembershipCreateHandler) createRelationship(tx *gorm.DB, membership *model.Membership, managerMemberId string) error {
+	id, err := this.ID.ULID()
+	if nil != err {
+		return err
+	}
+
+	version, err := this.ID.ULID()
+	if nil != err {
+		return err
+	}
+
+	relationship := model.ManagerRelationship{
+		ID:              id,
+		Version:         version,
+		UserMemberId:    membership.ID,
+		ManagerMemberId: managerMemberId,
+		IsActive:        true,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+	}
+
+	return tx.Table(connect.TableManagerEdge).Save(&relationship).Error
 }

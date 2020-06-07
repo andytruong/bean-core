@@ -18,6 +18,7 @@ import (
 
 	"bean/pkg/access"
 	"bean/pkg/infra/gql"
+	"bean/pkg/namespace"
 	"bean/pkg/util"
 )
 
@@ -98,7 +99,8 @@ type (
 	}
 
 	ModulesConfig struct {
-		Access *access.Config `yaml:"access"`
+		Access    *access.Config    `yaml:"access"`
+		Namespace *namespace.Config `yaml:"namespace"`
 	}
 )
 

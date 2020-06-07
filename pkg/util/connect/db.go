@@ -11,4 +11,5 @@ const (
 	TableNamespaceMemberships = "namespace_memberships"
 	TableNamespaceDomains     = "namespace_domains"
 	TableNamespaceConfig      = "namespace_config"
+	TableManagerEdge          = "namespace_manager_edge"
 )

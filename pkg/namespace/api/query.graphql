@@ -15,9 +15,10 @@ extend type Query {
 }
 
 input MembershipsFilter {
-	userId: ID!
 	namespace: MembershipsFilterNamespace
+	userId: ID!
 	isActive: Boolean!
+	managerId: ID
 }
 
 input MembershipsFilterNamespace {

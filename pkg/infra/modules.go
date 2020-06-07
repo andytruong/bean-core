@@ -62,6 +62,7 @@ func (this *modules) Namespace() (*namespace.NamespaceModule, error) {
 			this.container.logger,
 			this.container.Identifier(),
 			mUser,
+			this.container.Modules.Namespace,
 		)
 	}
 

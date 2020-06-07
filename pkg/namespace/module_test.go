@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
 
 	"bean/pkg/namespace/api/fixtures"
 	"bean/pkg/namespace/model"
@@ -17,14 +18,38 @@ import (
 	"bean/pkg/util/connect"
 )
 
-func Test_Create(t *testing.T) {
-	ass := assert.New(t)
+func module() *NamespaceModule {
+	configRaw, err := util.ParseFile("../../config.yaml")
+	if nil != err {
+		panic(err)
+	}
+
+	config := &struct {
+		Modules struct {
+			Namespace *Config `yaml:"namespace"`
+		} `yaml:"modules"`
+	}{}
+
+	{
+		err := yaml.Unmarshal(configRaw, &config)
+		if nil != err {
+			panic(err)
+		}
+	}
+
 	db := util.MockDatabase().LogMode(false)
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
 	mUser := user.NewUserModule(db, logger, id)
-	this := NewNamespaceModule(db, logger, id, mUser)
-	util.MockInstall(this, db)
+	this := NewNamespaceModule(db, logger, id, mUser, config.Modules.Namespace)
+
+	return this
+}
+
+func Test_Create(t *testing.T) {
+	ass := assert.New(t)
+	this := module()
+	util.MockInstall(this, this.db)
 
 	input := fixtures.NamespaceCreateInputFixture(false)
 
@@ -43,7 +68,7 @@ func Test_Create(t *testing.T) {
 		// check that owner role is created
 		// -------
 		ownerNS := &model.Namespace{}
-		err = db.First(&ownerNS, "parent_id = ?", outcome.Namespace.ID).Error
+		err = this.db.First(&ownerNS, "parent_id = ?", outcome.Namespace.ID).Error
 		ass.NoError(err)
 		ass.Equal(ownerNS.Title, "owner")
 		ass.Equal(ownerNS.Kind, model.NamespaceKindRole)
@@ -51,13 +76,13 @@ func Test_Create(t *testing.T) {
 
 		// check that memberships are setup correctly.
 		counter := 0
-		db.
+		this.db.
 			Table(connect.TableNamespaceMemberships).
 			Where("user_id = ? AND namespace_id = ?", input.Context.UserID, outcome.Namespace.ID).
 			Count(&counter)
 		ass.Equal(1, counter)
 
-		db.
+		this.db.
 			Table(connect.TableNamespaceMemberships).
 			Where("user_id = ? AND namespace_id = ?", input.Context.UserID, ownerNS.ID).
 			Count(&counter)
@@ -76,25 +101,21 @@ func Test_Create(t *testing.T) {
 
 func Test_Query(t *testing.T) {
 	ass := assert.New(t)
-	db := util.MockDatabase()
-	logger := util.MockLogger()
-	identifier := util.MockIdentifier()
-	mUser := user.NewUserModule(db, logger, identifier)
-	module := NewNamespaceModule(db, logger, identifier, mUser)
-	util.MockInstall(module, db)
+	this := module()
+	util.MockInstall(this, this.db)
 
 	var id string
 	input := fixtures.NamespaceCreateInputFixture(false)
 
 	{
 		// setup data for query
-		outcome, err := module.NamespaceCreate(context.Background(), input)
+		outcome, err := this.NamespaceCreate(context.Background(), input)
 		ass.NoError(err)
 		id = outcome.Namespace.ID
 	}
 
 	{
-		obj, err := module.Namespace(context.Background(), id)
+		obj, err := this.Namespace(context.Background(), id)
 		ass.NoError(err)
 		ass.Equal(obj.ID, id)
 		ass.Equal(obj.Title, *input.Object.Title)
@@ -104,12 +125,8 @@ func Test_Query(t *testing.T) {
 
 func Test_Update(t *testing.T) {
 	ass := assert.New(t)
-	db := util.MockDatabase()
-	logger := util.MockLogger()
-	identifier := util.MockIdentifier()
-	mUser := user.NewUserModule(db, logger, identifier)
-	this := NewNamespaceModule(db, logger, identifier, mUser)
-	util.MockInstall(this, db)
+	this := module()
+	util.MockInstall(this, this.db)
 
 	// create namespace so we have something to update
 	input := fixtures.NamespaceCreateInputFixture(false)
@@ -157,29 +174,25 @@ func Test_Update(t *testing.T) {
 
 func Test_Membership_Create(t *testing.T) {
 	ass := assert.New(t)
-	db := util.MockDatabase()
-	logger := util.MockLogger()
-	identifier := util.MockIdentifier()
-	mUser := user.NewUserModule(db, logger, identifier)
-	module := NewNamespaceModule(db, logger, identifier, mUser)
-	util.MockInstall(module, db)
+	this := module()
+	util.MockInstall(this, this.db)
 
 	// setup data for query
 	// -------
 	// create namespace
 	iNamespace := fixtures.NamespaceCreateInputFixture(false)
-	oNamespace, err := module.NamespaceCreate(context.Background(), iNamespace)
+	oNamespace, err := this.NamespaceCreate(context.Background(), iNamespace)
 	ass.NoError(err)
 
 	// create user
 	iUser := uFixtures.NewUserCreateInputFixture()
-	oUser, err := mUser.UserCreate(context.Background(), iUser)
+	oUser, err := this.user.UserCreate(context.Background(), iUser)
 	ass.NoError(err)
 
 	t.Run("create membership", func(t *testing.T) {
 		// change feature ON
 		{
-			ok, err := module.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
+			ok, err := this.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
 				NamespaceID:      oNamespace.Namespace.ID,
 				NamespaceVersion: oNamespace.Namespace.Version,
 				Object: &dto.NamespaceUpdateInputObject{
@@ -199,7 +212,7 @@ func Test_Membership_Create(t *testing.T) {
 			IsActive:    false,
 		}
 
-		outcome, err := module.NamespaceMembershipCreate(context.Background(), input)
+		outcome, err := this.NamespaceMembershipCreate(context.Background(), input)
 
 		ass.NoError(err)
 		ass.Len(outcome.Errors, 0)
@@ -208,12 +221,12 @@ func Test_Membership_Create(t *testing.T) {
 	})
 
 	t.Run("create failed of feature is off", func(t *testing.T) {
-		namespace, err := module.Namespace(context.Background(), oNamespace.Namespace.ID)
+		namespace, err := this.Namespace(context.Background(), oNamespace.Namespace.ID)
 		ass.NoError(err)
 
 		// change feature off
 		{
-			ok, err := module.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
+			ok, err := this.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
 				NamespaceID:      namespace.ID,
 				NamespaceVersion: namespace.Version,
 				Object: &dto.NamespaceUpdateInputObject{
@@ -234,7 +247,7 @@ func Test_Membership_Create(t *testing.T) {
 			IsActive:    false,
 		}
 
-		outcome, err := module.NamespaceMembershipCreate(
+		outcome, err := this.NamespaceMembershipCreate(
 			context.Background(),
 			input,
 		)
@@ -248,23 +261,19 @@ func Test_Membership_Create(t *testing.T) {
 
 func Test_Membership_Update(t *testing.T) {
 	ass := assert.New(t)
-	db := util.MockDatabase()
-	logger := util.MockLogger()
-	identifier := util.MockIdentifier()
-	mUser := user.NewUserModule(db, logger, identifier)
-	module := NewNamespaceModule(db, logger, identifier, mUser)
-	util.MockInstall(module, db)
+	this := module()
+	util.MockInstall(this, this.db)
 
 	// setup data for query
 	// -------
 	// create namespace
 	iNamespace := fixtures.NamespaceCreateInputFixture(true)
-	oNamespace, err := module.NamespaceCreate(context.Background(), iNamespace)
+	oNamespace, err := this.NamespaceCreate(context.Background(), iNamespace)
 	ass.NoError(err)
 
 	// create user
 	iUser := uFixtures.NewUserCreateInputFixture()
-	oUser, err := mUser.UserCreate(context.Background(), iUser)
+	oUser, err := this.user.UserCreate(context.Background(), iUser)
 	ass.NoError(err)
 
 	t.Run("create membership", func(t *testing.T) {
@@ -274,7 +283,7 @@ func Test_Membership_Update(t *testing.T) {
 			IsActive:    false,
 		}
 
-		_, err := module.NamespaceMembershipCreate(context.Background(), input)
+		_, err := this.NamespaceMembershipCreate(context.Background(), input)
 		ass.NoError(err)
 	})
 
@@ -289,7 +298,7 @@ func Test_Membership_Update(t *testing.T) {
 				IsActive:    false,
 			}
 
-			outcome, err := module.NamespaceMembershipCreate(context.Background(), input)
+			outcome, err := this.NamespaceMembershipCreate(context.Background(), input)
 			ass.NoError(err)
 			membership = outcome.Membership
 		}
@@ -298,21 +307,21 @@ func Test_Membership_Update(t *testing.T) {
 		{
 			// without version
 			{
-				obj, err := module.Membership(context.Background(), membership.ID, nil)
+				obj, err := this.Membership(context.Background(), membership.ID, nil)
 				ass.NoError(err)
 				ass.False(obj.IsActive)
 			}
 
 			// with version
 			{
-				obj, err := module.Membership(context.Background(), membership.ID, &membership.Version)
+				obj, err := this.Membership(context.Background(), membership.ID, &membership.Version)
 				ass.NoError(err)
 				ass.False(obj.IsActive)
 			}
 
 			// with invalid version
 			{
-				obj, err := module.Membership(context.Background(), membership.ID, util.NilString("InvalidVersion"))
+				obj, err := this.Membership(context.Background(), membership.ID, util.NilString("InvalidVersion"))
 				ass.Error(err)
 				ass.Equal(err.Error(), util.ErrorVersionConflict.Error())
 				ass.Nil(obj)
@@ -321,7 +330,7 @@ func Test_Membership_Update(t *testing.T) {
 
 		// change status to ON
 		{
-			outcome, err := module.NamespaceMembershipUpdate(
+			outcome, err := this.NamespaceMembershipUpdate(
 				context.Background(),
 				dto.NamespaceMembershipUpdateInput{
 					Id:       membership.ID,

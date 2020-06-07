@@ -76,6 +76,7 @@ input NamespaceMembershipCreateInput {
 	namespaceId: ID!
 	userId: ID!
 	isActive: Boolean!
+	managerMemberIds: [ID!]!
 }
 
 type NamespaceMembershipCreateOutcome {

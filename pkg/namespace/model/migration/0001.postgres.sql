@@ -54,5 +54,18 @@ CREATE TABLE namespace_memberships
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
--- store last login
+-- last login
 CREATE INDEX namespace_memberships_login ON namespace_memberships USING btree (logged_in_at DESC NULLS LAST);
+
+CREATE TABLE namespace_manager_edge
+(
+    id                character varying(26) NOT NULL PRIMARY KEY,
+    version           character varying(26) NOT NULL UNIQUE,
+    user_member_id    character varying(26) NOT NULL,
+    manager_member_id character varying(26) NOT NULL,
+    is_active         BOOLEAN               NOT NULL,
+    created_at        timestamp             NOT NULL,
+    updated_at        timestamp             NOT NULL,
+    FOREIGN KEY (user_member_id) REFERENCES namespace_memberships (id),
+    FOREIGN KEY (manager_member_id) REFERENCES namespace_memberships (id)
+);

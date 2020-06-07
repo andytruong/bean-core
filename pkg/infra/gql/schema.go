@@ -1286,6 +1286,7 @@ input NamespaceMembershipCreateInput {
 	namespaceId: ID!
 	userId: ID!
 	isActive: Boolean!
+	managerMemberIds: [ID!]!
 }
 
 type NamespaceMembershipCreateOutcome {
@@ -1324,9 +1325,10 @@ extend type Query {
 }
 
 input MembershipsFilter {
-	userId: ID!
 	namespace: MembershipsFilterNamespace
+	userId: ID!
 	isActive: Boolean!
+	managerId: ID
 }
 
 input MembershipsFilterNamespace {
@@ -6338,21 +6340,27 @@ func (ec *executionContext) unmarshalInputMembershipsFilter(ctx context.Context,
 
 	for k, v := range asMap {
 		switch k {
-		case "userId":
-			var err error
-			it.UserID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "namespace":
 			var err error
 			it.Namespace, err = ec.unmarshalOMembershipsFilterNamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐMembershipsFilterNamespace(ctx, v)
 			if err != nil {
 				return it, err
 			}
+		case "userId":
+			var err error
+			it.UserID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "isActive":
 			var err error
 			it.IsActive, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "managerId":
+			var err error
+			it.ManagerId, err = ec.unmarshalOID2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6521,6 +6529,12 @@ func (ec *executionContext) unmarshalInputNamespaceMembershipCreateInput(ctx con
 		case "isActive":
 			var err error
 			it.IsActive, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "managerMemberIds":
+			var err error
+			it.ManagerMemberIds, err = ec.unmarshalNID2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8286,6 +8300,35 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNID2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
