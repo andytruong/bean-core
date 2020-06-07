@@ -82,6 +82,7 @@ type ComplexityRoot struct {
 		ID        func(childComplexity int) int
 		IsActive  func(childComplexity int) int
 		Namespace func(childComplexity int) int
+		Roles     func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 		User      func(childComplexity int) int
 		Version   func(childComplexity int) int
@@ -230,6 +231,8 @@ type ComplexityRoot struct {
 type MembershipResolver interface {
 	Namespace(ctx context.Context, obj *model.Membership) (*model.Namespace, error)
 	User(ctx context.Context, obj *model.Membership) (*model1.User, error)
+
+	Roles(ctx context.Context, obj *model.Membership) ([]*model.Namespace, error)
 }
 type MembershipConnectionResolver interface {
 	Edges(ctx context.Context, obj *model.MembershipConnection) ([]*model.MembershipEdge, error)
@@ -393,6 +396,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Membership.Namespace(childComplexity), true
+
+	case "Membership.roles":
+		if e.complexity.Membership.Roles == nil {
+			break
+		}
+
+		return e.complexity.Membership.Roles(childComplexity), true
 
 	case "Membership.updatedAt":
 		if e.complexity.Membership.UpdatedAt == nil {
@@ -1195,6 +1205,7 @@ type Membership {
 	isActive: Boolean!
 	createdAt: Time!
 	updatedAt: Time!
+	roles: [Namespace!]!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/namespace/api/mutation.graphql", Input: `# ---------------------
@@ -2352,6 +2363,40 @@ func (ec *executionContext) _Membership_updatedAt(ctx context.Context, field gra
 	res := resTmp.(time.Time)
 	fc.Result = res
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Membership_roles(ctx context.Context, field graphql.CollectedField, obj *model.Membership) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Membership",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Membership().Roles(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Namespace)
+	fc.Result = res
+	return ec.marshalNNamespace2ᚕᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespaceᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MembershipConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.MembershipConnection) (ret graphql.Marshaler) {
@@ -7011,6 +7056,20 @@ func (ec *executionContext) _Membership(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "roles":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Membership_roles(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8368,6 +8427,43 @@ func (ec *executionContext) unmarshalNMembershipsFilter2beanᚋpkgᚋnamespace�
 
 func (ec *executionContext) marshalNNamespace2beanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx context.Context, sel ast.SelectionSet, v model.Namespace) graphql.Marshaler {
 	return ec._Namespace(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNNamespace2ᚕᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespaceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Namespace) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNNamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalNNamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐNamespace(ctx context.Context, sel ast.SelectionSet, v *model.Namespace) graphql.Marshaler {

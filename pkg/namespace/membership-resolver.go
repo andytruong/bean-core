@@ -56,12 +56,12 @@ func (this MembershipResolver) UpdateLastLoginTime(db *gorm.DB, membership *mode
 		Error
 }
 
-func (this MembershipResolver) Roles(ctx context.Context, obj *model.Membership) ([]model.Namespace, error) {
+func (this MembershipResolver) Roles(ctx context.Context, obj *model.Membership) ([]*model.Namespace, error) {
 	return this.FindRoles(ctx, obj.UserID, obj.NamespaceID)
 }
 
-func (this MembershipResolver) FindRoles(ctx context.Context, userId string, namespaceId string) ([]model.Namespace, error) {
-	var roles []model.Namespace
+func (this MembershipResolver) FindRoles(ctx context.Context, userId string, namespaceId string) ([]*model.Namespace, error) {
+	var roles []*model.Namespace
 
 	err := this.module.db.
 		Table(connect.TableNamespace).

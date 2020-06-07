@@ -40,4 +40,5 @@ type Membership {
 	isActive: Boolean!
 	createdAt: Time!
 	updatedAt: Time!
+	roles: [Namespace!]!
 }
