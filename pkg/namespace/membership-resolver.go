@@ -2,6 +2,7 @@ package namespace
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -15,14 +16,14 @@ import (
 
 func newMembershipResolver(namespaceModule *NamespaceModule, userModule *user.UserModule) MembershipResolver {
 	return MembershipResolver{
-		namespace: namespaceModule,
-		user:      userModule,
+		module: namespaceModule,
+		user:   userModule,
 	}
 }
 
 type MembershipResolver struct {
-	namespace *NamespaceModule
-	user      *user.UserModule
+	module *NamespaceModule
+	user   *user.UserModule
 }
 
 func (this MembershipResolver) Edges(ctx context.Context, obj *model.MembershipConnection) ([]*model.MembershipEdge, error) {
@@ -39,7 +40,7 @@ func (this MembershipResolver) Edges(ctx context.Context, obj *model.MembershipC
 }
 
 func (this MembershipResolver) Namespace(ctx context.Context, obj *model.Membership) (*model.Namespace, error) {
-	return this.namespace.Namespace(ctx, obj.NamespaceID)
+	return this.module.Namespace(ctx, obj.NamespaceID)
 }
 
 func (this MembershipResolver) User(ctx context.Context, obj *model.Membership) (*mUser.User, error) {
@@ -53,4 +54,35 @@ func (this MembershipResolver) UpdateLastLoginTime(db *gorm.DB, membership *mode
 		Table(connect.TableNamespaceMemberships).
 		Save(&membership).
 		Error
+}
+
+func (this MembershipResolver) Roles(ctx context.Context, obj *model.Membership) ([]model.Namespace, error) {
+	return this.FindRoles(ctx, obj.UserID, obj.NamespaceID)
+}
+
+func (this MembershipResolver) FindRoles(ctx context.Context, userId string, namespaceId string) ([]model.Namespace, error) {
+	var roles []model.Namespace
+
+	err := this.module.db.
+		Table(connect.TableNamespace).
+		Joins(
+			fmt.Sprintf(
+				"INNER JOIN %s ON %s.namespace_id = %s.id AND %s.user_id = ?",
+				connect.TableNamespaceMemberships,
+				connect.TableNamespaceMemberships,
+				connect.TableNamespace,
+				connect.TableNamespaceMemberships,
+			),
+			userId,
+		).
+		Where("kind = ?", model.NamespaceKindRole).
+		Where("parent_id = ?", namespaceId).
+		Find(&roles).
+		Error
+
+	if nil != err {
+		return nil, err
+	}
+
+	return roles, nil
 }

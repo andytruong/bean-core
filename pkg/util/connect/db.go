@@ -7,6 +7,7 @@ const (
 
 	// Table names
 	TableAccessSession        = "access_session"
+	TableNamespace            = "namespaces"
 	TableNamespaceMemberships = "namespace_memberships"
 	TableNamespaceDomains     = "namespace_domains"
 	TableNamespaceConfig      = "namespace_config"

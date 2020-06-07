@@ -28,12 +28,12 @@ func NewAccessModule(
 	config *Config,
 ) *AccessModule {
 	module := &AccessModule{
-		config:          config.init(),
-		logger:          logger,
-		db:              db,
-		id:              id,
-		userModule:      userModule,
-		namespaceModule: namespaceModule,
+		config:    config.init(),
+		logger:    logger,
+		db:        db,
+		id:        id,
+		user:      userModule,
+		namespace: namespaceModule,
 	}
 
 	module.SessionResolver = ModelResolver{
@@ -54,15 +54,15 @@ type (
 		SessionResolver ModelResolver
 
 		// depends on user module
-		userModule      *user.UserModule
-		namespaceModule *namespace.NamespaceModule
+		user      *user.UserModule
+		namespace *namespace.NamespaceModule
 	}
 )
 
 func (this AccessModule) Dependencies() []util.Module {
 	return []util.Module{
-		this.userModule,
-		this.namespaceModule,
+		this.user,
+		this.namespace,
 	}
 }
 
@@ -92,7 +92,7 @@ func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.SessionC
 	hdl := handler.SessionCreateHandler{
 		ID:             this.id,
 		SessionTimeout: timeout,
-		Namespace:      this.namespaceModule,
+		Namespace:      this.namespace,
 	}
 	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
 	outcome, err := hdl.Handle(ctx, txn, input)

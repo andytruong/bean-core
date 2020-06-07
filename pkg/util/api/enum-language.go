@@ -10,23 +10,23 @@ type Language string
 
 const (
 	// See more at https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
-	LanguageAustralia     Language = "AU"
-	LanguageUnitedStates  Language = "US"
-	LanguageUnitedKingdom Language = "UK"
-	LanguageVietnam       Language = "VN"
-	LanguageDefault       Language = "US"
+	LanguageAU      Language = "AU"
+	LanguageUS      Language = "US"
+	LanguageUK      Language = "UK"
+	LanguageVN      Language = "VN"
+	LanguageDefault Language = "US"
 )
 
 var AllLanguage = []Language{
-	LanguageAustralia,
-	LanguageUnitedStates,
-	LanguageUnitedKingdom,
-	LanguageVietnam,
+	LanguageAU,
+	LanguageUS,
+	LanguageUK,
+	LanguageVN,
 }
 
 func (this Language) IsValid() bool {
 	switch this {
-	case LanguageAustralia, LanguageUnitedStates, LanguageUnitedKingdom, LanguageVietnam:
+	case LanguageAU, LanguageUS, LanguageUK, LanguageVN:
 		return true
 	}
 	return false

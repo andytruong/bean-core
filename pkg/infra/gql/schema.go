@@ -1150,17 +1150,8 @@ enum ErrorCode   {
 	DB_Constraint
 }
 
-enum AccessScope {
-	Anonymous
-	Authenticated
-}
-
-enum Language {
-	Australia
-	UnitedStates
-	UnitedKingdom
-	Vietnam
-}
+enum AccessScope { Anonymous Authenticated }
+enum Language { AU US UK VN }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/namespace/api/entity.graphql", Input: `enum NamespaceKind { Organisation, Role }
 

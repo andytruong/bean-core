@@ -186,9 +186,7 @@ func (this NamespaceModule) NamespaceMembershipUpdate(ctx context.Context, input
 
 func (this NamespaceModule) Memberships(
 	ctx context.Context,
-	first int,
-	after *string,
-	filters dto.MembershipsFilter,
+	first int, after *string, filters dto.MembershipsFilter,
 ) (*model.MembershipConnection, error) {
 	hdl := handler.MembershipsQueryHandler{
 		DB:     this.db,
