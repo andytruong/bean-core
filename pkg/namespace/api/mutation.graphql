@@ -11,6 +11,7 @@ input NamespaceCreateInput {
 }
 
 input NamespaceCreateInputObject {
+	kind: String!
 	title: String
 	language: Language!
 	isActive: Boolean!

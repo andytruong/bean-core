@@ -32,7 +32,7 @@ func Test_Create(t *testing.T) {
 		outcome, err := module.NamespaceCreate(context.Background(), input)
 		ass.NoError(err)
 		ass.Nil(outcome.Errors)
-		ass.Equal(input.Object.Title, outcome.Namespace.Title)
+		ass.Equal(*input.Object.Title, outcome.Namespace.Title)
 		ass.Equal(input.Object.IsActive, outcome.Namespace.IsActive)
 		ass.True(outcome.Namespace.CreatedAt.UnixNano() >= now.UnixNano())
 		ass.True(outcome.Namespace.UpdatedAt.UnixNano() >= now.UnixNano())

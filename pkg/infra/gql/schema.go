@@ -121,6 +121,7 @@ type ComplexityRoot struct {
 		Features    func(childComplexity int) int
 		ID          func(childComplexity int) int
 		IsActive    func(childComplexity int) int
+		Kind        func(childComplexity int) int
 		Language    func(childComplexity int) int
 		Title       func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
@@ -592,6 +593,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Namespace.IsActive(childComplexity), true
+
+	case "Namespace.kind":
+		if e.complexity.Namespace.Kind == nil {
+			break
+		}
+
+		return e.complexity.Namespace.Kind(childComplexity), true
 
 	case "Namespace.language":
 		if e.complexity.Namespace.Language == nil {
@@ -1144,7 +1152,50 @@ enum Language {
 	Vietnam
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/namespace/api/api-mutation.graphql", Input: `# ---------------------
+	&ast.Source{Name: "pkg/namespace/api/entity.graphql", Input: `enum NamespaceKind { Organisation, Role }
+
+type Namespace {
+	id: ID!
+	version: ID!
+	kind: NamespaceKind!
+	title: String
+	createdAt: Time!
+	updatedAt: Time!
+	isActive: Boolean!
+	domainNames: DomainNames
+	features: NamespaceFeatures
+	language: Language!
+}
+
+type DomainNames {
+	primary: DomainName!
+	secondary: [DomainName]
+}
+
+type DomainName {
+	id: ID!
+	value: String!
+	createdAt: Time!
+	updatedAt: Time!
+	isActive: Boolean!
+	isVerified: Boolean!
+}
+
+type NamespaceFeatures {
+	register: Boolean!
+}
+
+type Membership {
+	id: ID!
+	version: ID!
+	namespace: Namespace!
+	user: User!
+	isActive: Boolean!
+	createdAt: Time!
+	updatedAt: Time!
+}
+`, BuiltIn: false},
+	&ast.Source{Name: "pkg/namespace/api/mutation.graphql", Input: `# ---------------------
 # Create namespace
 # ---------------------
 extend type Mutation {
@@ -1157,7 +1208,9 @@ input NamespaceCreateInput {
 }
 
 input NamespaceCreateInputObject {
+	kind: String!
 	title: String
+	language: Language!
 	isActive: Boolean!
 	domainNames: DomainNamesInput
 	features: NamespaceFeaturesInput!
@@ -1236,10 +1289,11 @@ extend type Mutation {
 input NamespaceMembershipUpdateInput {
 	id: ID!
 	version: ID!
+	Language: Language
 	isActive: Boolean!
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/namespace/api/api-query.graphql", Input: `extend type Query {
+	&ast.Source{Name: "pkg/namespace/api/query.graphql", Input: `extend type Query {
 	namespace(id: ID!): Namespace
 	membership(id: ID!, version: ID): Membership
 }
@@ -1281,46 +1335,6 @@ type MembershipInfo {
 	endCursor: String
 	hasNextPage: Boolean!
 	startCursor: String
-}
-`, BuiltIn: false},
-	&ast.Source{Name: "pkg/namespace/api/api.graphql", Input: `type Namespace {
-	id: ID!
-	version: ID!
-	title: String
-	createdAt: Time!
-	updatedAt: Time!
-	isActive: Boolean!
-	domainNames: DomainNames
-	features: NamespaceFeatures
-	language: Language!
-}
-
-type DomainNames {
-	primary: DomainName!
-	secondary: [DomainName]
-}
-
-type DomainName {
-	id: ID!
-	value: String!
-	createdAt: Time!
-	updatedAt: Time!
-	isActive: Boolean!
-	isVerified: Boolean!
-}
-
-type NamespaceFeatures {
-	register: Boolean!
-}
-
-type Membership {
-	id: ID!
-	version: ID!
-	namespace: Namespace!
-	user: User!
-	isActive: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/user/api/entity.graphql", Input: `type User {
@@ -2983,6 +2997,40 @@ func (ec *executionContext) _Namespace_version(ctx context.Context, field graphq
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Namespace_kind(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Namespace",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Kind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.NamespaceKind)
+	fc.Result = res
+	return ec.marshalNNamespaceKind2beanᚋpkgᚋnamespaceᚋmodelᚐNamespaceKind(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Namespace_title(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3009,9 +3057,9 @@ func (ec *executionContext) _Namespace_title(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Namespace_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
@@ -6285,13 +6333,13 @@ func (ec *executionContext) unmarshalInputNamespaceCreateInput(ctx context.Conte
 		switch k {
 		case "object":
 			var err error
-			it.Object, err = ec.unmarshalNNamespaceCreateInputObject2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx, v)
+			it.Object, err = ec.unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "context":
 			var err error
-			it.Context, err = ec.unmarshalNNamespaceCreateContext2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx, v)
+			it.Context, err = ec.unmarshalNNamespaceCreateContext2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6307,9 +6355,21 @@ func (ec *executionContext) unmarshalInputNamespaceCreateInputObject(ctx context
 
 	for k, v := range asMap {
 		switch k {
+		case "kind":
+			var err error
+			it.Kind, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "title":
 			var err error
 			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "language":
+			var err error
+			it.Language, err = ec.unmarshalNLanguage2beanᚋpkgᚋutilᚋapiᚐLanguage(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6400,6 +6460,12 @@ func (ec *executionContext) unmarshalInputNamespaceMembershipUpdateInput(ctx con
 		case "version":
 			var err error
 			it.Version, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "Language":
+			var err error
+			it.Language, err = ec.unmarshalOLanguage2ᚖbeanᚋpkgᚋutilᚋapiᚐLanguage(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7100,6 +7166,11 @@ func (ec *executionContext) _Namespace(ctx context.Context, sel ast.SelectionSet
 			}
 		case "version":
 			out.Values[i] = ec._Namespace_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "kind":
+			out.Values[i] = ec._Namespace_kind(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -8262,14 +8333,6 @@ func (ec *executionContext) unmarshalNNamespaceCreateContext2beanᚋpkgᚋnamesp
 	return ec.unmarshalInputNamespaceCreateContext(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNNamespaceCreateContext2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx context.Context, v interface{}) (*dto.NamespaceCreateContext, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNNamespaceCreateContext2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalNNamespaceCreateInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInput(ctx context.Context, v interface{}) (dto.NamespaceCreateInput, error) {
 	return ec.unmarshalInputNamespaceCreateInput(ctx, v)
 }
@@ -8278,16 +8341,17 @@ func (ec *executionContext) unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋna
 	return ec.unmarshalInputNamespaceCreateInputObject(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNNamespaceCreateInputObject2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx context.Context, v interface{}) (*dto.NamespaceCreateInputObject, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalNNamespaceFeaturesInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceFeaturesInput(ctx context.Context, v interface{}) (dto.NamespaceFeaturesInput, error) {
 	return ec.unmarshalInputNamespaceFeaturesInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNNamespaceKind2beanᚋpkgᚋnamespaceᚋmodelᚐNamespaceKind(ctx context.Context, v interface{}) (model.NamespaceKind, error) {
+	var res model.NamespaceKind
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNNamespaceKind2beanᚋpkgᚋnamespaceᚋmodelᚐNamespaceKind(ctx context.Context, sel ast.SelectionSet, v model.NamespaceKind) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNNamespaceMembershipCreateInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceMembershipCreateInput(ctx context.Context, v interface{}) (dto.NamespaceMembershipCreateInput, error) {
@@ -9070,6 +9134,30 @@ func (ec *executionContext) marshalOIP2ᚖstring(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 	return ec.marshalOIP2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOLanguage2beanᚋpkgᚋutilᚋapiᚐLanguage(ctx context.Context, v interface{}) (api.Language, error) {
+	var res api.Language
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOLanguage2beanᚋpkgᚋutilᚋapiᚐLanguage(ctx context.Context, sel ast.SelectionSet, v api.Language) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOLanguage2ᚖbeanᚋpkgᚋutilᚋapiᚐLanguage(ctx context.Context, v interface{}) (*api.Language, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOLanguage2beanᚋpkgᚋutilᚋapiᚐLanguage(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOLanguage2ᚖbeanᚋpkgᚋutilᚋapiᚐLanguage(ctx context.Context, sel ast.SelectionSet, v *api.Language) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOMembership2beanᚋpkgᚋnamespaceᚋmodelᚐMembership(ctx context.Context, sel ast.SelectionSet, v model.Membership) graphql.Marshaler {

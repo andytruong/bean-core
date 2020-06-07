@@ -1,6 +1,9 @@
+enum NamespaceKind { Organisation, Role }
+
 type Namespace {
 	id: ID!
 	version: ID!
+	kind: NamespaceKind!
 	title: String
 	createdAt: Time!
 	updatedAt: Time!

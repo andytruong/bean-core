@@ -16,7 +16,8 @@ type NamespaceCreateHandler struct {
 
 func (this *NamespaceCreateHandler) Create(tx *gorm.DB, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	namespace := &model.Namespace{
-		Title:     input.Object.Title,
+		Kind:      input.Object.Kind,
+		Title:     *input.Object.Title,
 		Language:  input.Object.Language,
 		IsActive:  input.Object.IsActive,
 		CreatedAt: time.Now(),
@@ -99,32 +100,30 @@ func (this *NamespaceCreateHandler) createDomain(tx *gorm.DB, namespace *model.N
 }
 
 func (this *NamespaceCreateHandler) createMembership(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
-	if nil != input.Context {
-		id, err := this.ID.ULID()
-		if nil != err {
-			return err
-		}
-
-		version, err := this.ID.ULID()
-		if nil != err {
-			return err
-		}
-
-		membership := model.Membership{
-			ID:          id,
-			Version:     version,
-			NamespaceID: namespace.ID,
-			UserID:      input.Context.UserID,
-			IsActive:    true,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
-		}
-
-		if err := tx.Table("namespace_memberships").Create(membership).Error; nil != err {
-			return err
-		}
+	id, err := this.ID.ULID()
+	if nil != err {
+		return err
 	}
 
+	version, err := this.ID.ULID()
+	if nil != err {
+		return err
+	}
+
+	membership := model.Membership{
+		ID:          id,
+		Version:     version,
+		NamespaceID: namespace.ID,
+		UserID:      input.Context.UserID,
+		IsActive:    true,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	if err := tx.Table("namespace_memberships").Create(membership).Error; nil != err {
+		return err
+	}
+	
 	return nil
 }
 
