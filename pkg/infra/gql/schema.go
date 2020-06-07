@@ -188,6 +188,7 @@ type ComplexityRoot struct {
 		IsActive  func(childComplexity int) int
 		Name      func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
+		Version   func(childComplexity int) int
 	}
 
 	UserCreateOutcome struct {
@@ -901,6 +902,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.UpdatedAt(childComplexity), true
 
+	case "User.version":
+		if e.complexity.User.Version == nil {
+			break
+		}
+
+		return e.complexity.User.Version(childComplexity), true
+
 	case "UserCreateOutcome.errors":
 		if e.complexity.UserCreateOutcome.Errors == nil {
 			break
@@ -1298,33 +1306,34 @@ type Membership {
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/user/api/entity.graphql", Input: `type User {
-    id: ID!
-    name: UserName!
-    emails: UserEmails
-    avatarUri: Uri
-    isActive: Boolean!
-    createdAt: Time!
-    updatedAt: Time!
+	id: ID!
+	version: ID!
+	name: UserName!
+	emails: UserEmails
+	avatarUri: Uri
+	isActive: Boolean!
+	createdAt: Time!
+	updatedAt: Time!
 }
 
 type UserName {
-    firstName: String
-    lastName: String
-    preferredName: String
+	firstName: String
+	lastName: String
+	preferredName: String
 }
 
 type UserEmails {
-    primary: UserEmail
-    secondary: [UserEmail]
+	primary: UserEmail
+	secondary: [UserEmail]
 }
 
 type UserEmail {
-    id: ID!
-    verified: Boolean!
-    value: EmailAddress!
-    createdAt: Time!
-    updatedAt: Time!
-    isActive: Boolean!
+	id: ID!
+	verified: Boolean!
+	value: EmailAddress!
+	createdAt: Time!
+	updatedAt: Time!
+	isActive: Boolean!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/user/api/mutation.graphql", Input: `# ---------------------
@@ -1370,7 +1379,7 @@ type UserCreateOutcome {
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/user/api/query.graphql", Input: `extend type Query {
-    user(id: ID!): User
+	user(id: ID!): User
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/access/api/entity.graphql", Input: `type Session {
@@ -4266,6 +4275,40 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_version(ctx context.Context, field graphql.CollectedField, obj *model1.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7414,6 +7457,11 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = graphql.MarshalString("User")
 		case "id":
 			out.Values[i] = ec._User_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "version":
+			out.Values[i] = ec._User_version(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}

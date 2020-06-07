@@ -17,7 +17,6 @@ func TestUserMutationResolver_UserCreate(t *testing.T) {
 	db := util.MockDatabase()
 	mod := NewUserModule(db, util.MockLogger(), util.MockIdentifier())
 	util.MockInstall(mod, db)
-
 	input := fixtures.NewUserCreateInputFixture()
 
 	t.Run("test happy case, no error", func(t *testing.T) {
@@ -27,10 +26,14 @@ func TestUserMutationResolver_UserCreate(t *testing.T) {
 		ass.Empty(out.Errors)
 		ass.Equal("https://foo.bar", string(*out.User.AvatarURI))
 
-		theUser, err := mod.User(context.Background(), out.User.ID)
-		ass.NoError(err)
-		ass.True(theUser.CreatedAt.UnixNano() >= now.UnixNano())
-		ass.Equal("https://foo.bar", string(*theUser.AvatarURI))
+		{
+			theUser, err := mod.User(context.Background(), out.User.ID)
+			ass.NoError(err)
+			ass.True(theUser.CreatedAt.UnixNano() >= now.UnixNano())
+			ass.Equal("https://foo.bar", string(*theUser.AvatarURI))
+			ass.Equal(26, len(theUser.ID))
+			ass.Equal(26, len(theUser.Version))
+		}
 	})
 
 	t.Run("error by email duplication", func(t *testing.T) {

@@ -1,29 +1,30 @@
 type User {
-    id: ID!
-    name: UserName!
-    emails: UserEmails
-    avatarUri: Uri
-    isActive: Boolean!
-    createdAt: Time!
-    updatedAt: Time!
+	id: ID!
+	version: ID!
+	name: UserName!
+	emails: UserEmails
+	avatarUri: Uri
+	isActive: Boolean!
+	createdAt: Time!
+	updatedAt: Time!
 }
 
 type UserName {
-    firstName: String
-    lastName: String
-    preferredName: String
+	firstName: String
+	lastName: String
+	preferredName: String
 }
 
 type UserEmails {
-    primary: UserEmail
-    secondary: [UserEmail]
+	primary: UserEmail
+	secondary: [UserEmail]
 }
 
 type UserEmail {
-    id: ID!
-    verified: Boolean!
-    value: EmailAddress!
-    createdAt: Time!
-    updatedAt: Time!
-    isActive: Boolean!
+	id: ID!
+	verified: Boolean!
+	value: EmailAddress!
+	createdAt: Time!
+	updatedAt: Time!
+	isActive: Boolean!
 }

@@ -1,14 +1,12 @@
 CREATE TABLE users
 (
-    id         character varying(26)  NOT NULL,
-    version    character varying(26)  NOT NULL,
+    id         character varying(26)  NOT NULL PRIMARY KEY,
+    version    character varying(26)  NOT NULL UNIQUE,
     is_active  boolean                NOT NULL,
     created_at timestamp              NOT NULL,
     updated_at timestamp              NOT NULL,
     deleted_at timestamp,
-    avatar_uri character varying(255) NOT NULL,
-    CONSTRAINT user_id PRIMARY KEY ("id"),
-    CONSTRAINT user_version UNIQUE (version)
+    avatar_uri character varying(255) NOT NULL
 );
 
 CREATE TABLE user_names
