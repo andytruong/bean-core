@@ -8,6 +8,7 @@ import (
 
 type Namespace struct {
 	ID        string        `json:"id"`
+	ParentID  *string       `json:"parentId"`
 	Version   string        `json:"version"`
 	Kind      NamespaceKind `json:"kind"`
 	Title     string        `json:"title"`

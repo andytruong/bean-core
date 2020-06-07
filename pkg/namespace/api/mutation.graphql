@@ -25,6 +25,7 @@ input NamespaceFeaturesInput {
 
 input NamespaceCreateContext {
 	userId: ID!
+	namespaceId: ID
 }
 
 input DomainNamesInput {

@@ -36,7 +36,8 @@ type NamespaceFeaturesInput struct {
 }
 
 type NamespaceCreateContext struct {
-	UserID string `json:"userId"`
+	UserID      string  `json:"userId"`
+	NamespaceID *string `json:"namespaceId"`
 }
 
 type NamespaceCreateOutcome struct {

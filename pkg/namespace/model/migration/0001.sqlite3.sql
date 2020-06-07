@@ -1,6 +1,7 @@
 CREATE TABLE namespaces
 (
     id         character varying(26)  NOT NULL PRIMARY KEY,
+    parent_id  character varying(26),
     version    character varying(26)  NOT NULL UNIQUE,
     kind       character varying(26)  NOT NULL,
     is_active  boolean                NOT NULL,
@@ -8,7 +9,8 @@ CREATE TABLE namespaces
     updated_at timestamp              NOT NULL,
     deleted_at timestamp,
     title      character varying(255) NOT NULL,
-    language   character varying(16)
+    language   character varying(16),
+    FOREIGN KEY (parent_id) REFERENCES namespaces (id)
 );
 
 CREATE TABLE namespace_domains
