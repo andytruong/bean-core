@@ -1324,9 +1324,10 @@ extend type Query {
 }
 
 input MembershipsFilter {
-	userId: ID!
 	namespace: MembershipsFilterNamespace
+	userId: ID!
 	isActive: Boolean!
+	managerId: ID
 }
 
 input MembershipsFilterNamespace {
@@ -6338,21 +6339,27 @@ func (ec *executionContext) unmarshalInputMembershipsFilter(ctx context.Context,
 
 	for k, v := range asMap {
 		switch k {
-		case "userId":
-			var err error
-			it.UserID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "namespace":
 			var err error
 			it.Namespace, err = ec.unmarshalOMembershipsFilterNamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐMembershipsFilterNamespace(ctx, v)
 			if err != nil {
 				return it, err
 			}
+		case "userId":
+			var err error
+			it.UserID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "isActive":
 			var err error
 			it.IsActive, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "managerId":
+			var err error
+			it.ManagerId, err = ec.unmarshalOID2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

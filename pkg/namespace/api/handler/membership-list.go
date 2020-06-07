@@ -86,6 +86,12 @@ func (this MembershipsQueryHandler) buildNoLimitQuery(
 		}
 	}
 
+	if nil != filters.ManagerId {
+		query = query.
+			Joins("INNER JOIN namespace_manager ON namespace_manager.user_member_id = namespace_memberships.id").
+			Where("namespace_manager.manager_member_id = ?", *filters.ManagerId)
+	}
+
 	// Pagination -> after
 	if nil != afterRaw {
 		after, err := connect.DecodeCursor(*afterRaw)
