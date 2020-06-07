@@ -11,8 +11,10 @@ migrate:
 test:
 	go test ./... -v
 
-build:
+check-size:
 	go build -o /tmp/go-bean cmd/main.go
+	du -h /tmp/go-bean
+	rm /tmp/go-bean
 
 gen-key:
 	CONFIG=config.yaml go run cmd/main.go gen-key
