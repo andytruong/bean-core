@@ -169,7 +169,7 @@ func (this NamespaceModule) NamespaceMembershipUpdate(ctx context.Context, input
 	}
 
 	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
-	hdl := handler.MembershipUpdateHandler{ID: this.id, DB: this.db}
+	hdl := handler.MembershipUpdateHandler{ID: this.id}
 	outcome, err := hdl.NamespaceMembershipUpdate(tx, input, membership)
 
 	if nil != err {
