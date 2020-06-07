@@ -11,13 +11,13 @@ extend type Query {
 		first: Int!,
 		after: String,
 		filters: MembershipsFilter!,
-		sort: Sorts,
 	): MembershipConnection
 }
 
 input MembershipsFilter {
 	userId: ID!
 	namespace: MembershipsFilterNamespace
+	isActive: Boolean!
 }
 
 input MembershipsFilterNamespace {
@@ -27,17 +27,17 @@ input MembershipsFilterNamespace {
 
 type MembershipConnection {
 	edges: [MembershipEdge!]!
-	nodes: [MembershipEdge!]!
+	nodes: [Membership!]!
 	pageInfo: MembershipInfo!
 }
 
 type MembershipEdge {
+	cursor: String!
 	node: Membership!
 }
 
 type MembershipInfo {
 	endCursor: String
 	hasNextPage: Boolean!
-	hasPreviousPage: Boolean!
 	startCursor: String
 }

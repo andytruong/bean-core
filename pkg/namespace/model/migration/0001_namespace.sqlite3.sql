@@ -23,6 +23,8 @@ CREATE TABLE namespace_domains
     FOREIGN KEY (namespace_id) REFERENCES namespaces (id)
 );
 
+CREATE INDEX namespace_domains_value ON namespace_domains (value);
+
 CREATE TABLE namespace_config
 (
     id           character varying(26)  NOT NULL PRIMARY KEY,

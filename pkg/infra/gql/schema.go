@@ -10,7 +10,6 @@ import (
 	model1 "bean/pkg/user/model"
 	dto2 "bean/pkg/user/model/dto"
 	"bean/pkg/util"
-	"bean/pkg/util/api"
 	"bytes"
 	"context"
 	"errors"
@@ -44,6 +43,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Membership() MembershipResolver
+	MembershipConnection() MembershipConnectionResolver
 	Mutation() MutationResolver
 	Namespace() NamespaceResolver
 	Query() QueryResolver
@@ -93,14 +93,14 @@ type ComplexityRoot struct {
 	}
 
 	MembershipEdge struct {
-		Node func(childComplexity int) int
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	MembershipInfo struct {
-		EndCursor       func(childComplexity int) int
-		HasNextPage     func(childComplexity int) int
-		HasPreviousPage func(childComplexity int) int
-		StartCursor     func(childComplexity int) int
+		EndCursor   func(childComplexity int) int
+		HasNextPage func(childComplexity int) int
+		StartCursor func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -141,7 +141,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Membership  func(childComplexity int, id string, version *string) int
-		Memberships func(childComplexity int, first int, after *string, filters dto.MembershipsFilter, sort *api.Sorts) int
+		Memberships func(childComplexity int, first int, after *string, filters dto.MembershipsFilter) int
 		Namespace   func(childComplexity int, id string) int
 		Ping        func(childComplexity int) int
 		Session     func(childComplexity int, token string) int
@@ -225,6 +225,9 @@ type MembershipResolver interface {
 	Namespace(ctx context.Context, obj *model.Membership) (*model.Namespace, error)
 	User(ctx context.Context, obj *model.Membership) (*model1.User, error)
 }
+type MembershipConnectionResolver interface {
+	Edges(ctx context.Context, obj *model.MembershipConnection) ([]*model.MembershipEdge, error)
+}
 type MutationResolver interface {
 	Ping(ctx context.Context) (string, error)
 	NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error)
@@ -243,7 +246,7 @@ type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
 	Namespace(ctx context.Context, id string) (*model.Namespace, error)
 	Membership(ctx context.Context, id string, version *string) (*model.Membership, error)
-	Memberships(ctx context.Context, first int, after *string, filters dto.MembershipsFilter, sort *api.Sorts) (*model.MembershipConnection, error)
+	Memberships(ctx context.Context, first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error)
 	User(ctx context.Context, id string) (*model1.User, error)
 	Session(ctx context.Context, token string) (*model2.Session, error)
 }
@@ -425,6 +428,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MembershipConnection.PageInfo(childComplexity), true
 
+	case "MembershipEdge.cursor":
+		if e.complexity.MembershipEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.MembershipEdge.Cursor(childComplexity), true
+
 	case "MembershipEdge.node":
 		if e.complexity.MembershipEdge.Node == nil {
 			break
@@ -445,13 +455,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MembershipInfo.HasNextPage(childComplexity), true
-
-	case "MembershipInfo.hasPreviousPage":
-		if e.complexity.MembershipInfo.HasPreviousPage == nil {
-			break
-		}
-
-		return e.complexity.MembershipInfo.HasPreviousPage(childComplexity), true
 
 	case "MembershipInfo.startCursor":
 		if e.complexity.MembershipInfo.StartCursor == nil {
@@ -664,7 +667,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Memberships(childComplexity, args["first"].(int), args["after"].(*string), args["filters"].(dto.MembershipsFilter), args["sort"].(*api.Sorts)), true
+		return e.complexity.Query.Memberships(childComplexity, args["first"].(int), args["after"].(*string), args["filters"].(dto.MembershipsFilter)), true
 
 	case "Query.namespace":
 		if e.complexity.Query.Namespace == nil {
@@ -1224,13 +1227,13 @@ extend type Query {
 		first: Int!,
 		after: String,
 		filters: MembershipsFilter!,
-		sort: Sorts,
 	): MembershipConnection
 }
 
 input MembershipsFilter {
 	userId: ID!
 	namespace: MembershipsFilterNamespace
+	isActive: Boolean!
 }
 
 input MembershipsFilterNamespace {
@@ -1240,18 +1243,18 @@ input MembershipsFilterNamespace {
 
 type MembershipConnection {
 	edges: [MembershipEdge!]!
-	nodes: [MembershipEdge!]!
+	nodes: [Membership!]!
 	pageInfo: MembershipInfo!
 }
 
 type MembershipEdge {
+	cursor: String!
 	node: Membership!
 }
 
 type MembershipInfo {
 	endCursor: String
 	hasNextPage: Boolean!
-	hasPreviousPage: Boolean!
 	startCursor: String
 }
 `, BuiltIn: false},
@@ -1622,14 +1625,6 @@ func (ec *executionContext) field_Query_memberships_args(ctx context.Context, ra
 		}
 	}
 	args["filters"] = arg2
-	var arg3 *api.Sorts
-	if tmp, ok := rawArgs["sort"]; ok {
-		arg3, err = ec.unmarshalOSorts2ᚖbeanᚋpkgᚋutilᚋapiᚐSorts(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["sort"] = arg3
 	return args, nil
 }
 
@@ -2325,13 +2320,13 @@ func (ec *executionContext) _MembershipConnection_edges(ctx context.Context, fie
 		Object:   "MembershipConnection",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
+		return ec.resolvers.MembershipConnection().Edges(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2377,9 +2372,9 @@ func (ec *executionContext) _MembershipConnection_nodes(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.MembershipEdge)
+	res := resTmp.([]model.Membership)
 	fc.Result = res
-	return ec.marshalNMembershipEdge2ᚕᚖbeanᚋpkgᚋnamespaceᚋmodelᚐMembershipEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalNMembership2ᚕbeanᚋpkgᚋnamespaceᚋmodelᚐMembershipᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MembershipConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.MembershipConnection) (ret graphql.Marshaler) {
@@ -2411,9 +2406,43 @@ func (ec *executionContext) _MembershipConnection_pageInfo(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.MembershipInfo)
+	res := resTmp.(model.MembershipInfo)
 	fc.Result = res
-	return ec.marshalNMembershipInfo2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐMembershipInfo(ctx, field.Selections, res)
+	return ec.marshalNMembershipInfo2beanᚋpkgᚋnamespaceᚋmodelᚐMembershipInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MembershipEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.MembershipEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MembershipEdge",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MembershipEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.MembershipEdge) (ret graphql.Marshaler) {
@@ -2445,9 +2474,9 @@ func (ec *executionContext) _MembershipEdge_node(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Membership)
+	res := resTmp.(model.Membership)
 	fc.Result = res
-	return ec.marshalNMembership2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐMembership(ctx, field.Selections, res)
+	return ec.marshalNMembership2beanᚋpkgᚋnamespaceᚋmodelᚐMembership(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MembershipInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *model.MembershipInfo) (ret graphql.Marshaler) {
@@ -2499,40 +2528,6 @@ func (ec *executionContext) _MembershipInfo_hasNextPage(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.HasNextPage, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _MembershipInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *model.MembershipInfo) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "MembershipInfo",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.HasPreviousPage, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3447,7 +3442,7 @@ func (ec *executionContext) _Query_memberships(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Memberships(rctx, args["first"].(int), args["after"].(*string), args["filters"].(dto.MembershipsFilter), args["sort"].(*api.Sorts))
+		return ec.resolvers.Query().Memberships(rctx, args["first"].(int), args["after"].(*string), args["filters"].(dto.MembershipsFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6098,6 +6093,12 @@ func (ec *executionContext) unmarshalInputMembershipsFilter(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "isActive":
+			var err error
+			it.IsActive, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -6112,13 +6113,13 @@ func (ec *executionContext) unmarshalInputMembershipsFilterNamespace(ctx context
 		switch k {
 		case "title":
 			var err error
-			it.Title, err = ec.unmarshalOString2string(ctx, v)
+			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "domainName":
 			var err error
-			it.DomainName, err = ec.unmarshalOString2string(ctx, v)
+			it.DomainName, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6797,19 +6798,28 @@ func (ec *executionContext) _MembershipConnection(ctx context.Context, sel ast.S
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MembershipConnection")
 		case "edges":
-			out.Values[i] = ec._MembershipConnection_edges(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MembershipConnection_edges(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "nodes":
 			out.Values[i] = ec._MembershipConnection_nodes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "pageInfo":
 			out.Values[i] = ec._MembershipConnection_pageInfo(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -6833,6 +6843,11 @@ func (ec *executionContext) _MembershipEdge(ctx context.Context, sel ast.Selecti
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MembershipEdge")
+		case "cursor":
+			out.Values[i] = ec._MembershipEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "node":
 			out.Values[i] = ec._MembershipEdge_node(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6864,11 +6879,6 @@ func (ec *executionContext) _MembershipInfo(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._MembershipInfo_endCursor(ctx, field, obj)
 		case "hasNextPage":
 			out.Values[i] = ec._MembershipInfo_hasNextPage(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "hasPreviousPage":
-			out.Values[i] = ec._MembershipInfo_hasPreviousPage(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7984,14 +7994,41 @@ func (ec *executionContext) marshalNMembership2beanᚋpkgᚋnamespaceᚋmodelᚐ
 	return ec._Membership(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMembership2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐMembership(ctx context.Context, sel ast.SelectionSet, v *model.Membership) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
+func (ec *executionContext) marshalNMembership2ᚕbeanᚋpkgᚋnamespaceᚋmodelᚐMembershipᚄ(ctx context.Context, sel ast.SelectionSet, v []model.Membership) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
 	}
-	return ec._Membership(ctx, sel, v)
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMembership2beanᚋpkgᚋnamespaceᚋmodelᚐMembership(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalNMembershipEdge2beanᚋpkgᚋnamespaceᚋmodelᚐMembershipEdge(ctx context.Context, sel ast.SelectionSet, v model.MembershipEdge) graphql.Marshaler {
@@ -8047,16 +8084,6 @@ func (ec *executionContext) marshalNMembershipEdge2ᚖbeanᚋpkgᚋnamespaceᚋm
 
 func (ec *executionContext) marshalNMembershipInfo2beanᚋpkgᚋnamespaceᚋmodelᚐMembershipInfo(ctx context.Context, sel ast.SelectionSet, v model.MembershipInfo) graphql.Marshaler {
 	return ec._MembershipInfo(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNMembershipInfo2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚐMembershipInfo(ctx context.Context, sel ast.SelectionSet, v *model.MembershipInfo) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._MembershipInfo(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNMembershipsFilter2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐMembershipsFilter(ctx context.Context, v interface{}) (dto.MembershipsFilter, error) {
@@ -9026,30 +9053,6 @@ func (ec *executionContext) unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccess�
 	}
 	res, err := ec.unmarshalOSessionCreateInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx, v)
 	return &res, err
-}
-
-func (ec *executionContext) unmarshalOSorts2beanᚋpkgᚋutilᚋapiᚐSorts(ctx context.Context, v interface{}) (api.Sorts, error) {
-	var res api.Sorts
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOSorts2beanᚋpkgᚋutilᚋapiᚐSorts(ctx context.Context, sel ast.SelectionSet, v api.Sorts) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalOSorts2ᚖbeanᚋpkgᚋutilᚋapiᚐSorts(ctx context.Context, v interface{}) (*api.Sorts, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOSorts2beanᚋpkgᚋutilᚋapiᚐSorts(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOSorts2ᚖbeanᚋpkgᚋutilᚋapiᚐSorts(ctx context.Context, sel ast.SelectionSet, v *api.Sorts) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

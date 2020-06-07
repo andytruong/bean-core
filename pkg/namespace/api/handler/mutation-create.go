@@ -114,7 +114,7 @@ func (this *NamespaceCreateHandler) createMembership(tx *gorm.DB, namespace *mod
 			Version:     version,
 			NamespaceID: namespace.ID,
 			UserID:      input.Context.UserID,
-			IsActive:    false,
+			IsActive:    true,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 		}

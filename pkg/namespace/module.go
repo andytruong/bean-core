@@ -15,7 +15,6 @@ import (
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/user"
 	"bean/pkg/util"
-	"bean/pkg/util/api"
 	"bean/pkg/util/migrate"
 )
 
@@ -189,7 +188,11 @@ func (this NamespaceModule) Memberships(
 	first int,
 	after *string,
 	filters dto.MembershipsFilter,
-	sort *api.Sorts,
 ) (*model.MembershipConnection, error) {
-	panic("implement me")
+	hdl := handler.MembershipsQueryHandler{
+		DB:     this.db,
+		Logger: this.logger,
+	}
+
+	return hdl.Memberships(first, after, filters)
 }

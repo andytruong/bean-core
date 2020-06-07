@@ -1,31 +1,46 @@
 package model
 
-import "time"
+import (
+	"time"
 
-type Membership struct {
-	ID          string     `json:"id"`
-	Version     string     `json:"version"`
-	NamespaceID string     `json:"namespaceId"`
-	UserID      string     `json:"userId"`
-	IsActive    bool       `json:"isActive"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   time.Time  `json:"updatedAt"`
-	LoggedInAt  *time.Time `json:"loggedInAt"`
-}
+	"bean/pkg/util/connect"
+)
 
-type MembershipConnection struct {
-	Edges    []*MembershipEdge `json:"edges"`
-	Nodes    []*MembershipEdge `json:"nodes"`
-	PageInfo *MembershipInfo   `json:"pageInfo"`
-}
+type (
+	Membership struct {
+		ID          string     `json:"id"`
+		Version     string     `json:"version"`
+		NamespaceID string     `json:"namespaceId"`
+		UserID      string     `json:"userId"`
+		IsActive    bool       `json:"isActive"`
+		CreatedAt   time.Time  `json:"createdAt"`
+		UpdatedAt   time.Time  `json:"updatedAt"`
+		LoggedInAt  *time.Time `json:"loggedInAt"`
+	}
 
-type MembershipEdge struct {
-	Node *Membership `json:"node"`
-}
+	MembershipConnection struct {
+		PageInfo MembershipInfo `json:"pageInfo"`
+		Nodes    []Membership   `json:"nodes"`
+	}
 
-type MembershipInfo struct {
-	EndCursor       *string `json:"endCursor"`
-	HasNextPage     bool    `json:"hasNextPage"`
-	HasPreviousPage bool    `json:"hasPreviousPage"`
-	StartCursor     *string `json:"startCursor"`
+	MembershipEdge struct {
+		Cursor string     `json:"cursor"`
+		Node   Membership `json:"node"`
+	}
+
+	MembershipInfo struct {
+		EndCursor   *string `json:"endCursor"`
+		HasNextPage bool    `json:"hasNextPage"`
+		StartCursor *string `json:"startCursor"`
+	}
+)
+
+func MembershipNodeCursor(node Membership) string {
+	after := connect.Cursor{
+		Entity:   "Membership",
+		Property: "logged_in_at",
+		Value:    node.LoggedInAt.String(),
+	}
+
+	return after.Encode()
 }

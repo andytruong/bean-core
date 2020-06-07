@@ -4,9 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jinzhu/gorm"
-	"github.com/mattn/go-sqlite3"
-
+	"bean/pkg/util/connect"
 	"bean/pkg/util/migrate"
 )
 
@@ -15,7 +13,7 @@ func (this *Container) Migrate(ctx context.Context) error {
 		return err
 	} else {
 		// start transaction
-		driver := driver(db)
+		driver := connect.Driver(db)
 		tx := db.BeginTx(ctx, &sql.TxOptions{})
 
 		// create migration table if not existing
@@ -35,15 +33,5 @@ func (this *Container) Migrate(ctx context.Context) error {
 		}
 
 		return tx.Commit().Error
-	}
-}
-
-func driver(db *gorm.DB) string {
-	switch db.DB().Driver().(type) {
-	case *sqlite3.SQLiteDriver:
-		return "sqlite3"
-
-	default:
-		return "postgres"
 	}
 }

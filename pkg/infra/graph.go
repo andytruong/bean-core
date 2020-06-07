@@ -25,6 +25,12 @@ type (
 	}
 )
 
+func (this *graph) MembershipConnection() gql.MembershipConnectionResolver {
+	module, _ := this.container.modules.Namespace()
+
+	return module.MembershipResolver()
+}
+
 func (this *graph) Membership() gql.MembershipResolver {
 	module, _ := this.container.modules.Namespace()
 
