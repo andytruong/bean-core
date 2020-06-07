@@ -13,17 +13,19 @@ import (
 	"bean/pkg/user"
 	uFixtures "bean/pkg/user/api/fixtures"
 	"bean/pkg/util"
+	"bean/pkg/util/api"
 )
 
 func Test_Create(t *testing.T) {
 	ass := assert.New(t)
-	input := fixtures.NamespaceCreateInputFixture(false)
 	db := util.MockDatabase().LogMode(false)
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
 	mUser := user.NewUserModule(db, logger, id)
 	module := NewNamespaceModule(db, logger, id, mUser)
 	util.MockInstall(module, db)
+
+	input := fixtures.NamespaceCreateInputFixture(false)
 
 	t.Run("happy case", func(t *testing.T) {
 		now := time.Now()
@@ -34,6 +36,7 @@ func Test_Create(t *testing.T) {
 		ass.Equal(input.Object.IsActive, outcome.Namespace.IsActive)
 		ass.True(outcome.Namespace.CreatedAt.UnixNano() >= now.UnixNano())
 		ass.True(outcome.Namespace.UpdatedAt.UnixNano() >= now.UnixNano())
+		ass.Equal(outcome.Namespace.Language, api.LanguageAustralia)
 	})
 
 	t.Run("domain duplication", func(t *testing.T) {
@@ -76,37 +79,44 @@ func Test_Query(t *testing.T) {
 
 func Test_Update(t *testing.T) {
 	ass := assert.New(t)
-	input := fixtures.NamespaceCreateInputFixture(false)
 	db := util.MockDatabase()
 	logger := util.MockLogger()
 	identifier := util.MockIdentifier()
 	mUser := user.NewUserModule(db, logger, identifier)
-	module := NewNamespaceModule(db, logger, identifier, mUser)
-	util.MockInstall(module, db)
+	this := NewNamespaceModule(db, logger, identifier, mUser)
+	util.MockInstall(this, db)
 
 	// create namespace so we have something to update
-	outcome, err := module.NamespaceCreate(context.Background(), input)
+	input := fixtures.NamespaceCreateInputFixture(false)
+	outcome, err := this.NamespaceCreate(context.Background(), input)
 	ass.NoError(err)
 	ass.Nil(outcome.Errors)
 
 	t.Run("happy case", func(t *testing.T) {
-		_, err = module.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
+		_, err = this.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
 			NamespaceID:      outcome.Namespace.ID,
 			NamespaceVersion: outcome.Namespace.Version,
 			Object: &dto.NamespaceUpdateInputObject{
+				Language: api.LanguageUnitedStates.Nil(),
 				Features: &dto.NamespaceUpdateInputFeatures{
 					Register: util.NilBool(true),
 				},
 			},
 		})
 
-		features, err := module.Features(context.Background(), outcome.Namespace)
+		{
+			obj, err := this.Namespace(context.Background(), outcome.Namespace.ID)
+			ass.NoError(err)
+			ass.Equal(obj.Language, api.LanguageUnitedStates)
+		}
+
+		features, err := this.Features(context.Background(), outcome.Namespace)
 		ass.NoError(err)
 		ass.True(features.Register)
 	})
 
 	t.Run("update with invalid version -> conflict", func(t *testing.T) {
-		_, err = module.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
+		_, err = this.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
 			NamespaceID:      outcome.Namespace.ID,
 			NamespaceVersion: "invalid-version",
 			Object: &dto.NamespaceUpdateInputObject{

@@ -12,6 +12,7 @@ input NamespaceCreateInput {
 
 input NamespaceCreateInputObject {
 	title: String
+	language: Language!
 	isActive: Boolean!
 	domainNames: DomainNamesInput
 	features: NamespaceFeaturesInput!
@@ -90,5 +91,6 @@ extend type Mutation {
 input NamespaceMembershipUpdateInput {
 	id: ID!
 	version: ID!
+	Language: Language
 	isActive: Boolean!
 }

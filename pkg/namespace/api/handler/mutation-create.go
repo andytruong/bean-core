@@ -17,6 +17,7 @@ type NamespaceCreateHandler struct {
 func (this *NamespaceCreateHandler) Create(tx *gorm.DB, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	namespace := &model.Namespace{
 		Title:     input.Object.Title,
+		Language:  input.Object.Language,
 		IsActive:  input.Object.IsActive,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

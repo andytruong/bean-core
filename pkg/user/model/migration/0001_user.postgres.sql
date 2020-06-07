@@ -6,7 +6,8 @@ CREATE TABLE users
     created_at timestamp              NOT NULL,
     updated_at timestamp              NOT NULL,
     deleted_at timestamp,
-    avatar_uri character varying(255) NOT NULL
+    avatar_uri character varying(255) NOT NULL,
+    language   character varying(16)
 );
 
 CREATE TABLE user_names

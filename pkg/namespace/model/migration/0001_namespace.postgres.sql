@@ -1,13 +1,13 @@
 CREATE TABLE namespaces
 (
-    id         character varying(26)  NOT NULL,
+    id         character varying(26)  NOT NULL PRIMARY KEY,
     version    character varying(26)  NOT NULL UNIQUE,
     is_active  boolean                NOT NULL,
     created_at timestamp              NOT NULL,
     updated_at timestamp              NOT NULL,
     deleted_at timestamp,
     title      character varying(255) NOT NULL,
-    CONSTRAINT namespace_id PRIMARY KEY (id)
+    language   character varying(16)
 );
 
 CREATE TABLE namespace_domains

@@ -3,6 +3,7 @@ package dto
 import (
 	"bean/pkg/namespace/model"
 	"bean/pkg/util"
+	"bean/pkg/util/api"
 )
 
 type NamespaceCreateInput struct {
@@ -12,6 +13,7 @@ type NamespaceCreateInput struct {
 
 type NamespaceCreateInputObject struct {
 	Title       *string                `json:"title"`
+	Language    api.Language           `json:"language"`
 	IsActive    bool                   `json:"isActive"`
 	DomainNames *DomainNamesInput      `json:"domainNames"`
 	Features    NamespaceFeaturesInput `json:"features"`

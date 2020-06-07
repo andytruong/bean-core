@@ -3,6 +3,7 @@ package fixtures
 import (
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/util"
+	"bean/pkg/util/api"
 )
 
 func NamespaceCreateInputFixture(register bool) dto.NamespaceCreateInput {
@@ -10,6 +11,7 @@ func NamespaceCreateInputFixture(register bool) dto.NamespaceCreateInput {
 		Object: &dto.NamespaceCreateInputObject{
 			Title:    util.NilString("Home of QA"),
 			IsActive: true,
+			Language: api.LanguageAustralia,
 			DomainNames: &dto.DomainNamesInput{
 				Primary: &dto.DomainNameInput{
 					Verified: util.NilBool(true),
