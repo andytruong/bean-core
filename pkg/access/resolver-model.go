@@ -23,7 +23,7 @@ type ModelResolver struct {
 }
 
 func (this ModelResolver) User(ctx context.Context, obj *model.Session) (*user_model.User, error) {
-	return this.module.userModule.User(ctx, obj.UserId)
+	return this.module.user.User(ctx, obj.UserId)
 }
 
 func (this ModelResolver) Context(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
@@ -35,7 +35,7 @@ func (this ModelResolver) Scopes(ctx context.Context, obj *model.Session) ([]*mo
 }
 
 func (this ModelResolver) Namespace(ctx context.Context, obj *model.Session) (*namespace_model.Namespace, error) {
-	return this.module.namespaceModule.Namespace(ctx, obj.NamespaceId)
+	return this.module.namespace.Namespace(ctx, obj.NamespaceId)
 }
 
 func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (string, error) {
@@ -44,7 +44,21 @@ func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (stri
 		return "", errors.Wrap(util.ErrorConfig, err.Error())
 	}
 
+	roles, err := this.module.namespace.MembershipResolver().FindRoles(ctx, session.UserId, session.NamespaceId)
+	if nil != err {
+		return "", err
+	}
+
 	claims := util.Claims{
+		Roles: func() []string {
+			var roleNames []string
+
+			for _, role := range roles {
+				roleNames = append(roleNames, role.Title)
+			}
+
+			return roleNames
+		}(),
 		StandardClaims: jwt.StandardClaims{
 			Issuer:    "access",
 			Id:        session.ID,

@@ -38,7 +38,7 @@ func Test_Create(t *testing.T) {
 		ass.Equal(input.Object.IsActive, outcome.Namespace.IsActive)
 		ass.True(outcome.Namespace.CreatedAt.UnixNano() >= now.UnixNano())
 		ass.True(outcome.Namespace.UpdatedAt.UnixNano() >= now.UnixNano())
-		ass.Equal(outcome.Namespace.Language, api.LanguageAustralia)
+		ass.Equal(outcome.Namespace.Language, api.LanguageAU)
 
 		// check that owner role is created
 		// -------
@@ -122,7 +122,7 @@ func Test_Update(t *testing.T) {
 			NamespaceID:      outcome.Namespace.ID,
 			NamespaceVersion: outcome.Namespace.Version,
 			Object: &dto.NamespaceUpdateInputObject{
-				Language: api.LanguageUnitedStates.Nil(),
+				Language: api.LanguageUS.Nil(),
 				Features: &dto.NamespaceUpdateInputFeatures{
 					Register: util.NilBool(true),
 				},
@@ -132,7 +132,7 @@ func Test_Update(t *testing.T) {
 		{
 			obj, err := this.Namespace(context.Background(), outcome.Namespace.ID)
 			ass.NoError(err)
-			ass.Equal(obj.Language, api.LanguageUnitedStates)
+			ass.Equal(obj.Language, api.LanguageUS)
 		}
 
 		features, err := this.Features(context.Background(), outcome.Namespace)

@@ -13,6 +13,7 @@ import (
 
 type Claims struct {
 	jwt.StandardClaims
+	Roles []string `json:"roles"`
 }
 
 func (this Claims) UserId() string {

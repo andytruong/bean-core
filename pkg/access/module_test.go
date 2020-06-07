@@ -64,13 +64,13 @@ func Test_Create(t *testing.T) {
 
 	// create user
 	iUser := fUser.NewUserCreateInputFixture()
-	oUser, err := this.userModule.UserCreate(ctx, iUser)
+	oUser, err := this.user.UserCreate(ctx, iUser)
 	ass.NoError(err)
 
 	// create namespace
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	iNamespace.Context.UserID = oUser.User.ID
-	oNamespace, err := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
+	oNamespace, err := this.namespace.NamespaceCreate(ctx, iNamespace)
 	ass.NoError(err)
 
 	t.Run("test email inactive", func(t *testing.T) {
@@ -113,6 +113,7 @@ func Test_Create(t *testing.T) {
 				ass.Equal(claims.SessionId(), outcome.Session.ID)
 				ass.Equal(claims.UserId(), outcome.Session.UserId)
 				ass.Equal(claims.NamespaceId(), outcome.Session.NamespaceId)
+				ass.Equal(claims.Roles, []string{"owner"})
 			}
 		}
 	})
@@ -128,7 +129,7 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 
 	// create namespace
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
-	oNamespace, err := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
+	oNamespace, err := this.namespace.NamespaceCreate(ctx, iNamespace)
 	ass.NoError(err)
 
 	// base input
@@ -146,10 +147,10 @@ func Test_Query(t *testing.T) {
 	this := module()
 
 	iUser := fUser.NewUserCreateInputFixture()
-	oUser, _ := this.userModule.UserCreate(ctx, iUser)
+	oUser, _ := this.user.UserCreate(ctx, iUser)
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	iNamespace.Context.UserID = oUser.User.ID
-	oNamespace, _ := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
+	oNamespace, _ := this.namespace.NamespaceCreate(ctx, iNamespace)
 	input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	outcome, err := this.SessionCreate(ctx, input)
@@ -181,10 +182,10 @@ func Test_Archive(t *testing.T) {
 	this := module()
 
 	iUser := fUser.NewUserCreateInputFixture()
-	oUser, _ := this.userModule.UserCreate(ctx, iUser)
+	oUser, _ := this.user.UserCreate(ctx, iUser)
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	iNamespace.Context.UserID = oUser.User.ID
-	oNamespace, _ := this.namespaceModule.NamespaceCreate(ctx, iNamespace)
+	oNamespace, _ := this.namespace.NamespaceCreate(ctx, iNamespace)
 	input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	sessionOutcome, err := this.SessionCreate(ctx, input)

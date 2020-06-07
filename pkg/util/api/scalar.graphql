@@ -35,14 +35,5 @@ enum ErrorCode   {
 	DB_Constraint
 }
 
-enum AccessScope {
-	Anonymous
-	Authenticated
-}
-
-enum Language {
-	Australia
-	UnitedStates
-	UnitedKingdom
-	Vietnam
-}
+enum AccessScope { Anonymous Authenticated }
+enum Language { AU US UK VN }

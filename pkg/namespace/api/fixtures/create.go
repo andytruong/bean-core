@@ -19,7 +19,7 @@ func NamespaceCreateInputFixture(register bool) dto.NamespaceCreateInput {
 		Kind:        model.NamespaceKindOrganisation,
 		Title:       util.NilString("Home of QA"),
 		IsActive:    true,
-		Language:    api.LanguageAustralia,
+		Language:    api.LanguageAU,
 		DomainNames: nil,
 		Features: dto.NamespaceFeaturesInput{
 			Register: register,
