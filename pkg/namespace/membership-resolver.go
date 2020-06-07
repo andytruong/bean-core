@@ -2,28 +2,54 @@ package namespace
 
 import (
 	"context"
+	"time"
+
+	"github.com/jinzhu/gorm"
 
 	"bean/pkg/namespace/model"
 	"bean/pkg/user"
 	mUser "bean/pkg/user/model"
+	"bean/pkg/util"
 )
 
 func newMembershipResolver(namespaceModule *NamespaceModule, userModule *user.UserModule) MembershipResolver {
 	return MembershipResolver{
-		namespaceModule: namespaceModule,
-		userModule:      userModule,
+		namespace: namespaceModule,
+		user:      userModule,
 	}
 }
 
 type MembershipResolver struct {
-	namespaceModule *NamespaceModule
-	userModule      *user.UserModule
+	namespace *NamespaceModule
+	user      *user.UserModule
+}
+
+func (this MembershipResolver) Edges(ctx context.Context, obj *model.MembershipConnection) ([]*model.MembershipEdge, error) {
+	var edges []*model.MembershipEdge
+
+	for _, node := range obj.Nodes {
+		edges = append(edges, &model.MembershipEdge{
+			Cursor: model.MembershipNodeCursor(node),
+			Node:   node,
+		})
+	}
+
+	return edges, nil
 }
 
 func (this MembershipResolver) Namespace(ctx context.Context, obj *model.Membership) (*model.Namespace, error) {
-	return this.namespaceModule.Namespace(ctx, obj.NamespaceID)
+	return this.namespace.Namespace(ctx, obj.NamespaceID)
 }
 
 func (this MembershipResolver) User(ctx context.Context, obj *model.Membership) (*mUser.User, error) {
-	return this.userModule.User(ctx, obj.UserID)
+	return this.user.User(ctx, obj.UserID)
+}
+
+func (this MembershipResolver) UpdateLastLoginTime(db *gorm.DB, membership *model.Membership) error {
+	membership.LoggedInAt = util.NilTime(time.Now())
+
+	return db.
+		Table("namespace_memberships").
+		Save(&membership).
+		Error
 }

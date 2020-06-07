@@ -5,11 +5,12 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 
+	"bean/pkg/util/connect"
 	"bean/pkg/util/migrate"
 )
 
 func MockDatabase() *gorm.DB {
-	db, err := gorm.Open("sqlite3", ":memory:")
+	db, err := gorm.Open(connect.SQLite, ":memory:")
 	if nil != err {
 		panic(err)
 	}
@@ -43,7 +44,7 @@ func mockInstall(module Module, tx *gorm.DB) error {
 		}
 	}
 
-	if err := module.Migrate(tx, "sqlite3"); nil != err {
+	if err := module.Migrate(tx, connect.SQLite); nil != err {
 		tx.Rollback()
 		panic(err)
 	} else {

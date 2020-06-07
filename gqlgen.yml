@@ -28,3 +28,4 @@ autobind:
   - bean/pkg/access/model
   - bean/pkg/access/model/dto
   - bean/pkg/util
+  - bean/pkg/util/api

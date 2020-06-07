@@ -14,7 +14,8 @@ const (
 	ErrorCodeRuntime      ErrorCode = "Runtime"
 	ErrorCodeDbTimeout    ErrorCode = "DB_Timeout"
 	ErrorCodeDbConstraint ErrorCode = "DB_Constraint"
-	ErrorToBeImplemented  ErrorCode = "TOBE_IMPLEMENTED"
+	ErrorToBeImplemented  ErrorCode = "ToBeImplemented"
+	ErrorQueryTooMuch     ErrorCode = "QueryTooMuch"
 )
 
 var AllErrorCode = []ErrorCode{

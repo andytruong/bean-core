@@ -5,7 +5,7 @@ import (
 	"bean/pkg/util"
 )
 
-func NamespaceCreateInputFixture() dto.NamespaceCreateInput {
+func NamespaceCreateInputFixture(register bool) dto.NamespaceCreateInput {
 	return dto.NamespaceCreateInput{
 		Object: &dto.NamespaceCreateInputObject{
 			Title:    util.NilString("Home of QA"),
@@ -28,6 +28,9 @@ func NamespaceCreateInputFixture() dto.NamespaceCreateInput {
 						IsActive: util.NilBool(true),
 					},
 				},
+			},
+			Features: dto.NamespaceFeaturesInput{
+				Register: register,
 			},
 		},
 		Context: &dto.NamespaceCreateContext{

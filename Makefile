@@ -5,7 +5,7 @@ gql:
 	gqlgen generate
 	rm pkg/infra/__tmp__resolvers.go
 
-migrate: gql
+migrate:
 	CONFIG=config.yaml go run cmd/main.go migrate
 
 test:

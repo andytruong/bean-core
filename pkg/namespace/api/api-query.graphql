@@ -2,3 +2,42 @@ extend type Query {
 	namespace(id: ID!): Namespace
 	membership(id: ID!, version: ID): Membership
 }
+
+# ---------------------
+# Query Memberships
+# ---------------------
+extend type Query {
+	memberships(
+		first: Int!,
+		after: String,
+		filters: MembershipsFilter!,
+	): MembershipConnection
+}
+
+input MembershipsFilter {
+	userId: ID!
+	namespace: MembershipsFilterNamespace
+	isActive: Boolean!
+}
+
+input MembershipsFilterNamespace {
+	title: String
+	domainName: String
+}
+
+type MembershipConnection {
+	edges: [MembershipEdge!]!
+	nodes: [Membership!]!
+	pageInfo: MembershipInfo!
+}
+
+type MembershipEdge {
+	cursor: String!
+	node: Membership!
+}
+
+type MembershipInfo {
+	endCursor: String
+	hasNextPage: Boolean!
+	startCursor: String
+}

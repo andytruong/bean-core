@@ -39,3 +39,10 @@ enum AccessScope {
 	Anonymous
 	Authenticated
 }
+
+enum Sorts {
+	CreatedAtAsc
+	CreatedAtDesc
+	UpdatedAtAsc
+	UpdatedAtDesc
+}
