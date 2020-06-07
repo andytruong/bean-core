@@ -29,7 +29,8 @@ func TestContainer(t *testing.T) {
 	sv, err := container.modules.User()
 	ass.NoError(err)
 	ass.NotNil(sv)
-	ass.Equal(container.Modules.Access.SessionTimeout.String(), "128h0m0s")
+	ass.Equal("128h0m0s", container.Modules.Access.SessionTimeout.String())
+	ass.Equal(uint16(100), container.Modules.Namespace.Manager.MaxNumberOfManager)
 }
 
 func Test_Request_JWT(t *testing.T) {

@@ -34,7 +34,9 @@ modules:
   # ---------------------
   # Namespace module
   # ---------------------
-  namespace: {}
+  namespace:
+    manager:
+      maxNumberOfManager: 100
 
   # ---------------------
   # Access module
