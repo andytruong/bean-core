@@ -22,12 +22,14 @@ import (
 func NewNamespaceModule(
 	db *gorm.DB, logger *zap.Logger, id *util.Identifier,
 	userModule *user.UserModule,
+	config *Config,
 ) *NamespaceModule {
 	this := &NamespaceModule{
-		logger:     logger,
-		db:         db,
-		id:         id,
-		userModule: userModule,
+		logger: logger,
+		db:     db,
+		id:     id,
+		user:   userModule,
+		config: config,
 	}
 
 	this.membership = newMembershipResolver(this, userModule)
@@ -39,8 +41,9 @@ type NamespaceModule struct {
 	logger     *zap.Logger
 	db         *gorm.DB
 	id         *util.Identifier
-	userModule *user.UserModule
+	user       *user.UserModule
 	membership MembershipResolver
+	config     *Config
 }
 
 func (this *NamespaceModule) MembershipResolver() MembershipResolver {
@@ -48,7 +51,7 @@ func (this *NamespaceModule) MembershipResolver() MembershipResolver {
 }
 
 func (this *NamespaceModule) Dependencies() []util.Module {
-	return []util.Module{this.userModule}
+	return []util.Module{this.user}
 }
 
 func (this NamespaceModule) Migrate(tx *gorm.DB, driver string) error {
@@ -129,7 +132,7 @@ func (this NamespaceModule) NamespaceMembershipCreate(
 		return nil, err
 	}
 
-	user, err := this.userModule.User(ctx, input.UserID)
+	user, err := this.user.User(ctx, input.UserID)
 	if nil != err {
 		return nil, err
 	}
@@ -142,13 +145,21 @@ func (this NamespaceModule) NamespaceMembershipCreate(
 	if !features.Register {
 		return nil, errors.Wrap(util.ErrorConfig, "register is off")
 	}
-
+	
+	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
 	hdl := handler.MembershipCreateHandler{
-		ID: this.id,
-		DB: this.db,
+		ID:         this.id,
+		MaxManager: this.config.Manager.MaxNumberOfManager,
 	}
 
-	return hdl.NamespaceMembershipCreate(ctx, input, namespace, user)
+	outcome, err := hdl.NamespaceMembershipCreate(tx, input, namespace, user)
+
+	if nil != err {
+		tx.Rollback()
+		return nil, err
+	} else {
+		return outcome, tx.Commit().Error
+	}
 }
 
 func (this NamespaceModule) Membership(ctx context.Context, id string, version *string) (*model.Membership, error) {

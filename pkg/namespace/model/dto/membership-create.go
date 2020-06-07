@@ -6,9 +6,10 @@ import (
 )
 
 type NamespaceMembershipCreateInput struct {
-	NamespaceID string `json:"namespaceId"`
-	UserID      string `json:"userId"`
-	IsActive    bool   `json:"isActive"`
+	NamespaceID      string   `json:"namespaceId"`
+	UserID           string   `json:"userId"`
+	IsActive         bool     `json:"isActive"`
+	ManagerMemberIds []string `json:"managerMemberIds"`
 }
 
 type NamespaceMembershipCreateOutcome struct {

@@ -57,7 +57,7 @@ CREATE TABLE namespace_memberships
 -- last login
 CREATE INDEX namespace_memberships_login ON namespace_memberships USING btree (logged_in_at DESC NULLS LAST);
 
-CREATE TABLE namespace_manager
+CREATE TABLE namespace_manager_edge
 (
     id                character varying(26) NOT NULL PRIMARY KEY,
     version           character varying(26) NOT NULL UNIQUE,

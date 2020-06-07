@@ -5,5 +5,5 @@ type Config struct {
 }
 
 type ManagerConfig struct {
-	MaxNumberOfManager uint16 `yaml:"maxNumberOfManager"`
+	MaxNumberOfManager int `yaml:"maxNumberOfManager"`
 }

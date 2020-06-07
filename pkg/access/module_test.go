@@ -40,7 +40,7 @@ func module() *AccessModule {
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
 	mUser := user.NewUserModule(db, logger, id)
-	mNamespace := namespace.NewNamespaceModule(db, logger, id, mUser)
+	mNamespace := namespace.NewNamespaceModule(db, logger, id, mUser, nil)
 	module := NewAccessModule(db, id, logger, mUser, mNamespace, config.Modules.Access)
 	util.MockInstall(mUser, db)
 	util.MockInstall(mNamespace, db)
