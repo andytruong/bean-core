@@ -57,3 +57,16 @@ CREATE TABLE namespace_memberships
 );
 
 CREATE INDEX namespace_memberships_login ON namespace_memberships (logged_in_at);
+
+CREATE TABLE namespace_manager
+(
+    id                character varying(26) NOT NULL PRIMARY KEY,
+    version           character varying(26) NOT NULL UNIQUE,
+    user_member_id    character varying(26) NOT NULL,
+    manager_member_id character varying(26) NOT NULL,
+    is_active         BOOLEAN               NOT NULL,
+    created_at        timestamp             NOT NULL,
+    updated_at        timestamp             NOT NULL,
+    FOREIGN KEY (user_member_id) REFERENCES namespace_memberships (id),
+    FOREIGN KEY (manager_member_id) REFERENCES namespace_memberships (id)
+);
