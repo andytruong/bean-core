@@ -40,7 +40,7 @@ func (this MembershipResolver) Edges(ctx context.Context, obj *model.MembershipC
 }
 
 func (this MembershipResolver) Namespace(ctx context.Context, obj *model.Membership) (*model.Namespace, error) {
-	return this.module.Namespace(ctx, obj.NamespaceID)
+	return this.module.Load(ctx, obj.NamespaceID)
 }
 
 func (this MembershipResolver) User(ctx context.Context, obj *model.Membership) (*mUser.User, error) {
