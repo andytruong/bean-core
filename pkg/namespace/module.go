@@ -145,7 +145,7 @@ func (this NamespaceModule) NamespaceMembershipCreate(
 	if !features.Register {
 		return nil, errors.Wrap(util.ErrorConfig, "register is off")
 	}
-	
+
 	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
 	hdl := handler.MembershipCreateHandler{
 		ID:         this.id,
@@ -153,6 +153,24 @@ func (this NamespaceModule) NamespaceMembershipCreate(
 	}
 
 	outcome, err := hdl.NamespaceMembershipCreate(tx, input, namespace, user)
+
+	if nil != err {
+		tx.Rollback()
+		return nil, err
+	} else {
+		return outcome, tx.Commit().Error
+	}
+}
+
+func (this NamespaceModule) NamespaceMembershipUpdate(ctx context.Context, input dto.NamespaceMembershipUpdateInput) (*dto.NamespaceMembershipCreateOutcome, error) {
+	membership, err := this.Membership(ctx, input.Id, util.NilString(input.Version))
+	if nil != err {
+		return nil, err
+	}
+
+	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
+	hdl := handler.MembershipUpdateHandler{ID: this.id}
+	outcome, err := hdl.NamespaceMembershipUpdate(tx, input, membership)
 
 	if nil != err {
 		tx.Rollback()
@@ -179,20 +197,6 @@ func (this NamespaceModule) Membership(ctx context.Context, id string, version *
 	}
 
 	return obj, nil
-}
-
-func (this NamespaceModule) NamespaceMembershipUpdate(ctx context.Context, input dto.NamespaceMembershipUpdateInput) (*dto.NamespaceMembershipCreateOutcome, error) {
-	membership, err := this.Membership(ctx, input.Id, util.NilString(input.Version))
-	if nil != err {
-		return nil, err
-	}
-
-	hdl := handler.MembershipUpdateHandler{
-		ID: this.id,
-		DB: this.db,
-	}
-
-	return hdl.NamespaceMembershipUpdate(ctx, input, membership)
 }
 
 func (this NamespaceModule) Memberships(

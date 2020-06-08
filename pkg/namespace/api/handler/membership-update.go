@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"context"
-
 	"github.com/jinzhu/gorm"
 
 	"bean/pkg/namespace/model"
@@ -13,11 +11,10 @@ import (
 
 type MembershipUpdateHandler struct {
 	ID *util.Identifier
-	DB *gorm.DB
 }
 
 func (this MembershipUpdateHandler) NamespaceMembershipUpdate(
-	ctx context.Context,
+	tx *gorm.DB,
 	input dto.NamespaceMembershipUpdateInput,
 	membership *model.Membership,
 ) (*dto.NamespaceMembershipCreateOutcome, error) {
@@ -30,15 +27,19 @@ func (this MembershipUpdateHandler) NamespaceMembershipUpdate(
 	membership.Version = version
 	membership.IsActive = input.IsActive
 
-	{
-		err := this.DB.
-			Table(connect.TableNamespaceMemberships).
-			Save(&membership).
-			Error
+	err = tx.
+		Table(connect.TableNamespaceMemberships).
+		Save(&membership).
+		Error
 
-		if nil != err {
-			return nil, err
-		}
+	if nil != err {
+		return nil, err
+	} else {
+		// TODO: remove manager
+		// …
+
+		// TODO: add manager
+		// …
 	}
 
 	return &dto.NamespaceMembershipCreateOutcome{
