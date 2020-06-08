@@ -31,14 +31,3 @@ type DomainName {
 type NamespaceFeatures {
 	register: Boolean!
 }
-
-type Membership {
-	id: ID!
-	version: ID!
-	namespace: Namespace!
-	user: User!
-	isActive: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
-	roles: [Namespace!]!
-}

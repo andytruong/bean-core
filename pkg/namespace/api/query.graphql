@@ -1,44 +1,6 @@
+# ---------------------
+# Load Namespace by ID
+# ---------------------
 extend type Query {
 	namespace(id: ID!): Namespace
-	membership(id: ID!, version: ID): Membership
-}
-
-# ---------------------
-# Query Memberships
-# ---------------------
-extend type Query {
-	memberships(
-		first: Int!,
-		after: String,
-		filters: MembershipsFilter!,
-	): MembershipConnection
-}
-
-input MembershipsFilter {
-	namespace: MembershipsFilterNamespace
-	userId: ID!
-	isActive: Boolean!
-	managerId: ID
-}
-
-input MembershipsFilterNamespace {
-	title: String
-	domainName: String
-}
-
-type MembershipConnection {
-	edges: [MembershipEdge!]!
-	nodes: [Membership!]!
-	pageInfo: MembershipInfo!
-}
-
-type MembershipEdge {
-	cursor: String!
-	node: Membership!
-}
-
-type MembershipInfo {
-	endCursor: String
-	hasNextPage: Boolean!
-	startCursor: String
 }
