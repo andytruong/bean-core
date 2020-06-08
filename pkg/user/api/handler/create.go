@@ -14,23 +14,15 @@ type UserCreateHandler struct {
 	ID *util.Identifier
 }
 
-func (this *UserCreateHandler) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
+func (this *UserCreateHandler) Handle(tx *gorm.DB, input *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
 	// create base record
 	user := model.User{
+		ID:        this.ID.MustULID(),
+		Version:   this.ID.MustULID(),
 		AvatarURI: input.AvatarURI,
 		IsActive:  input.IsActive,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-	}
-
-	// Generate user Identifier.
-	if id, err := this.ID.ULID(); nil != err {
-		return nil, err
-	} else if version, err := this.ID.ULID(); nil != err {
-		return nil, err
-	} else {
-		user.ID = id
-		user.Version = version
 	}
 
 	if err := tx.Create(&user).Error; nil != err {
@@ -64,7 +56,9 @@ func (this *UserCreateHandler) Create(tx *gorm.DB, input *dto.UserCreateInput) (
 			IsActive:    true,
 		}
 
-		tx.Save(pass)
+		if err := tx.Save(pass).Error; nil != err {
+			return nil, err
+		}
 	}
 
 	return &dto.UserMutationOutcome{User: &user}, nil
@@ -77,14 +71,13 @@ func (this *UserCreateHandler) createEmails(tx *gorm.DB, user *model.User, input
 
 	if nil != input.Emails.Primary {
 		table := "user_emails"
-		id, _ := this.ID.ULID()
 
 		if !input.Emails.Primary.Verified {
 			table = "user_unverified_emails"
 		}
 
 		email := model.UserEmail{
-			ID:        id,
+			ID:        this.ID.MustULID(),
 			UserId:    user.ID,
 			Value:     input.Emails.Primary.Value.LowerCaseValue(),
 			IsActive:  input.Emails.Primary.IsActive,
@@ -101,14 +94,13 @@ func (this *UserCreateHandler) createEmails(tx *gorm.DB, user *model.User, input
 	if nil != input.Emails.Secondary {
 		for _, secondaryInput := range input.Emails.Secondary {
 			table := "user_emails"
-			id, _ := this.ID.ULID()
 
 			if !secondaryInput.Verified {
 				table = "user_unverified_emails"
 			}
 
 			email := model.UserEmail{
-				ID:        id,
+				ID:        this.ID.MustULID(),
 				UserId:    user.ID,
 				Value:     secondaryInput.Value.LowerCaseValue(),
 				IsActive:  secondaryInput.IsActive,
@@ -128,9 +120,8 @@ func (this *UserCreateHandler) createEmails(tx *gorm.DB, user *model.User, input
 
 func (this *UserCreateHandler) createName(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
 	if nil != input.Name {
-		id, _ := this.ID.ULID()
 		name := model.UserName{
-			ID:            id,
+			ID:            this.ID.MustULID(),
 			UserId:        user.ID,
 			FirstName:     input.Name.FirstName,
 			LastName:      input.Name.LastName,

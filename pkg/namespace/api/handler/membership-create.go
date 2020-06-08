@@ -23,19 +23,9 @@ func (this MembershipCreateHandler) NamespaceMembershipCreate(
 	namespace *model.Namespace,
 	user *mUser.User,
 ) (*dto.NamespaceMembershipCreateOutcome, error) {
-	id, err := this.ID.ULID()
-	if nil != err {
-		return nil, err
-	}
-
-	version, err := this.ID.ULID()
-	if nil != err {
-		return nil, err
-	}
-
 	membership := &model.Membership{
-		ID:          id,
-		Version:     version,
+		ID:          this.ID.MustULID(),
+		Version:     this.ID.MustULID(),
 		NamespaceID: namespace.ID,
 		UserID:      user.ID,
 		IsActive:    input.IsActive,
@@ -43,7 +33,7 @@ func (this MembershipCreateHandler) NamespaceMembershipCreate(
 		UpdatedAt:   time.Now(),
 	}
 
-	err = tx.Table(connect.TableNamespaceMemberships).Create(&membership).Error
+	err := tx.Table(connect.TableNamespaceMemberships).Create(&membership).Error
 	if nil != err {
 		return nil, err
 	} else if errors, err := this.createRelationships(tx, membership, input.ManagerMemberIds); nil != err {
@@ -91,19 +81,9 @@ func (this MembershipCreateHandler) createRelationships(tx *gorm.DB, membership 
 }
 
 func (this MembershipCreateHandler) createRelationship(tx *gorm.DB, membership *model.Membership, managerMemberId string) error {
-	id, err := this.ID.ULID()
-	if nil != err {
-		return err
-	}
-
-	version, err := this.ID.ULID()
-	if nil != err {
-		return err
-	}
-
 	relationship := model.ManagerRelationship{
-		ID:              id,
-		Version:         version,
+		ID:              this.ID.MustULID(),
+		Version:         this.ID.MustULID(),
 		UserMemberId:    membership.ID,
 		ManagerMemberId: managerMemberId,
 		IsActive:        true,

@@ -25,22 +25,17 @@ func (this NamespaceUpdateHandler) NamespaceUpdate(
 		return nil, util.ErrorVersionConflict
 	}
 
-	// change version
-	version, err := this.ID.ULID()
-	if nil != err {
-		return nil, err
-	}
-
 	if nil != input.Object.Language {
 		namespace.Language = *input.Object.Language
 	}
 
-	namespace.Version = version
+	// change version
+	namespace.Version = this.ID.MustULID()
 	if err := tx.Save(namespace).Error; nil != err {
 		return nil, err
 	}
 
-	err = this.updateFeatures(tx, namespace, input)
+	err := this.updateFeatures(tx, namespace, input)
 	if nil != err {
 		return nil, err
 	}
@@ -67,16 +62,11 @@ func (this *NamespaceUpdateHandler) updateFeature(
 	tx *gorm.DB,
 	namespace *model.Namespace, bucket string, key string, value []byte,
 ) error {
-	version, err := this.ID.ULID()
-	if nil != err {
-		return err
-	}
-
 	return tx.
 		Table(connect.TableNamespaceConfig).
 		Where("namespace_id = ? AND bucket = ? AND key = ?", namespace.ID, bucket, key).
 		Update(&model.NamespaceConfig{
-			Version:   version,
+			Version:   this.ID.MustULID(),
 			Value:     value,
 			UpdatedAt: time.Now(),
 		}).

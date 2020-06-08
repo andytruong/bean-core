@@ -74,7 +74,7 @@ func (this *UserModule) UserCreate(ctx context.Context, input *dto.UserCreateInp
 		)
 	}
 
-	if outcome, err := hdl.Create(txn, input); nil != err {
+	if outcome, err := hdl.Handle(txn, input); nil != err {
 		txn.Rollback()
 
 		return nil, err
@@ -105,30 +105,30 @@ func (this UserModule) Name(ctx context.Context, user *model.User) (*model.UserN
 	return &name, nil
 }
 
-// TODO: need a better resolver, we not always load secondary emails.
 func (this UserModule) Emails(ctx context.Context, user *model.User) (*model.UserEmails, error) {
-	emails := &model.UserEmails{}
-
-	var rows []*model.UserEmail
-	err := this.db.
-		Raw(`
-			     SELECT *, 1 AS is_verified FROM user_emails            WHERE user_id = ?
-		   UNION SELECT *, 0 AS is_verified FROM user_unverified_emails WHERE user_id = ?
-		`, user.ID, user.ID).
-		Find(&rows).
-		Error
-
-	if nil != err {
-		return nil, err
-	} else {
-		for _, row := range rows {
-			if row.IsPrimary {
-				emails.Primary = row
-			} else {
-				emails.Secondary = append(emails.Secondary, row)
-			}
-		}
+	hdl := handler.EmailQueryHandler{
+		DB: this.db,
 	}
 
-	return emails, nil
+	return hdl.Emails(ctx, user)
+}
+
+func (this UserModule) UserUpdate(ctx context.Context, input dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
+	user, err := this.User(ctx, input.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	hdl := handler.UserUpdateHandler{ ID: this.id }
+	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
+
+	if outcome, err := hdl.Handle(txn, user, input); nil != err {
+		txn.Rollback()
+
+		return nil, err
+	} else {
+		txn.Commit()
+
+		return outcome, nil
+	}
 }

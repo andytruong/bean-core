@@ -26,6 +26,16 @@ func (this *Identifier) HashInt64(salt string, current time.Time) (string, error
 	return hash.EncodeInt64([]int64{current.Unix()})
 }
 
+func (this *Identifier) MustULID() string {
+	val, err := this.ULID()
+
+	if nil != err {
+		panic(err)
+	}
+
+	return val
+}
+
 func (this *Identifier) ULID() (string, error) {
 	entropy := ulid.Monotonic(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
 	id, err := ulid.New(ulid.Now(), entropy)

@@ -18,16 +18,10 @@ func (this MembershipUpdateHandler) NamespaceMembershipUpdate(
 	input dto.NamespaceMembershipUpdateInput,
 	membership *model.Membership,
 ) (*dto.NamespaceMembershipCreateOutcome, error) {
-	// change version
-	version, err := this.ID.ULID()
-	if nil != err {
-		return nil, err
-	}
-
-	membership.Version = version
+	membership.Version = this.ID.MustULID()
 	membership.IsActive = input.IsActive
 
-	err = tx.
+	err := tx.
 		Table(connect.TableNamespaceMemberships).
 		Save(&membership).
 		Error

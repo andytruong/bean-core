@@ -2,7 +2,7 @@ package dto
 
 type UserUpdateInput struct {
 	ID      string                 `json:"id"`
-	VersioN string                 `json:"versioN"`
+	Version string                 `json:"version"`
 	Values  *UserUpdateValuesInput `json:"values"`
 }
 

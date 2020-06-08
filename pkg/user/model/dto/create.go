@@ -36,6 +36,6 @@ type UserPasswordInput struct {
 }
 
 type UserMutationOutcome struct {
-	Errors []util.Error `json:"errors"`
-	User   *model.User  `json:"user"`
+	Errors []*util.Error `json:"errors"`
+	User   *model.User   `json:"user"`
 }
