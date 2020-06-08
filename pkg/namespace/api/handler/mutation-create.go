@@ -9,6 +9,7 @@ import (
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/util"
 	"bean/pkg/util/api"
+	"bean/pkg/util/connect"
 )
 
 type NamespaceCreateHandler struct {
@@ -34,6 +35,8 @@ func (this *NamespaceCreateHandler) Create(tx *gorm.DB, input dto.NamespaceCreat
 
 func (this *NamespaceCreateHandler) create(tx *gorm.DB, input dto.NamespaceCreateInput) (*model.Namespace, error) {
 	namespace := &model.Namespace{
+		ID:        this.ID.MustULID(),
+		Version:   this.ID.MustULID(),
 		ParentID:  input.Context.NamespaceID,
 		Kind:      input.Object.Kind,
 		Title:     *input.Object.Title,
@@ -41,16 +44,6 @@ func (this *NamespaceCreateHandler) create(tx *gorm.DB, input dto.NamespaceCreat
 		IsActive:  input.Object.IsActive,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-	}
-
-	// Generate user Identifier.
-	if id, err := this.ID.ULID(); nil != err {
-		return nil, err
-	} else if version, err := this.ID.ULID(); nil != err {
-		return nil, err
-	} else {
-		namespace.ID = id
-		namespace.Version = version
 	}
 
 	if err := tx.Create(&namespace).Error; nil != err {
@@ -119,13 +112,8 @@ func (this *NamespaceCreateHandler) createDomains(tx *gorm.DB, namespace *model.
 }
 
 func (this *NamespaceCreateHandler) createDomain(tx *gorm.DB, namespace *model.Namespace, input *dto.DomainNameInput, isPrimary bool) error {
-	id, err := this.ID.ULID()
-	if nil != err {
-		return err
-	}
-
 	domain := model.DomainName{
-		ID:          id,
+		ID:          this.ID.MustULID(),
 		NamespaceId: namespace.ID,
 		IsVerified:  *input.Verified,
 		Value:       *input.Value,
@@ -139,19 +127,9 @@ func (this *NamespaceCreateHandler) createDomain(tx *gorm.DB, namespace *model.N
 }
 
 func (this *NamespaceCreateHandler) createMembership(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
-	id, err := this.ID.ULID()
-	if nil != err {
-		return err
-	}
-
-	version, err := this.ID.ULID()
-	if nil != err {
-		return err
-	}
-
 	membership := model.Membership{
-		ID:          id,
-		Version:     version,
+		ID:          this.ID.MustULID(),
+		Version:     this.ID.MustULID(),
 		NamespaceID: namespace.ID,
 		UserID:      input.Context.UserID,
 		IsActive:    true,
@@ -159,7 +137,7 @@ func (this *NamespaceCreateHandler) createMembership(tx *gorm.DB, namespace *mod
 		UpdatedAt:   time.Now(),
 	}
 
-	if err := tx.Table("namespace_memberships").Create(membership).Error; nil != err {
+	if err := tx.Table(connect.TableNamespaceMemberships).Create(membership).Error; nil != err {
 		return err
 	}
 
@@ -178,19 +156,9 @@ func (this *NamespaceCreateHandler) createFeature(
 	tx *gorm.DB,
 	namespace *model.Namespace, bucket string, key string, value []byte,
 ) error {
-	id, err := this.ID.ULID()
-	if nil != err {
-		return err
-	}
-
-	version, err := this.ID.ULID()
-	if nil != err {
-		return err
-	}
-
 	config := model.NamespaceConfig{
-		Id:          id,
-		Version:     version,
+		Id:          this.ID.MustULID(),
+		Version:     this.ID.MustULID(),
 		NamespaceId: namespace.ID,
 		Bucket:      bucket,
 		Key:         key,
@@ -199,5 +167,5 @@ func (this *NamespaceCreateHandler) createFeature(
 		UpdatedAt:   time.Now(),
 	}
 
-	return tx.Table("namespace_config").Create(&config).Error
+	return tx.Table(connect.TableNamespaceConfig).Create(&config).Error
 }

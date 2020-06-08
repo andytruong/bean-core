@@ -88,40 +88,33 @@ func (this SessionCreateHandler) createSession(
 	namespaceId string,
 	membership *mNamespace.Membership,
 ) (*dto.SessionCreateOutcome, error) {
-	if id, err := this.ID.ULID(); nil != err {
-		return nil, err
-	} else if version, err := this.ID.ULID(); nil != err {
-		return nil, err
-	} else if token, err := this.ID.UUID(); nil != err {
+	token := this.ID.MustULID()
+	session := &model.Session{
+		ID:          this.ID.MustULID(),
+		Version:     this.ID.MustULID(),
+		UserId:      userId,
+		NamespaceId: namespaceId,
+		HashedToken: this.ID.Encode(token),
+		Scopes:      nil, // TODO
+		IsActive:    true,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		ExpiredAt:   time.Now().Add(this.SessionTimeout),
+	}
+
+	if err := tx.Table(connect.TableAccessSession).Create(&session).Error; nil != err {
 		return nil, err
 	} else {
-		session := &model.Session{
-			ID:          id,
-			Version:     version,
-			UserId:      userId,
-			NamespaceId: namespaceId,
-			HashedToken: this.ID.Encode(token),
-			Scopes:      nil, // TODO
-			IsActive:    true,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
-			ExpiredAt:   time.Now().Add(this.SessionTimeout),
-		}
-
-		if err := tx.Table(connect.TableAccessSession).Create(&session).Error; nil != err {
+		// update membership -> last-time-login
+		err := this.Namespace.MembershipResolver().UpdateLastLoginTime(tx, membership)
+		if nil != err {
 			return nil, err
-		} else {
-			// update membership -> last-time-login
-			err := this.Namespace.MembershipResolver().UpdateLastLoginTime(tx, membership)
-			if nil != err {
-				return nil, err
-			}
 		}
-
-		return &dto.SessionCreateOutcome{
-			Errors:  nil,
-			Token:   &token,
-			Session: session,
-		}, nil
 	}
+
+	return &dto.SessionCreateOutcome{
+		Errors:  nil,
+		Token:   &token,
+		Session: session,
+	}, nil
 }

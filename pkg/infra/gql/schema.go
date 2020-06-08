@@ -114,6 +114,7 @@ type ComplexityRoot struct {
 		SessionArchive            func(childComplexity int, token string) int
 		SessionCreate             func(childComplexity int, input *dto1.SessionCreateInput) int
 		UserCreate                func(childComplexity int, input *dto2.UserCreateInput) int
+		UserUpdate                func(childComplexity int, input dto2.UserUpdateInput) int
 	}
 
 	Namespace struct {
@@ -197,11 +198,6 @@ type ComplexityRoot struct {
 		Version   func(childComplexity int) int
 	}
 
-	UserCreateOutcome struct {
-		Errors func(childComplexity int) int
-		User   func(childComplexity int) int
-	}
-
 	UserEmail struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
@@ -214,6 +210,11 @@ type ComplexityRoot struct {
 	UserEmails struct {
 		Primary   func(childComplexity int) int
 		Secondary func(childComplexity int) int
+	}
+
+	UserMutationOutcome struct {
+		Errors func(childComplexity int) int
+		User   func(childComplexity int) int
 	}
 
 	UserName struct {
@@ -243,7 +244,8 @@ type MutationResolver interface {
 	NamespaceMembershipUpdate(ctx context.Context, input dto.NamespaceMembershipUpdateInput) (*dto.NamespaceMembershipCreateOutcome, error)
 	NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error)
 	NamespaceUpdate(ctx context.Context, input dto.NamespaceUpdateInput) (*bool, error)
-	UserCreate(ctx context.Context, input *dto2.UserCreateInput) (*dto2.UserCreateOutcome, error)
+	UserCreate(ctx context.Context, input *dto2.UserCreateInput) (*dto2.UserMutationOutcome, error)
+	UserUpdate(ctx context.Context, input dto2.UserUpdateInput) (*dto2.UserMutationOutcome, error)
 	SessionCreate(ctx context.Context, input *dto1.SessionCreateInput) (*dto1.SessionCreateOutcome, error)
 	SessionArchive(ctx context.Context, token string) (*dto1.SessionDeleteOutcome, error)
 }
@@ -571,6 +573,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UserCreate(childComplexity, args["input"].(*dto2.UserCreateInput)), true
+
+	case "Mutation.userUpdate":
+		if e.complexity.Mutation.UserUpdate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_userUpdate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UserUpdate(childComplexity, args["input"].(dto2.UserUpdateInput)), true
 
 	case "Namespace.createdAt":
 		if e.complexity.Namespace.CreatedAt == nil {
@@ -954,20 +968,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Version(childComplexity), true
 
-	case "UserCreateOutcome.errors":
-		if e.complexity.UserCreateOutcome.Errors == nil {
-			break
-		}
-
-		return e.complexity.UserCreateOutcome.Errors(childComplexity), true
-
-	case "UserCreateOutcome.user":
-		if e.complexity.UserCreateOutcome.User == nil {
-			break
-		}
-
-		return e.complexity.UserCreateOutcome.User(childComplexity), true
-
 	case "UserEmail.createdAt":
 		if e.complexity.UserEmail.CreatedAt == nil {
 			break
@@ -1023,6 +1023,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UserEmails.Secondary(childComplexity), true
+
+	case "UserMutationOutcome.errors":
+		if e.complexity.UserMutationOutcome.Errors == nil {
+			break
+		}
+
+		return e.complexity.UserMutationOutcome.Errors(childComplexity), true
+
+	case "UserMutationOutcome.user":
+		if e.complexity.UserMutationOutcome.User == nil {
+			break
+		}
+
+		return e.complexity.UserMutationOutcome.User(childComplexity), true
 
 	case "UserName.firstName":
 		if e.complexity.UserName.FirstName == nil {
@@ -1390,45 +1404,63 @@ type UserEmail {
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/user/api/mutation.graphql", Input: `# ---------------------
-# UserCreate
+# User -> Create
 # ---------------------
 extend type Mutation {
-    userCreate(input: UserCreateInput): UserCreateOutcome
+	userCreate(input: UserCreateInput): UserMutationOutcome
 }
 
 input UserCreateInput {
-    name: UserNameInput!
-    emails: UserEmailsInput
-    password: UserPasswordInput!
-    avatarUri: Uri
-    isActive: Boolean!
+	name: UserNameInput!
+	emails: UserEmailsInput
+	password: UserPasswordInput!
+	avatarUri: Uri
+	isActive: Boolean!
 }
 
 input UserNameInput {
-    firstName: String
-    lastName: String
-    preferredName: String
+	firstName: String
+	lastName: String
+	preferredName: String
 }
 
 input UserEmailsInput {
-    primary: UserEmailInput!
-    secondary: [UserEmailInput]
+	primary: UserEmailInput!
+	secondary: [UserEmailInput]
 }
 
 input UserEmailInput {
-    verified: Boolean!
-    value: EmailAddress!
-    isActive: Boolean!
+	verified: Boolean!
+	value: EmailAddress!
+	isActive: Boolean!
 }
 
 input UserPasswordInput {
-    hashedValue: String!
-    algorithm: String!
+	hashedValue: String!
+	algorithm: String!
 }
 
-type UserCreateOutcome {
-    user: User
-    errors: [Error!]
+type UserMutationOutcome {
+	user: User
+	errors: [Error!]
+}
+
+
+# ---------------------
+# User -> Update
+# ---------------------
+extend type Mutation {
+	userUpdate(input: UserUpdateInput!): UserMutationOutcome
+}
+
+input UserUpdateInput {
+	id: ID!
+	version: ID!
+	values: UserUpdateValuesInput
+}
+
+input UserUpdateValuesInput {
+	password: UserPasswordInput!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/user/api/query.graphql", Input: `extend type Query {
@@ -1616,6 +1648,20 @@ func (ec *executionContext) field_Mutation_userCreate_args(ctx context.Context, 
 	var arg0 *dto2.UserCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		arg0, err = ec.unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_userUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 dto2.UserUpdateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNUserUpdateInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2896,9 +2942,47 @@ func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*dto2.UserCreateOutcome)
+	res := resTmp.(*dto2.UserMutationOutcome)
 	fc.Result = res
-	return ec.marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateOutcome(ctx, field.Selections, res)
+	return ec.marshalOUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_userUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_userUpdate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UserUpdate(rctx, args["input"].(dto2.UserUpdateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*dto2.UserMutationOutcome)
+	fc.Result = res
+	return ec.marshalOUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4743,68 +4827,6 @@ func (ec *executionContext) _User_language(ctx context.Context, field graphql.Co
 	return ec.marshalNLanguage2beanᚋpkgᚋutilᚋapiᚐLanguage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserCreateOutcome_user(ctx context.Context, field graphql.CollectedField, obj *dto2.UserCreateOutcome) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "UserCreateOutcome",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.User, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model1.User)
-	fc.Result = res
-	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _UserCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto2.UserCreateOutcome) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "UserCreateOutcome",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Errors, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]util.Error)
-	fc.Result = res
-	return ec.marshalOError2ᚕbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _UserEmail_id(ctx context.Context, field graphql.CollectedField, obj *model1.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5069,6 +5091,68 @@ func (ec *executionContext) _UserEmails_secondary(ctx context.Context, field gra
 	res := resTmp.([]*model1.UserEmail)
 	fc.Result = res
 	return ec.marshalOUserEmail2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserMutationOutcome_user(ctx context.Context, field graphql.CollectedField, obj *dto2.UserMutationOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "UserMutationOutcome",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model1.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserMutationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto2.UserMutationOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "UserMutationOutcome",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]util.Error)
+	fc.Result = res
+	return ec.marshalOError2ᚕbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserName_firstName(ctx context.Context, field graphql.CollectedField, obj *model1.UserName) (ret graphql.Marshaler) {
@@ -6896,6 +6980,54 @@ func (ec *executionContext) unmarshalInputUserPasswordInput(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUserUpdateInput(ctx context.Context, obj interface{}) (dto2.UserUpdateInput, error) {
+	var it dto2.UserUpdateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.ID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "version":
+			var err error
+			it.Version, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "values":
+			var err error
+			it.Values, err = ec.unmarshalOUserUpdateValuesInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateValuesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserUpdateValuesInput(ctx context.Context, obj interface{}) (dto2.UserUpdateValuesInput, error) {
+	var it dto2.UserUpdateValuesInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "password":
+			var err error
+			it.Password, err = ec.unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputValidationInput(ctx context.Context, obj interface{}) (dto1.ValidationInput, error) {
 	var it dto1.ValidationInput
 	var asMap = obj.(map[string]interface{})
@@ -7268,6 +7400,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_namespaceUpdate(ctx, field)
 		case "userCreate":
 			out.Values[i] = ec._Mutation_userCreate(ctx, field)
+		case "userUpdate":
+			out.Values[i] = ec._Mutation_userUpdate(ctx, field)
 		case "sessionCreate":
 			out.Values[i] = ec._Mutation_sessionCreate(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -7838,32 +7972,6 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
-var userCreateOutcomeImplementors = []string{"UserCreateOutcome"}
-
-func (ec *executionContext) _UserCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto2.UserCreateOutcome) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, userCreateOutcomeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("UserCreateOutcome")
-		case "user":
-			out.Values[i] = ec._UserCreateOutcome_user(ctx, field, obj)
-		case "errors":
-			out.Values[i] = ec._UserCreateOutcome_errors(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var userEmailImplementors = []string{"UserEmail"}
 
 func (ec *executionContext) _UserEmail(ctx context.Context, sel ast.SelectionSet, obj *model1.UserEmail) graphql.Marshaler {
@@ -7940,6 +8048,32 @@ func (ec *executionContext) _UserEmails(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._UserEmails_primary(ctx, field, obj)
 		case "secondary":
 			out.Values[i] = ec._UserEmails_secondary(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var userMutationOutcomeImplementors = []string{"UserMutationOutcome"}
+
+func (ec *executionContext) _UserMutationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto2.UserMutationOutcome) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userMutationOutcomeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserMutationOutcome")
+		case "user":
+			out.Values[i] = ec._UserMutationOutcome_user(ctx, field, obj)
+		case "errors":
+			out.Values[i] = ec._UserMutationOutcome_errors(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8720,6 +8854,10 @@ func (ec *executionContext) unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋm
 	}
 	res, err := ec.unmarshalNUserPasswordInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) unmarshalNUserUpdateInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateInput(ctx context.Context, v interface{}) (dto2.UserUpdateInput, error) {
+	return ec.unmarshalInputUserUpdateInput(ctx, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -9621,17 +9759,6 @@ func (ec *executionContext) unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋmod
 	return &res, err
 }
 
-func (ec *executionContext) marshalOUserCreateOutcome2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto2.UserCreateOutcome) graphql.Marshaler {
-	return ec._UserCreateOutcome(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOUserCreateOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto2.UserCreateOutcome) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._UserCreateOutcome(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalOUserEmail2beanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v model1.UserEmail) graphql.Marshaler {
 	return ec._UserEmail(ctx, sel, &v)
 }
@@ -9735,6 +9862,29 @@ func (ec *executionContext) unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋmod
 		return nil, nil
 	}
 	res, err := ec.unmarshalOUserEmailsInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailsInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOUserMutationOutcome2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto2.UserMutationOutcome) graphql.Marshaler {
+	return ec._UserMutationOutcome(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto2.UserMutationOutcome) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._UserMutationOutcome(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOUserUpdateValuesInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateValuesInput(ctx context.Context, v interface{}) (dto2.UserUpdateValuesInput, error) {
+	return ec.unmarshalInputUserUpdateValuesInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOUserUpdateValuesInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateValuesInput(ctx context.Context, v interface{}) (*dto2.UserUpdateValuesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOUserUpdateValuesInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateValuesInput(ctx, v)
 	return &res, err
 }
 

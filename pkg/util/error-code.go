@@ -16,6 +16,7 @@ const (
 	ErrorCodeDbConstraint ErrorCode = "DB_Constraint"
 	ErrorToBeImplemented  ErrorCode = "ToBeImplemented"
 	ErrorQueryTooMuch     ErrorCode = "QueryTooMuch"
+	ErrorCodeConflict     ErrorCode = "Conflict"
 )
 
 var AllErrorCode = []ErrorCode{

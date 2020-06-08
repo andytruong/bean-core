@@ -1,41 +1,59 @@
 # ---------------------
-# UserCreate
+# User -> Create
 # ---------------------
 extend type Mutation {
-    userCreate(input: UserCreateInput): UserCreateOutcome
+	userCreate(input: UserCreateInput): UserMutationOutcome
 }
 
 input UserCreateInput {
-    name: UserNameInput!
-    emails: UserEmailsInput
-    password: UserPasswordInput!
-    avatarUri: Uri
-    isActive: Boolean!
+	name: UserNameInput!
+	emails: UserEmailsInput
+	password: UserPasswordInput!
+	avatarUri: Uri
+	isActive: Boolean!
 }
 
 input UserNameInput {
-    firstName: String
-    lastName: String
-    preferredName: String
+	firstName: String
+	lastName: String
+	preferredName: String
 }
 
 input UserEmailsInput {
-    primary: UserEmailInput!
-    secondary: [UserEmailInput]
+	primary: UserEmailInput!
+	secondary: [UserEmailInput]
 }
 
 input UserEmailInput {
-    verified: Boolean!
-    value: EmailAddress!
-    isActive: Boolean!
+	verified: Boolean!
+	value: EmailAddress!
+	isActive: Boolean!
 }
 
 input UserPasswordInput {
-    hashedValue: String!
-    algorithm: String!
+	hashedValue: String!
+	algorithm: String!
 }
 
-type UserCreateOutcome {
-    user: User
-    errors: [Error!]
+type UserMutationOutcome {
+	user: User
+	errors: [Error!]
+}
+
+
+# ---------------------
+# User -> Update
+# ---------------------
+extend type Mutation {
+	userUpdate(input: UserUpdateInput!): UserMutationOutcome
+}
+
+input UserUpdateInput {
+	id: ID!
+	version: ID!
+	values: UserUpdateValuesInput
+}
+
+input UserUpdateValuesInput {
+	password: UserPasswordInput!
 }

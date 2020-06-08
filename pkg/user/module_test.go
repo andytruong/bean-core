@@ -9,25 +9,26 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"bean/pkg/user/api/fixtures"
+	"bean/pkg/user/model/dto"
 	"bean/pkg/util"
 )
 
-func TestUserMutationResolver_UserCreate(t *testing.T) {
+func Test_Create(t *testing.T) {
 	ass := assert.New(t)
 	db := util.MockDatabase()
-	mod := NewUserModule(db, util.MockLogger(), util.MockIdentifier())
-	util.MockInstall(mod, db)
+	this := NewUserModule(db, util.MockLogger(), util.MockIdentifier())
+	util.MockInstall(this, db)
 	input := fixtures.NewUserCreateInputFixture()
 
 	t.Run("test happy case, no error", func(t *testing.T) {
 		now := time.Now()
-		out, err := mod.UserCreate(context.Background(), input)
+		out, err := this.UserCreate(context.Background(), input)
 		ass.NoError(err)
 		ass.Empty(out.Errors)
 		ass.Equal("https://foo.bar", string(*out.User.AvatarURI))
 
 		{
-			theUser, err := mod.User(context.Background(), out.User.ID)
+			theUser, err := this.User(context.Background(), out.User.ID)
 			ass.NoError(err)
 			ass.True(theUser.CreatedAt.UnixNano() >= now.UnixNano())
 			ass.Equal("https://foo.bar", string(*theUser.AvatarURI))
@@ -42,5 +43,45 @@ func TestUserMutationResolver_UserCreate(t *testing.T) {
 
 	t.Run("email is casted to lower-case", func(t *testing.T) {
 		ass.True(true, "TODO")
+	})
+}
+
+func Test_Update(t *testing.T) {
+	ass := assert.New(t)
+	db := util.MockDatabase()
+	this := NewUserModule(db, util.MockLogger(), util.MockIdentifier())
+	util.MockInstall(this, db)
+	input := fixtures.NewUserCreateInputFixture()
+
+	// create user so we can edit
+	oCreate, err := this.UserCreate(context.Background(), input)
+	ass.NoError(err)
+	ass.NotNil(oCreate)
+
+	t.Run("version conflict", func(t *testing.T) {
+		oUpdate, err := this.UserUpdate(context.Background(), dto.UserUpdateInput{
+			ID:      oCreate.User.ID,
+			Version: this.id.MustULID(), // some other version
+		})
+
+		ass.NoError(err)
+		ass.Equal(oUpdate.Errors[0].Code.String(), util.ErrorCodeConflict.String())
+	})
+
+	t.Run("update password", func(t *testing.T) {
+		oUpdate, err := this.UserUpdate(context.Background(), dto.UserUpdateInput{
+			ID:      oCreate.User.ID,
+			Version: oCreate.User.Version,
+			Values: &dto.UserUpdateValuesInput{
+				Password: &dto.UserPasswordInput{
+					Algorithm:   "xxxxxx",
+					HashedValue: this.id.MustULID(),
+				},
+			},
+		})
+
+		ass.NoError(err)
+		ass.NotNil(oUpdate)
+		ass.NotEqual(oCreate.User.Version, oUpdate.User.Version)
 	})
 }

@@ -18,18 +18,13 @@ type SessionDeleteHandler struct {
 }
 
 func (this SessionDeleteHandler) Handle(ctx context.Context, session *model.Session) (*dto.SessionDeleteOutcome, error) {
-	version, err := this.ID.ULID()
+	session.IsActive = false
+	session.Version = this.ID.MustULID()
+	session.UpdatedAt = time.Now()
+	err := this.DB.Table(connect.TableAccessSession).Save(&session).Error
 	if nil != err {
 		return nil, err
-	} else {
-		session.IsActive = false
-		session.Version = version
-		session.UpdatedAt = time.Now()
-		err := this.DB.Table(connect.TableAccessSession).Save(&session).Error
-		if nil != err {
-			return nil, err
-		}
-
-		return &dto.SessionDeleteOutcome{Errors: nil, Result: true}, nil
 	}
+
+	return &dto.SessionDeleteOutcome{Errors: nil, Result: true}, nil
 }
