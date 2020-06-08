@@ -9,7 +9,7 @@ import (
 
 type (
 	modules struct {
-		container *Container
+		can       *Can
 		user      *user.UserModule
 		namespace *namespace.NamespaceModule
 		access    *access.AccessModule
@@ -28,15 +28,15 @@ func (this *modules) User() (*user.UserModule, error) {
 	var err error
 
 	if nil == this.user {
-		db, err := this.container.dbs.master()
+		db, err := this.can.dbs.master()
 		if nil != err {
 			return nil, err
 		}
 
 		this.user = user.NewUserModule(
 			db,
-			this.container.logger,
-			this.container.Identifier(),
+			this.can.logger,
+			this.can.Identifier(),
 		)
 	}
 
@@ -47,7 +47,7 @@ func (this *modules) Namespace() (*namespace.NamespaceModule, error) {
 	var err error
 
 	if nil == this.namespace {
-		db, err := this.container.dbs.master()
+		db, err := this.can.dbs.master()
 		if nil != err {
 			return nil, err
 		}
@@ -59,10 +59,10 @@ func (this *modules) Namespace() (*namespace.NamespaceModule, error) {
 
 		this.namespace = namespace.NewNamespaceModule(
 			db,
-			this.container.logger,
-			this.container.Identifier(),
+			this.can.logger,
+			this.can.Identifier(),
 			mUser,
-			this.container.Modules.Namespace,
+			this.can.Modules.Namespace,
 		)
 	}
 
@@ -71,7 +71,7 @@ func (this *modules) Namespace() (*namespace.NamespaceModule, error) {
 
 func (this *modules) Access() (*access.AccessModule, error) {
 	if nil == this.access {
-		db, err := this.container.dbs.master()
+		db, err := this.can.dbs.master()
 		if nil != err {
 			return nil, err
 		}
@@ -88,11 +88,11 @@ func (this *modules) Access() (*access.AccessModule, error) {
 
 		this.access = access.NewAccessModule(
 			db,
-			this.container.Identifier(),
-			this.container.logger,
+			this.can.Identifier(),
+			this.can.logger,
 			mUser,
 			mNamespace,
-			this.container.Modules.Access,
+			this.can.Modules.Access,
 		)
 	}
 

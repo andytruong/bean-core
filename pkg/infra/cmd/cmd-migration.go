@@ -6,11 +6,11 @@ import (
 	"bean/pkg/infra"
 )
 
-func MigrationCommand(container *infra.Container) *cli.Command {
+func MigrationCommand(can *infra.Can) *cli.Command {
 	return &cli.Command{
 		Name: "migrate",
 		Action: func(ctx *cli.Context) error {
-			return container.Migrate(ctx.Context)
+			return can.Migrate(ctx.Context)
 		},
 	}
 }

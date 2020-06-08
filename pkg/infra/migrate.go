@@ -8,7 +8,7 @@ import (
 	"bean/pkg/util/migrate"
 )
 
-func (this *Container) Migrate(ctx context.Context) error {
+func (this *Can) Migrate(ctx context.Context) error {
 	if db, err := this.dbs.master(); nil != err {
 		return err
 	} else {

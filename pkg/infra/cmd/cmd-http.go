@@ -6,11 +6,11 @@ import (
 	"bean/pkg/infra"
 )
 
-func HttpServerCommand(container *infra.Container) *cli.Command {
+func HttpServerCommand(can *infra.Can) *cli.Command {
 	return &cli.Command{
 		Name: "http-server",
 		Action: func(ctx *cli.Context) error {
-			return container.ListenAndServe()
+			return can.ListenAndServe()
 		},
 	}
 }

@@ -22,10 +22,10 @@ import (
 	"bean/pkg/util"
 )
 
-func NewContainer(path string) (*Container, error) {
+func NewCan(path string) (*Can, error) {
 	var err error
 
-	this := &Container{}
+	this := &Can{}
 
 	// parse configuration from YAML configuration file & env variables.
 	if err := this.parseFile(path); nil != err {
@@ -35,14 +35,14 @@ func NewContainer(path string) (*Container, error) {
 	this.mu = &sync.Mutex{}
 
 	this.modules = modules{
-		container: this,
-		user:      nil,
-		access:    nil,
+		can:    this,
+		user:   nil,
+		access: nil,
 	}
 
 	this.graph = &graph{
-		container: this,
-		mu:        &sync.Mutex{},
+		can: this,
+		mu:  &sync.Mutex{},
 	}
 
 	// setup logger
@@ -63,7 +63,7 @@ type (
 	// 	- Logger
 	//  - Database connections
 	//  - HTTP server (GraphQL query interface)
-	Container struct {
+	Can struct {
 		Version    string                    `yaml:"version"`
 		Databases  map[string]DatabaseConfig `yaml:"databases"`
 		HttpServer HttpServerConfig          `yaml:"http-server"`
@@ -104,11 +104,11 @@ type (
 	}
 )
 
-func (this *Container) Logger() *zap.Logger {
+func (this *Can) Logger() *zap.Logger {
 	return this.logger
 }
 
-func (this *Container) parseFile(path string) error {
+func (this *Can) parseFile(path string) error {
 	content, err := util.ParseFile(path)
 	if nil != err {
 		return err
@@ -117,7 +117,7 @@ func (this *Container) parseFile(path string) error {
 	return yaml.Unmarshal(content, &this)
 }
 
-func (this *Container) ListenAndServe() error {
+func (this *Can) ListenAndServe() error {
 	router := mux.NewRouter()
 	router.HandleFunc("/query", this.HandleQueryRequest())
 
@@ -142,7 +142,7 @@ func (this *Container) ListenAndServe() error {
 
 // Handle request to /query.
 //  Verify JWT authorization if provided.
-func (this *Container) HandleQueryRequest() func(http.ResponseWriter, *http.Request) {
+func (this *Can) HandleQueryRequest() func(http.ResponseWriter, *http.Request) {
 	cnf := gql.Config{Resolvers: this.graph}
 	schema := gql.NewExecutableSchema(cnf)
 	hdl := handler.NewDefaultServer(schema)
@@ -169,7 +169,7 @@ func (this *Container) HandleQueryRequest() func(http.ResponseWriter, *http.Requ
 	}
 }
 
-func (this *Container) BeforeServeHTTP(r *http.Request) error {
+func (this *Can) BeforeServeHTTP(r *http.Request) error {
 	authHeader := r.Header.Get("Authorization")
 	if "" != authHeader {
 		module, err := this.modules.Access()
@@ -189,7 +189,7 @@ func (this *Container) BeforeServeHTTP(r *http.Request) error {
 	return nil
 }
 
-func (this *Container) Identifier() *util.Identifier {
+func (this *Can) Identifier() *util.Identifier {
 	if this.id == nil {
 		this.mu.Lock()
 		this.id = &util.Identifier{}
