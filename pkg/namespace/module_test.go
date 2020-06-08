@@ -114,13 +114,36 @@ func Test_Query(t *testing.T) {
 		id = outcome.Namespace.ID
 	}
 
-	{
-		obj, err := this.Namespace(context.Background(), id)
+	t.Run("load by ID", func(t *testing.T) {
+		obj, err := this.Load(context.Background(), id)
 		ass.NoError(err)
 		ass.Equal(obj.ID, id)
 		ass.Equal(obj.Title, *input.Object.Title)
 		ass.Equal(obj.IsActive, input.Object.IsActive)
-	}
+	})
+
+	t.Run("load by domain name -> inactive domain name", func(t *testing.T) {
+		domainName := util.Uri(*input.Object.DomainNames.Secondary[1].Value)
+		obj, err := this.Namespace(context.Background(), dto.NamespaceFilters{
+			Domain: &domainName,
+		})
+
+		ass.Error(err)
+		ass.Equal(err.Error(), "domain name is not active")
+		ass.Nil(obj)
+	})
+
+	t.Run("load by domain name -> verified", func(t *testing.T) {
+		domainName := util.Uri(*input.Object.DomainNames.Primary.Value)
+		obj, err := this.Namespace(context.Background(), dto.NamespaceFilters{
+			Domain: &domainName,
+		})
+
+		ass.NoError(err)
+		ass.Equal(obj.ID, id)
+		ass.Equal(obj.Title, *input.Object.Title)
+		ass.Equal(obj.IsActive, input.Object.IsActive)
+	})
 }
 
 func Test_Update(t *testing.T) {
@@ -147,7 +170,7 @@ func Test_Update(t *testing.T) {
 		})
 
 		{
-			obj, err := this.Namespace(context.Background(), outcome.Namespace.ID)
+			obj, err := this.Load(context.Background(), outcome.Namespace.ID)
 			ass.NoError(err)
 			ass.Equal(obj.Language, api.LanguageUS)
 		}
@@ -221,7 +244,7 @@ func Test_Membership_Create(t *testing.T) {
 	})
 
 	t.Run("create failed of feature is off", func(t *testing.T) {
-		namespace, err := this.Namespace(context.Background(), oNamespace.Namespace.ID)
+		namespace, err := this.Load(context.Background(), oNamespace.Namespace.ID)
 		ass.NoError(err)
 
 		// change feature off

@@ -35,7 +35,7 @@ func (this ModelResolver) Scopes(ctx context.Context, obj *model.Session) ([]*mo
 }
 
 func (this ModelResolver) Namespace(ctx context.Context, obj *model.Session) (*namespace_model.Namespace, error) {
-	return this.module.namespace.Namespace(ctx, obj.NamespaceId)
+	return this.module.namespace.Load(ctx, obj.NamespaceId)
 }
 
 func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (string, error) {

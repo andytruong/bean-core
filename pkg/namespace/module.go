@@ -71,14 +71,16 @@ func (this NamespaceModule) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this NamespaceModule) Namespace(ctx context.Context, id string) (*model.Namespace, error) {
-	obj := &model.Namespace{}
-	err := this.db.First(&obj, "id = ?", id).Error
-	if nil != err {
-		return nil, err
-	}
+func (this NamespaceModule) Namespace(ctx context.Context, filters dto.NamespaceFilters) (*model.Namespace, error) {
+	hdl := handler.NamespaceQueryHandler{DB: this.db}
 
-	return obj, nil
+	return hdl.Handle(ctx, filters)
+}
+
+func (this NamespaceModule) Load(ctx context.Context, id string) (*model.Namespace, error) {
+	hdl := handler.NamespaceQueryHandler{DB: this.db}
+
+	return hdl.Load(ctx, id)
 }
 
 func (this NamespaceModule) NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
@@ -105,7 +107,7 @@ func (this NamespaceModule) Features(ctx context.Context, namespace *model.Names
 }
 
 func (this NamespaceModule) NamespaceUpdate(ctx context.Context, input dto.NamespaceUpdateInput) (*bool, error) {
-	namespace, err := this.Namespace(ctx, input.NamespaceID)
+	namespace, err := this.Load(ctx, input.NamespaceID)
 	if nil != err {
 		return nil, err
 	}
@@ -127,7 +129,7 @@ func (this NamespaceModule) NamespaceMembershipCreate(
 	ctx context.Context,
 	input dto.NamespaceMembershipCreateInput,
 ) (*dto.NamespaceMembershipCreateOutcome, error) {
-	namespace, err := this.Namespace(ctx, input.NamespaceID)
+	namespace, err := this.Load(ctx, input.NamespaceID)
 	if nil != err {
 		return nil, err
 	}
@@ -216,5 +218,5 @@ func (this NamespaceModule) Parent(ctx context.Context, obj *model.Namespace) (*
 		return nil, nil
 	}
 
-	return this.Namespace(ctx, *obj.ParentID)
+	return this.Load(ctx, *obj.ParentID)
 }

@@ -42,7 +42,7 @@ func NamespaceCreateInputFixture(register bool) dto.NamespaceCreateInput {
 		{
 			Verified: util.NilBool(true),
 			Value:    util.NilString("http://rc.test.qa"),
-			IsActive: util.NilBool(true),
+			IsActive: util.NilBool(false),
 		},
 	}
 
