@@ -14,7 +14,7 @@ type UserCreateHandler struct {
 	ID *util.Identifier
 }
 
-func (this *UserCreateHandler) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto.UserCreateOutcome, error) {
+func (this *UserCreateHandler) Create(tx *gorm.DB, input *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
 	// create base record
 	user := model.User{
 		AvatarURI: input.AvatarURI,
@@ -67,7 +67,7 @@ func (this *UserCreateHandler) Create(tx *gorm.DB, input *dto.UserCreateInput) (
 		tx.Save(pass)
 	}
 
-	return &dto.UserCreateOutcome{User: &user}, nil
+	return &dto.UserMutationOutcome{User: &user}, nil
 }
 
 func (this *UserCreateHandler) createEmails(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {

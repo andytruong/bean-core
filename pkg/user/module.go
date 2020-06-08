@@ -63,7 +63,7 @@ func (this UserModule) Verified(ctx context.Context, obj *model.UserEmail) (bool
 	return obj.IsVerified, nil
 }
 
-func (this *UserModule) UserCreate(ctx context.Context, input *dto.UserCreateInput) (*dto.UserCreateOutcome, error) {
+func (this *UserModule) UserCreate(ctx context.Context, input *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
 	hdl := handler.UserCreateHandler{ID: this.id}
 	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
 

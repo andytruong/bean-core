@@ -35,7 +35,7 @@ type UserPasswordInput struct {
 	HashedValue string `json:"hashedValue"`
 }
 
-type UserCreateOutcome struct {
+type UserMutationOutcome struct {
 	Errors []util.Error `json:"errors"`
 	User   *model.User  `json:"user"`
 }
