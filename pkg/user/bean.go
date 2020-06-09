@@ -18,12 +18,12 @@ import (
 	"bean/pkg/util/migrate"
 )
 
-func NewUserModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) *UserModule {
+func NewUserBean(db *gorm.DB, logger *zap.Logger, id *util.Identifier) *UserBean {
 	if err := util.NilPointerErrorValidate(db, logger, id); nil != err {
 		panic(err)
 	}
 
-	return &UserModule{
+	return &UserBean{
 		logger:                   logger,
 		db:                       db,
 		id:                       id,
@@ -31,18 +31,18 @@ func NewUserModule(db *gorm.DB, logger *zap.Logger, id *util.Identifier) *UserMo
 	}
 }
 
-type UserModule struct {
+type UserBean struct {
 	logger                   *zap.Logger
 	db                       *gorm.DB
 	id                       *util.Identifier
 	maxSecondaryEmailPerUser uint8
 }
 
-func (this UserModule) Dependencies() []util.Module {
+func (this UserBean) Dependencies() []util.Bean {
 	return nil
 }
 
-func (this UserModule) Migrate(tx *gorm.DB, driver string) error {
+func (this UserBean) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -52,18 +52,18 @@ func (this UserModule) Migrate(tx *gorm.DB, driver string) error {
 		Tx:     tx,
 		Logger: this.logger,
 		Driver: driver,
-		Module: "user",
+		Bean:   "user",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 
 	return runner.Run()
 }
 
-func (this UserModule) Verified(ctx context.Context, obj *model.UserEmail) (bool, error) {
+func (this UserBean) Verified(ctx context.Context, obj *model.UserEmail) (bool, error) {
 	return obj.IsVerified, nil
 }
 
-func (this *UserModule) UserCreate(ctx context.Context, input *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
+func (this *UserBean) UserCreate(ctx context.Context, input *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
 	hdl := handler.UserCreateHandler{ID: this.id}
 	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
 
@@ -85,13 +85,13 @@ func (this *UserModule) UserCreate(ctx context.Context, input *dto.UserCreateInp
 	}
 }
 
-func (this *UserModule) User(ctx context.Context, id string) (*model.User, error) {
+func (this *UserBean) User(ctx context.Context, id string) (*model.User, error) {
 	hdl := handler.UserLoadHandler{}
 
 	return hdl.Load(this.db, id)
 }
 
-func (this UserModule) Name(ctx context.Context, user *model.User) (*model.UserName, error) {
+func (this UserBean) Name(ctx context.Context, user *model.User) (*model.UserName, error) {
 	name := model.UserName{}
 	err := this.db.
 		Where(model.UserName{UserId: user.ID}).
@@ -105,7 +105,7 @@ func (this UserModule) Name(ctx context.Context, user *model.User) (*model.UserN
 	return &name, nil
 }
 
-func (this UserModule) Emails(ctx context.Context, user *model.User) (*model.UserEmails, error) {
+func (this UserBean) Emails(ctx context.Context, user *model.User) (*model.UserEmails, error) {
 	hdl := handler.EmailQueryHandler{
 		DB: this.db,
 	}
@@ -113,7 +113,7 @@ func (this UserModule) Emails(ctx context.Context, user *model.User) (*model.Use
 	return hdl.Emails(ctx, user)
 }
 
-func (this UserModule) UserUpdate(ctx context.Context, input dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
+func (this UserBean) UserUpdate(ctx context.Context, input dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
 	user, err := this.User(ctx, input.ID)
 	if err != nil {
 		return nil, err

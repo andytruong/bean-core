@@ -15,9 +15,9 @@ func NewCan(path string) (*Can, error) {
 	var err error
 
 	this := &Can{
-		mu:      &sync.Mutex{},
-		modules: modules{},
-		graph:   &graph{mu: &sync.Mutex{}},
+		mu:    &sync.Mutex{},
+		beans: beans{},
+		graph: &graph{mu: &sync.Mutex{}},
 		dbs: databases{
 			connections: &sync.Map{},
 		},
@@ -28,7 +28,7 @@ func NewCan(path string) (*Can, error) {
 		return nil, err
 	}
 
-	this.modules.can = this
+	this.beans.can = this
 	this.graph.can = this
 	this.dbs.config = this.Databases
 
@@ -56,14 +56,14 @@ type (
 		Env        string                    `yaml:"env"`
 		Databases  map[string]DatabaseConfig `yaml:"databases"`
 		HttpServer HttpServerConfig          `yaml:"http-server"`
-		Modules    ModulesConfig             `json:"modules"`
+		Beans      BeansConfig               `json:"beans"`
 
-		mu      *sync.Mutex
-		id      *util.Identifier
-		graph   *graph
-		dbs     databases
-		modules modules
-		logger  *zap.Logger
+		mu     *sync.Mutex
+		id     *util.Identifier
+		graph  *graph
+		dbs    databases
+		beans  beans
+		logger *zap.Logger
 	}
 
 	DatabaseConfig struct {
@@ -87,7 +87,7 @@ type (
 		Path    string `yaml:"path"`
 	}
 
-	ModulesConfig struct {
+	BeansConfig struct {
 		Access    *access.Config    `yaml:"access"`
 		Namespace *namespace.Config `yaml:"namespace"`
 	}

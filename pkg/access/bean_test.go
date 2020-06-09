@@ -16,11 +16,11 @@ import (
 	"bean/pkg/util/connect"
 )
 
-func module() *AccessModule {
+func bean() *AccessBean {
 	config := &struct {
-		Modules struct {
+		Beans struct {
 			Access *Config `yaml:"access"`
-		} `yaml:"modules"`
+		} `yaml:"beans"`
 	}{}
 
 	err := util.ParseFile("../../config.yaml", config)
@@ -31,19 +31,19 @@ func module() *AccessModule {
 	db := util.MockDatabase()
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
-	mUser := user.NewUserModule(db, logger, id)
-	mNamespace := namespace.NewNamespaceModule(db, logger, id, mUser, nil)
-	module := NewAccessModule(db, id, logger, mUser, mNamespace, config.Modules.Access)
-	util.MockInstall(mUser, db)
-	util.MockInstall(mNamespace, db)
-	util.MockInstall(module, db)
+	bUser := user.NewUserBean(db, logger, id)
+	bNamespace := namespace.NewNamespaceBean(db, logger, id, bUser, nil)
+	bean := NewAccessBean(db, id, logger, bUser, bNamespace, config.Beans.Access)
+	util.MockInstall(bUser, db)
+	util.MockInstall(bNamespace, db)
+	util.MockInstall(bean, db)
 
-	return module
+	return bean
 }
 
 func Test_Config(t *testing.T) {
 	ass := assert.New(t)
-	this := module()
+	this := bean()
 	key, err := this.config.GetSignKey()
 	ass.NoError(err)
 	ass.NotNil(key)
@@ -52,7 +52,7 @@ func Test_Config(t *testing.T) {
 func Test_Create(t *testing.T) {
 	ctx := context.Background()
 	ass := assert.New(t)
-	this := module()
+	this := bean()
 
 	// create user
 	iUser := fUser.NewUserCreateInputFixture()
@@ -114,7 +114,7 @@ func Test_Create(t *testing.T) {
 func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 	ctx := context.Background()
 	ass := assert.New(t)
-	this := module()
+	this := bean()
 
 	// create user
 	iUser := fUser.NewUserCreateInputFixture()
@@ -136,7 +136,7 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 func Test_Query(t *testing.T) {
 	ctx := context.Background()
 	ass := assert.New(t)
-	this := module()
+	this := bean()
 
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := this.user.UserCreate(ctx, iUser)
@@ -171,7 +171,7 @@ func Test_Query(t *testing.T) {
 func Test_Archive(t *testing.T) {
 	ctx := context.Background()
 	ass := assert.New(t)
-	this := module()
+	this := bean()
 
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := this.user.UserCreate(ctx, iUser)

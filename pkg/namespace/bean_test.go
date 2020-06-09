@@ -17,11 +17,11 @@ import (
 	"bean/pkg/util/connect"
 )
 
-func module() *NamespaceModule {
+func bean() *NamespaceBean {
 	config := &struct {
-		Modules struct {
+		Beans struct {
 			Namespace *Config `yaml:"namespace"`
-		} `yaml:"modules"`
+		} `yaml:"beans"`
 	}{}
 
 	err := util.ParseFile("../../config.yaml", &config)
@@ -32,15 +32,15 @@ func module() *NamespaceModule {
 	db := util.MockDatabase().LogMode(false)
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
-	mUser := user.NewUserModule(db, logger, id)
-	this := NewNamespaceModule(db, logger, id, mUser, config.Modules.Namespace)
+	mUser := user.NewUserBean(db, logger, id)
+	this := NewNamespaceBean(db, logger, id, mUser, config.Beans.Namespace)
 
 	return this
 }
 
 func Test_Create(t *testing.T) {
 	ass := assert.New(t)
-	this := module()
+	this := bean()
 	util.MockInstall(this, this.db)
 
 	input := fixtures.NamespaceCreateInputFixture(false)
@@ -93,7 +93,7 @@ func Test_Create(t *testing.T) {
 
 func Test_Query(t *testing.T) {
 	ass := assert.New(t)
-	this := module()
+	this := bean()
 	util.MockInstall(this, this.db)
 
 	var id string
@@ -140,7 +140,7 @@ func Test_Query(t *testing.T) {
 
 func Test_Update(t *testing.T) {
 	ass := assert.New(t)
-	this := module()
+	this := bean()
 	util.MockInstall(this, this.db)
 
 	// create namespace so we have something to update
@@ -189,7 +189,7 @@ func Test_Update(t *testing.T) {
 
 func Test_Membership_Create(t *testing.T) {
 	ass := assert.New(t)
-	this := module()
+	this := bean()
 	util.MockInstall(this, this.db)
 
 	// setup data for query
@@ -276,7 +276,7 @@ func Test_Membership_Create(t *testing.T) {
 
 func Test_Membership_Update(t *testing.T) {
 	ass := assert.New(t)
-	this := module()
+	this := bean()
 	util.MockInstall(this, this.db)
 
 	// setup data for query

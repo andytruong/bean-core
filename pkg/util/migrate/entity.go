@@ -9,9 +9,9 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func NewMigration(module string, name string) Migration {
+func NewMigration(bean string, name string) Migration {
 	this := Migration{
-		Module:    module,
+		Bean:      bean,
 		Name:      name,
 		CreatedAt: time.Now(),
 	}
@@ -23,8 +23,8 @@ func NewMigration(module string, name string) Migration {
 }
 
 type Migration struct {
-	Module    string `gorm:"unique_index:module_unique_schema"`
-	Name      string `gorm:"unique_index:module_unique_schema"`
+	Bean      string `gorm:"unique_index:bean_unique_schema"`
+	Name      string `gorm:"unique_index:bean_unique_schema"`
 	CreatedAt time.Time
 }
 
@@ -41,7 +41,7 @@ func (this *Migration) IsExecuted(tx *gorm.DB) (bool, error) {
 
 	err := tx.
 		Model(&Migration{}).
-		Where(&Migration{Module: this.Module, Name: this.Name}).
+		Where(&Migration{Bean: this.Bean, Name: this.Name}).
 		Count(&count).
 		Error
 

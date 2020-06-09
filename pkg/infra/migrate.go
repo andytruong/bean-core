@@ -24,9 +24,9 @@ func (this *Can) Migrate(ctx context.Context) error {
 			}
 		}
 
-		// loop through modules
-		for _, module := range this.modules.List() {
-			if err := module.Migrate(tx, driver); nil != err {
+		// loop through beans
+		for _, bean := range this.beans.List() {
+			if err := bean.Migrate(tx, driver); nil != err {
 				tx.Rollback()
 				return err
 			}

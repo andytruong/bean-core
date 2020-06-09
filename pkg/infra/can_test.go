@@ -26,11 +26,11 @@ func TestContainer(t *testing.T) {
 	id := can.Identifier()
 	ass.NotNil(t, id)
 
-	sv, err := can.modules.User()
+	sv, err := can.beans.User()
 	ass.NoError(err)
 	ass.NotNil(sv)
-	ass.Equal("128h0m0s", can.Modules.Access.SessionTimeout.String())
-	ass.Equal(100, can.Modules.Namespace.Manager.MaxNumberOfManager)
+	ass.Equal("128h0m0s", can.Beans.Access.SessionTimeout.String())
+	ass.Equal(100, can.Beans.Namespace.Manager.MaxNumberOfManager)
 }
 
 func Test_Request_JWT(t *testing.T) {

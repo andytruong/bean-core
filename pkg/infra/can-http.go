@@ -59,12 +59,12 @@ func (this *Can) handleQueryRequest() func(http.ResponseWriter, *http.Request) {
 func (this *Can) beforeServeHTTP(r *http.Request) error {
 	authHeader := r.Header.Get("Authorization")
 	if "" != authHeader {
-		module, err := this.modules.Access()
+		bean, err := this.beans.Access()
 		if nil != err {
 			return errors.Wrap(err, util.ErrorCodeConfig.String())
 		}
 
-		claims, err := module.SessionResolver.JwtValidation(authHeader)
+		claims, err := bean.SessionResolver.JwtValidation(authHeader)
 		if err != nil {
 			return err
 		} else if nil != claims {

@@ -26,10 +26,10 @@ func MockIdentifier() *Identifier {
 	return &Identifier{}
 }
 
-func MockInstall(module Module, db *gorm.DB) {
+func MockInstall(bean Bean, db *gorm.DB) {
 	tx := db.Begin()
 
-	err := mockInstall(module, tx)
+	err := mockInstall(bean, tx)
 	if nil != err {
 		tx.Rollback()
 	} else {
@@ -37,18 +37,18 @@ func MockInstall(module Module, db *gorm.DB) {
 	}
 }
 
-func mockInstall(module Module, tx *gorm.DB) error {
+func mockInstall(bean Bean, tx *gorm.DB) error {
 	if !tx.HasTable(migrate.Migration{}) {
 		if err := tx.CreateTable(migrate.Migration{}).Error; nil != err {
 			return err
 		}
 	}
 
-	if err := module.Migrate(tx, connect.SQLite); nil != err {
+	if err := bean.Migrate(tx, connect.SQLite); nil != err {
 		tx.Rollback()
 		panic(err)
 	} else {
-		dependencies := module.Dependencies()
+		dependencies := bean.Dependencies()
 		if nil != dependencies {
 			for _, dependency := range dependencies {
 				err := mockInstall(dependency, tx)

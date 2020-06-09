@@ -19,22 +19,22 @@ type (
 
 	resolvers struct {
 		*api.Resolver
-		*user.UserModule
-		*namespace.NamespaceModule
-		*access.AccessModule
+		*user.UserBean
+		*namespace.NamespaceBean
+		*access.AccessBean
 	}
 )
 
 func (this *graph) MembershipConnection() gql.MembershipConnectionResolver {
-	module, _ := this.can.modules.Namespace()
+	bean, _ := this.can.beans.Namespace()
 
-	return module.MembershipResolver()
+	return bean.MembershipResolver()
 }
 
 func (this *graph) Membership() gql.MembershipResolver {
-	module, _ := this.can.modules.Namespace()
+	bean, _ := this.can.beans.Namespace()
 
-	return module.MembershipResolver()
+	return bean.MembershipResolver()
 }
 
 func (this *graph) Mutation() gql.MutationResolver {
@@ -46,27 +46,27 @@ func (this *graph) Query() gql.QueryResolver {
 }
 
 func (this *graph) Session() gql.SessionResolver {
-	module, _ := this.can.modules.Access()
+	bean, _ := this.can.beans.Access()
 
-	return module.SessionResolver
+	return bean.SessionResolver
 }
 
 func (this *graph) User() gql.UserResolver {
-	module, _ := this.can.modules.User()
+	bean, _ := this.can.beans.User()
 
-	return module
+	return bean
 }
 
 func (this *graph) Namespace() gql.NamespaceResolver {
-	module, _ := this.can.modules.Namespace()
+	bean, _ := this.can.beans.Namespace()
 
-	return module
+	return bean
 }
 
 func (this *graph) UserEmail() gql.UserEmailResolver {
-	module, _ := this.can.modules.User()
+	bean, _ := this.can.beans.User()
 
-	return module
+	return bean
 }
 
 func (this *graph) getResolvers() *resolvers {
@@ -74,14 +74,14 @@ func (this *graph) getResolvers() *resolvers {
 		this.mu.Lock()
 		defer this.mu.Unlock()
 
-		modUser, _ := this.can.modules.User()
-		modAccess, _ := this.can.modules.Access()
-		modNamespace, _ := this.can.modules.Namespace()
+		bUser, _ := this.can.beans.User()
+		bAccess, _ := this.can.beans.Access()
+		bNamespace, _ := this.can.beans.Namespace()
 
 		this.resolvers = &resolvers{
-			UserModule:      modUser,
-			AccessModule:    modAccess,
-			NamespaceModule: modNamespace,
+			UserBean:      bUser,
+			AccessBean:    bAccess,
+			NamespaceBean: bNamespace,
 		}
 	}
 

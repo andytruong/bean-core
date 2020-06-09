@@ -16,7 +16,7 @@ import (
 func Test_Create(t *testing.T) {
 	ass := assert.New(t)
 	db := util.MockDatabase()
-	this := NewUserModule(db, util.MockLogger(), util.MockIdentifier())
+	this := NewUserBean(db, util.MockLogger(), util.MockIdentifier())
 	util.MockInstall(this, db)
 	input := fixtures.NewUserCreateInputFixture()
 
@@ -49,7 +49,7 @@ func Test_Create(t *testing.T) {
 func Test_Update(t *testing.T) {
 	ass := assert.New(t)
 	db := util.MockDatabase()
-	this := NewUserModule(db, util.MockLogger(), util.MockIdentifier())
+	this := NewUserBean(db, util.MockLogger(), util.MockIdentifier())
 	util.MockInstall(this, db)
 	input := fixtures.NewUserCreateInputFixture()
 

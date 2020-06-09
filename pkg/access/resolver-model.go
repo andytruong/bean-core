@@ -18,12 +18,12 @@ import (
 
 type ModelResolver struct {
 	logger *zap.Logger
-	module *AccessModule
+	bean   *AccessBean
 	config *Config
 }
 
 func (this ModelResolver) User(ctx context.Context, obj *model.Session) (*user_model.User, error) {
-	return this.module.user.User(ctx, obj.UserId)
+	return this.bean.user.User(ctx, obj.UserId)
 }
 
 func (this ModelResolver) Context(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
@@ -35,7 +35,7 @@ func (this ModelResolver) Scopes(ctx context.Context, obj *model.Session) ([]*mo
 }
 
 func (this ModelResolver) Namespace(ctx context.Context, obj *model.Session) (*namespace_model.Namespace, error) {
-	return this.module.namespace.Load(ctx, obj.NamespaceId)
+	return this.bean.namespace.Load(ctx, obj.NamespaceId)
 }
 
 func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (string, error) {
@@ -44,7 +44,7 @@ func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (stri
 		return "", errors.Wrap(util.ErrorConfig, err.Error())
 	}
 
-	roles, err := this.module.namespace.MembershipResolver().FindRoles(ctx, session.UserId, session.NamespaceId)
+	roles, err := this.bean.namespace.MembershipResolver().FindRoles(ctx, session.UserId, session.NamespaceId)
 	if nil != err {
 		return "", err
 	}

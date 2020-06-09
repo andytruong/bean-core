@@ -1,8 +1,8 @@
 package config
 
-type ConfigModule struct {
+type ConfigBean struct {
 }
 
-// Module install
 // API to create bucket
+// Bean install
 // API to update bucket
