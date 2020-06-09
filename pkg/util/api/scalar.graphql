@@ -1,3 +1,4 @@
+scalar AccessMode
 scalar Time
 scalar Uri
 scalar IP
@@ -35,5 +36,4 @@ enum ErrorCode   {
 	DB_Constraint
 }
 
-enum AccessScope { Anonymous Authenticated }
 enum Language { AU US UK VN }
