@@ -4,8 +4,8 @@ import (
 	"sync"
 
 	"github.com/jinzhu/gorm"
-	_ "github.com/mattn/go-sqlite3"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 
 	"bean/pkg/util"
