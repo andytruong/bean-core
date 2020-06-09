@@ -22,6 +22,7 @@ resolver:
   type: Resolver
 
 autobind:
+  - bean/pkg/config/model
   - bean/pkg/user/model
   - bean/pkg/user/model/dto
   - bean/pkg/namespace/model

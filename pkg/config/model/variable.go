@@ -7,7 +7,7 @@ type ConfigVariable struct {
 	Version   string    `json:"version"`
 	BucketId  string    `json:"bucketId"`
 	Name      string    `json:"name"`
-	Value     []byte    `json:"value"`
-	CreateAt  time.Time `json:"createdAt"`
+	Value     string    `json:"value"`
+	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }

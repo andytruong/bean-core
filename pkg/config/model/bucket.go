@@ -13,6 +13,7 @@ type ConfigBucket struct {
 	Slug      string         `json:"machineName"`
 	CreatedAt time.Time      `json:"createdAt"`
 	UpdatedAt time.Time      `json:"updatedAt"`
-	UserId    string         `json:"userID"`
+	UserId    string         `json:"userId"`
+	HostId    string         `json:"hostId"`
 	Access    api.AccessMode `json:"access"`
 }

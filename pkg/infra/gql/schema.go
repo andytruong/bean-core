@@ -5,6 +5,7 @@ package gql
 import (
 	model2 "bean/pkg/access/model"
 	dto1 "bean/pkg/access/model/dto"
+	model3 "bean/pkg/config/model"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	model1 "bean/pkg/user/model"
@@ -57,6 +58,26 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	ConfigBucket struct {
+		Access    func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		HostId    func(childComplexity int) int
+		Id        func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		UserId    func(childComplexity int) int
+		Version   func(childComplexity int) int
+	}
+
+	ConfigVariable struct {
+		BucketId  func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		Id        func(childComplexity int) int
+		Name      func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		Value     func(childComplexity int) int
+		Version   func(childComplexity int) int
+	}
+
 	DomainName struct {
 		CreatedAt  func(childComplexity int) int
 		ID         func(childComplexity int) int
@@ -240,14 +261,14 @@ type MembershipConnectionResolver interface {
 }
 type MutationResolver interface {
 	Ping(ctx context.Context) (string, error)
+	SessionCreate(ctx context.Context, input *dto1.SessionCreateInput) (*dto1.SessionCreateOutcome, error)
+	SessionArchive(ctx context.Context, token string) (*dto1.SessionDeleteOutcome, error)
 	NamespaceMembershipCreate(ctx context.Context, input dto.NamespaceMembershipCreateInput) (*dto.NamespaceMembershipCreateOutcome, error)
 	NamespaceMembershipUpdate(ctx context.Context, input dto.NamespaceMembershipUpdateInput) (*dto.NamespaceMembershipCreateOutcome, error)
 	NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error)
 	NamespaceUpdate(ctx context.Context, input dto.NamespaceUpdateInput) (*bool, error)
 	UserCreate(ctx context.Context, input *dto2.UserCreateInput) (*dto2.UserMutationOutcome, error)
 	UserUpdate(ctx context.Context, input dto2.UserUpdateInput) (*dto2.UserMutationOutcome, error)
-	SessionCreate(ctx context.Context, input *dto1.SessionCreateInput) (*dto1.SessionCreateOutcome, error)
-	SessionArchive(ctx context.Context, token string) (*dto1.SessionDeleteOutcome, error)
 }
 type NamespaceResolver interface {
 	DomainNames(ctx context.Context, obj *model.Namespace) (*model.DomainNames, error)
@@ -257,11 +278,11 @@ type NamespaceResolver interface {
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
+	Session(ctx context.Context, token string) (*model2.Session, error)
 	Membership(ctx context.Context, id string, version *string) (*model.Membership, error)
 	Memberships(ctx context.Context, first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error)
 	Namespace(ctx context.Context, filters dto.NamespaceFilters) (*model.Namespace, error)
 	User(ctx context.Context, id string) (*model1.User, error)
-	Session(ctx context.Context, token string) (*model2.Session, error)
 }
 type SessionResolver interface {
 	User(ctx context.Context, obj *model2.Session) (*model1.User, error)
@@ -293,6 +314,104 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "ConfigBucket.access":
+		if e.complexity.ConfigBucket.Access == nil {
+			break
+		}
+
+		return e.complexity.ConfigBucket.Access(childComplexity), true
+
+	case "ConfigBucket.createdAt":
+		if e.complexity.ConfigBucket.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ConfigBucket.CreatedAt(childComplexity), true
+
+	case "ConfigBucket.hostId":
+		if e.complexity.ConfigBucket.HostId == nil {
+			break
+		}
+
+		return e.complexity.ConfigBucket.HostId(childComplexity), true
+
+	case "ConfigBucket.id":
+		if e.complexity.ConfigBucket.Id == nil {
+			break
+		}
+
+		return e.complexity.ConfigBucket.Id(childComplexity), true
+
+	case "ConfigBucket.updatedAt":
+		if e.complexity.ConfigBucket.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.ConfigBucket.UpdatedAt(childComplexity), true
+
+	case "ConfigBucket.userId":
+		if e.complexity.ConfigBucket.UserId == nil {
+			break
+		}
+
+		return e.complexity.ConfigBucket.UserId(childComplexity), true
+
+	case "ConfigBucket.version":
+		if e.complexity.ConfigBucket.Version == nil {
+			break
+		}
+
+		return e.complexity.ConfigBucket.Version(childComplexity), true
+
+	case "ConfigVariable.bucketId":
+		if e.complexity.ConfigVariable.BucketId == nil {
+			break
+		}
+
+		return e.complexity.ConfigVariable.BucketId(childComplexity), true
+
+	case "ConfigVariable.createdAt":
+		if e.complexity.ConfigVariable.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ConfigVariable.CreatedAt(childComplexity), true
+
+	case "ConfigVariable.id":
+		if e.complexity.ConfigVariable.Id == nil {
+			break
+		}
+
+		return e.complexity.ConfigVariable.Id(childComplexity), true
+
+	case "ConfigVariable.name":
+		if e.complexity.ConfigVariable.Name == nil {
+			break
+		}
+
+		return e.complexity.ConfigVariable.Name(childComplexity), true
+
+	case "ConfigVariable.updatedAt":
+		if e.complexity.ConfigVariable.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.ConfigVariable.UpdatedAt(childComplexity), true
+
+	case "ConfigVariable.value":
+		if e.complexity.ConfigVariable.Value == nil {
+			break
+		}
+
+		return e.complexity.ConfigVariable.Value(childComplexity), true
+
+	case "ConfigVariable.version":
+		if e.complexity.ConfigVariable.Version == nil {
+			break
+		}
+
+		return e.complexity.ConfigVariable.Version(childComplexity), true
 
 	case "DomainName.createdAt":
 		if e.complexity.DomainName.CreatedAt == nil {
@@ -1137,7 +1256,8 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	&ast.Source{Name: "pkg/util/api/scalar.graphql", Input: `scalar Time
+	&ast.Source{Name: "pkg/util/api/scalar.graphql", Input: `scalar AccessMode
+scalar Time
 scalar Uri
 scalar IP
 scalar CountryCode
@@ -1174,8 +1294,113 @@ enum ErrorCode   {
 	DB_Constraint
 }
 
-enum AccessScope { Anonymous Authenticated }
 enum Language { AU US UK VN }
+`, BuiltIn: false},
+	&ast.Source{Name: "pkg/config/api/entity.graphql", Input: `type ConfigBucket {
+	id: ID!
+	version: ID!
+	userId: ID!
+	hostId: ID!
+	access: AccessMode!
+	createdAt: Time!
+	updatedAt: Time!
+}
+
+type ConfigVariable {
+	id: ID!
+	version: ID!
+	bucketId: ID!
+	name: String!
+	value: String!
+	createdAt: Time!
+	updatedAt: Time!
+}
+`, BuiltIn: false},
+	&ast.Source{Name: "pkg/access/api/entity.graphql", Input: `enum AccessScope { Anonymous Authenticated }
+
+type Session {
+	id: ID!
+	version: ID!
+	user: User
+	namespace: Namespace!
+	scopes: [AccessScope]
+	context: SessionContext
+	isActive: Boolean!
+	createdAt: Time!
+	updatedAt: Time!
+	expiredAt: Time!
+	jwt: JWT!
+}
+
+type SessionContext {
+	ipAddress: IP
+	country: CountryCode
+	deviceType: DeviceType
+	deviceName: String
+}
+
+enum DeviceType {
+	Desktop
+	Laptop
+	SmartPhone
+	Tablet
+	TV
+}
+`, BuiltIn: false},
+	&ast.Source{Name: "pkg/access/api/mutation.graphql", Input: `# ---------------------
+# SessionCreate // Login
+# ---------------------
+extend type Mutation {
+	sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
+}
+
+input SessionCreateInput {
+	namespaceId: String!
+	email: EmailAddress!
+	hashedPassword: String!
+	context: SessionCreateContextInput
+}
+
+input SessionCreateContextInput {
+	ipAddress: IP
+	country: CountryCode
+	deviceType: DeviceType
+	deviceName: String
+}
+
+type SessionCreateOutcome {
+	errors: [Error!]
+	session: Session
+	token: String
+}
+
+# ---------------------
+# SessionDelete // Logout
+# ---------------------
+extend type Mutation {
+	sessionArchive(token: String!): SessionDeleteOutcome!
+}
+
+type SessionDeleteOutcome {
+	errors: [Error!]
+	result: Boolean!
+}
+`, BuiltIn: false},
+	&ast.Source{Name: "pkg/access/api/query.graphql", Input: `# ---------------------
+# SessionLoad // Validation
+# ---------------------
+extend type Query {
+    session(token: ID!): Session
+}
+
+input ValidationInput {
+    hashedToken: String!
+}
+
+type ValidationOutcome {
+    status: Boolean!
+    errors: [Error!]
+}
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/namespace/api/entity.graphql", Input: `enum NamespaceKind { Organisation, Role }
 
@@ -1467,90 +1692,6 @@ input UserUpdateValuesInput {
 	user(id: ID!): User
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/access/api/entity.graphql", Input: `type Session {
-	id: ID!
-	version: ID!
-	user: User
-	namespace: Namespace!
-	scopes: [AccessScope]
-	context: SessionContext
-	isActive: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
-	expiredAt: Time!
-	jwt: JWT!
-}
-
-type SessionContext {
-	ipAddress: IP
-	country: CountryCode
-	deviceType: DeviceType
-	deviceName: String
-}
-
-enum DeviceType {
-	Desktop
-	Laptop
-	SmartPhone
-	Tablet
-	TV
-}
-`, BuiltIn: false},
-	&ast.Source{Name: "pkg/access/api/mutation.graphql", Input: `# ---------------------
-# SessionCreate // Login
-# ---------------------
-extend type Mutation {
-	sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
-}
-
-input SessionCreateInput {
-	namespaceId: String!
-	email: EmailAddress!
-	hashedPassword: String!
-	context: SessionCreateContextInput
-}
-
-input SessionCreateContextInput {
-	ipAddress: IP
-	country: CountryCode
-	deviceType: DeviceType
-	deviceName: String
-}
-
-type SessionCreateOutcome {
-	errors: [Error!]
-	session: Session
-	token: String
-}
-
-# ---------------------
-# SessionDelete // Logout
-# ---------------------
-extend type Mutation {
-	sessionArchive(token: String!): SessionDeleteOutcome!
-}
-
-type SessionDeleteOutcome {
-	errors: [Error!]
-	result: Boolean!
-}
-`, BuiltIn: false},
-	&ast.Source{Name: "pkg/access/api/query.graphql", Input: `# ---------------------
-# SessionLoad // Validation
-# ---------------------
-extend type Query {
-    session(token: ID!): Session
-}
-
-input ValidationInput {
-    hashedToken: String!
-}
-
-type ValidationOutcome {
-    status: Boolean!
-    errors: [Error!]
-}
-`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -1813,6 +1954,482 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _ConfigBucket_id(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigBucket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigBucket_version(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigBucket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigBucket_userId(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigBucket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigBucket_hostId(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigBucket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HostId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigBucket_access(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigBucket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Access, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(api.AccessMode)
+	fc.Result = res
+	return ec.marshalNAccessMode2beanᚋpkgᚋutilᚋapiᚐAccessMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigBucket_createdAt(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigBucket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigBucket_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigBucket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigVariable_id(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigVariable) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigVariable",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigVariable_version(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigVariable) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigVariable",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigVariable_bucketId(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigVariable) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigVariable",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BucketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigVariable_name(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigVariable) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigVariable",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigVariable_value(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigVariable) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigVariable",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigVariable_createdAt(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigVariable) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigVariable",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigVariable_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigVariable) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigVariable",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _DomainName_id(ctx context.Context, field graphql.CollectedField, obj *model.DomainName) (ret graphql.Marshaler) {
 	defer func() {
@@ -2751,6 +3368,88 @@ func (ec *executionContext) _Mutation_ping(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_sessionCreate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SessionCreate(rctx, args["input"].(*dto1.SessionCreateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto1.SessionCreateOutcome)
+	fc.Result = res
+	return ec.marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_sessionArchive(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_sessionArchive_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SessionArchive(rctx, args["token"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto1.SessionDeleteOutcome)
+	fc.Result = res
+	return ec.marshalNSessionDeleteOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionDeleteOutcome(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_namespaceMembershipCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2983,88 +3682,6 @@ func (ec *executionContext) _Mutation_userUpdate(ctx context.Context, field grap
 	res := resTmp.(*dto2.UserMutationOutcome)
 	fc.Result = res
 	return ec.marshalOUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_sessionCreate_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SessionCreate(rctx, args["input"].(*dto1.SessionCreateInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*dto1.SessionCreateOutcome)
-	fc.Result = res
-	return ec.marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_sessionArchive(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_sessionArchive_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SessionArchive(rctx, args["token"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*dto1.SessionDeleteOutcome)
-	fc.Result = res
-	return ec.marshalNSessionDeleteOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionDeleteOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Namespace_id(ctx context.Context, field graphql.CollectedField, obj *model.Namespace) (ret graphql.Marshaler) {
@@ -3621,6 +4238,44 @@ func (ec *executionContext) _Query_ping(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_session(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_session_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Session(rctx, args["token"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model2.Session)
+	fc.Result = res
+	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_membership(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3771,44 +4426,6 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	res := resTmp.(*model1.User)
 	fc.Result = res
 	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_session(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_session_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Session(rctx, args["token"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model2.Session)
-	fc.Result = res
-	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5150,9 +5767,9 @@ func (ec *executionContext) _UserMutationOutcome_errors(ctx context.Context, fie
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]util.Error)
+	res := resTmp.([]*util.Error)
 	fc.Result = res
-	return ec.marshalOError2ᚕbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
+	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserName_firstName(ctx context.Context, field graphql.CollectedField, obj *model1.UserName) (ret graphql.Marshaler) {
@@ -7054,6 +7671,120 @@ func (ec *executionContext) unmarshalInputValidationInput(ctx context.Context, o
 
 // region    **************************** object.gotpl ****************************
 
+var configBucketImplementors = []string{"ConfigBucket"}
+
+func (ec *executionContext) _ConfigBucket(ctx context.Context, sel ast.SelectionSet, obj *model3.ConfigBucket) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, configBucketImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ConfigBucket")
+		case "id":
+			out.Values[i] = ec._ConfigBucket_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "version":
+			out.Values[i] = ec._ConfigBucket_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "userId":
+			out.Values[i] = ec._ConfigBucket_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "hostId":
+			out.Values[i] = ec._ConfigBucket_hostId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "access":
+			out.Values[i] = ec._ConfigBucket_access(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._ConfigBucket_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._ConfigBucket_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var configVariableImplementors = []string{"ConfigVariable"}
+
+func (ec *executionContext) _ConfigVariable(ctx context.Context, sel ast.SelectionSet, obj *model3.ConfigVariable) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, configVariableImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ConfigVariable")
+		case "id":
+			out.Values[i] = ec._ConfigVariable_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "version":
+			out.Values[i] = ec._ConfigVariable_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "bucketId":
+			out.Values[i] = ec._ConfigVariable_bucketId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._ConfigVariable_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "value":
+			out.Values[i] = ec._ConfigVariable_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._ConfigVariable_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._ConfigVariable_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var domainNameImplementors = []string{"DomainName"}
 
 func (ec *executionContext) _DomainName(ctx context.Context, sel ast.SelectionSet, obj *model.DomainName) graphql.Marshaler {
@@ -7384,6 +8115,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "sessionCreate":
+			out.Values[i] = ec._Mutation_sessionCreate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "sessionArchive":
+			out.Values[i] = ec._Mutation_sessionArchive(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "namespaceMembershipCreate":
 			out.Values[i] = ec._Mutation_namespaceMembershipCreate(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -7402,16 +8143,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_userCreate(ctx, field)
 		case "userUpdate":
 			out.Values[i] = ec._Mutation_userUpdate(ctx, field)
-		case "sessionCreate":
-			out.Values[i] = ec._Mutation_sessionCreate(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "sessionArchive":
-			out.Values[i] = ec._Mutation_sessionArchive(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7623,6 +8354,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "session":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_session(ctx, field)
+				return res
+			})
 		case "membership":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -7665,17 +8407,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_user(ctx, field)
-				return res
-			})
-		case "session":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_session(ctx, field)
 				return res
 			})
 		case "__type":
@@ -8386,6 +9117,15 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) unmarshalNAccessMode2beanᚋpkgᚋutilᚋapiᚐAccessMode(ctx context.Context, v interface{}) (api.AccessMode, error) {
+	var res api.AccessMode
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNAccessMode2beanᚋpkgᚋutilᚋapiᚐAccessMode(ctx context.Context, sel ast.SelectionSet, v api.AccessMode) graphql.Marshaler {
+	return v
+}
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	return graphql.UnmarshalBoolean(v)
