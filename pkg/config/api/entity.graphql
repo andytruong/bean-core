@@ -1,0 +1,18 @@
+type ConfigBucket {
+	id: ID!
+	version: ID!
+	owner: User!
+	access: AccessMode!
+	createdAt: Time!
+	updatedAt: Time!
+}
+
+type ConfigRecord {
+	id: ID!
+	version: ID!
+	bucket: ConfigBucket
+	key: String!
+	value: String!
+	createdAt: Time!
+	updatedAt: Time!
+}

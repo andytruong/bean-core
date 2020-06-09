@@ -1,4 +1,4 @@
-CREATE TABLE config_bucket
+CREATE TABLE config_buckets
 (
     id         character varying(26) NOT NULL PRIMARY KEY,
     version    character varying(26) NOT NULL UNIQUE,
@@ -10,14 +10,14 @@ CREATE TABLE config_bucket
     updated_at timestamp             NOT NULL
 );
 
-CREATE TABLE config_record
+CREATE TABLE config_variables
 (
     id         character varying(26) NOT NULL PRIMARY KEY,
     version    character varying(26) NOT NULL UNIQUE,
     bucket_id  character varying(26) NOT NULL,
-    key        character varying(64) NOT NULL,
+    name       character varying(64) NOT NULL,
     value      json                  NOT NULL,
     created_at timestamp             NOT NULL,
     updated_at timestamp             NOT NULL,
-    CONSTRAINT config_config_unique UNIQUE (bucket_id, key)
+    CONSTRAINT config_config_unique UNIQUE (bucket_id, name)
 );

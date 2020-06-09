@@ -1,3 +1,4 @@
+scalar AccessMode
 scalar Time
 scalar Uri
 scalar IP
