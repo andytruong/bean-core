@@ -8,23 +8,23 @@ import (
 )
 
 type (
-	modules struct {
+	beans struct {
 		can       *Can
-		user      *user.UserModule
-		namespace *namespace.NamespaceModule
-		access    *access.AccessModule
+		user      *user.UserBean
+		namespace *namespace.NamespaceBean
+		access    *access.AccessBean
 	}
 )
 
-func (this *modules) List() []util.Module {
+func (this *beans) List() []util.Bean {
 	mUser, _ := this.User()
 	mNamespace, _ := this.Namespace()
 	mAccess, _ := this.Access()
 
-	return []util.Module{mUser, mNamespace, mAccess}
+	return []util.Bean{mUser, mNamespace, mAccess}
 }
 
-func (this *modules) User() (*user.UserModule, error) {
+func (this *beans) User() (*user.UserBean, error) {
 	var err error
 
 	if nil == this.user {
@@ -33,7 +33,7 @@ func (this *modules) User() (*user.UserModule, error) {
 			return nil, err
 		}
 
-		this.user = user.NewUserModule(
+		this.user = user.NewUserBean(
 			db,
 			this.can.logger,
 			this.can.Identifier(),
@@ -43,7 +43,7 @@ func (this *modules) User() (*user.UserModule, error) {
 	return this.user, err
 }
 
-func (this *modules) Namespace() (*namespace.NamespaceModule, error) {
+func (this *beans) Namespace() (*namespace.NamespaceBean, error) {
 	var err error
 
 	if nil == this.namespace {
@@ -57,19 +57,19 @@ func (this *modules) Namespace() (*namespace.NamespaceModule, error) {
 			return nil, err
 		}
 
-		this.namespace = namespace.NewNamespaceModule(
+		this.namespace = namespace.NewNamespaceBean(
 			db,
 			this.can.logger,
 			this.can.Identifier(),
 			mUser,
-			this.can.Modules.Namespace,
+			this.can.Beans.Namespace,
 		)
 	}
 
 	return this.namespace, err
 }
 
-func (this *modules) Access() (*access.AccessModule, error) {
+func (this *beans) Access() (*access.AccessBean, error) {
 	if nil == this.access {
 		db, err := this.can.dbs.master()
 		if nil != err {
@@ -86,13 +86,13 @@ func (this *modules) Access() (*access.AccessModule, error) {
 			return nil, err
 		}
 
-		this.access = access.NewAccessModule(
+		this.access = access.NewAccessBean(
 			db,
 			this.can.Identifier(),
 			this.can.logger,
 			mUser,
 			mNamespace,
-			this.can.Modules.Access,
+			this.can.Beans.Access,
 		)
 	}
 

@@ -20,7 +20,7 @@ import (
 type SessionCreateHandler struct {
 	ID             *util.Identifier
 	SessionTimeout time.Duration
-	Namespace      *namespace.NamespaceModule
+	Namespace      *namespace.NamespaceBean
 }
 
 func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {

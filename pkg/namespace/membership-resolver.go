@@ -14,16 +14,16 @@ import (
 	"bean/pkg/util/connect"
 )
 
-func newMembershipResolver(namespaceModule *NamespaceModule, userModule *user.UserModule) MembershipResolver {
+func newMembershipResolver(bNamespace *NamespaceBean, bUser *user.UserBean) MembershipResolver {
 	return MembershipResolver{
-		module: namespaceModule,
-		user:   userModule,
+		bean: bNamespace,
+		user: bUser,
 	}
 }
 
 type MembershipResolver struct {
-	module *NamespaceModule
-	user   *user.UserModule
+	bean *NamespaceBean
+	user *user.UserBean
 }
 
 func (this MembershipResolver) Edges(ctx context.Context, obj *model.MembershipConnection) ([]*model.MembershipEdge, error) {
@@ -40,7 +40,7 @@ func (this MembershipResolver) Edges(ctx context.Context, obj *model.MembershipC
 }
 
 func (this MembershipResolver) Namespace(ctx context.Context, obj *model.Membership) (*model.Namespace, error) {
-	return this.module.Load(ctx, obj.NamespaceID)
+	return this.bean.Load(ctx, obj.NamespaceID)
 }
 
 func (this MembershipResolver) User(ctx context.Context, obj *model.Membership) (*mUser.User, error) {
@@ -63,7 +63,7 @@ func (this MembershipResolver) Roles(ctx context.Context, obj *model.Membership)
 func (this MembershipResolver) FindRoles(ctx context.Context, userId string, namespaceId string) ([]*model.Namespace, error) {
 	var roles []*model.Namespace
 
-	err := this.module.db.
+	err := this.bean.db.
 		Table(connect.TableNamespace).
 		Joins(
 			fmt.Sprintf(

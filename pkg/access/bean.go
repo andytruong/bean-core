@@ -19,54 +19,54 @@ import (
 	"bean/pkg/util/migrate"
 )
 
-func NewAccessModule(
+func NewAccessBean(
 	db *gorm.DB,
 	id *util.Identifier,
 	logger *zap.Logger,
-	userModule *user.UserModule,
-	namespaceModule *namespace.NamespaceModule,
+	bUser *user.UserBean,
+	bNamespace *namespace.NamespaceBean,
 	config *Config,
-) *AccessModule {
-	module := &AccessModule{
+) *AccessBean {
+	bean := &AccessBean{
 		config:    config.init(),
 		logger:    logger,
 		db:        db,
 		id:        id,
-		user:      userModule,
-		namespace: namespaceModule,
+		user:      bUser,
+		namespace: bNamespace,
 	}
 
-	module.SessionResolver = ModelResolver{
+	bean.SessionResolver = ModelResolver{
 		logger: logger,
-		module: module,
+		bean:   bean,
 		config: config,
 	}
 
-	return module
+	return bean
 }
 
 type (
-	AccessModule struct {
+	AccessBean struct {
 		config          *Config
 		logger          *zap.Logger
 		db              *gorm.DB
 		id              *util.Identifier
 		SessionResolver ModelResolver
 
-		// depends on user module
-		user      *user.UserModule
-		namespace *namespace.NamespaceModule
+		// depends on user bean
+		user      *user.UserBean
+		namespace *namespace.NamespaceBean
 	}
 )
 
-func (this AccessModule) Dependencies() []util.Module {
-	return []util.Module{
+func (this AccessBean) Dependencies() []util.Bean {
+	return []util.Bean{
 		this.user,
 		this.namespace,
 	}
 }
 
-func (this AccessModule) Migrate(tx *gorm.DB, driver string) error {
+func (this AccessBean) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -76,14 +76,14 @@ func (this AccessModule) Migrate(tx *gorm.DB, driver string) error {
 		Tx:     tx,
 		Logger: this.logger,
 		Driver: driver,
-		Module: "access",
+		Bean:   "access",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 
 	return runner.Run()
 }
 
-func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+func (this *AccessBean) SessionCreate(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 	timeout, _ := time.ParseDuration("128h")
 	if nil != this.config {
 		timeout = this.config.SessionTimeout
@@ -105,7 +105,7 @@ func (this *AccessModule) SessionCreate(ctx context.Context, input *dto.SessionC
 	return outcome, txn.Commit().Error
 }
 
-func (this *AccessModule) SessionArchive(ctx context.Context, token string) (*dto.SessionDeleteOutcome, error) {
+func (this *AccessBean) SessionArchive(ctx context.Context, token string) (*dto.SessionDeleteOutcome, error) {
 	session, err := this.Session(ctx, token)
 	if nil != err {
 		return &dto.SessionDeleteOutcome{
@@ -122,7 +122,7 @@ func (this *AccessModule) SessionArchive(ctx context.Context, token string) (*dt
 	return hdl.Handle(ctx, session)
 }
 
-func (this AccessModule) Session(ctx context.Context, token string) (*model.Session, error) {
+func (this AccessBean) Session(ctx context.Context, token string) (*model.Session, error) {
 	hdl := handler.SessionLoadHandler{
 		ID: this.id,
 		DB: this.db,

@@ -29,20 +29,18 @@ databases:
     url:    "${DB_SLAVE_URL:resources/dev.sqlite}"
 
 # ---------------------
-# Modules configuration
-#
-# Each module may have its own config
+# Beans configuration: Each bean may have its own config
 # ---------------------
-modules:
+beans:
   # ---------------------
-  # Namespace module
+  # Namespace bean
   # ---------------------
   namespace:
     manager:
       maxNumberOfManager: 100
 
   # ---------------------
-  # Access module
+  # Access bean
   # ---------------------
   access:
     timeout: "128h"
