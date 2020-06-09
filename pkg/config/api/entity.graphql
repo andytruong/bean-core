@@ -1,7 +1,8 @@
 type ConfigBucket {
 	id: ID!
 	version: ID!
-	userId: ID!
+	slug: ID!
+	title: String!
 	hostId: ID!
 	access: AccessMode!
 	createdAt: Time!

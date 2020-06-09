@@ -63,8 +63,9 @@ type ComplexityRoot struct {
 		CreatedAt func(childComplexity int) int
 		HostId    func(childComplexity int) int
 		Id        func(childComplexity int) int
+		Slug      func(childComplexity int) int
+		Title     func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
-		UserId    func(childComplexity int) int
 		Version   func(childComplexity int) int
 	}
 
@@ -343,19 +344,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ConfigBucket.Id(childComplexity), true
 
+	case "ConfigBucket.slug":
+		if e.complexity.ConfigBucket.Slug == nil {
+			break
+		}
+
+		return e.complexity.ConfigBucket.Slug(childComplexity), true
+
+	case "ConfigBucket.title":
+		if e.complexity.ConfigBucket.Title == nil {
+			break
+		}
+
+		return e.complexity.ConfigBucket.Title(childComplexity), true
+
 	case "ConfigBucket.updatedAt":
 		if e.complexity.ConfigBucket.UpdatedAt == nil {
 			break
 		}
 
 		return e.complexity.ConfigBucket.UpdatedAt(childComplexity), true
-
-	case "ConfigBucket.userId":
-		if e.complexity.ConfigBucket.UserId == nil {
-			break
-		}
-
-		return e.complexity.ConfigBucket.UserId(childComplexity), true
 
 	case "ConfigBucket.version":
 		if e.complexity.ConfigBucket.Version == nil {
@@ -1299,7 +1307,8 @@ enum Language { AU US UK VN }
 	&ast.Source{Name: "pkg/config/api/entity.graphql", Input: `type ConfigBucket {
 	id: ID!
 	version: ID!
-	userId: ID!
+	slug: ID!
+	title: String!
 	hostId: ID!
 	access: AccessMode!
 	createdAt: Time!
@@ -2023,7 +2032,7 @@ func (ec *executionContext) _ConfigBucket_version(ctx context.Context, field gra
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ConfigBucket_userId(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
+func (ec *executionContext) _ConfigBucket_slug(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2040,7 +2049,7 @@ func (ec *executionContext) _ConfigBucket_userId(ctx context.Context, field grap
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.UserId, nil
+		return obj.Slug, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2055,6 +2064,40 @@ func (ec *executionContext) _ConfigBucket_userId(ctx context.Context, field grap
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigBucket_title(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigBucket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ConfigBucket_hostId(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
@@ -7692,8 +7735,13 @@ func (ec *executionContext) _ConfigBucket(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "userId":
-			out.Values[i] = ec._ConfigBucket_userId(ctx, field, obj)
+		case "slug":
+			out.Values[i] = ec._ConfigBucket_slug(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "title":
+			out.Values[i] = ec._ConfigBucket_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
