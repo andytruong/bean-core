@@ -32,8 +32,8 @@ func bean() *NamespaceBean {
 	db := util.MockDatabase().LogMode(false)
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
-	mUser := user.NewUserBean(db, logger, id)
-	this := NewNamespaceBean(db, logger, id, mUser, config.Beans.Namespace)
+	bUser := user.NewUserBean(db, logger, id)
+	this := NewNamespaceBean(db, logger, id, bUser, config.Beans.Namespace)
 
 	return this
 }
