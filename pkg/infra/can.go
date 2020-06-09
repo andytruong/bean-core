@@ -25,34 +25,33 @@ import (
 func NewCan(path string) (*Can, error) {
 	var err error
 
-	this := &Can{}
+	this := &Can{
+		mu:      &sync.Mutex{},
+		modules: modules{},
+		graph:   &graph{mu: &sync.Mutex{}},
+		dbs: databases{
+			connections: &sync.Map{},
+		},
+	}
 
 	// parse configuration from YAML configuration file & env variables.
 	if err := this.parseFile(path); nil != err {
 		return nil, err
 	}
 
-	this.mu = &sync.Mutex{}
-
-	this.modules = modules{
-		can:    this,
-		user:   nil,
-		access: nil,
-	}
-
-	this.graph = &graph{
-		can: this,
-		mu:  &sync.Mutex{},
-	}
+	this.modules.can = this
+	this.graph.can = this
+	this.dbs.config = this.Databases
 
 	// setup logger
-	if this.logger, err = zap.NewProduction(); nil != err {
-		return nil, err
-	}
-
-	this.dbs = databases{
-		config:      this.Databases,
-		connections: &sync.Map{},
+	if "dev" == this.Env {
+		if this.logger, err = zap.NewDevelopment(); nil != err {
+			return nil, err
+		}
+	} else {
+		if this.logger, err = zap.NewProduction(); nil != err {
+			return nil, err
+		}
 	}
 
 	return this, nil
@@ -65,6 +64,7 @@ type (
 	//  - HTTP server (GraphQL query interface)
 	Can struct {
 		Version    string                    `yaml:"version"`
+		Env        string                    `yaml:"env"`
 		Databases  map[string]DatabaseConfig `yaml:"databases"`
 		HttpServer HttpServerConfig          `yaml:"http-server"`
 		Modules    ModulesConfig             `json:"modules"`

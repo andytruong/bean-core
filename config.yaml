@@ -1,5 +1,8 @@
 version: "1.0-SNAPSHOT"
 
+# One of: `dev`, `production` or others strings.
+env: "${ENV:dev}"
+
 # ---------------------
 # Server configuration
 # ---------------------
