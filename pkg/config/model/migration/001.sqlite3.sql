@@ -11,7 +11,7 @@ CREATE TABLE config_buckets
     updated_at  timestamp             NOT NULL
 );
 
-CREATE INDEX config_buckets_fk ON config_buckets USING hash (host_id);
+CREATE INDEX config_buckets_fk ON config_buckets (host_id);
 
 CREATE TABLE config_variables
 (

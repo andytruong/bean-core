@@ -18,8 +18,8 @@ import (
 
 func NewConfigBean(id *util.Identifier, logger *zap.Logger) *ConfigBean {
 	return &ConfigBean{
-		id:     nil,
-		logger: nil,
+		id:     id,
+		logger: logger,
 	}
 }
 
@@ -46,7 +46,7 @@ func (this ConfigBean) Migrate(tx *gorm.DB, driver string) error {
 }
 
 func (this ConfigBean) Dependencies() []util.Bean {
-	panic("implement me")
+	return nil
 }
 
 func (this ConfigBean) BucketCreate(ctx context.Context, tx *gorm.DB, input dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
@@ -54,7 +54,7 @@ func (this ConfigBean) BucketCreate(ctx context.Context, tx *gorm.DB, input dto.
 		Id:          this.id.MustULID(),
 		Version:     this.id.MustULID(),
 		Slug:        util.NotNilString(input.Slug, this.id.MustULID()),
-		Title:       *input.Title,
+		Title:       util.NotNilString(input.Title, ""),
 		Description: input.Description,
 		Access:      "777",
 		HostId:      input.HostId,
@@ -66,7 +66,7 @@ func (this ConfigBean) BucketCreate(ctx context.Context, tx *gorm.DB, input dto.
 		bucket.Access = *input.Access
 	}
 
-	err := tx.Table(connect.TableNamespaceConfig).Save(&bucket).Error
+	err := tx.Table(connect.TableConfigBucket).Save(&bucket).Error
 	if nil != err {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (this ConfigBean) BucketUpdate(ctx context.Context, tx *gorm.DB, input dto.
 	if changed {
 		bucket.Version = this.id.MustULID()
 		err = tx.
-			Table(connect.TableNamespaceConfig).
+			Table(connect.TableConfigBucket).
 			Save(&bucket).
 			Error
 		if nil != err {
