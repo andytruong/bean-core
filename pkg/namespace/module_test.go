@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
 
 	"bean/pkg/namespace/api/fixtures"
 	"bean/pkg/namespace/model"
@@ -19,22 +18,15 @@ import (
 )
 
 func module() *NamespaceModule {
-	configRaw, err := util.ParseFile("../../config.yaml")
-	if nil != err {
-		panic(err)
-	}
-
 	config := &struct {
 		Modules struct {
 			Namespace *Config `yaml:"namespace"`
 		} `yaml:"modules"`
 	}{}
 
-	{
-		err := yaml.Unmarshal(configRaw, &config)
-		if nil != err {
-			panic(err)
-		}
+	err := util.ParseFile("../../config.yaml", &config)
+	if nil != err {
+		panic(err)
 	}
 
 	db := util.MockDatabase().LogMode(false)

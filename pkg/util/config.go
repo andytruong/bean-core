@@ -5,15 +5,24 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+
+	"gopkg.in/yaml.v2"
 )
 
-func ParseFile(path string) ([]byte, error) {
-	raw, err := ioutil.ReadFile(path)
+func ParseFile(path string, out interface{}) error {
+	content, err := ioutil.ReadFile(path)
 	if nil != err {
-		return nil, err
+		return err
 	}
 
-	return replaceEnvVariables(raw)
+	content, err = replaceEnvVariables(content)
+	if nil != err {
+		return err
+	}
+
+	err = yaml.Unmarshal(content, out)
+
+	return err
 }
 
 func replaceEnvVariables(inBytes []byte) ([]byte, error) {

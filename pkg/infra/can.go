@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
 
 	"bean/pkg/access"
 	"bean/pkg/namespace"
@@ -25,7 +24,7 @@ func NewCan(path string) (*Can, error) {
 	}
 
 	// parse configuration from YAML configuration file & env variables.
-	if err := this.parseFile(path); nil != err {
+	if err := util.ParseFile(path, &this); nil != err {
 		return nil, err
 	}
 
@@ -96,15 +95,6 @@ type (
 
 func (this *Can) Logger() *zap.Logger {
 	return this.logger
-}
-
-func (this *Can) parseFile(path string) error {
-	content, err := util.ParseFile(path)
-	if nil != err {
-		return err
-	}
-
-	return yaml.Unmarshal(content, &this)
 }
 
 func (this *Can) Identifier() *util.Identifier {

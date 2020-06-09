@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
 
 	"bean/pkg/access/api/fixtures"
 	"bean/pkg/namespace"
@@ -18,22 +17,15 @@ import (
 )
 
 func module() *AccessModule {
-	configRaw, err := util.ParseFile("../../config.yaml")
-	if nil != err {
-		panic(err)
-	}
-
 	config := &struct {
 		Modules struct {
 			Access *Config `yaml:"access"`
 		} `yaml:"modules"`
 	}{}
 
-	{
-		err := yaml.Unmarshal(configRaw, &config)
-		if nil != err {
-			panic(err)
-		}
+	err := util.ParseFile("../../config.yaml", config)
+	if nil != err {
+		panic(err)
 	}
 
 	db := util.MockDatabase()
