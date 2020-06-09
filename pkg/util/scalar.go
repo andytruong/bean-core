@@ -97,3 +97,11 @@ func NilUri(input Uri) *Uri {
 func NilTime(time time.Time) *time.Time {
 	return &time
 }
+
+func NotNilString(input *string, defaultValue string) string {
+	if nil != input {
+		return *input
+	}
+
+	return defaultValue
+}
