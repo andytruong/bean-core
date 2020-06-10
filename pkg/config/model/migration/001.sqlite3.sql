@@ -23,5 +23,6 @@ CREATE TABLE config_variables
     value       json                  NOT NULL,
     created_at  timestamp             NOT NULL,
     updated_at  timestamp             NOT NULL,
-    CONSTRAINT config_config_unique UNIQUE (bucket_id, name)
+    CONSTRAINT config_config_unique UNIQUE (bucket_id, name),
+    FOREIGN KEY (bucket_id) REFERENCES config_buckets (id)
 );

@@ -14,6 +14,7 @@ const (
 
 	// Table names
 	TableConfigBucket         = "config_buckets"
+	TableConfigVariable       = "config_variables"
 	TableAccessSession        = "access_session"
 	TableAccessPassword       = "user_password"
 	TableNamespace            = "namespaces"
