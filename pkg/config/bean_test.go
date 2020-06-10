@@ -129,3 +129,72 @@ func Test_Bucket(t *testing.T) {
 		ass.Equal(access, bucket.Access)
 	})
 }
+
+func Test_Variable(t *testing.T) {
+	ass := assert.New(t)
+	this := bean()
+	db := util.MockDatabase()
+	util.MockInstall(this, db)
+
+	t.Run("variable.create", func(t *testing.T) {
+		t.Run("on read-only bucket", func(t *testing.T) {
+			// create read-only bucket
+		})
+
+		t.Run("on writable bucket", func(t *testing.T) {
+			// create writable bucket
+		})
+	})
+
+	t.Run("variable.load", func(t *testing.T) {
+		t.Run("load on private bucket", func(t *testing.T) {
+			// create private bucket
+			// create variable
+			// load & assert outcome
+		})
+
+		t.Run("load on read only bucket", func(t *testing.T) {
+			// create read-only bucket
+			// create variable
+			// load & assert outcome
+		})
+	})
+
+	t.Run("variable.update", func(t *testing.T) {
+		t.Run("update on read-only bucket", func(t *testing.T) {
+			// create read-only bucket
+			// create variable
+			// update variable & assert outcome
+		})
+
+		t.Run("update on writable bucket", func(t *testing.T) {
+			// create read-only bucket
+			// create variable
+			// update variable & assert outcome
+		})
+	})
+
+	t.Run("variable delete", func(t *testing.T) {
+		t.Run("delete on read-only bucket", func(t *testing.T) {
+			// create read-only bucket
+			// create variable
+			// delete variable & assert outcome
+		})
+
+		t.Run("delete on writable bucket", func(t *testing.T) {
+			t.Run("write on locked variable", func(t *testing.T) {
+				// create read-only bucket
+				// create variable
+				// delete variable & assert outcome
+			})
+
+			t.Run("write on unlocked variable", func(t *testing.T) {
+				// create read-only bucket
+				// create variable
+				// delete variable & assert outcome
+			})
+		})
+	})
+
+	ass.True(true, "WIP")
+}
