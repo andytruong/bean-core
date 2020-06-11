@@ -33,6 +33,7 @@ func NewNamespaceBean(
 	}
 
 	this.Core = &NamespaceBeanCore{bean: this}
+	this.domainName = &NamespaceBeanDomainName{bean: this}
 	this.Member = &NamespaceBeanMembership{
 		bean:     this,
 		Resolver: newMembershipResolver(this, bUser),
@@ -48,8 +49,9 @@ type NamespaceBean struct {
 	user   *user.UserBean
 	config *Config
 
-	Core   *NamespaceBeanCore
-	Member *NamespaceBeanMembership
+	Core       *NamespaceBeanCore
+	Member     *NamespaceBeanMembership
+	domainName *NamespaceBeanDomainName
 }
 
 func (this *NamespaceBean) MembershipResolver() MembershipResolver {

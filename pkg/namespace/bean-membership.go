@@ -119,27 +119,39 @@ func (this NamespaceBeanMembership) Create(
 	namespace *model.Namespace,
 	user *mUser.User,
 ) (*dto.NamespaceMembershipCreateOutcome, error) {
+	membership, err := this.doCreate(tx, namespace.ID, user.ID, in.IsActive)
+
+	if nil != err {
+		return nil, err
+	}
+
+	errorList, err := this.createRelationships(tx, membership, in.ManagerMemberIds)
+	if nil != err {
+		return nil, err
+	}
+
+	return &dto.NamespaceMembershipCreateOutcome{
+		Errors:     errorList,
+		Membership: membership,
+	}, nil
+}
+
+func (this NamespaceBeanMembership) doCreate(tx *gorm.DB, namespaceId string, userId string, isActive bool) (*model.Membership, error) {
 	membership := &model.Membership{
 		ID:          this.bean.id.MustULID(),
 		Version:     this.bean.id.MustULID(),
-		NamespaceID: namespace.ID,
-		UserID:      user.ID,
-		IsActive:    in.IsActive,
+		NamespaceID: namespaceId,
+		UserID:      userId,
+		IsActive:    isActive,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
 
-	err := tx.Table(connect.TableNamespaceMemberships).Create(&membership).Error
-	if nil != err {
+	if err := tx.Table(connect.TableNamespaceMemberships).Create(&membership).Error; nil != err {
 		return nil, err
-	} else if errors, err := this.createRelationships(tx, membership, in.ManagerMemberIds); nil != err {
-		return nil, err
-	} else {
-		return &dto.NamespaceMembershipCreateOutcome{
-			Errors:     errors,
-			Membership: membership,
-		}, nil
 	}
+
+	return membership, nil
 }
 
 func (this NamespaceBeanMembership) createRelationships(tx *gorm.DB, obj *model.Membership, managerMemberIds []string) ([]*util.Error, error) {

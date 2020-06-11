@@ -54,7 +54,7 @@ func (this *NamespaceBeanCore) doCreate(tx *gorm.DB, input dto.NamespaceCreateIn
 }
 
 func (this *NamespaceBeanCore) createRelationships(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
-	if err := this.createDomains(tx, namespace, input); nil != err {
+	if err := this.bean.domainName.createMultiple(tx, namespace, input); nil != err {
 		return err
 	}
 
@@ -78,67 +78,16 @@ func (this *NamespaceBeanCore) createRelationships(tx *gorm.DB, namespace *model
 		return err
 	} else {
 		// membership of user -> organisation
-		if err := this.createMembership(tx, namespace, input); nil != err {
+		_, err = this.bean.Member.doCreate(tx, namespace.ID, input.Context.UserID, true)
+		if nil != err {
 			return err
 		}
 
 		// membership of user -> owner role
-		if err := this.createMembership(tx, ownerRole, input); nil != err {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (this *NamespaceBeanCore) createDomains(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
-	if nil != input.Object.DomainNames.Primary {
-		err := this.createDomain(tx, namespace, input.Object.DomainNames.Primary, true)
+		_, err = this.bean.Member.doCreate(tx, ownerRole.ID, input.Context.UserID, true)
 		if nil != err {
 			return err
 		}
-	}
-
-	if nil != input.Object.DomainNames.Secondary {
-		for _, in := range input.Object.DomainNames.Secondary {
-			err := this.createDomain(tx, namespace, in, false)
-			if nil != err {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func (this *NamespaceBeanCore) createDomain(tx *gorm.DB, namespace *model.Namespace, input *dto.DomainNameInput, isPrimary bool) error {
-	domain := model.DomainName{
-		ID:          this.bean.id.MustULID(),
-		NamespaceId: namespace.ID,
-		IsVerified:  *input.Verified,
-		Value:       *input.Value,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		IsPrimary:   isPrimary,
-		IsActive:    *input.IsActive,
-	}
-
-	return tx.Table("namespace_domains").Create(&domain).Error
-}
-
-func (this *NamespaceBeanCore) createMembership(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
-	membership := model.Membership{
-		ID:          this.bean.id.MustULID(),
-		Version:     this.bean.id.MustULID(),
-		NamespaceID: namespace.ID,
-		UserID:      input.Context.UserID,
-		IsActive:    true,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-	}
-
-	if err := tx.Table(connect.TableNamespaceMemberships).Create(membership).Error; nil != err {
-		return err
 	}
 
 	return nil
