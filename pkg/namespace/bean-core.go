@@ -1,4 +1,4 @@
-package handler
+package namespace
 
 import (
 	"time"
@@ -12,12 +12,12 @@ import (
 	"bean/pkg/util/connect"
 )
 
-type NamespaceCreateHandler struct {
-	ID *util.Identifier
+type NamespaceBeanCore struct {
+	bean *NamespaceBean
 }
 
-func (this *NamespaceCreateHandler) Create(tx *gorm.DB, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
-	namespace, err := this.create(tx, input)
+func (this *NamespaceBeanCore) Create(tx *gorm.DB, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
+	namespace, err := this.doCreate(tx, input)
 	if nil != err {
 		return nil, err
 	} else {
@@ -33,10 +33,10 @@ func (this *NamespaceCreateHandler) Create(tx *gorm.DB, input dto.NamespaceCreat
 	}
 }
 
-func (this *NamespaceCreateHandler) create(tx *gorm.DB, input dto.NamespaceCreateInput) (*model.Namespace, error) {
+func (this *NamespaceBeanCore) doCreate(tx *gorm.DB, input dto.NamespaceCreateInput) (*model.Namespace, error) {
 	namespace := &model.Namespace{
-		ID:        this.ID.MustULID(),
-		Version:   this.ID.MustULID(),
+		ID:        this.bean.id.MustULID(),
+		Version:   this.bean.id.MustULID(),
 		ParentID:  input.Context.NamespaceID,
 		Kind:      input.Object.Kind,
 		Title:     *input.Object.Title,
@@ -53,7 +53,7 @@ func (this *NamespaceCreateHandler) create(tx *gorm.DB, input dto.NamespaceCreat
 	return namespace, nil
 }
 
-func (this *NamespaceCreateHandler) createRelationships(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
+func (this *NamespaceBeanCore) createRelationships(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
 	if err := this.createDomains(tx, namespace, input); nil != err {
 		return err
 	}
@@ -74,7 +74,7 @@ func (this *NamespaceCreateHandler) createRelationships(tx *gorm.DB, namespace *
 	}
 
 	ownerRoleInput.Context.NamespaceID = util.NilString(namespace.ID)
-	if ownerRole, err := this.create(tx, ownerRoleInput); nil != err {
+	if ownerRole, err := this.doCreate(tx, ownerRoleInput); nil != err {
 		return err
 	} else {
 		// membership of user -> organisation
@@ -91,7 +91,7 @@ func (this *NamespaceCreateHandler) createRelationships(tx *gorm.DB, namespace *
 	return nil
 }
 
-func (this *NamespaceCreateHandler) createDomains(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
+func (this *NamespaceBeanCore) createDomains(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
 	if nil != input.Object.DomainNames.Primary {
 		err := this.createDomain(tx, namespace, input.Object.DomainNames.Primary, true)
 		if nil != err {
@@ -111,9 +111,9 @@ func (this *NamespaceCreateHandler) createDomains(tx *gorm.DB, namespace *model.
 	return nil
 }
 
-func (this *NamespaceCreateHandler) createDomain(tx *gorm.DB, namespace *model.Namespace, input *dto.DomainNameInput, isPrimary bool) error {
+func (this *NamespaceBeanCore) createDomain(tx *gorm.DB, namespace *model.Namespace, input *dto.DomainNameInput, isPrimary bool) error {
 	domain := model.DomainName{
-		ID:          this.ID.MustULID(),
+		ID:          this.bean.id.MustULID(),
 		NamespaceId: namespace.ID,
 		IsVerified:  *input.Verified,
 		Value:       *input.Value,
@@ -126,10 +126,10 @@ func (this *NamespaceCreateHandler) createDomain(tx *gorm.DB, namespace *model.N
 	return tx.Table("namespace_domains").Create(&domain).Error
 }
 
-func (this *NamespaceCreateHandler) createMembership(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
+func (this *NamespaceBeanCore) createMembership(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
 	membership := model.Membership{
-		ID:          this.ID.MustULID(),
-		Version:     this.ID.MustULID(),
+		ID:          this.bean.id.MustULID(),
+		Version:     this.bean.id.MustULID(),
 		NamespaceID: namespace.ID,
 		UserID:      input.Context.UserID,
 		IsActive:    true,
@@ -144,7 +144,7 @@ func (this *NamespaceCreateHandler) createMembership(tx *gorm.DB, namespace *mod
 	return nil
 }
 
-func (this *NamespaceCreateHandler) createFeatures(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
+func (this *NamespaceBeanCore) createFeatures(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
 	if input.Object.Features.Register {
 		return this.createFeature(tx, namespace, "default", "register", []byte("true"))
 	} else {
@@ -152,13 +152,13 @@ func (this *NamespaceCreateHandler) createFeatures(tx *gorm.DB, namespace *model
 	}
 }
 
-func (this *NamespaceCreateHandler) createFeature(
+func (this *NamespaceBeanCore) createFeature(
 	tx *gorm.DB,
 	namespace *model.Namespace, bucket string, key string, value []byte,
 ) error {
 	config := model.NamespaceConfig{
-		Id:          this.ID.MustULID(),
-		Version:     this.ID.MustULID(),
+		Id:          this.bean.id.MustULID(),
+		Version:     this.bean.id.MustULID(),
 		NamespaceId: namespace.ID,
 		Bucket:      bucket,
 		Key:         key,

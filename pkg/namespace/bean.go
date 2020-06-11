@@ -32,22 +32,28 @@ func NewNamespaceBean(
 		config: config,
 	}
 
-	this.membership = newMembershipResolver(this, bUser)
+	this.Core = &NamespaceBeanCore{bean: this}
+	this.Member = &NamespaceBeanMembership{
+		bean:     this,
+		Resolver: newMembershipResolver(this, bUser),
+	}
 
 	return this
 }
 
 type NamespaceBean struct {
-	logger     *zap.Logger
-	db         *gorm.DB
-	id         *util.Identifier
-	user       *user.UserBean
-	membership MembershipResolver
-	config     *Config
+	logger *zap.Logger
+	db     *gorm.DB
+	id     *util.Identifier
+	user   *user.UserBean
+	config *Config
+
+	Core   *NamespaceBeanCore
+	Member *NamespaceBeanMembership
 }
 
 func (this *NamespaceBean) MembershipResolver() MembershipResolver {
-	return this.membership
+	return this.Member.Resolver
 }
 
 func (this *NamespaceBean) Dependencies() []util.Bean {
@@ -84,9 +90,8 @@ func (this NamespaceBean) Load(ctx context.Context, id string) (*model.Namespace
 }
 
 func (this NamespaceBean) NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
-	hdl := handler.NamespaceCreateHandler{ID: this.id}
 	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
-	outcome, err := hdl.Create(txn, input)
+	outcome, err := this.Core.Create(txn, input)
 
 	if nil != err {
 		txn.Rollback()
@@ -149,12 +154,7 @@ func (this NamespaceBean) NamespaceMembershipCreate(
 	}
 
 	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
-	hdl := handler.MembershipCreateHandler{
-		ID:         this.id,
-		MaxManager: this.config.Manager.MaxNumberOfManager,
-	}
-
-	outcome, err := hdl.NamespaceMembershipCreate(tx, input, namespace, user)
+	outcome, err := this.Member.Create(tx, input, namespace, user)
 
 	if nil != err {
 		tx.Rollback()
@@ -171,8 +171,7 @@ func (this NamespaceBean) NamespaceMembershipUpdate(ctx context.Context, input d
 	}
 
 	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
-	hdl := handler.MembershipUpdateHandler{ID: this.id}
-	outcome, err := hdl.NamespaceMembershipUpdate(tx, input, membership)
+	outcome, err := this.Member.Update(tx, input, membership)
 
 	if nil != err {
 		tx.Rollback()
@@ -201,16 +200,8 @@ func (this NamespaceBean) Membership(ctx context.Context, id string, version *st
 	return obj, nil
 }
 
-func (this NamespaceBean) Memberships(
-	ctx context.Context,
-	first int, after *string, filters dto.MembershipsFilter,
-) (*model.MembershipConnection, error) {
-	hdl := handler.MembershipsQueryHandler{
-		DB:     this.db,
-		Logger: this.logger,
-	}
-
-	return hdl.Memberships(first, after, filters)
+func (this NamespaceBean) Memberships(ctx context.Context, first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {
+	return this.Member.Find(first, after, filters)
 }
 
 func (this NamespaceBean) Parent(ctx context.Context, obj *model.Namespace) (*model.Namespace, error) {
