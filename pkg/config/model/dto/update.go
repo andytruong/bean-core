@@ -9,5 +9,5 @@ type BucketUpdateInput struct {
 	Description *string         `json:"description"`
 	Access      *api.AccessMode `json:"access"`
 	Schema      *string         `json:"schema"`
-	IsPublished bool            `json:"isPublished"`
+	IsPublished *bool           `json:"isPublished"`
 }

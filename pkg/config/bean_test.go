@@ -84,7 +84,7 @@ func Test_Bucket(t *testing.T) {
 			Description: util.NilString("Just for Testing"),
 			Access:      &publicAccess,
 			Schema:      util.NilString(`{"type":"string"}`),
-			IsPublished: true,
+			IsPublished: util.NilBool(true),
 		})
 
 		ass.NoError(err)
@@ -95,6 +95,17 @@ func Test_Bucket(t *testing.T) {
 		ass.Equal("Test", oUpdate.Bucket.Title)
 		ass.Equal("Just for Testing", *oUpdate.Bucket.Description)
 		ass.Equal(publicAccess, oUpdate.Bucket.Access)
+
+		t.Run("can't unpublished a published bucket", func(t *testing.T) {
+			_, err := this.Bucket.Update(ctx, tx, dto.BucketUpdateInput{
+				Id:          oUpdate.Bucket.Id,
+				Version:     oUpdate.Bucket.Version,
+				IsPublished: util.NilBool(false),
+			})
+
+			ass.Error(err)
+			ass.Equal(err.Error(), "change not un-publish a published bucket: locked")
+		})
 
 		t.Run("can't change schema is isPublished on", func(t *testing.T) {
 			_, err := this.Bucket.Update(ctx, tx, dto.BucketUpdateInput{

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
+	"github.com/pkg/errors"
 
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
@@ -83,6 +84,16 @@ func (this ConfigBucketBean) Update(ctx context.Context, tx *gorm.DB, input dto.
 
 			changed = true
 			bucket.Schema = *input.Schema
+		}
+	}
+
+	if nil != input.IsPublished {
+		if *input.IsPublished != bucket.IsPublished {
+			if bucket.IsPublished {
+				return nil, errors.Wrap(util.ErrorLocked, "change not un-publish a published bucket")
+			}
+
+			bucket.IsPublished = *input.IsPublished
 		}
 	}
 
