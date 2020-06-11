@@ -21,6 +21,7 @@ CREATE TABLE config_variables
     name        character varying(64) NOT NULL,
     description text,
     value       json                  NOT NULL,
+    is_locked   boolean               NOT NULL,
     created_at  timestamp             NOT NULL,
     updated_at  timestamp             NOT NULL,
     CONSTRAINT config_config_unique UNIQUE (bucket_id, name),

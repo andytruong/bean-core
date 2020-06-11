@@ -17,6 +17,9 @@ type ConfigVariableBean struct {
 }
 
 func (this ConfigVariableBean) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigVariable, error) {
+	// TODO: check bucket access mode
+	// ---------------------
+
 	variable := &model.ConfigVariable{}
 
 	err := db.Table(connect.TableConfigVariable).First(&variable, "id = ?", id).Error
@@ -28,6 +31,9 @@ func (this ConfigVariableBean) Load(ctx context.Context, db *gorm.DB, id string)
 }
 
 func (this ConfigVariableBean) Create(ctx context.Context, tx *gorm.DB, input dto.VariableCreateInput) (*dto.VariableMutationOutcome, error) {
+	// TODO: check bucket access mode
+	// ---------------------
+
 	variable := &model.ConfigVariable{
 		Id:          this.bean.id.MustULID(),
 		Version:     this.bean.id.MustULID(),
@@ -35,6 +41,7 @@ func (this ConfigVariableBean) Create(ctx context.Context, tx *gorm.DB, input dt
 		Name:        input.Name,
 		Description: input.Description,
 		Value:       input.Value,
+		IsLocked:    util.NotNilBool(input.IsLocked, false),
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -76,6 +83,19 @@ func (this ConfigVariableBean) Update(ctx context.Context, tx *gorm.DB, input dt
 			}
 		}
 
+		if variable.IsLocked {
+			if changed {
+				return nil, util.ErrorLocked
+			}
+		}
+
+		if nil != input.IsLocked {
+			if variable.IsLocked != *input.IsLocked {
+				changed = true
+				variable.IsLocked = *input.IsLocked
+			}
+		}
+
 		if changed {
 			version := variable.Version
 			variable.Version = this.bean.id.MustULID()
@@ -96,9 +116,13 @@ func (this ConfigVariableBean) Update(ctx context.Context, tx *gorm.DB, input dt
 }
 
 func (this ConfigVariableBean) Delete(ctx context.Context, tx *gorm.DB, input dto.VariableDeleteInput) (*dto.VariableMutationOutcome, error) {
+	// TODO: check bucket access mode
+	// ---------------------
 	variable, err := this.Load(ctx, tx, input.Id)
 	if nil != err {
 		return nil, err
+	} else if variable.IsLocked {
+		return nil, util.ErrorLocked
 	} else {
 		err := tx.
 			Table(connect.TableConfigVariable).

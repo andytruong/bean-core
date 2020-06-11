@@ -105,3 +105,11 @@ func NotNilString(input *string, defaultValue string) string {
 
 	return defaultValue
 }
+
+func NotNilBool(input *bool, defaultValue bool) bool {
+	if nil != input {
+		return *input
+	}
+
+	return defaultValue
+}

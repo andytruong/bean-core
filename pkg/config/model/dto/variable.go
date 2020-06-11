@@ -10,6 +10,7 @@ type VariableCreateInput struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
 	Value       string  `json:"value"`
+	IsLocked    *bool   `json:"isLocked"`
 }
 
 type VariableUpdateInput struct {
@@ -17,6 +18,7 @@ type VariableUpdateInput struct {
 	Version     string  `json:"version"`
 	Description *string `json:"description"`
 	Value       *string `json:"value"`
+	IsLocked    *bool   `json:"isLocked"`
 }
 
 type VariableDeleteInput struct {
