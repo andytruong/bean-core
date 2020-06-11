@@ -9,6 +9,7 @@ type ConfigVariable struct {
 	Name        string    `json:"name"`
 	Description *string   `json:"description"`
 	Value       string    `json:"value"`
+	IsLocked    bool      `json:"isLocked"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }

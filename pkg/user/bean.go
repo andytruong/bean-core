@@ -119,7 +119,7 @@ func (this UserBean) UserUpdate(ctx context.Context, input dto.UserUpdateInput) 
 		return nil, err
 	}
 
-	hdl := handler.UserUpdateHandler{ ID: this.id }
+	hdl := handler.UserUpdateHandler{ID: this.id}
 	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
 
 	if outcome, err := hdl.Handle(txn, user, input); nil != err {

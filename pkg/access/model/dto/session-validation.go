@@ -7,6 +7,6 @@ type ValidationInput struct {
 }
 
 type ValidationOutcome struct {
-	Status bool     `json:"status"`
+	Status bool          `json:"status"`
 	Errors []*util.Error `json:"errors"`
 }

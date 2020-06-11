@@ -31,6 +31,7 @@ const (
 	ErrorNilPointer      = Err("nil pointer error")
 	ErrorQuery           = Err("query error")
 	ErrorVersionConflict = Err("version conflict")
+	ErrorLocked          = Err("locked")
 )
 
 func NilPointerErrorValidate(values ...interface{}) error {
