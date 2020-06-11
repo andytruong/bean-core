@@ -16,6 +16,7 @@ type ConfigBucket struct {
 	Description *string        `json:"description"`
 	Access      api.AccessMode `json:"access"`
 	HostId      string         `json:"hostId"`
+	Schema      string         `json:"schema"`
 	CreatedAt   time.Time      `json:"createdAt"`
 	UpdatedAt   time.Time      `json:"updatedAt"`
 }

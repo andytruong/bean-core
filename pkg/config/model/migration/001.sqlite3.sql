@@ -7,6 +7,7 @@ CREATE TABLE config_buckets
     description text,
     host_id     character varying(26) NOT NULL,
     access      character varying(4)  NOT NULL,
+    schema      json                  NOT NULL,
     created_at  timestamp             NOT NULL,
     updated_at  timestamp             NOT NULL
 );

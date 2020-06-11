@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/jinzhu/gorm"
@@ -24,6 +25,7 @@ func bean() *ConfigBean {
 
 func Test_Bucket(t *testing.T) {
 	ass := assert.New(t)
+	ctx := context.Background()
 	this := bean()
 	db := util.MockDatabase()
 	util.MockInstall(this, db)
@@ -35,12 +37,13 @@ func Test_Bucket(t *testing.T) {
 			func(tx *gorm.DB) error {
 				hostId := this.id.MustULID()
 				access := api.AccessMode("444")
-				outcome, err := this.Bucket.Create(context.Background(), tx, dto.BucketCreateInput{
+				outcome, err := this.Bucket.Create(ctx, tx, dto.BucketCreateInput{
 					HostId:      hostId,
 					Slug:        util.NilString("doe"),
 					Title:       util.NilString("Doe"),
 					Description: util.NilString("Just for John Doe"),
 					Access:      &access,
+					Schema:      `{"type:"number"}`,
 				})
 
 				ass.NoError(err)
@@ -60,20 +63,21 @@ func Test_Bucket(t *testing.T) {
 
 	t.Run("bucket.update", func(t *testing.T) {
 		err := connect.Transaction(
-			context.Background(),
+			ctx,
 			db,
 			func(tx *gorm.DB) error {
 				privateAccess := api.AccessModePrivate
-				oCreate, _ := this.Bucket.Create(context.Background(), tx, dto.BucketCreateInput{
+				oCreate, _ := this.Bucket.Create(ctx, tx, dto.BucketCreateInput{
 					HostId:      this.id.MustULID(),
 					Slug:        util.NilString("qa"),
 					Title:       util.NilString("QA"),
 					Description: util.NilString("Just for QA"),
 					Access:      &privateAccess,
+					Schema:      `{"type:"number"}`,
 				})
 
 				publicAccess := api.AccessModePublicRead
-				outcome, err := this.Bucket.Update(context.Background(), tx, dto.BucketUpdateInput{
+				outcome, err := this.Bucket.Update(ctx, tx, dto.BucketUpdateInput{
 					Id:          oCreate.Bucket.Id,
 					Version:     oCreate.Bucket.Version,
 					Title:       util.NilString("Test"),
@@ -102,28 +106,25 @@ func Test_Bucket(t *testing.T) {
 		var bucket *model.ConfigBucket
 		hostId := this.id.MustULID()
 		access := api.AccessMode("444")
+		tx := db.BeginTx(ctx, &sql.TxOptions{})
+		defer tx.Rollback()
 
-		_ = connect.Transaction(
-			context.Background(),
-			db,
-			func(tx *gorm.DB) error {
+		oCreate, err = this.Bucket.Create(ctx, tx, dto.BucketCreateInput{
+			HostId:      hostId,
+			Slug:        util.NilString("load-doe"),
+			Title:       util.NilString("Doe"),
+			Description: util.NilString("Just for John Doe"),
+			Access:      &access,
+			Schema:      `{"type:"number"}`,
+		})
 
-				oCreate, err = this.Bucket.Create(context.Background(), tx, dto.BucketCreateInput{
-					HostId:      hostId,
-					Slug:        util.NilString("doe"),
-					Title:       util.NilString("Doe"),
-					Description: util.NilString("Just for John Doe"),
-					Access:      &access,
-				})
+		ass.NoError(err)
+		ass.NotNil(oCreate)
 
-				return err
-			},
-		)
-
-		bucket, err = this.Bucket.BucketLoad(context.Background(), db, oCreate.Bucket.Id)
+		bucket, err = this.Bucket.BucketLoad(context.Background(), tx, oCreate.Bucket.Id)
 		ass.NoError(err)
 		ass.Equal(hostId, bucket.HostId)
-		ass.Equal("doe", bucket.Slug)
+		ass.Equal("load-doe", bucket.Slug)
 		ass.Equal("Doe", bucket.Title)
 		ass.Equal("Just for John Doe", *bucket.Description)
 		ass.Equal(access, bucket.Access)

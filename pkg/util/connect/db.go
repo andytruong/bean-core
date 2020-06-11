@@ -25,12 +25,12 @@ const (
 )
 
 func Transaction(ctx context.Context, db *gorm.DB, callback func(tx *gorm.DB) error) error {
-	txn := db.BeginTx(ctx, &sql.TxOptions{})
-	err := callback(txn)
+	tx := db.BeginTx(ctx, &sql.TxOptions{})
+	er := callback(tx)
 
-	if nil != err {
-		return txn.Rollback().Error
+	if nil != er {
+		return tx.Rollback().Error
 	} else {
-		return txn.Commit().Error
+		return tx.Commit().Error
 	}
 }

@@ -24,6 +24,7 @@ func (this ConfigBucketBean) Create(ctx context.Context, tx *gorm.DB, input dto.
 		Title:       util.NotNilString(input.Title, ""),
 		Description: input.Description,
 		Access:      "777",
+		Schema:      input.Schema,
 		HostId:      input.HostId,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
@@ -38,10 +39,7 @@ func (this ConfigBucketBean) Create(ctx context.Context, tx *gorm.DB, input dto.
 		return nil, err
 	}
 
-	return &dto.BucketMutationOutcome{
-		Errors: nil,
-		Bucket: bucket,
-	}, nil
+	return &dto.BucketMutationOutcome{Errors: nil, Bucket: bucket}, nil
 }
 
 func (this ConfigBucketBean) Update(ctx context.Context, tx *gorm.DB, input dto.BucketUpdateInput) (*dto.BucketMutationOutcome, error) {
