@@ -28,6 +28,7 @@ func (this ConfigBucketBean) Create(ctx context.Context, tx *gorm.DB, input dto.
 		HostId:      input.HostId,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
+		IsPublished: input.IsPublished,
 	}
 
 	if nil != input.Access {
@@ -71,6 +72,17 @@ func (this ConfigBucketBean) Update(ctx context.Context, tx *gorm.DB, input dto.
 		if bucket.Access != *input.Access {
 			changed = true
 			bucket.Access = *input.Access
+		}
+	}
+
+	if input.Schema != nil {
+		if bucket.Schema != *input.Schema {
+			if bucket.IsPublished {
+				return nil, util.ErrorLocked
+			}
+
+			changed = true
+			bucket.Schema = *input.Schema
 		}
 	}
 

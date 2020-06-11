@@ -62,42 +62,53 @@ func Test_Bucket(t *testing.T) {
 	})
 
 	t.Run("bucket.update", func(t *testing.T) {
-		err := connect.Transaction(
-			ctx,
-			db,
-			func(tx *gorm.DB) error {
-				privateAccess := api.AccessModePrivate
-				oCreate, _ := this.Bucket.Create(ctx, tx, dto.BucketCreateInput{
-					HostId:      this.id.MustULID(),
-					Slug:        util.NilString("qa"),
-					Title:       util.NilString("QA"),
-					Description: util.NilString("Just for QA"),
-					Access:      &privateAccess,
-					Schema:      `{"type:"number"}`,
-				})
+		tx := db.BeginTx(ctx, &sql.TxOptions{})
+		defer tx.Rollback()
 
-				publicAccess := api.AccessModePublicRead
-				outcome, err := this.Bucket.Update(ctx, tx, dto.BucketUpdateInput{
-					Id:          oCreate.Bucket.Id,
-					Version:     oCreate.Bucket.Version,
-					Title:       util.NilString("Test"),
-					Description: util.NilString("Just for Testing"),
-					Access:      &publicAccess,
-				})
+		privateAccess := api.AccessModePrivate
+		oCreate, _ := this.Bucket.Create(ctx, tx, dto.BucketCreateInput{
+			HostId:      this.id.MustULID(),
+			Slug:        util.NilString("qa"),
+			Title:       util.NilString("QA"),
+			Description: util.NilString("Just for QA"),
+			Access:      &privateAccess,
+			Schema:      `{"type:"number"}`,
+			IsPublished: false,
+		})
 
-				ass.NotNil(outcome)
-				ass.Empty(outcome.Errors)
-				ass.NotEqual(oCreate.Bucket.Version, outcome.Bucket.Version)
-				ass.Equal(oCreate.Bucket.Slug, outcome.Bucket.Slug)
-				ass.Equal("Test", outcome.Bucket.Title)
-				ass.Equal("Just for Testing", *outcome.Bucket.Description)
-				ass.Equal(publicAccess, outcome.Bucket.Access)
-
-				return err
-			},
-		)
+		publicAccess := api.AccessModePublicRead
+		oUpdate, err := this.Bucket.Update(ctx, tx, dto.BucketUpdateInput{
+			Id:          oCreate.Bucket.Id,
+			Version:     oCreate.Bucket.Version,
+			Title:       util.NilString("Test"),
+			Description: util.NilString("Just for Testing"),
+			Access:      &publicAccess,
+			Schema:      util.NilString(`{"type":"string"}`),
+			IsPublished: true,
+		})
 
 		ass.NoError(err)
+		ass.NotNil(oUpdate)
+		ass.Empty(oUpdate.Errors)
+		ass.NotEqual(oCreate.Bucket.Version, oUpdate.Bucket.Version)
+		ass.Equal(oCreate.Bucket.Slug, oUpdate.Bucket.Slug)
+		ass.Equal("Test", oUpdate.Bucket.Title)
+		ass.Equal("Just for Testing", *oUpdate.Bucket.Description)
+		ass.Equal(publicAccess, oUpdate.Bucket.Access)
+
+		t.Run("can't change schema is isPublished on", func(t *testing.T) {
+			_, err := this.Bucket.Update(ctx, tx, dto.BucketUpdateInput{
+				Id:          oCreate.Bucket.Id,
+				Version:     oCreate.Bucket.Version,
+				Title:       util.NilString("Test"),
+				Description: util.NilString("Just for Testing"),
+				Access:      &publicAccess,
+				Schema:      util.NilString(`{"type":"int"}`),
+			})
+
+			ass.Error(err)
+			ass.Equal(util.ErrorVersionConflict.Error(), err.Error())
+		})
 	})
 
 	t.Run("bucket.load", func(t *testing.T) {
@@ -116,6 +127,7 @@ func Test_Bucket(t *testing.T) {
 			Description: util.NilString("Just for John Doe"),
 			Access:      &access,
 			Schema:      `{"type:"number"}`,
+			IsPublished: true,
 		})
 
 		ass.NoError(err)
@@ -128,6 +140,7 @@ func Test_Bucket(t *testing.T) {
 		ass.Equal("Doe", bucket.Title)
 		ass.Equal("Just for John Doe", *bucket.Description)
 		ass.Equal(access, bucket.Access)
+		ass.Equal(true, bucket.IsPublished)
 	})
 }
 

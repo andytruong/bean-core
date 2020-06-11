@@ -19,4 +19,5 @@ type ConfigBucket struct {
 	Schema      string         `json:"schema"`
 	CreatedAt   time.Time      `json:"createdAt"`
 	UpdatedAt   time.Time      `json:"updatedAt"`
+	IsPublished bool           `json:"isPublished"`
 }

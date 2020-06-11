@@ -6,6 +6,7 @@ type ConfigBucket {
 	description: String
 	hostId: ID!
 	access: AccessMode!
+	isPublished: Boolean!
 	createdAt: Time!
 	updatedAt: Time!
 }
@@ -19,4 +20,5 @@ type ConfigVariable {
 	value: String!
 	createdAt: Time!
 	updatedAt: Time!
+	isLocked: Boolean!
 }
