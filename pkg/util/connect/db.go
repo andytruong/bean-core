@@ -23,6 +23,7 @@ const (
 	TableNamespaceConfig      = "namespace_config"
 	TableManagerEdge          = "namespace_manager_edge"
 	TableUserEmail            = "user_emails"
+	TableUserEmailUnverified  = "user_unverified_emails"
 )
 
 func Transaction(ctx context.Context, db *gorm.DB, callback func(tx *gorm.DB) error) error {

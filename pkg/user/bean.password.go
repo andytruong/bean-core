@@ -1,0 +1,42 @@
+package user
+
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+
+	"bean/pkg/user/model"
+	"bean/pkg/user/model/dto"
+	"bean/pkg/util/connect"
+)
+
+type CorePassword struct {
+	bean *UserBean
+}
+
+func (this *CorePassword) create(tx *gorm.DB, user *model.User, in *dto.UserPasswordInput) error {
+	if nil == in {
+		return nil
+	}
+
+	pass := &model.UserPassword{
+		ID:          this.bean.id.MustULID(),
+		UserId:      user.ID,
+		Algorithm:   in.Algorithm,
+		HashedValue: in.HashedValue,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		IsActive:    true,
+	}
+
+	if err := tx.Save(pass).Error; nil != err {
+		return err
+	}
+
+	// set other passwords to inactive
+	return tx.Table(connect.TableAccessPassword).
+		Where("user_id == ?", pass.UserId).
+		Where("id != ?", pass.ID).
+		Update(model.UserPassword{IsActive: false}).
+		Error
+}

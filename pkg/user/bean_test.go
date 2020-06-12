@@ -19,7 +19,7 @@ func tearDown(this *UserBean) {
 	this.db.Table(connect.TableUserEmail).Delete(&model.UserEmail{})
 }
 
-func Test_Create(t *testing.T) {
+func Test(t *testing.T) {
 	ass := assert.New(t)
 	db := util.MockDatabase()
 	this := NewUserBean(db, util.MockLogger(), util.MockIdentifier())
