@@ -59,24 +59,28 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	ConfigBucket struct {
-		Access    func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		HostId    func(childComplexity int) int
-		Id        func(childComplexity int) int
-		Slug      func(childComplexity int) int
-		Title     func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		Version   func(childComplexity int) int
+		Access      func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		Description func(childComplexity int) int
+		HostId      func(childComplexity int) int
+		Id          func(childComplexity int) int
+		IsPublished func(childComplexity int) int
+		Slug        func(childComplexity int) int
+		Title       func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
+		Version     func(childComplexity int) int
 	}
 
 	ConfigVariable struct {
-		BucketId  func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		Id        func(childComplexity int) int
-		Name      func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		Value     func(childComplexity int) int
-		Version   func(childComplexity int) int
+		BucketId    func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		Description func(childComplexity int) int
+		Id          func(childComplexity int) int
+		IsLocked    func(childComplexity int) int
+		Name        func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
+		Value       func(childComplexity int) int
+		Version     func(childComplexity int) int
 	}
 
 	DomainName struct {
@@ -330,6 +334,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ConfigBucket.CreatedAt(childComplexity), true
 
+	case "ConfigBucket.description":
+		if e.complexity.ConfigBucket.Description == nil {
+			break
+		}
+
+		return e.complexity.ConfigBucket.Description(childComplexity), true
+
 	case "ConfigBucket.hostId":
 		if e.complexity.ConfigBucket.HostId == nil {
 			break
@@ -343,6 +354,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ConfigBucket.Id(childComplexity), true
+
+	case "ConfigBucket.isPublished":
+		if e.complexity.ConfigBucket.IsPublished == nil {
+			break
+		}
+
+		return e.complexity.ConfigBucket.IsPublished(childComplexity), true
 
 	case "ConfigBucket.slug":
 		if e.complexity.ConfigBucket.Slug == nil {
@@ -386,12 +404,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ConfigVariable.CreatedAt(childComplexity), true
 
+	case "ConfigVariable.description":
+		if e.complexity.ConfigVariable.Description == nil {
+			break
+		}
+
+		return e.complexity.ConfigVariable.Description(childComplexity), true
+
 	case "ConfigVariable.id":
 		if e.complexity.ConfigVariable.Id == nil {
 			break
 		}
 
 		return e.complexity.ConfigVariable.Id(childComplexity), true
+
+	case "ConfigVariable.isLocked":
+		if e.complexity.ConfigVariable.IsLocked == nil {
+			break
+		}
+
+		return e.complexity.ConfigVariable.IsLocked(childComplexity), true
 
 	case "ConfigVariable.name":
 		if e.complexity.ConfigVariable.Name == nil {
@@ -1309,8 +1341,10 @@ enum Language { AU US UK VN }
 	version: ID!
 	slug: ID!
 	title: String!
+	description: String
 	hostId: ID!
 	access: AccessMode!
+	isPublished: Boolean!
 	createdAt: Time!
 	updatedAt: Time!
 }
@@ -1320,9 +1354,11 @@ type ConfigVariable {
 	version: ID!
 	bucketId: ID!
 	name: String!
+	description: String
 	value: String!
 	createdAt: Time!
 	updatedAt: Time!
+	isLocked: Boolean!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/access/api/entity.graphql", Input: `enum AccessScope { Anonymous Authenticated }
@@ -2100,6 +2136,37 @@ func (ec *executionContext) _ConfigBucket_title(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ConfigBucket_description(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigBucket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ConfigBucket_hostId(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2166,6 +2233,40 @@ func (ec *executionContext) _ConfigBucket_access(ctx context.Context, field grap
 	res := resTmp.(api.AccessMode)
 	fc.Result = res
 	return ec.marshalNAccessMode2beanᚋpkgᚋutilᚋapiᚐAccessMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigBucket_isPublished(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigBucket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsPublished, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ConfigBucket_createdAt(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigBucket) (ret graphql.Marshaler) {
@@ -2372,6 +2473,37 @@ func (ec *executionContext) _ConfigVariable_name(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ConfigVariable_description(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigVariable) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigVariable",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ConfigVariable_value(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigVariable) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2472,6 +2604,40 @@ func (ec *executionContext) _ConfigVariable_updatedAt(ctx context.Context, field
 	res := resTmp.(time.Time)
 	fc.Result = res
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigVariable_isLocked(ctx context.Context, field graphql.CollectedField, obj *model3.ConfigVariable) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConfigVariable",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsLocked, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DomainName_id(ctx context.Context, field graphql.CollectedField, obj *model.DomainName) (ret graphql.Marshaler) {
@@ -7745,6 +7911,8 @@ func (ec *executionContext) _ConfigBucket(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "description":
+			out.Values[i] = ec._ConfigBucket_description(ctx, field, obj)
 		case "hostId":
 			out.Values[i] = ec._ConfigBucket_hostId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -7752,6 +7920,11 @@ func (ec *executionContext) _ConfigBucket(ctx context.Context, sel ast.Selection
 			}
 		case "access":
 			out.Values[i] = ec._ConfigBucket_access(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "isPublished":
+			out.Values[i] = ec._ConfigBucket_isPublished(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7807,6 +7980,8 @@ func (ec *executionContext) _ConfigVariable(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "description":
+			out.Values[i] = ec._ConfigVariable_description(ctx, field, obj)
 		case "value":
 			out.Values[i] = ec._ConfigVariable_value(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -7819,6 +7994,11 @@ func (ec *executionContext) _ConfigVariable(ctx context.Context, sel ast.Selecti
 			}
 		case "updatedAt":
 			out.Values[i] = ec._ConfigVariable_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "isLocked":
+			out.Values[i] = ec._ConfigVariable_isLocked(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

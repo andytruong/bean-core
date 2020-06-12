@@ -2,8 +2,6 @@ package user
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"path"
 	"runtime"
 
@@ -11,10 +9,10 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"bean/pkg/user/api/handler"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
 	"bean/pkg/util"
+	"bean/pkg/util/connect"
 	"bean/pkg/util/migrate"
 )
 
@@ -23,12 +21,19 @@ func NewUserBean(db *gorm.DB, logger *zap.Logger, id *util.Identifier) *UserBean
 		panic(err)
 	}
 
-	return &UserBean{
+	this := &UserBean{
 		logger:                   logger,
 		db:                       db,
 		id:                       id,
 		maxSecondaryEmailPerUser: 20,
 	}
+
+	this.Core = &Core{bean: this}
+	this.CoreName = &CoreName{bean: this}
+	this.CoreEmail = &CoreEmail{bean: this}
+	this.CorePassword = &CorePassword{bean: this}
+
+	return this
 }
 
 type UserBean struct {
@@ -36,6 +41,10 @@ type UserBean struct {
 	db                       *gorm.DB
 	id                       *util.Identifier
 	maxSecondaryEmailPerUser uint8
+	Core                     *Core
+	CoreName                 *CoreName
+	CoreEmail                *CoreEmail
+	CorePassword             *CorePassword
 }
 
 func (this UserBean) Dependencies() []util.Bean {
@@ -63,32 +72,21 @@ func (this UserBean) Verified(ctx context.Context, obj *model.UserEmail) (bool, 
 	return obj.IsVerified, nil
 }
 
-func (this *UserBean) UserCreate(ctx context.Context, input *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
-	hdl := handler.UserCreateHandler{ID: this.id}
-	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
+func (this *UserBean) UserCreate(ctx context.Context, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
+	var err error
+	var out *dto.UserMutationOutcome
 
-	if uint8(len(input.Emails.Secondary)) > this.maxSecondaryEmailPerUser {
-		return nil, errors.Wrap(
-			util.ErrorInvalidArgument,
-			fmt.Sprintf("too many secondary emails, limit is %d", this.maxSecondaryEmailPerUser),
-		)
-	}
+	err = connect.Transaction(ctx, this.db, func(tx *gorm.DB) error {
+		out, err = this.Core.Create(tx, in)
 
-	if outcome, err := hdl.Handle(txn, input); nil != err {
-		txn.Rollback()
+		return err
+	})
 
-		return nil, err
-	} else {
-		txn.Commit()
-
-		return outcome, nil
-	}
+	return out, err
 }
 
 func (this *UserBean) User(ctx context.Context, id string) (*model.User, error) {
-	hdl := handler.UserLoadHandler{}
-
-	return hdl.Load(this.db, id)
+	return this.Core.Load(this.db, id)
 }
 
 func (this UserBean) Name(ctx context.Context, user *model.User) (*model.UserName, error) {
@@ -105,30 +103,19 @@ func (this UserBean) Name(ctx context.Context, user *model.User) (*model.UserNam
 	return &name, nil
 }
 
-func (this UserBean) Emails(ctx context.Context, user *model.User) (*model.UserEmails, error) {
-	hdl := handler.EmailQueryHandler{
-		DB: this.db,
-	}
-
-	return hdl.Emails(ctx, user)
+func (this UserBean) Emails(ctx context.Context, obj *model.User) (*model.UserEmails, error) {
+	return this.CoreEmail.List(ctx, obj)
 }
 
 func (this UserBean) UserUpdate(ctx context.Context, input dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
-	user, err := this.User(ctx, input.ID)
-	if err != nil {
-		return nil, err
-	}
+	var err error
+	var out *dto.UserMutationOutcome
 
-	hdl := handler.UserUpdateHandler{ID: this.id}
-	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
+	err = connect.Transaction(ctx, this.db, func(tx *gorm.DB) error {
+		out, err = this.Core.Update(tx, input)
 
-	if outcome, err := hdl.Handle(txn, user, input); nil != err {
-		txn.Rollback()
+		return err
+	})
 
-		return nil, err
-	} else {
-		txn.Commit()
-
-		return outcome, nil
-	}
+	return out, err
 }
