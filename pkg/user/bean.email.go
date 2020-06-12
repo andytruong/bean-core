@@ -1,23 +1,22 @@
-package handler
+package user
 
 import (
 	"context"
 
-	"github.com/jinzhu/gorm"
-
 	"bean/pkg/user/model"
 )
 
-type EmailQueryHandler struct {
-	DB *gorm.DB
+type UserBeanEmail struct {
+	bean *UserBean
 }
 
 // TODO: need a better resolver, we not always load secondary emails.
-func (this EmailQueryHandler) Emails(ctx context.Context, user *model.User) (*model.UserEmails, error) {
+//       see: https://gqlgen.com/reference/field-collection/
+func (this UserBeanEmail) List(ctx context.Context, user *model.User) (*model.UserEmails, error) {
 	emails := &model.UserEmails{}
 
 	var rows []*model.UserEmail
-	err := this.DB.
+	err := this.bean.db.
 		Raw(`
 			     SELECT *, 1 AS is_verified FROM user_emails            WHERE user_id = ?
 		   UNION SELECT *, 0 AS is_verified FROM user_unverified_emails WHERE user_id = ?

@@ -23,12 +23,16 @@ func NewUserBean(db *gorm.DB, logger *zap.Logger, id *util.Identifier) *UserBean
 		panic(err)
 	}
 
-	return &UserBean{
+	this := &UserBean{
 		logger:                   logger,
 		db:                       db,
 		id:                       id,
 		maxSecondaryEmailPerUser: 20,
 	}
+
+	this.Email = &UserBeanEmail{bean: this}
+
+	return this
 }
 
 type UserBean struct {
@@ -36,6 +40,7 @@ type UserBean struct {
 	db                       *gorm.DB
 	id                       *util.Identifier
 	maxSecondaryEmailPerUser uint8
+	Email                    *UserBeanEmail
 }
 
 func (this UserBean) Dependencies() []util.Bean {
@@ -105,12 +110,8 @@ func (this UserBean) Name(ctx context.Context, user *model.User) (*model.UserNam
 	return &name, nil
 }
 
-func (this UserBean) Emails(ctx context.Context, user *model.User) (*model.UserEmails, error) {
-	hdl := handler.EmailQueryHandler{
-		DB: this.db,
-	}
-
-	return hdl.Emails(ctx, user)
+func (this UserBean) Emails(ctx context.Context, obj *model.User) (*model.UserEmails, error) {
+	return this.Email.List(ctx, obj)
 }
 
 func (this UserBean) UserUpdate(ctx context.Context, input dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
