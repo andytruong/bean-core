@@ -41,7 +41,7 @@ func bean() *NamespaceBean {
 
 func tearDown(bean *NamespaceBean) {
 	bean.db.Table(connect.TableNamespaceDomains).Where("id != ?", "").Delete(&model.DomainName{})
-	bean.db.Table("user_emails").Where("id != ?", "").Delete(&mUser.UserEmail{})
+	bean.db.Table(connect.TableUserEmail).Where("id != ?", "").Delete(&mUser.UserEmail{})
 }
 
 func Test_Namespace(t *testing.T) {

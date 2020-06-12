@@ -80,15 +80,11 @@ func (this NamespaceBean) Migrate(tx *gorm.DB, driver string) error {
 }
 
 func (this NamespaceBean) Namespace(ctx context.Context, filters dto.NamespaceFilters) (*model.Namespace, error) {
-	hdl := handler.NamespaceQueryHandler{DB: this.db}
-
-	return hdl.Handle(ctx, filters)
+	return this.Core.Find(ctx, filters)
 }
 
 func (this NamespaceBean) Load(ctx context.Context, id string) (*model.Namespace, error) {
-	hdl := handler.NamespaceQueryHandler{DB: this.db}
-
-	return hdl.Load(ctx, id)
+	return this.Core.Load(ctx, id)
 }
 
 func (this NamespaceBean) NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
@@ -120,9 +116,7 @@ func (this NamespaceBean) NamespaceUpdate(ctx context.Context, input dto.Namespa
 	}
 
 	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
-	hdl := handler.NamespaceUpdateHandler{ID: this.id}
-
-	outcome, err := hdl.NamespaceUpdate(tx, namespace, input)
+	outcome, err := this.Core.Update(tx, namespace, input)
 
 	if nil != err {
 		tx.Rollback()

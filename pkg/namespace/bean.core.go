@@ -1,6 +1,8 @@
 package namespace
 
 import (
+	"context"
+	"errors"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -15,6 +17,40 @@ import (
 type NamespaceBeanCore struct {
 	bean *NamespaceBean
 }
+
+func (this NamespaceBeanCore) Load(ctx context.Context, id string) (*model.Namespace, error) {
+	obj := &model.Namespace{}
+	err := this.bean.db.First(&obj, "id = ?", id).Error
+	if nil != err {
+		return nil, err
+	}
+
+	return obj, nil
+}
+
+func (this NamespaceBeanCore) Find(ctx context.Context, filters dto.NamespaceFilters) (*model.Namespace, error) {
+	if nil != filters.ID {
+		return this.Load(ctx, *filters.ID)
+	} else if nil != filters.Domain {
+		domain := &model.DomainName{}
+		err := this.bean.db.
+			Table(connect.TableNamespaceDomains).
+			Where("value = ?", filters.Domain).
+			First(&domain).
+			Error
+
+		if nil != err {
+			return nil, err
+		} else if !domain.IsActive {
+			return nil, errors.New("domain name is not active")
+		}
+
+		return this.Load(ctx, domain.NamespaceId)
+	}
+
+	return nil, nil
+}
+
 
 func (this *NamespaceBeanCore) Create(tx *gorm.DB, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	namespace, err := this.doCreate(tx, input)
@@ -63,6 +99,8 @@ func (this *NamespaceBeanCore) createRelationships(tx *gorm.DB, namespace *model
 	}
 
 	// setup roles
+	//  - create 'owner' role for the new namespace
+	//  - grant 'owner' role to actor
 	ownerRoleInput := dto.NamespaceCreateInput{
 		Object: dto.NamespaceCreateInputObject{
 			Kind:     model.NamespaceKindRole,
@@ -117,4 +155,55 @@ func (this *NamespaceBeanCore) createFeature(
 	}
 
 	return tx.Table(connect.TableNamespaceConfig).Create(&config).Error
+}
+
+func (this NamespaceBeanCore) Update(tx *gorm.DB, obj *model.Namespace, in dto.NamespaceUpdateInput) (*bool, error) {
+	// check version for conflict
+	if in.NamespaceVersion != obj.Version {
+		return nil, util.ErrorVersionConflict
+	}
+
+	if nil != in.Object.Language {
+		obj.Language = *in.Object.Language
+	}
+
+	// change version
+	obj.Version = this.bean.id.MustULID()
+	if err := tx.Save(obj).Error; nil != err {
+		return nil, err
+	}
+
+	err := this.updateFeatures(tx, obj, in)
+	if nil != err {
+		return nil, err
+	}
+
+	return util.NilBool(true), nil
+}
+
+func (this *NamespaceBeanCore) updateFeatures(tx *gorm.DB, obj *model.Namespace, in dto.NamespaceUpdateInput) error {
+	if nil != in.Object.Features.Register {
+		if *in.Object.Features.Register {
+			return this.updateFeature(tx, obj, "default", "register", []byte("true"))
+		} else {
+			return this.updateFeature(tx, obj, "default", "register", []byte("false"))
+		}
+	}
+
+	return nil
+}
+
+func (this *NamespaceBeanCore) updateFeature(
+	tx *gorm.DB,
+	obj *model.Namespace, bucket string, key string, value []byte,
+) error {
+	return tx.
+		Table(connect.TableNamespaceConfig).
+		Where("namespace_id = ? AND bucket = ? AND key = ?", obj.ID, bucket, key).
+		Update(&model.NamespaceConfig{
+			Version:   this.bean.id.MustULID(),
+			Value:     value,
+			UpdatedAt: time.Now(),
+		}).
+		Error
 }
