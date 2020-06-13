@@ -19,6 +19,9 @@ type ConfigVariableBean struct {
 func (this ConfigVariableBean) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigVariable, error) {
 	// TODO: check bucket access mode
 	// ---------------------
+	{
+		// TODO: how to know who is requesting?
+	}
 
 	variable := &model.ConfigVariable{}
 

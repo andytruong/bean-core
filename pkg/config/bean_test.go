@@ -37,7 +37,7 @@ func Test_Bucket(t *testing.T) {
 			func(tx *gorm.DB) error {
 				hostId := this.id.MustULID()
 				access := api.AccessMode("444")
-				outcome, err := this.Bucket.Create(ctx, tx, dto.BucketCreateInput{
+				outcome, err := this.CoreBucket.Create(ctx, tx, dto.BucketCreateInput{
 					HostId:      hostId,
 					Slug:        util.NilString("doe"),
 					Title:       util.NilString("Doe"),
@@ -66,7 +66,7 @@ func Test_Bucket(t *testing.T) {
 		defer tx.Rollback()
 
 		privateAccess := api.AccessModePrivate
-		oCreate, _ := this.Bucket.Create(ctx, tx, dto.BucketCreateInput{
+		oCreate, _ := this.CoreBucket.Create(ctx, tx, dto.BucketCreateInput{
 			HostId:      this.id.MustULID(),
 			Slug:        util.NilString("qa"),
 			Title:       util.NilString("QA"),
@@ -77,7 +77,7 @@ func Test_Bucket(t *testing.T) {
 		})
 
 		publicAccess := api.AccessModePublicRead
-		oUpdate, err := this.Bucket.Update(ctx, tx, dto.BucketUpdateInput{
+		oUpdate, err := this.CoreBucket.Update(ctx, tx, dto.BucketUpdateInput{
 			Id:          oCreate.Bucket.Id,
 			Version:     oCreate.Bucket.Version,
 			Title:       util.NilString("Test"),
@@ -97,7 +97,7 @@ func Test_Bucket(t *testing.T) {
 		ass.Equal(publicAccess, oUpdate.Bucket.Access)
 
 		t.Run("can't unpublished a published bucket", func(t *testing.T) {
-			_, err := this.Bucket.Update(ctx, tx, dto.BucketUpdateInput{
+			_, err := this.CoreBucket.Update(ctx, tx, dto.BucketUpdateInput{
 				Id:          oUpdate.Bucket.Id,
 				Version:     oUpdate.Bucket.Version,
 				IsPublished: util.NilBool(false),
@@ -108,7 +108,7 @@ func Test_Bucket(t *testing.T) {
 		})
 
 		t.Run("can't change schema is isPublished on", func(t *testing.T) {
-			_, err := this.Bucket.Update(ctx, tx, dto.BucketUpdateInput{
+			_, err := this.CoreBucket.Update(ctx, tx, dto.BucketUpdateInput{
 				Id:          oCreate.Bucket.Id,
 				Version:     oCreate.Bucket.Version,
 				Title:       util.NilString("Test"),
@@ -131,7 +131,7 @@ func Test_Bucket(t *testing.T) {
 		tx := db.BeginTx(ctx, &sql.TxOptions{})
 		defer tx.Rollback()
 
-		oCreate, err = this.Bucket.Create(ctx, tx, dto.BucketCreateInput{
+		oCreate, err = this.CoreBucket.Create(ctx, tx, dto.BucketCreateInput{
 			HostId:      hostId,
 			Slug:        util.NilString("load-doe"),
 			Title:       util.NilString("Doe"),
@@ -144,7 +144,7 @@ func Test_Bucket(t *testing.T) {
 		ass.NoError(err)
 		ass.NotNil(oCreate)
 
-		bucket, err = this.Bucket.BucketLoad(context.Background(), tx, oCreate.Bucket.Id)
+		bucket, err = this.CoreBucket.BucketLoad(context.Background(), tx, oCreate.Bucket.Id)
 		ass.NoError(err)
 		ass.Equal(hostId, bucket.HostId)
 		ass.Equal("load-doe", bucket.Slug)

@@ -17,17 +17,17 @@ func NewConfigBean(id *util.Identifier, logger *zap.Logger) *ConfigBean {
 		logger: logger,
 	}
 
-	this.Bucket = &ConfigBucketBean{bean: this}
-	this.Variable = &ConfigVariableBean{bean: this}
+	this.CoreBucket = &ConfigBucketBean{bean: this}
+	this.CoreVariable = &ConfigVariableBean{bean: this}
 
 	return this
 }
 
 type ConfigBean struct {
-	id       *util.Identifier
-	logger   *zap.Logger
-	Bucket   *ConfigBucketBean
-	Variable *ConfigVariableBean
+	id           *util.Identifier
+	logger       *zap.Logger
+	CoreBucket   *ConfigBucketBean
+	CoreVariable *ConfigVariableBean
 }
 
 func (this ConfigBean) Migrate(tx *gorm.DB, driver string) error {
