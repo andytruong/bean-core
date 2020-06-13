@@ -68,7 +68,7 @@ func (this *Can) beforeServeHTTP(r *http.Request) error {
 		if err != nil {
 			return err
 		} else if nil != claims {
-			ctx := context.WithValue(r.Context(), "bean.claims", claims)
+			ctx := context.WithValue(r.Context(), util.ContextkeyClaims, claims)
 			r = r.WithContext(ctx)
 		}
 	}
