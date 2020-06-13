@@ -14,11 +14,11 @@ import (
 	"bean/pkg/util/connect"
 )
 
-type NamespaceBeanCore struct {
+type Core struct {
 	bean *NamespaceBean
 }
 
-func (this NamespaceBeanCore) Load(ctx context.Context, id string) (*model.Namespace, error) {
+func (this Core) Load(ctx context.Context, id string) (*model.Namespace, error) {
 	obj := &model.Namespace{}
 	err := this.bean.db.First(&obj, "id = ?", id).Error
 	if nil != err {
@@ -28,7 +28,7 @@ func (this NamespaceBeanCore) Load(ctx context.Context, id string) (*model.Names
 	return obj, nil
 }
 
-func (this NamespaceBeanCore) Find(ctx context.Context, filters dto.NamespaceFilters) (*model.Namespace, error) {
+func (this Core) Find(ctx context.Context, filters dto.NamespaceFilters) (*model.Namespace, error) {
 	if nil != filters.ID {
 		return this.Load(ctx, *filters.ID)
 	} else if nil != filters.Domain {
@@ -52,7 +52,7 @@ func (this NamespaceBeanCore) Find(ctx context.Context, filters dto.NamespaceFil
 }
 
 
-func (this *NamespaceBeanCore) Create(tx *gorm.DB, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
+func (this *Core) Create(tx *gorm.DB, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	namespace, err := this.doCreate(tx, input)
 	if nil != err {
 		return nil, err
@@ -69,7 +69,7 @@ func (this *NamespaceBeanCore) Create(tx *gorm.DB, input dto.NamespaceCreateInpu
 	}
 }
 
-func (this *NamespaceBeanCore) doCreate(tx *gorm.DB, input dto.NamespaceCreateInput) (*model.Namespace, error) {
+func (this *Core) doCreate(tx *gorm.DB, input dto.NamespaceCreateInput) (*model.Namespace, error) {
 	namespace := &model.Namespace{
 		ID:        this.bean.id.MustULID(),
 		Version:   this.bean.id.MustULID(),
@@ -89,8 +89,8 @@ func (this *NamespaceBeanCore) doCreate(tx *gorm.DB, input dto.NamespaceCreateIn
 	return namespace, nil
 }
 
-func (this *NamespaceBeanCore) createRelationships(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
-	if err := this.bean.domainName.createMultiple(tx, namespace, input); nil != err {
+func (this *Core) createRelationships(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
+	if err := this.bean.CoreDomainName.createMultiple(tx, namespace, input); nil != err {
 		return err
 	}
 
@@ -116,13 +116,13 @@ func (this *NamespaceBeanCore) createRelationships(tx *gorm.DB, namespace *model
 		return err
 	} else {
 		// membership of user -> organisation
-		_, err = this.bean.Member.doCreate(tx, namespace.ID, input.Context.UserID, true)
+		_, err = this.bean.CoreMember.doCreate(tx, namespace.ID, input.Context.UserID, true)
 		if nil != err {
 			return err
 		}
 
 		// membership of user -> owner role
-		_, err = this.bean.Member.doCreate(tx, ownerRole.ID, input.Context.UserID, true)
+		_, err = this.bean.CoreMember.doCreate(tx, ownerRole.ID, input.Context.UserID, true)
 		if nil != err {
 			return err
 		}
@@ -131,7 +131,7 @@ func (this *NamespaceBeanCore) createRelationships(tx *gorm.DB, namespace *model
 	return nil
 }
 
-func (this *NamespaceBeanCore) createFeatures(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
+func (this *Core) createFeatures(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
 	if input.Object.Features.Register {
 		return this.createFeature(tx, namespace, "default", "register", []byte("true"))
 	} else {
@@ -139,7 +139,7 @@ func (this *NamespaceBeanCore) createFeatures(tx *gorm.DB, namespace *model.Name
 	}
 }
 
-func (this *NamespaceBeanCore) createFeature(
+func (this *Core) createFeature(
 	tx *gorm.DB,
 	namespace *model.Namespace, bucket string, key string, value []byte,
 ) error {
@@ -157,7 +157,7 @@ func (this *NamespaceBeanCore) createFeature(
 	return tx.Table(connect.TableNamespaceConfig).Create(&config).Error
 }
 
-func (this NamespaceBeanCore) Update(tx *gorm.DB, obj *model.Namespace, in dto.NamespaceUpdateInput) (*bool, error) {
+func (this Core) Update(tx *gorm.DB, obj *model.Namespace, in dto.NamespaceUpdateInput) (*bool, error) {
 	// check version for conflict
 	if in.NamespaceVersion != obj.Version {
 		return nil, util.ErrorVersionConflict
@@ -181,7 +181,7 @@ func (this NamespaceBeanCore) Update(tx *gorm.DB, obj *model.Namespace, in dto.N
 	return util.NilBool(true), nil
 }
 
-func (this *NamespaceBeanCore) updateFeatures(tx *gorm.DB, obj *model.Namespace, in dto.NamespaceUpdateInput) error {
+func (this *Core) updateFeatures(tx *gorm.DB, obj *model.Namespace, in dto.NamespaceUpdateInput) error {
 	if nil != in.Object.Features.Register {
 		if *in.Object.Features.Register {
 			return this.updateFeature(tx, obj, "default", "register", []byte("true"))
@@ -193,7 +193,7 @@ func (this *NamespaceBeanCore) updateFeatures(tx *gorm.DB, obj *model.Namespace,
 	return nil
 }
 
-func (this *NamespaceBeanCore) updateFeature(
+func (this *Core) updateFeature(
 	tx *gorm.DB,
 	obj *model.Namespace, bucket string, key string, value []byte,
 ) error {
