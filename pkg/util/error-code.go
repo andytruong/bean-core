@@ -14,9 +14,9 @@ const (
 	ErrorCodeRuntime      ErrorCode = "Runtime"
 	ErrorCodeDbTimeout    ErrorCode = "DB_Timeout"
 	ErrorCodeDbConstraint ErrorCode = "DB_Constraint"
-	ErrorToBeImplemented  ErrorCode = "ToBeImplemented"
 	ErrorQueryTooMuch     ErrorCode = "QueryTooMuch"
 	ErrorCodeConflict     ErrorCode = "Conflict"
+	ErrorToBeImplemented  ErrorCode = "ToBeImplemented"
 )
 
 var AllErrorCode = []ErrorCode{
@@ -29,9 +29,13 @@ var AllErrorCode = []ErrorCode{
 
 func (e ErrorCode) IsValid() bool {
 	switch e {
-	case ErrorCodeInput, ErrorCodeConfig, ErrorCodeRuntime, ErrorCodeDbTimeout, ErrorCodeDbConstraint:
+	case ErrorCodeInput,
+		ErrorCodeConfig, ErrorCodeRuntime,
+		ErrorCodeDbTimeout, ErrorCodeDbConstraint,
+		ErrorToBeImplemented, ErrorQueryTooMuch, ErrorCodeConflict:
 		return true
 	}
+	
 	return false
 }
 

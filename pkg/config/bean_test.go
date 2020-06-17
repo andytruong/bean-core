@@ -252,7 +252,7 @@ func Test_Variable(t *testing.T) {
 			// create private bucket
 			oBucketCreate, err := this.CoreBucket.Create(authorCtx, tx, dto.BucketCreateInput{
 				HostId:      authorId,
-				Slug:        util.NilString("load-doe"),
+				Slug:        util.NilString(this.id.MustULID()),
 				Title:       util.NilString("Doe"),
 				Description: util.NilString("Just for John Doe"),
 				Access:      &access,

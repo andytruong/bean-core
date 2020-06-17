@@ -32,18 +32,18 @@ func (this AccessMode) Public() string {
 }
 
 func (this AccessMode) CanRead(isOwner, isMember bool) bool {
-	return this.canAccess(isOwner, isMember, 4)
+	return this.can(isOwner, isMember, 4)
 }
 
 func (this AccessMode) CanWrite(isOwner, isMember bool) bool {
-	return this.canAccess(isOwner, isMember, 2)
+	return this.can(isOwner, isMember, 2)
 }
 
 func (this AccessMode) CanDelete(isOwner, isMember bool) bool {
-	return this.canAccess(isOwner, isMember, 1)
+	return this.can(isOwner, isMember, 1)
 }
 
-func (this AccessMode) canAccess(isOwner, isMember bool, check int) bool {
+func (this AccessMode) can(isOwner, isMember bool, check int) bool {
 	// Check public access
 	if this.check(this.Public(), check) {
 		return true

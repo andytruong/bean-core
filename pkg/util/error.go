@@ -32,6 +32,7 @@ const (
 	ErrorQuery           = Err("query error")
 	ErrorVersionConflict = Err("version conflict")
 	ErrorLocked          = Err("locked")
+	ErrorAccessDenied    = Err("access denied")
 )
 
 func NilPointerErrorValidate(values ...interface{}) error {
