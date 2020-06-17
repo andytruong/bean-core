@@ -12,39 +12,69 @@ import (
 	"bean/pkg/util/connect"
 )
 
-type ConfigVariableBean struct {
+type CoreVariable struct {
 	bean *ConfigBean
 }
 
-func (this ConfigVariableBean) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigVariable, error) {
-	// TODO: check bucket access mode
-	// ---------------------
-	{
-		// TODO: how to know who is requesting?
+func (this CoreVariable) access(ctx context.Context, db *gorm.DB, bucketId string, action string) (bool, error) {
+	bucket, err := this.bean.CoreBucket.Load(ctx, db, bucketId)
+	if nil != err {
+		return false, err
 	}
 
-	variable := &model.ConfigVariable{}
+	if nil == bucket {
+		return false, nil
+	}
 
+	actor := util.CxtKeyClaims.Actor(ctx)
+	isOwner := (nil != actor) && actor.UserId() == bucket.HostId
+	isMember := (nil != actor) && actor.NamespaceId() == bucket.HostId
+
+	switch action {
+	case "read":
+		return bucket.Access.CanRead(isOwner, isMember), nil
+
+	case "write":
+		return bucket.Access.CanWrite(isOwner, isMember), nil
+
+	case "delete":
+		return bucket.Access.CanDelete(isOwner, isMember), nil
+	}
+
+	return false, nil
+}
+
+func (this CoreVariable) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigVariable, error) {
+	variable := &model.ConfigVariable{}
 	err := db.Table(connect.TableConfigVariable).First(&variable, "id = ?", id).Error
 	if nil != err {
 		return nil, err
 	}
 
+	if access, err := this.access(ctx, db, variable.BucketId, "read"); nil != err {
+		return nil, err
+	} else if !access {
+		return nil, util.ErrorAccessDenied
+	}
+
 	return variable, nil
 }
 
-func (this ConfigVariableBean) Create(ctx context.Context, tx *gorm.DB, input dto.VariableCreateInput) (*dto.VariableMutationOutcome, error) {
-	// TODO: check bucket access mode
-	// ---------------------
+func (this CoreVariable) Create(ctx context.Context, tx *gorm.DB, in dto.VariableCreateInput) (*dto.VariableMutationOutcome, error) {
+	if access, err := this.access(ctx, tx, in.BucketId, "write"); nil != err {
+		return nil, err
+	} else if !access {
+		return nil, util.ErrorAccessDenied
+	}
 
 	variable := &model.ConfigVariable{
 		Id:          this.bean.id.MustULID(),
 		Version:     this.bean.id.MustULID(),
-		BucketId:    input.BucketId,
-		Name:        input.Name,
-		Description: input.Description,
-		Value:       input.Value,
-		IsLocked:    util.NotNilBool(input.IsLocked, false),
+		BucketId:    in.BucketId,
+		Name:        in.Name,
+		Description: in.Description,
+		Value:       in.Value,
+		IsLocked:    util.NotNilBool(in.IsLocked, false),
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -61,10 +91,16 @@ func (this ConfigVariableBean) Create(ctx context.Context, tx *gorm.DB, input dt
 	}
 }
 
-func (this ConfigVariableBean) Update(ctx context.Context, tx *gorm.DB, input dto.VariableUpdateInput) (*dto.VariableMutationOutcome, error) {
+func (this CoreVariable) Update(ctx context.Context, tx *gorm.DB, input dto.VariableUpdateInput) (*dto.VariableMutationOutcome, error) {
 	variable, err := this.Load(ctx, tx, input.Id)
 	if nil != err {
 		return nil, err
+	}
+
+	if access, err := this.access(ctx, tx, variable.BucketId, "write"); nil != err {
+		return nil, err
+	} else if !access {
+		return nil, util.ErrorAccessDenied
 	}
 
 	if variable.Version != input.Version {
@@ -118,15 +154,19 @@ func (this ConfigVariableBean) Update(ctx context.Context, tx *gorm.DB, input dt
 	}, nil
 }
 
-func (this ConfigVariableBean) Delete(ctx context.Context, tx *gorm.DB, input dto.VariableDeleteInput) (*dto.VariableMutationOutcome, error) {
-	// TODO: check bucket access mode
-	// ---------------------
-	variable, err := this.Load(ctx, tx, input.Id)
+func (this CoreVariable) Delete(ctx context.Context, tx *gorm.DB, in dto.VariableDeleteInput) (*dto.VariableMutationOutcome, error) {
+	variable, err := this.Load(ctx, tx, in.Id)
 	if nil != err {
 		return nil, err
 	} else if variable.IsLocked {
 		return nil, util.ErrorLocked
 	} else {
+		if access, err := this.access(ctx, tx, variable.BucketId, "delete"); nil != err {
+			return nil, err
+		} else if !access {
+			return nil, util.ErrorAccessDenied
+		}
+
 		err := tx.
 			Table(connect.TableConfigVariable).
 			Delete(variable, "id = ?", variable.Id).

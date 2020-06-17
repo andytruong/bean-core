@@ -17,8 +17,8 @@ func NewConfigBean(id *util.Identifier, logger *zap.Logger) *ConfigBean {
 		logger: logger,
 	}
 
-	this.CoreBucket = &ConfigBucketBean{bean: this}
-	this.CoreVariable = &ConfigVariableBean{bean: this}
+	this.CoreBucket = &CoreBucket{bean: this}
+	this.CoreVariable = &CoreVariable{bean: this}
 
 	return this
 }
@@ -26,8 +26,8 @@ func NewConfigBean(id *util.Identifier, logger *zap.Logger) *ConfigBean {
 type ConfigBean struct {
 	id           *util.Identifier
 	logger       *zap.Logger
-	CoreBucket   *ConfigBucketBean
-	CoreVariable *ConfigVariableBean
+	CoreBucket   *CoreBucket
+	CoreVariable *CoreVariable
 }
 
 func (this ConfigBean) Migrate(tx *gorm.DB, driver string) error {
