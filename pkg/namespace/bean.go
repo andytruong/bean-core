@@ -32,9 +32,9 @@ func NewNamespaceBean(
 		config: config,
 	}
 
-	this.Core = &NamespaceBeanCore{bean: this}
-	this.domainName = &NamespaceBeanDomainName{bean: this}
-	this.Member = &NamespaceBeanMembership{
+	this.Core = &Core{bean: this}
+	this.CoreDomainName = &CoreDomainName{bean: this}
+	this.CoreMember = &CoreMember{
 		bean:     this,
 		Resolver: newMembershipResolver(this, bUser),
 	}
@@ -49,13 +49,13 @@ type NamespaceBean struct {
 	user   *user.UserBean
 	config *Config
 
-	Core       *NamespaceBeanCore
-	Member     *NamespaceBeanMembership
-	domainName *NamespaceBeanDomainName
+	Core           *Core
+	CoreMember     *CoreMember
+	CoreDomainName *CoreDomainName
 }
 
 func (this *NamespaceBean) MembershipResolver() MembershipResolver {
-	return this.Member.Resolver
+	return this.CoreMember.Resolver
 }
 
 func (this *NamespaceBean) Dependencies() []util.Bean {
@@ -100,8 +100,7 @@ func (this NamespaceBean) NamespaceCreate(ctx context.Context, input dto.Namespa
 }
 
 func (this NamespaceBean) DomainNames(ctx context.Context, namespace *model.Namespace) (*model.DomainNames, error) {
-	hdl := handler.DomainQueryHandler{DB: this.db}
-	return hdl.DomainNames(ctx, namespace)
+	return this.CoreDomainName.Find(namespace)
 }
 
 func (this NamespaceBean) Features(ctx context.Context, namespace *model.Namespace) (*model.NamespaceFeatures, error) {
@@ -150,7 +149,7 @@ func (this NamespaceBean) NamespaceMembershipCreate(
 	}
 
 	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
-	outcome, err := this.Member.Create(tx, input, namespace, user)
+	outcome, err := this.CoreMember.Create(tx, input, namespace, user)
 
 	if nil != err {
 		tx.Rollback()
@@ -167,7 +166,7 @@ func (this NamespaceBean) NamespaceMembershipUpdate(ctx context.Context, input d
 	}
 
 	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
-	outcome, err := this.Member.Update(tx, input, membership)
+	outcome, err := this.CoreMember.Update(tx, input, membership)
 
 	if nil != err {
 		tx.Rollback()
@@ -197,7 +196,7 @@ func (this NamespaceBean) Membership(ctx context.Context, id string, version *st
 }
 
 func (this NamespaceBean) Memberships(ctx context.Context, first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {
-	return this.Member.Find(first, after, filters)
+	return this.CoreMember.Find(first, after, filters)
 }
 
 func (this NamespaceBean) Parent(ctx context.Context, obj *model.Namespace) (*model.Namespace, error) {

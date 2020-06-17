@@ -7,13 +7,14 @@ import (
 
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
+	"bean/pkg/util/connect"
 )
 
-type NamespaceBeanDomainName struct {
+type CoreDomainName struct {
 	bean *NamespaceBean
 }
 
-func (this *NamespaceBeanDomainName) createMultiple(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
+func (this *CoreDomainName) createMultiple(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
 	if nil != input.Object.DomainNames.Primary {
 		err := this.create(tx, namespace, input.Object.DomainNames.Primary, true)
 		if nil != err {
@@ -33,7 +34,7 @@ func (this *NamespaceBeanDomainName) createMultiple(tx *gorm.DB, namespace *mode
 	return nil
 }
 
-func (this *NamespaceBeanDomainName) create(tx *gorm.DB, namespace *model.Namespace, input *dto.DomainNameInput, isPrimary bool) error {
+func (this *CoreDomainName) create(tx *gorm.DB, namespace *model.Namespace, input *dto.DomainNameInput, isPrimary bool) error {
 	domain := model.DomainName{
 		ID:          this.bean.id.MustULID(),
 		NamespaceId: namespace.ID,
@@ -46,4 +47,31 @@ func (this *NamespaceBeanDomainName) create(tx *gorm.DB, namespace *model.Namesp
 	}
 
 	return tx.Table("namespace_domains").Create(&domain).Error
+}
+
+func (this *CoreDomainName) Find(namespace *model.Namespace) (*model.DomainNames, error) {
+	out := &model.DomainNames{
+		Primary:   nil,
+		Secondary: nil,
+	}
+
+	var domainNames []*model.DomainName
+	err := this.bean.db.
+		Table(connect.TableNamespaceDomains).
+		Where("namespace_id = ?", namespace.ID).
+		Find(&domainNames).
+		Error
+	if nil != err {
+		return nil, err
+	}
+
+	for _, domainName := range domainNames {
+		if domainName.IsPrimary {
+			out.Primary = domainName
+		} else {
+			out.Secondary = append(out.Secondary, domainName)
+		}
+	}
+
+	return out, nil
 }

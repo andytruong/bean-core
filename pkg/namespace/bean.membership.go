@@ -13,12 +13,12 @@ import (
 	"bean/pkg/util/connect"
 )
 
-type NamespaceBeanMembership struct {
+type CoreMember struct {
 	bean     *NamespaceBean
 	Resolver MembershipResolver
 }
 
-func (this NamespaceBeanMembership) Find(first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {
+func (this CoreMember) Find(first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {
 	if first > 100 {
 		return nil, errors.New(util.ErrorQueryTooMuch.String())
 	}
@@ -64,7 +64,7 @@ func (this NamespaceBeanMembership) Find(first int, after *string, filters dto.M
 	return con, nil
 }
 
-func (this NamespaceBeanMembership) findUnlimited(afterRaw *string, filters dto.MembershipsFilter) (*gorm.DB, error) {
+func (this CoreMember) findUnlimited(afterRaw *string, filters dto.MembershipsFilter) (*gorm.DB, error) {
 	query := this.bean.db.
 		Table(connect.TableNamespaceMemberships).
 		Where("namespace_memberships.user_id = ?", filters.UserID).
@@ -113,7 +113,7 @@ func (this NamespaceBeanMembership) findUnlimited(afterRaw *string, filters dto.
 	return query, nil
 }
 
-func (this NamespaceBeanMembership) Create(
+func (this CoreMember) Create(
 	tx *gorm.DB,
 	in dto.NamespaceMembershipCreateInput,
 	namespace *model.Namespace,
@@ -136,7 +136,7 @@ func (this NamespaceBeanMembership) Create(
 	}, nil
 }
 
-func (this NamespaceBeanMembership) doCreate(tx *gorm.DB, namespaceId string, userId string, isActive bool) (*model.Membership, error) {
+func (this CoreMember) doCreate(tx *gorm.DB, namespaceId string, userId string, isActive bool) (*model.Membership, error) {
 	membership := &model.Membership{
 		ID:          this.bean.id.MustULID(),
 		Version:     this.bean.id.MustULID(),
@@ -154,7 +154,7 @@ func (this NamespaceBeanMembership) doCreate(tx *gorm.DB, namespaceId string, us
 	return membership, nil
 }
 
-func (this NamespaceBeanMembership) createRelationships(tx *gorm.DB, obj *model.Membership, managerMemberIds []string) ([]*util.Error, error) {
+func (this CoreMember) createRelationships(tx *gorm.DB, obj *model.Membership, managerMemberIds []string) ([]*util.Error, error) {
 	if len(managerMemberIds) > this.bean.config.Manager.MaxNumberOfManager {
 		return util.NewErrors(util.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "exceeded limitation"), nil
 	}
@@ -188,7 +188,7 @@ func (this NamespaceBeanMembership) createRelationships(tx *gorm.DB, obj *model.
 	return nil, nil
 }
 
-func (this NamespaceBeanMembership) createRelationship(tx *gorm.DB, obj *model.Membership, managerMemberId string) error {
+func (this CoreMember) createRelationship(tx *gorm.DB, obj *model.Membership, managerMemberId string) error {
 	relationship := model.ManagerRelationship{
 		ID:              this.bean.id.MustULID(),
 		Version:         this.bean.id.MustULID(),
@@ -202,7 +202,7 @@ func (this NamespaceBeanMembership) createRelationship(tx *gorm.DB, obj *model.M
 	return tx.Table(connect.TableManagerEdge).Save(&relationship).Error
 }
 
-func (this NamespaceBeanMembership) Update(tx *gorm.DB, in dto.NamespaceMembershipUpdateInput, obj *model.Membership) (*dto.NamespaceMembershipCreateOutcome, error) {
+func (this CoreMember) Update(tx *gorm.DB, in dto.NamespaceMembershipUpdateInput, obj *model.Membership) (*dto.NamespaceMembershipCreateOutcome, error) {
 	obj.Version = this.bean.id.MustULID()
 	obj.IsActive = in.IsActive
 

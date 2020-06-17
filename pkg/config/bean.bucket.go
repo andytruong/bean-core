@@ -13,11 +13,11 @@ import (
 	"bean/pkg/util/connect"
 )
 
-type ConfigBucketBean struct {
+type CoreBucket struct {
 	bean *ConfigBean
 }
 
-func (this ConfigBucketBean) Create(ctx context.Context, tx *gorm.DB, input dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
+func (this CoreBucket) Create(ctx context.Context, tx *gorm.DB, input dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
 	bucket := &model.ConfigBucket{
 		Id:          this.bean.id.MustULID(),
 		Version:     this.bean.id.MustULID(),
@@ -44,8 +44,8 @@ func (this ConfigBucketBean) Create(ctx context.Context, tx *gorm.DB, input dto.
 	return &dto.BucketMutationOutcome{Errors: nil, Bucket: bucket}, nil
 }
 
-func (this ConfigBucketBean) Update(ctx context.Context, tx *gorm.DB, input dto.BucketUpdateInput) (*dto.BucketMutationOutcome, error) {
-	bucket, err := this.BucketLoad(ctx, tx, input.Id)
+func (this CoreBucket) Update(ctx context.Context, tx *gorm.DB, input dto.BucketUpdateInput) (*dto.BucketMutationOutcome, error) {
+	bucket, err := this.Load(ctx, tx, input.Id)
 	if nil != err {
 		return nil, err
 	}
@@ -114,13 +114,11 @@ func (this ConfigBucketBean) Update(ctx context.Context, tx *gorm.DB, input dto.
 	}, nil
 }
 
-func (this ConfigBucketBean) BucketLoad(ctx context.Context, db *gorm.DB, id string) (*model.ConfigBucket, error) {
+// TODO: need data-loader
+func (this CoreBucket) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigBucket, error) {
 	bucket := &model.ConfigBucket{}
 
-	err := db.
-		Table(connect.TableConfigBucket).
-		First(&bucket, "id = ?", id).
-		Error
+	err := db.Table(connect.TableConfigBucket).First(&bucket, "id = ?", id).Error
 	if nil != err {
 		return nil, err
 	}

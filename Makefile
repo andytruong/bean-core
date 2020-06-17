@@ -9,7 +9,7 @@ migrate:
 	CONFIG=config.yaml go run cmd/main.go migrate
 
 test:
-	go test ./... -race -v
+	go test ./pkg/... -race -v
 
 check-size:
 	go build -o /tmp/go-bean cmd/main.go
