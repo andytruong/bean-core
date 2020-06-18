@@ -16,7 +16,7 @@ import (
 )
 
 func tearDown(this *UserBean) {
-	this.db.Table(connect.TableUserEmail).Delete(&model.UserEmail{})
+	this.db.Table(connect.TableUserEmail).Where("1").Delete(&model.UserEmail{})
 }
 
 func Test(t *testing.T) {

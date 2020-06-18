@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"

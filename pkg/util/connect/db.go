@@ -2,9 +2,8 @@ package connect
 
 import (
 	"context"
-	"database/sql"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 const (
@@ -27,7 +26,7 @@ const (
 )
 
 func Transaction(ctx context.Context, db *gorm.DB, callback func(tx *gorm.DB) error) error {
-	tx := db.BeginTx(ctx, &sql.TxOptions{})
+	tx := db.WithContext(ctx).Begin()
 	er := callback(tx)
 
 	if nil != er {

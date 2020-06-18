@@ -2,13 +2,12 @@ package access
 
 import (
 	"context"
-	"database/sql"
 	"path"
 	"runtime"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"bean/pkg/access/api/handler"
 	"bean/pkg/access/model"
@@ -94,7 +93,8 @@ func (this *AccessBean) SessionCreate(ctx context.Context, input *dto.SessionCre
 		SessionTimeout: timeout,
 		Namespace:      this.namespace,
 	}
-	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
+
+	txn := this.db.WithContext(ctx).Begin()
 	outcome, err := hdl.Handle(ctx, txn, input)
 	if nil != err {
 		txn.Rollback()

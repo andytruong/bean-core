@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	"golang.org/x/sync/errgroup"
+	"gorm.io/gorm"
 
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"

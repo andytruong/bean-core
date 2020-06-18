@@ -3,7 +3,7 @@ package namespace
 import (
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"

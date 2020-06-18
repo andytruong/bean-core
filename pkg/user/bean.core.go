@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"

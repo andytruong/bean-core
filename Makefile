@@ -19,6 +19,7 @@ check-size:
 gen-key:
 	CONFIG=config.yaml go run cmd/main.go gen-key
 
+
 clean:
 	go fmt ./...
 	go mod tidy

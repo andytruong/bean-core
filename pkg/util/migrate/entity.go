@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 func NewMigration(bean string, name string) Migration {
@@ -37,7 +37,7 @@ func (this Migration) DriverMatch(driver string) bool {
 }
 
 func (this *Migration) IsExecuted(tx *gorm.DB) (bool, error) {
-	count := 0
+	var count int64
 
 	err := tx.
 		Model(&Migration{}).

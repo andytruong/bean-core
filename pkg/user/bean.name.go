@@ -1,7 +1,7 @@
 package user
 
 import (
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"

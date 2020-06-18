@@ -4,8 +4,8 @@ import (
 	"path"
 	"runtime"
 
-	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"bean/pkg/util"
 	"bean/pkg/util/migrate"

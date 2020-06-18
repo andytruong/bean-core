@@ -78,7 +78,7 @@ func Test_AccessMode(t *testing.T) {
 			ass.False(AccessModePrivate.CanDelete(false, false))
 			ass.False(AccessModePrivate.CanDelete(false, true))
 		})
-		
+
 		t.Run("owner", func(t *testing.T) {
 			ass.False(AccessModeSystemDisabled.CanWrite(true, true))
 			ass.True(AccessModePrivateReadonly.CanRead(true, false))
