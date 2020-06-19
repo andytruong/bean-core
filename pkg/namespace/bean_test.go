@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	log "gorm.io/gorm/logger"
 
 	"bean/pkg/namespace/api/fixtures"
 	"bean/pkg/namespace/model"
@@ -30,7 +31,8 @@ func bean() *NamespaceBean {
 		panic(err)
 	}
 
-	db := util.MockDatabase().LogMode(false)
+	db := util.MockDatabase()
+	db.Logger.LogMode(log.Silent)
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
 	bUser := user.NewUserBean(db, logger, id)

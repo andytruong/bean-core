@@ -15,13 +15,13 @@ const (
 	TableConfigBucket         = "config_buckets"
 	TableConfigVariable       = "config_variables"
 	TableAccessSession        = "access_session"
-	TableAccessPassword       = "user_password"
 	TableNamespace            = "namespaces"
 	TableNamespaceMemberships = "namespace_memberships"
 	TableNamespaceDomains     = "namespace_domains"
 	TableNamespaceConfig      = "namespace_config"
 	TableManagerEdge          = "namespace_manager_edge"
 	TableUserEmail            = "user_emails"
+	TableAccessPassword       = "user_passwords"
 	TableUserEmailUnverified  = "user_unverified_emails"
 )
 

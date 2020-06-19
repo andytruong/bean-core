@@ -29,8 +29,11 @@ func (this *CorePassword) create(tx *gorm.DB, user *model.User, in *dto.UserPass
 		IsActive:    true,
 	}
 
-	if err := tx.Save(pass).Error; nil != err {
-		return err
+	{
+		err := tx.Create(pass).Table(connect.TableAccessPassword).Error
+		if nil != err {
+			return err
+		}
 	}
 
 	// set other passwords to inactive

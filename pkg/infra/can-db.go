@@ -30,7 +30,7 @@ func (this *databases) get(name string) (*gorm.DB, error) {
 		// No configuration found for requested-DB
 		return nil, errors.Wrap(util.ErrorConfig, "database config not provided: "+name)
 	} else {
-		if con, err := gorm.Open(this.dialector(cnf), &gorm.Config{}); nil != err {
+		if con, err := gorm.Open(this.dialector(cnf), &gorm.Config{SkipDefaultTransaction: true}); nil != err {
 			return nil, err
 		} else {
 			this.connections.Store(name, con)
