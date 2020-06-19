@@ -46,7 +46,12 @@ func (this CoreVariable) access(ctx context.Context, db *gorm.DB, bucketId strin
 
 func (this CoreVariable) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigVariable, error) {
 	variable := &model.ConfigVariable{}
-	err := db.Table(connect.TableConfigVariable).First(&variable, "id = ?", id).Error
+	
+	err := db.
+		Table(connect.TableConfigVariable).
+		First(&variable, "id = ?", id).
+		Error
+
 	if nil != err {
 		return nil, err
 	}
@@ -79,7 +84,7 @@ func (this CoreVariable) Create(ctx context.Context, tx *gorm.DB, in dto.Variabl
 		UpdatedAt:   time.Now(),
 	}
 
-	err := tx.Table(connect.TableConfigVariable).Save(&variable).Error
+	err := tx.Table(connect.TableConfigVariable).Create(&variable).Error
 
 	if nil != err {
 		return nil, err

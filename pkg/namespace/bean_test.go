@@ -76,18 +76,18 @@ func Test_Namespace(t *testing.T) {
 			ass.Equal(ownerNS.Language, api.LanguageDefault)
 
 			// check that memberships are setup correctly.
-			counter := 0
+			var counter int64
 			this.db.
 				Table(connect.TableNamespaceMemberships).
 				Where("user_id = ? AND namespace_id = ?", iCreate.Context.UserID, outcome.Namespace.ID).
 				Count(&counter)
-			ass.Equal(1, counter)
+			ass.Equal(int64(1), counter)
 
 			this.db.
 				Table(connect.TableNamespaceMemberships).
 				Where("user_id = ? AND namespace_id = ?", iCreate.Context.UserID, ownerNS.ID).
 				Count(&counter)
-			ass.Equal(1, counter)
+			ass.Equal(int64(1), counter)
 		})
 
 		t.Run("domain duplication", func(t *testing.T) {

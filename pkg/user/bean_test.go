@@ -54,6 +54,14 @@ func Test(t *testing.T) {
 			ass.True(true, "TODO")
 		})
 	})
+}
+
+func Test_Update(t *testing.T) {
+	ass := assert.New(t)
+	db := util.MockDatabase()
+	this := NewUserBean(db, util.MockLogger(), util.MockIdentifier())
+	util.MockInstall(this, db)
+	iCreate := fixtures.NewUserCreateInputFixture()
 
 	t.Run("Update", func(t *testing.T) {
 		defer tearDown(this)

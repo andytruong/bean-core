@@ -65,14 +65,14 @@ func Test_Create(t *testing.T) {
 	oNamespace, err := this.namespace.NamespaceCreate(ctx, iNamespace)
 	ass.NoError(err)
 
-	t.Run("test email inactive", func(t *testing.T) {
+	t.Run("email inactive", func(t *testing.T) {
 		input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 		input.Email = iUser.Emails.Secondary[1].Value
 		_, err := this.SessionCreate(ctx, input)
 		ass.Equal(err.Error(), "user not found")
 	})
 
-	t.Run("test password unmatched", func(t *testing.T) {
+	t.Run("password unmatched", func(t *testing.T) {
 		input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 		input.HashedPassword = "invalid-password"
 		outcome, err := this.SessionCreate(ctx, input)
@@ -83,7 +83,7 @@ func Test_Create(t *testing.T) {
 		ass.Equal(outcome.Errors[0].Fields, []string{"input.namespaceId"})
 	})
 
-	t.Run("test ok", func(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
 		input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 		outcome, err := this.SessionCreate(ctx, input)
 		ass.NoError(err)

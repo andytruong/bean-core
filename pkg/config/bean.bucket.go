@@ -36,7 +36,7 @@ func (this CoreBucket) Create(ctx context.Context, tx *gorm.DB, input dto.Bucket
 		bucket.Access = *input.Access
 	}
 
-	err := tx.Table(connect.TableConfigBucket).Save(&bucket).Error
+	err := tx.Table(connect.TableConfigBucket).Create(&bucket).Error
 	if nil != err {
 		return nil, err
 	}
@@ -118,7 +118,12 @@ func (this CoreBucket) Update(ctx context.Context, tx *gorm.DB, input dto.Bucket
 func (this CoreBucket) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigBucket, error) {
 	bucket := &model.ConfigBucket{}
 
-	err := db.Table(connect.TableConfigBucket).First(&bucket, "id = ?", id).Error
+	err := db.
+		WithContext(ctx).
+		Table(connect.TableConfigBucket).
+		Where("id = ?", id).
+		First(&bucket).
+		Error
 	if nil != err {
 		return nil, err
 	}

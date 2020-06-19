@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	"bean/pkg/util/connect"
 	"bean/pkg/util/migrate"
@@ -15,6 +16,8 @@ func MockDatabase() *gorm.DB {
 	db, err := gorm.Open(con, &gorm.Config{})
 	if nil != err {
 		panic(err)
+	} else {
+		db.Logger = db.Logger.LogMode(logger.Silent)
 	}
 
 	return db

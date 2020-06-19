@@ -21,5 +21,5 @@ require (
 	gopkg.in/yaml.v2 v2.3.0
 	gorm.io/driver/postgres v0.2.0
 	gorm.io/driver/sqlite v1.0.3
-	gorm.io/gorm v0.2.8
+	gorm.io/gorm v0.2.9
 )
