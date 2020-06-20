@@ -64,11 +64,11 @@ func (this *CoreSession) createUseCredentials(tx *gorm.DB, in *dto.SessionCreate
 		}
 	}
 
-	return this.create(tx, model.KindCredentials, email.UserId, in.NamespaceID)
+	return this.create(tx, util.KindCredentials, email.UserId, in.NamespaceID)
 }
 
 func (this *CoreSession) generateOTLT(tx *gorm.DB, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
-	return this.create(tx, model.KindOTLT, in.UserID, in.NamespaceID)
+	return this.create(tx, util.KindOTLT, in.UserID, in.NamespaceID)
 }
 
 func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
@@ -77,11 +77,11 @@ func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dt
 		return nil, err
 	}
 
-	if oneTimeSession.Kind != model.KindOTLT {
+	if oneTimeSession.Kind != util.KindOTLT {
 		return nil, util.ErrorInvalidArgument
 	}
 
-	out, err := this.create(tx, model.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.NamespaceId)
+	out, err := this.create(tx, util.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.NamespaceId)
 	if nil != err {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dt
 
 func (this CoreSession) create(
 	tx *gorm.DB,
-	kind model.Kind,
+	kind util.Kind,
 	userId string,
 	namespaceId string,
 ) (*dto.SessionCreateOutcome, error) {

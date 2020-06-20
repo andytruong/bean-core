@@ -50,6 +50,7 @@ func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (stri
 	}
 
 	claims := util.Claims{
+		Kind: session.Kind,
 		Roles: func() []string {
 			var roleNames []string
 
