@@ -6,9 +6,10 @@ import (
 )
 
 type SessionCreateInput struct {
-	Credentials  *SessionCreateUseCredentialsInput  `json:"credentials"`
-	OneTimeLogin *SessionCreateUseOneTimeLoginInput `json:"oneTimeLogin"`
-	Context      *SessionCreateContextInput         `json:"context"`
+	UseCredentials *SessionCreateUseCredentialsInput `json:"useCredentials"`
+	GenerateOTLT   *SessionCreateGenerateOTLT        `json:"generateOTLT"`
+	UseOTLT        *SessionCreateUseOTLT             `json:"useOTLT"`
+	Context        *SessionCreateContextInput        `json:"context"`
 }
 
 type SessionCreateUseCredentialsInput struct {
@@ -17,7 +18,12 @@ type SessionCreateUseCredentialsInput struct {
 	HashedPassword string            `json:"hashedPassword"`
 }
 
-type SessionCreateUseOneTimeLoginInput struct {
+type SessionCreateGenerateOTLT struct {
+	NamespaceID string `json:"namespaceId"`
+	UserID      string `json:"userId"`
+}
+
+type SessionCreateUseOTLT struct {
 	Token string `json:"token"`
 }
 

@@ -7,7 +7,7 @@ import (
 
 func SessionCreateInputFixtureUseCredentials(namespaceId string, email string, hashedPassword string) *dto.SessionCreateInput {
 	return &dto.SessionCreateInput{
-		Credentials: &dto.SessionCreateUseCredentialsInput{
+		UseCredentials: &dto.SessionCreateUseCredentialsInput{
 			NamespaceID:    namespaceId,
 			Email:          util.EmailAddress(email),
 			HashedPassword: hashedPassword,

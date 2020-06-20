@@ -1400,8 +1400,9 @@ extend type Mutation {
 }
 
 input SessionCreateInput {
-	credentials:  SessionCreateUseCredentialsInput
-	oneTimeLogin: SessionCreateUseOneTimeLoginInput
+	useCredentials:  SessionCreateUseCredentialsInput
+	generateOTLT: SessionCreateGenerateOTLT
+	useOTLT: SessionCreateUseOTLT
 	context: SessionCreateContextInput
 }
 
@@ -1411,7 +1412,12 @@ input SessionCreateUseCredentialsInput {
 	hashedPassword: String!
 }
 
-input SessionCreateUseOneTimeLoginInput {
+input SessionCreateGenerateOTLT {
+	namespaceId: String!
+	userId: String!
+}
+
+input SessionCreateUseOTLT {
 	token: String!
 }
 
@@ -7629,21 +7635,51 @@ func (ec *executionContext) unmarshalInputSessionCreateContextInput(ctx context.
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputSessionCreateGenerateOTLT(ctx context.Context, obj interface{}) (dto1.SessionCreateGenerateOTLT, error) {
+	var it dto1.SessionCreateGenerateOTLT
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "namespaceId":
+			var err error
+			it.NamespaceID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "userId":
+			var err error
+			it.UserID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSessionCreateInput(ctx context.Context, obj interface{}) (dto1.SessionCreateInput, error) {
 	var it dto1.SessionCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "credentials":
+		case "useCredentials":
 			var err error
-			it.Credentials, err = ec.unmarshalOSessionCreateUseCredentialsInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseCredentialsInput(ctx, v)
+			it.UseCredentials, err = ec.unmarshalOSessionCreateUseCredentialsInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseCredentialsInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "oneTimeLogin":
+		case "generateOTLT":
 			var err error
-			it.OneTimeLogin, err = ec.unmarshalOSessionCreateUseOneTimeLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOneTimeLoginInput(ctx, v)
+			it.GenerateOTLT, err = ec.unmarshalOSessionCreateGenerateOTLT2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateGenerateOTLT(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "useOTLT":
+			var err error
+			it.UseOTLT, err = ec.unmarshalOSessionCreateUseOTLT2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOTLT(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7689,8 +7725,8 @@ func (ec *executionContext) unmarshalInputSessionCreateUseCredentialsInput(ctx c
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSessionCreateUseOneTimeLoginInput(ctx context.Context, obj interface{}) (dto1.SessionCreateUseOneTimeLoginInput, error) {
-	var it dto1.SessionCreateUseOneTimeLoginInput
+func (ec *executionContext) unmarshalInputSessionCreateUseOTLT(ctx context.Context, obj interface{}) (dto1.SessionCreateUseOTLT, error) {
+	var it dto1.SessionCreateUseOTLT
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -10664,6 +10700,18 @@ func (ec *executionContext) unmarshalOSessionCreateContextInput2ᚖbeanᚋpkgᚋ
 	return &res, err
 }
 
+func (ec *executionContext) unmarshalOSessionCreateGenerateOTLT2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateGenerateOTLT(ctx context.Context, v interface{}) (dto1.SessionCreateGenerateOTLT, error) {
+	return ec.unmarshalInputSessionCreateGenerateOTLT(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOSessionCreateGenerateOTLT2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateGenerateOTLT(ctx context.Context, v interface{}) (*dto1.SessionCreateGenerateOTLT, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOSessionCreateGenerateOTLT2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateGenerateOTLT(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalOSessionCreateInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx context.Context, v interface{}) (dto1.SessionCreateInput, error) {
 	return ec.unmarshalInputSessionCreateInput(ctx, v)
 }
@@ -10688,15 +10736,15 @@ func (ec *executionContext) unmarshalOSessionCreateUseCredentialsInput2ᚖbean�
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOSessionCreateUseOneTimeLoginInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOneTimeLoginInput(ctx context.Context, v interface{}) (dto1.SessionCreateUseOneTimeLoginInput, error) {
-	return ec.unmarshalInputSessionCreateUseOneTimeLoginInput(ctx, v)
+func (ec *executionContext) unmarshalOSessionCreateUseOTLT2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOTLT(ctx context.Context, v interface{}) (dto1.SessionCreateUseOTLT, error) {
+	return ec.unmarshalInputSessionCreateUseOTLT(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOSessionCreateUseOneTimeLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOneTimeLoginInput(ctx context.Context, v interface{}) (*dto1.SessionCreateUseOneTimeLoginInput, error) {
+func (ec *executionContext) unmarshalOSessionCreateUseOTLT2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOTLT(ctx context.Context, v interface{}) (*dto1.SessionCreateUseOTLT, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOSessionCreateUseOneTimeLoginInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOneTimeLoginInput(ctx, v)
+	res, err := ec.unmarshalOSessionCreateUseOTLT2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOTLT(ctx, v)
 	return &res, err
 }
 

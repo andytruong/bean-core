@@ -6,8 +6,9 @@ extend type Mutation {
 }
 
 input SessionCreateInput {
-	credentials:  SessionCreateUseCredentialsInput
-	oneTimeLogin: SessionCreateUseOneTimeLoginInput
+	useCredentials:  SessionCreateUseCredentialsInput
+	generateOTLT: SessionCreateGenerateOTLT
+	useOTLT: SessionCreateUseOTLT
 	context: SessionCreateContextInput
 }
 
@@ -17,7 +18,12 @@ input SessionCreateUseCredentialsInput {
 	hashedPassword: String!
 }
 
-input SessionCreateUseOneTimeLoginInput {
+input SessionCreateGenerateOTLT {
+	namespaceId: String!
+	userId: String!
+}
+
+input SessionCreateUseOTLT {
 	token: String!
 }
 

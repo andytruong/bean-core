@@ -41,7 +41,7 @@ const (
 	//        - If user record found -> create 'oneTime' session
 	//   6. User is redirected to /auth/oneTime/$oneTimeSession.token
 	//   7. Our server will generate full authenticated session for user, one-time session is deleted.
-	KindOneTimeToken Kind = "onetime"
+	KindOTLT Kind = "onetime"
 
 	// User who simply authenticated but without providing credentials.
 	// With this kind of session, user can not change password.

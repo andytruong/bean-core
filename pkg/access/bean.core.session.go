@@ -20,31 +20,19 @@ type CoreSession struct {
 }
 
 func (this *CoreSession) Create(tx *gorm.DB, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
-	if nil != in.Credentials {
-		return this.createUseCredentials(tx, in.Credentials)
+	if nil != in.UseCredentials {
+		return this.createUseCredentials(tx, in.UseCredentials)
 	}
 
-	if nil != in.OneTimeLogin {
-		return this.createUseOneTimeLogin(tx, in.OneTimeLogin)
+	if nil != in.GenerateOTLT {
+		return this.generateOTLT(tx, in.GenerateOTLT)
+	}
+
+	if nil != in.UseOTLT {
+		return this.useOTLT(tx, in.UseOTLT)
 	}
 
 	return nil, nil
-}
-
-func (this *CoreSession) createUseOneTimeLogin(tx *gorm.DB, in *dto.SessionCreateUseOneTimeLoginInput) (*dto.SessionCreateOutcome, error) {
-	oneTimeSession, err := this.Load(tx.Statement.Context, in.Token)
-	if nil != err {
-		return nil, err
-	}
-
-	if oneTimeSession.Kind != model.KindOneTimeToken {
-		return nil, util.ErrorInvalidArgument
-	}
-
-	// create session
-	// this.create(ctx, model.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.NamespaceId)
-
-	panic("wip")
 }
 
 func (this *CoreSession) createUseCredentials(tx *gorm.DB, in *dto.SessionCreateUseCredentialsInput) (*dto.SessionCreateOutcome, error) {
@@ -77,6 +65,36 @@ func (this *CoreSession) createUseCredentials(tx *gorm.DB, in *dto.SessionCreate
 	}
 
 	return this.create(tx, model.KindCredentials, email.UserId, in.NamespaceID)
+}
+
+func (this *CoreSession) generateOTLT(tx *gorm.DB, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
+	return this.create(tx, model.KindOTLT, in.UserID, in.NamespaceID)
+}
+
+func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
+	oneTimeSession, err := this.Load(tx.Statement.Context, tx, in.Token)
+	if nil != err {
+		return nil, err
+	}
+
+	if oneTimeSession.Kind != model.KindOTLT {
+		return nil, util.ErrorInvalidArgument
+	}
+
+	out, err := this.create(tx, model.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.NamespaceId)
+	if nil != err {
+		return nil, err
+	}
+
+	// delete OTLT session
+	{
+		_, err := this.Delete(tx, oneTimeSession)
+		if nil != err {
+			return nil, err
+		}
+	}
+
+	return out, err
 }
 
 func (this CoreSession) create(
@@ -133,9 +151,9 @@ func (this CoreSession) create(
 	}, nil
 }
 
-func (this CoreSession) Load(ctx context.Context, token string) (*model.Session, error) {
+func (this CoreSession) Load(ctx context.Context, db *gorm.DB, token string) (*model.Session, error) {
 	session := &model.Session{}
-	err := this.bean.db.
+	err := db.
 		WithContext(ctx).
 		Table(connect.TableAccessSession).
 		First(&session, "hashed_token = ?", this.bean.id.Encode(token)).
@@ -156,11 +174,11 @@ func (this CoreSession) Load(ctx context.Context, token string) (*model.Session,
 	return session, nil
 }
 
-func (this CoreSession) Delete(ctx context.Context, session *model.Session) (*dto.SessionDeleteOutcome, error) {
+func (this CoreSession) Delete(tx *gorm.DB, session *model.Session) (*dto.SessionDeleteOutcome, error) {
 	session.IsActive = false
 	session.Version = this.bean.id.MustULID()
 	session.UpdatedAt = time.Now()
-	err := this.bean.db.WithContext(ctx).Table(connect.TableAccessSession).Save(&session).Error
+	err := tx.Table(connect.TableAccessSession).Save(&session).Error
 	if nil != err {
 		return nil, err
 	}
