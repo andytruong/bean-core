@@ -49,19 +49,19 @@ func mockInstall(bean Bean, tx *gorm.DB) error {
 		}
 	}
 
+	dependencies := bean.Dependencies()
+	if nil != dependencies {
+		for _, dependency := range dependencies {
+			err := mockInstall(dependency, tx)
+			if nil != err {
+				return err
+			}
+		}
+	}
+
 	if err := bean.Migrate(tx, connect.SQLite); nil != err {
 		tx.Rollback()
 		panic(err)
-	} else {
-		dependencies := bean.Dependencies()
-		if nil != dependencies {
-			for _, dependency := range dependencies {
-				err := mockInstall(dependency, tx)
-				if nil != err {
-					return err
-				}
-			}
-		}
 	}
 
 	return nil

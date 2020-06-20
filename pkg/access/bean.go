@@ -39,7 +39,7 @@ func NewAccessBean(
 		config: config,
 	}
 
-	this.core = &Core{bean: this}
+	this.coreSession = &CoreSession{bean: this}
 
 	return this
 }
@@ -51,7 +51,7 @@ type (
 		db              *gorm.DB
 		id              *util.Identifier
 		SessionResolver ModelResolver
-		core            *Core
+		coreSession     *CoreSession
 
 		// depends on user bean
 		user      *user.UserBean
@@ -85,7 +85,7 @@ func (this AccessBean) Migrate(tx *gorm.DB, driver string) error {
 
 func (this *AccessBean) SessionCreate(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 	txn := this.db.WithContext(ctx).Begin()
-	outcome, err := this.core.Create(txn, in)
+	outcome, err := this.coreSession.Create(txn, in)
 	if nil != err {
 		txn.Rollback()
 
@@ -96,7 +96,10 @@ func (this *AccessBean) SessionCreate(ctx context.Context, in *dto.SessionCreate
 }
 
 func (this *AccessBean) SessionArchive(ctx context.Context, token string) (*dto.SessionDeleteOutcome, error) {
-	session, err := this.Session(ctx, token)
+	tx := this.db.WithContext(ctx).Begin()
+
+	// load session
+	sess, err := this.coreSession.Load(ctx, tx, token)
 	if nil != err {
 		return &dto.SessionDeleteOutcome{
 			Errors: util.NewErrors(util.ErrorCodeInput, []string{"token"}, err.Error()),
@@ -104,9 +107,19 @@ func (this *AccessBean) SessionArchive(ctx context.Context, token string) (*dto.
 		}, nil
 	}
 
-	return this.core.Delete(ctx, session)
+	// delete it
+	{
+		out, err := this.coreSession.Delete(tx, sess)
+		if nil != err {
+			tx.Rollback()
+
+			return nil, err
+		}
+
+		return out, tx.Commit().Error
+	}
 }
 
 func (this AccessBean) Session(ctx context.Context, token string) (*model.Session, error) {
-	return this.core.Load(ctx, token)
+	return this.coreSession.Load(ctx, this.db, token)
 }

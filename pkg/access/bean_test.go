@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"bean/pkg/access/api/fixtures"
+	"bean/pkg/access/model"
+	"bean/pkg/access/model/dto"
 	"bean/pkg/namespace"
 	fNamespace "bean/pkg/namespace/api/fixtures"
 	"bean/pkg/user"
@@ -34,8 +36,6 @@ func bean() *AccessBean {
 	bUser := user.NewUserBean(db, logger, id)
 	bNamespace := namespace.NewNamespaceBean(db, logger, id, bUser, nil)
 	bean := NewAccessBean(db, id, logger, bUser, bNamespace, config.Beans.Access)
-	util.MockInstall(bUser, db)
-	util.MockInstall(bNamespace, db)
 	util.MockInstall(bean, db)
 
 	return bean
@@ -65,49 +65,84 @@ func Test_Create(t *testing.T) {
 	oNamespace, err := this.namespace.NamespaceCreate(ctx, iNamespace)
 	ass.NoError(err)
 
-	t.Run("email inactive", func(t *testing.T) {
-		in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-		in.Email = iUser.Emails.Secondary[1].Value
-		_, err := this.SessionCreate(ctx, in)
-		ass.Equal(err.Error(), "user not found")
-	})
+	t.Run("use credentials", func(t *testing.T) {
+		t.Run("email inactive", func(t *testing.T) {
+			in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+			in.UseCredentials.Email = iUser.Emails.Secondary[1].Value
+			_, err := this.SessionCreate(ctx, in)
+			ass.Equal(err.Error(), "user not found")
+		})
 
-	t.Run("password unmatched", func(t *testing.T) {
-		in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-		in.HashedPassword = "invalid-password"
-		outcome, err := this.SessionCreate(ctx, in)
+		t.Run("password unmatched", func(t *testing.T) {
+			in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+			in.UseCredentials.HashedPassword = "invalid-password"
+			outcome, err := this.SessionCreate(ctx, in)
 
-		ass.NoError(err)
-		ass.Equal(util.ErrorCodeInput, *outcome.Errors[0].Code)
-		ass.Equal(outcome.Errors[0].Message, "invalid password")
-		ass.Equal(outcome.Errors[0].Fields, []string{"input.namespaceId"})
-	})
-
-	t.Run("ok", func(t *testing.T) {
-		in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-		out, err := this.SessionCreate(ctx, in)
-		ass.NoError(err)
-		ass.Equal(oUser.User.ID, out.Session.UserId)
-		ass.Equal(oNamespace.Namespace.ID, out.Session.NamespaceId)
-		ass.Len(out.Errors, 0)
-
-		{
-			// check that with outcome.Session we can generate JWT
-			signedString, err := this.SessionResolver.Jwt(ctx, out.Session)
 			ass.NoError(err)
-			ass.Contains(signedString, "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.")
+			ass.Equal(util.ErrorCodeInput, *outcome.Errors[0].Code)
+			ass.Equal(outcome.Errors[0].Message, "invalid password")
+			ass.Equal(outcome.Errors[0].Fields, []string{"input.namespaceId"})
+		})
+
+		t.Run("ok", func(t *testing.T) {
+			in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+			out, err := this.SessionCreate(ctx, in)
+			ass.NoError(err)
+			ass.Equal(oUser.User.ID, out.Session.UserId)
+			ass.Equal(oNamespace.Namespace.ID, out.Session.NamespaceId)
+			ass.Len(out.Errors, 0)
 
 			{
-				// check that JWT is valid
-				claims, err := this.SessionResolver.JwtValidation(signedString)
+				// check that with outcome.Session we can generate JWT
+				signedString, err := this.SessionResolver.Jwt(ctx, out.Session)
 				ass.NoError(err)
-				ass.NotNil(claims)
-				ass.Equal(claims.SessionId(), out.Session.ID)
-				ass.Equal(claims.UserId(), out.Session.UserId)
-				ass.Equal(claims.NamespaceId(), out.Session.NamespaceId)
-				ass.Equal(claims.Roles, []string{"owner"})
+				ass.Contains(signedString, "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.")
+
+				{
+					// check that JWT is valid
+					claims, err := this.SessionResolver.JwtValidation(signedString)
+					ass.NoError(err)
+					ass.NotNil(claims)
+					ass.Equal(claims.SessionId(), out.Session.ID)
+					ass.Equal(claims.UserId(), out.Session.UserId)
+					ass.Equal(claims.NamespaceId(), out.Session.NamespaceId)
+					ass.Equal(claims.Roles, []string{"owner"})
+				}
 			}
-		}
+		})
+	})
+
+	t.Run("OTLT - one time login token", func(t *testing.T) {
+		t.Run("generate", func(t *testing.T) {
+			oGenerate, err := this.SessionCreate(ctx, &dto.SessionCreateInput{
+				GenerateOTLT: &dto.SessionCreateGenerateOTLT{
+					NamespaceID: oNamespace.Namespace.ID,
+					UserID:      oUser.User.ID,
+				},
+			})
+
+			ass.NoError(err)
+			ass.Equal(model.KindOTLT, oGenerate.Session.Kind)
+
+			// Use it
+			{
+				out, err := this.SessionCreate(ctx, &dto.SessionCreateInput{
+					UseOTLT: &dto.SessionCreateUseOTLT{
+						Token: *oGenerate.Token,
+					},
+				})
+
+				ass.NoError(err)
+				ass.Equal(model.KindAuthenticated, out.Session.Kind)
+
+				// load again -> should not be found
+				{
+					otltSession, err := this.Session(ctx, *oGenerate.Token)
+					ass.Error(err)
+					ass.Nil(otltSession)
+				}
+			}
+		})
 	})
 }
 
@@ -125,7 +160,7 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 	ass.NoError(err)
 
 	// base input
-	in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+	in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	outcome, err := this.SessionCreate(ctx, in)
 	ass.Error(err)
@@ -143,7 +178,7 @@ func Test_Query(t *testing.T) {
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, _ := this.namespace.NamespaceCreate(ctx, iNamespace)
-	in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+	in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	outcome, err := this.SessionCreate(ctx, in)
 	ass.NoError(err)
@@ -154,7 +189,7 @@ func Test_Query(t *testing.T) {
 	ass.Equal(session.NamespaceId, oNamespace.Namespace.ID)
 	ass.Equal(session.UserId, oUser.User.ID)
 
-	{
+	t.Run("load expired session", func(t *testing.T) {
 		// change session expiration time
 		oneMinDuration, _ := time.ParseDuration("129h")
 		session.ExpiredAt = session.ExpiredAt.Add(-1 * oneMinDuration)
@@ -165,7 +200,11 @@ func Test_Query(t *testing.T) {
 		_, err = this.Session(ctx, *outcome.Token)
 		ass.Error(err)
 		ass.Equal(err.Error(), "session expired")
-	}
+	})
+
+	t.Run("load one-time-login session -> session deleted", func(t *testing.T) {
+		// …
+	})
 }
 
 func Test_Archive(t *testing.T) {
@@ -178,7 +217,7 @@ func Test_Archive(t *testing.T) {
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, _ := this.namespace.NamespaceCreate(ctx, iNamespace)
-	in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+	in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	sessionOutcome, err := this.SessionCreate(ctx, in)
 	ass.NoError(err)

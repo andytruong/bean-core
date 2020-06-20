@@ -6,10 +6,25 @@ extend type Mutation {
 }
 
 input SessionCreateInput {
+	useCredentials:  SessionCreateUseCredentialsInput
+	generateOTLT: SessionCreateGenerateOTLT
+	useOTLT: SessionCreateUseOTLT
+	context: SessionCreateContextInput
+}
+
+input SessionCreateUseCredentialsInput {
 	namespaceId: String!
 	email: EmailAddress!
 	hashedPassword: String!
-	context: SessionCreateContextInput
+}
+
+input SessionCreateGenerateOTLT {
+	namespaceId: String!
+	userId: String!
+}
+
+input SessionCreateUseOTLT {
+	token: String!
 }
 
 input SessionCreateContextInput {

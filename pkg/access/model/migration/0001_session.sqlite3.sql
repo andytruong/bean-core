@@ -2,6 +2,8 @@ CREATE TABLE access_session
 (
     id           character varying(26) PRIMARY KEY NOT NULL,
     version      character varying(26)             NOT NULL,
+    parent_id    character varying(26),
+    kind         character varying(32)             NOT NULL,
     user_id      character varying(26)             NOT NULL,
     namespace_id character varying(26)             NOT NULL,
     hashed_token character varying(128)            NOT NULL,
@@ -14,5 +16,6 @@ CREATE TABLE access_session
 
     CONSTRAINT session_version UNIQUE (version),
     FOREIGN KEY (user_id) REFERENCES users (user_id),
-    FOREIGN KEY (namespace_id) REFERENCES namespaces (namespace_id)
+    FOREIGN KEY (namespace_id) REFERENCES namespaces (namespace_id),
+    FOREIGN KEY (parent_id) REFERENCES access_session
 );
