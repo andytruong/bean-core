@@ -51,12 +51,12 @@ func (this Core) Find(ctx context.Context, filters dto.NamespaceFilters) (*model
 	return nil, nil
 }
 
-func (this *Core) Create(ctx context.Context, tx *gorm.DB, in dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
+func (this *Core) Create(tx *gorm.DB, in dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	namespace, err := this.create(tx, in)
 	if nil != err {
 		return nil, err
 	} else {
-		err := this.createRelationships(ctx, tx, namespace, in)
+		err := this.createRelationships(tx, namespace, in)
 		if nil != err {
 			return nil, err
 		}
@@ -69,13 +69,22 @@ func (this *Core) create(tx *gorm.DB, in dto.NamespaceCreateInput) (*model.Names
 	namespace := &model.Namespace{
 		ID:        this.bean.id.MustULID(),
 		Version:   this.bean.id.MustULID(),
-		ParentID:  in.Context.NamespaceID,
 		Kind:      in.Object.Kind,
 		Title:     *in.Object.Title,
 		Language:  in.Object.Language,
 		IsActive:  in.Object.IsActive,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
+	}
+
+	if nil != in.Object.ParentId {
+		namespace.ParentID = in.Object.ParentId
+	} else {
+		claims := util.CxtKeyClaims.Actor(tx.Statement.Context)
+		if nil != claims {
+			parentNamespaceId := claims.NamespaceId()
+			namespace.ParentID = &parentNamespaceId
+		}
 	}
 
 	if err := tx.Create(&namespace).Error; nil != err {
@@ -85,7 +94,7 @@ func (this *Core) create(tx *gorm.DB, in dto.NamespaceCreateInput) (*model.Names
 	return namespace, nil
 }
 
-func (this *Core) createRelationships(ctx context.Context, tx *gorm.DB, namespace *model.Namespace, in dto.NamespaceCreateInput) error {
+func (this *Core) createRelationships(tx *gorm.DB, namespace *model.Namespace, in dto.NamespaceCreateInput) error {
 	if err := this.bean.CoreDomainName.createMultiple(tx, namespace, in); nil != err {
 		return err
 	}
@@ -97,32 +106,32 @@ func (this *Core) createRelationships(ctx context.Context, tx *gorm.DB, namespac
 		}
 	}
 
-	// setup roles
-	//  - create 'owner' role for the new namespace
-	//  - grant 'owner' role to actor
-	{
+	claims := util.CxtKeyClaims.Actor(tx.Statement.Context)
+	if nil != claims {
+		// setup roles
+		//  - create 'owner' role for the new namespace
+		//  - grant 'owner' role to actor
 		ownerRoleInput := dto.NamespaceCreateInput{
 			Object: dto.NamespaceCreateInputObject{
+				ParentId: &namespace.ID,
 				Kind:     model.NamespaceKindRole,
 				Title:    util.NilString("owner"),
 				Language: api.LanguageDefault,
 				IsActive: true,
 			},
-			Context: in.Context,
 		}
 
-		ownerRoleInput.Context.NamespaceID = util.NilString(namespace.ID)
 		if ownerRole, err := this.create(tx, ownerRoleInput); nil != err {
 			return err
 		} else {
 			// membership of user -> organisation
-			_, err = this.bean.CoreMember.doCreate(tx, namespace.ID, in.Context.UserID, true)
+			_, err = this.bean.CoreMember.doCreate(tx, namespace.ID, claims.UserId(), true)
 			if nil != err {
 				return err
 			}
 
 			// membership of user -> owner role
-			_, err = this.bean.CoreMember.doCreate(tx, ownerRole.ID, in.Context.UserID, true)
+			_, err = this.bean.CoreMember.doCreate(tx, ownerRole.ID, claims.UserId(), true)
 			if nil != err {
 				return err
 			}

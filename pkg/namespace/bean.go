@@ -91,13 +91,13 @@ func (this NamespaceBean) Load(ctx context.Context, id string) (*model.Namespace
 
 func (this NamespaceBean) NamespaceCreate(ctx context.Context, in dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	txn := this.db.WithContext(ctx).Begin()
-	outcome, err := this.Core.Create(ctx, txn, in)
+	out, err := this.Core.Create(txn, in)
 
 	if nil != err {
 		txn.Rollback()
 		return nil, err
 	} else {
-		return outcome, txn.Commit().Error
+		return out, txn.Commit().Error
 	}
 }
 
@@ -115,14 +115,14 @@ func (this NamespaceBean) NamespaceUpdate(ctx context.Context, in dto.NamespaceU
 		return nil, err
 	}
 
-	tx := this.db.WithContext(ctx).Begin()
-	outcome, err := this.Core.Update(tx, namespace, in)
+	txn := this.db.WithContext(ctx).Begin()
+	out, err := this.Core.Update(txn, namespace, in)
 
 	if nil != err {
-		tx.Rollback()
+		txn.Rollback()
 		return nil, err
 	} else {
-		return outcome, tx.Commit().Error
+		return out, txn.Commit().Error
 	}
 }
 
