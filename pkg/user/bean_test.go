@@ -16,7 +16,7 @@ import (
 )
 
 func tearDown(this *UserBean) {
-	this.db.Table(connect.TableUserEmail).Delete(&model.UserEmail{})
+	this.db.Table(connect.TableUserEmail).Where("1").Delete(&model.UserEmail{})
 }
 
 func Test(t *testing.T) {
@@ -54,6 +54,14 @@ func Test(t *testing.T) {
 			ass.True(true, "TODO")
 		})
 	})
+}
+
+func Test_Update(t *testing.T) {
+	ass := assert.New(t)
+	db := util.MockDatabase()
+	this := NewUserBean(db, util.MockLogger(), util.MockIdentifier())
+	util.MockInstall(this, db)
+	iCreate := fixtures.NewUserCreateInputFixture()
 
 	t.Run("Update", func(t *testing.T) {
 		defer tearDown(this)

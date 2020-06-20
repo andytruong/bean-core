@@ -1,18 +1,23 @@
 package util
 
 import (
-	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	"bean/pkg/util/connect"
 	"bean/pkg/util/migrate"
 )
 
 func MockDatabase() *gorm.DB {
-	db, err := gorm.Open(connect.SQLite, ":memory:")
+	con := sqlite.Open(":memory:")
+	db, err := gorm.Open(con, &gorm.Config{})
 	if nil != err {
 		panic(err)
+	} else {
+		db.Logger = db.Logger.LogMode(logger.Silent)
 	}
 
 	return db
@@ -38,8 +43,8 @@ func MockInstall(bean Bean, db *gorm.DB) {
 }
 
 func mockInstall(bean Bean, tx *gorm.DB) error {
-	if !tx.HasTable(migrate.Migration{}) {
-		if err := tx.CreateTable(migrate.Migration{}).Error; nil != err {
+	if !tx.Migrator().HasTable(migrate.Migration{}) {
+		if err := tx.Migrator().CreateTable(migrate.Migration{}); nil != err {
 			return err
 		}
 	}

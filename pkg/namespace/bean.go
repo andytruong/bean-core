@@ -2,14 +2,14 @@ package namespace
 
 import (
 	"context"
-	"database/sql"
 	"path"
 	"runtime"
 
-	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
+	"bean/pkg/config"
 	"bean/pkg/namespace/api/handler"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
@@ -43,11 +43,12 @@ func NewNamespaceBean(
 }
 
 type NamespaceBean struct {
-	logger *zap.Logger
-	db     *gorm.DB
-	id     *util.Identifier
-	user   *user.UserBean
-	config *Config
+	config  *Config
+	logger  *zap.Logger
+	db      *gorm.DB
+	id      *util.Identifier
+	user    *user.UserBean
+	bConfig *config.ConfigBean
 
 	Core           *Core
 	CoreMember     *CoreMember
@@ -88,7 +89,7 @@ func (this NamespaceBean) Load(ctx context.Context, id string) (*model.Namespace
 }
 
 func (this NamespaceBean) NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
-	txn := this.db.BeginTx(ctx, &sql.TxOptions{})
+	txn := this.db.WithContext(ctx).Begin()
 	outcome, err := this.Core.Create(txn, input)
 
 	if nil != err {
@@ -114,7 +115,7 @@ func (this NamespaceBean) NamespaceUpdate(ctx context.Context, input dto.Namespa
 		return nil, err
 	}
 
-	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
+	tx := this.db.WithContext(ctx).Begin()
 	outcome, err := this.Core.Update(tx, namespace, input)
 
 	if nil != err {
@@ -148,7 +149,7 @@ func (this NamespaceBean) NamespaceMembershipCreate(
 		return nil, errors.Wrap(util.ErrorConfig, "register is off")
 	}
 
-	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
+	tx := this.db.WithContext(ctx).Begin()
 	outcome, err := this.CoreMember.Create(tx, input, namespace, user)
 
 	if nil != err {
@@ -165,7 +166,7 @@ func (this NamespaceBean) NamespaceMembershipUpdate(ctx context.Context, input d
 		return nil, err
 	}
 
-	tx := this.db.BeginTx(ctx, &sql.TxOptions{})
+	tx := this.db.WithContext(ctx).Begin()
 	outcome, err := this.CoreMember.Update(tx, input, membership)
 
 	if nil != err {

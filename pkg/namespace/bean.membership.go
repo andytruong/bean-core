@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
@@ -41,11 +41,11 @@ func (this CoreMember) Find(first int, after *string, filters dto.MembershipsFil
 			return nil, err
 		}
 
-		counter := 0
+		var counter int64
 		if err := query.Count(&counter).Error; nil != err {
 			return nil, err
 		} else {
-			con.PageInfo.HasNextPage = counter > len(con.Nodes)
+			con.PageInfo.HasNextPage = int(counter) > len(con.Nodes)
 
 			if len(con.Nodes) > 0 {
 				startEntity := con.Nodes[0]
@@ -161,7 +161,7 @@ func (this CoreMember) createRelationships(tx *gorm.DB, obj *model.Membership, m
 
 	// validate manager in same namespace
 	{
-		counter := 0
+		var counter int64
 		err := tx.
 			Table(connect.TableNamespaceMemberships).
 			Where("namespace_id = ?", obj.NamespaceID).
@@ -172,7 +172,7 @@ func (this CoreMember) createRelationships(tx *gorm.DB, obj *model.Membership, m
 
 		if nil != err {
 			return nil, err
-		} else if counter != len(managerMemberIds) {
+		} else if int(counter) != len(managerMemberIds) {
 			return util.NewErrors(util.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "one ore more IDs are invalid"), nil
 		}
 	}

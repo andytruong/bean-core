@@ -20,7 +20,7 @@ func NewMockCan() *Can {
 	return ctn
 }
 
-func TestContainer(t *testing.T) {
+func Test(t *testing.T) {
 	ass := assert.New(t)
 	can := NewMockCan()
 	id := can.Identifier()

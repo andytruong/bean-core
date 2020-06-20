@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
@@ -50,7 +50,6 @@ func (this Core) Find(ctx context.Context, filters dto.NamespaceFilters) (*model
 
 	return nil, nil
 }
-
 
 func (this *Core) Create(tx *gorm.DB, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	namespace, err := this.doCreate(tx, input)
@@ -200,7 +199,7 @@ func (this *Core) updateFeature(
 	return tx.
 		Table(connect.TableNamespaceConfig).
 		Where("namespace_id = ? AND bucket = ? AND key = ?", obj.ID, bucket, key).
-		Update(&model.NamespaceConfig{
+		Updates(&model.NamespaceConfig{
 			Version:   this.bean.id.MustULID(),
 			Value:     value,
 			UpdatedAt: time.Now(),

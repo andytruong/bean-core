@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
@@ -63,7 +63,7 @@ func Test_Bucket(t *testing.T) {
 	})
 
 	t.Run("bucket.update", func(t *testing.T) {
-		tx := db.BeginTx(ctx, &sql.TxOptions{})
+		tx := db.Begin()
 		defer tx.Rollback()
 
 		privateAccess := api.AccessModePrivate
@@ -129,7 +129,7 @@ func Test_Bucket(t *testing.T) {
 		var bucket *model.ConfigBucket
 		hostId := this.id.MustULID()
 		access := api.AccessMode("444")
-		tx := db.BeginTx(ctx, &sql.TxOptions{})
+		tx := db.Begin()
 		defer tx.Rollback()
 
 		oCreate, err = this.CoreBucket.Create(ctx, tx, dto.BucketCreateInput{
@@ -165,7 +165,7 @@ func Test_Variable(t *testing.T) {
 	t.Run("variable.create", func(t *testing.T) {
 		t.Run("on read-only bucket", func(t *testing.T) {
 			ctx := context.Background()
-			tx := db.BeginTx(ctx, &sql.TxOptions{})
+			tx := db.Begin(&sql.TxOptions{})
 			defer tx.Rollback()
 			hostId := this.id.MustULID()
 			access := api.AccessModePrivateReadonly
@@ -204,7 +204,7 @@ func Test_Variable(t *testing.T) {
 			ctx := context.WithValue(context.Background(), util.CxtKeyClaims, &util.Claims{
 				StandardClaims: jwt.StandardClaims{Subject: userId},
 			})
-			tx := db.BeginTx(ctx, &sql.TxOptions{})
+			tx := db.Begin()
 			defer tx.Rollback()
 			access := api.AccessModePrivate
 
@@ -240,7 +240,7 @@ func Test_Variable(t *testing.T) {
 	})
 
 	t.Run("variable.load", func(t *testing.T) {
-		tx := db.BeginTx(context.Background(), &sql.TxOptions{})
+		tx := db.Begin()
 		defer tx.Rollback()
 
 		setup := func(access api.AccessMode) (context.Context, *model.ConfigBucket, *model.ConfigVariable) {

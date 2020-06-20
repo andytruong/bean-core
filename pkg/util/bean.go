@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type Bean interface {

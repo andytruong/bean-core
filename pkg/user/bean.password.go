@@ -3,7 +3,7 @@ package user
 import (
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
@@ -29,14 +29,17 @@ func (this *CorePassword) create(tx *gorm.DB, user *model.User, in *dto.UserPass
 		IsActive:    true,
 	}
 
-	if err := tx.Save(pass).Error; nil != err {
-		return err
+	{
+		err := tx.Create(pass).Table(connect.TableAccessPassword).Error
+		if nil != err {
+			return err
+		}
 	}
 
 	// set other passwords to inactive
 	return tx.Table(connect.TableAccessPassword).
 		Where("user_id == ?", pass.UserId).
 		Where("id != ?", pass.ID).
-		Update(model.UserPassword{IsActive: false}).
+		Updates(model.UserPassword{IsActive: false}).
 		Error
 }

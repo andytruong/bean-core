@@ -22,7 +22,7 @@ CREATE TABLE user_names
 
 CREATE INDEX user_name_fk ON user_names USING hash (user_id);
 
-CREATE TABLE user_password
+CREATE TABLE user_passwords
 (
     id           character varying(26)  NOT NULL PRIMARY KEY,
     user_id      character varying(26)  NOT NULL,

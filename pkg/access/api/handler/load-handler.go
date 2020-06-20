@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"bean/pkg/access/model"
 	"bean/pkg/util"
@@ -20,6 +20,7 @@ type SessionLoadHandler struct {
 func (this SessionLoadHandler) Handle(ctx context.Context, token string) (*model.Session, error) {
 	session := &model.Session{}
 	err := this.DB.
+		WithContext(ctx).
 		Table(connect.TableAccessSession).
 		First(&session, "hashed_token = ?", this.ID.Encode(token)).
 		Error

@@ -1,12 +1,13 @@
 package connect
 
 import (
-	"github.com/jinzhu/gorm"
+	"database/sql"
+
 	"github.com/mattn/go-sqlite3"
 )
 
-func Driver(db *gorm.DB) string {
-	switch db.DB().Driver().(type) {
+func Driver(db *sql.DB) string {
+	switch db.Driver().(type) {
 	case *sqlite3.SQLiteDriver:
 		return SQLite
 

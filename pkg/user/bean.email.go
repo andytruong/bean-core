@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
@@ -55,7 +55,9 @@ func (this CoreEmail) Create(tx *gorm.DB, user *model.User, in dto.UserEmailInpu
 		IsPrimary: isPrimary,
 	}
 
-	return tx.Table(table).Create(&email).Error
+	err := tx.Table(table).Create(&email).Error
+	
+	return err
 }
 
 // TODO: need a better resolver, we not always load secondary emails.

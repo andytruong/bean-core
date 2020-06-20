@@ -35,7 +35,7 @@ func (e ErrorCode) IsValid() bool {
 		ErrorToBeImplemented, ErrorQueryTooMuch, ErrorCodeConflict:
 		return true
 	}
-	
+
 	return false
 }
 

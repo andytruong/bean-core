@@ -2,9 +2,8 @@ package connect
 
 import (
 	"context"
-	"database/sql"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 const (
@@ -16,18 +15,18 @@ const (
 	TableConfigBucket         = "config_buckets"
 	TableConfigVariable       = "config_variables"
 	TableAccessSession        = "access_session"
-	TableAccessPassword       = "user_password"
 	TableNamespace            = "namespaces"
 	TableNamespaceMemberships = "namespace_memberships"
 	TableNamespaceDomains     = "namespace_domains"
 	TableNamespaceConfig      = "namespace_config"
 	TableManagerEdge          = "namespace_manager_edge"
 	TableUserEmail            = "user_emails"
+	TableAccessPassword       = "user_passwords"
 	TableUserEmailUnverified  = "user_unverified_emails"
 )
 
 func Transaction(ctx context.Context, db *gorm.DB, callback func(tx *gorm.DB) error) error {
-	tx := db.BeginTx(ctx, &sql.TxOptions{})
+	tx := db.WithContext(ctx).Begin()
 	er := callback(tx)
 
 	if nil != er {
