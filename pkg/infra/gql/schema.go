@@ -1400,10 +1400,19 @@ extend type Mutation {
 }
 
 input SessionCreateInput {
+	credentials:  SessionCreateUseCredentialsInput
+	oneTimeLogin: SessionCreateUseOneTimeLoginInput
+	context: SessionCreateContextInput
+}
+
+input SessionCreateUseCredentialsInput {
 	namespaceId: String!
 	email: EmailAddress!
 	hashedPassword: String!
-	context: SessionCreateContextInput
+}
+
+input SessionCreateUseOneTimeLoginInput {
+	token: String!
 }
 
 input SessionCreateContextInput {
@@ -7626,6 +7635,36 @@ func (ec *executionContext) unmarshalInputSessionCreateInput(ctx context.Context
 
 	for k, v := range asMap {
 		switch k {
+		case "credentials":
+			var err error
+			it.Credentials, err = ec.unmarshalOSessionCreateUseCredentialsInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseCredentialsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "oneTimeLogin":
+			var err error
+			it.OneTimeLogin, err = ec.unmarshalOSessionCreateUseOneTimeLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOneTimeLoginInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "context":
+			var err error
+			it.Context, err = ec.unmarshalOSessionCreateContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateContextInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSessionCreateUseCredentialsInput(ctx context.Context, obj interface{}) (dto1.SessionCreateUseCredentialsInput, error) {
+	var it dto1.SessionCreateUseCredentialsInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
 		case "namespaceId":
 			var err error
 			it.NamespaceID, err = ec.unmarshalNString2string(ctx, v)
@@ -7644,9 +7683,21 @@ func (ec *executionContext) unmarshalInputSessionCreateInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "context":
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSessionCreateUseOneTimeLoginInput(ctx context.Context, obj interface{}) (dto1.SessionCreateUseOneTimeLoginInput, error) {
+	var it dto1.SessionCreateUseOneTimeLoginInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "token":
 			var err error
-			it.Context, err = ec.unmarshalOSessionCreateContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateContextInput(ctx, v)
+			it.Token, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10622,6 +10673,30 @@ func (ec *executionContext) unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccess�
 		return nil, nil
 	}
 	res, err := ec.unmarshalOSessionCreateInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOSessionCreateUseCredentialsInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseCredentialsInput(ctx context.Context, v interface{}) (dto1.SessionCreateUseCredentialsInput, error) {
+	return ec.unmarshalInputSessionCreateUseCredentialsInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOSessionCreateUseCredentialsInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseCredentialsInput(ctx context.Context, v interface{}) (*dto1.SessionCreateUseCredentialsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOSessionCreateUseCredentialsInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseCredentialsInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOSessionCreateUseOneTimeLoginInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOneTimeLoginInput(ctx context.Context, v interface{}) (dto1.SessionCreateUseOneTimeLoginInput, error) {
+	return ec.unmarshalInputSessionCreateUseOneTimeLoginInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOSessionCreateUseOneTimeLoginInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOneTimeLoginInput(ctx context.Context, v interface{}) (*dto1.SessionCreateUseOneTimeLoginInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOSessionCreateUseOneTimeLoginInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOneTimeLoginInput(ctx, v)
 	return &res, err
 }
 

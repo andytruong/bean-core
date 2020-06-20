@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 
 	"bean/pkg/access/model"
@@ -16,11 +15,39 @@ import (
 	"bean/pkg/util/connect"
 )
 
-type Core struct {
+type CoreSession struct {
 	bean *AccessBean
 }
 
-func (this Core) Create(tx *gorm.DB, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+func (this *CoreSession) Create(tx *gorm.DB, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+	if nil != in.Credentials {
+		return this.createUseCredentials(tx, in.Credentials)
+	}
+
+	if nil != in.OneTimeLogin {
+		return this.createUseOneTimeLogin(tx, in.OneTimeLogin)
+	}
+
+	return nil, nil
+}
+
+func (this *CoreSession) createUseOneTimeLogin(tx *gorm.DB, in *dto.SessionCreateUseOneTimeLoginInput) (*dto.SessionCreateOutcome, error) {
+	oneTimeSession, err := this.Load(tx.Statement.Context, in.Token)
+	if nil != err {
+		return nil, err
+	}
+
+	if oneTimeSession.Kind != model.KindOneTimeToken {
+		return nil, util.ErrorInvalidArgument
+	}
+
+	// create session
+	// this.create(ctx, model.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.NamespaceId)
+
+	panic("wip")
+}
+
+func (this *CoreSession) createUseCredentials(tx *gorm.DB, in *dto.SessionCreateUseCredentialsInput) (*dto.SessionCreateOutcome, error) {
 	// load email object, so we have userID
 	email := mUser.UserEmail{}
 	{
@@ -36,59 +63,49 @@ func (this Core) Create(tx *gorm.DB, in *dto.SessionCreateInput) (*dto.SessionCr
 		}
 	}
 
-	eg := errgroup.Group{}
-	outcome := &dto.SessionCreateOutcome{}
-	membership := &mNamespace.Membership{}
-
 	// password validation
-	eg.Go(func() error {
+	{
 		pass := mUser.UserPassword{}
 		err := tx.First(&pass, "user_id = ? AND hashed_value = ? AND is_active = ?", email.UserId, in.HashedPassword, true).Error
-		if err == gorm.ErrRecordNotFound {
-			outcome.Errors = util.NewErrors(util.ErrorCodeInput, []string{"input.namespaceId"}, "invalid password")
-			return nil
+		if nil != err {
+			if err == gorm.ErrRecordNotFound {
+				return &dto.SessionCreateOutcome{
+					Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.namespaceId"}, "invalid password"),
+				}, nil
+			}
 		}
+	}
 
-		return err
-	})
+	return this.create(tx, model.KindCredentials, email.UserId, in.NamespaceID)
+}
 
-	// membership validation
-	eg.Go(func() error {
+func (this CoreSession) create(
+	tx *gorm.DB,
+	kind model.Kind,
+	userId string,
+	namespaceId string,
+) (*dto.SessionCreateOutcome, error) {
+	membership := &mNamespace.Membership{}
+
+	// validate membership
+	{
 		err := tx.
 			Table(connect.TableNamespaceMemberships).
-			First(&membership, "namespace_id = ? AND user_id = ?", in.NamespaceID, email.UserId).
+			First(&membership, "namespace_id = ? AND user_id = ?", namespaceId, userId).
 			Error
 
 		if err == gorm.ErrRecordNotFound {
-			outcome.Errors = util.NewErrors(util.ErrorCodeInput, []string{"input.namespaceId"}, "membership not found")
-			return nil
+			return &dto.SessionCreateOutcome{
+				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.namespaceId"}, "membership not found"),
+			}, nil
 		}
-
-		return err
-	})
-
-	err := eg.Wait()
-	if nil != err {
-		return nil, err
 	}
 
-	if nil != outcome.Errors {
-		return outcome, nil
-	}
-
-	return this.createSession(tx, email.UserId, in.NamespaceID, membership)
-}
-
-func (this Core) createSession(
-	tx *gorm.DB,
-	userId string,
-	namespaceId string,
-	membership *mNamespace.Membership,
-) (*dto.SessionCreateOutcome, error) {
 	token := this.bean.id.MustULID()
 	session := &model.Session{
 		ID:          this.bean.id.MustULID(),
 		Version:     this.bean.id.MustULID(),
+		Kind:        kind,
 		UserId:      userId,
 		NamespaceId: namespaceId,
 		HashedToken: this.bean.id.Encode(token),
@@ -116,7 +133,7 @@ func (this Core) createSession(
 	}, nil
 }
 
-func (this Core) Load(ctx context.Context, token string) (*model.Session, error) {
+func (this CoreSession) Load(ctx context.Context, token string) (*model.Session, error) {
 	session := &model.Session{}
 	err := this.bean.db.
 		WithContext(ctx).
@@ -139,7 +156,7 @@ func (this Core) Load(ctx context.Context, token string) (*model.Session, error)
 	return session, nil
 }
 
-func (this Core) Delete(ctx context.Context, session *model.Session) (*dto.SessionDeleteOutcome, error) {
+func (this CoreSession) Delete(ctx context.Context, session *model.Session) (*dto.SessionDeleteOutcome, error) {
 	session.IsActive = false
 	session.Version = this.bean.id.MustULID()
 	session.UpdatedAt = time.Now()

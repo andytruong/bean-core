@@ -34,8 +34,6 @@ func bean() *AccessBean {
 	bUser := user.NewUserBean(db, logger, id)
 	bNamespace := namespace.NewNamespaceBean(db, logger, id, bUser, nil)
 	bean := NewAccessBean(db, id, logger, bUser, bNamespace, config.Beans.Access)
-	util.MockInstall(bUser, db)
-	util.MockInstall(bNamespace, db)
 	util.MockInstall(bean, db)
 
 	return bean
@@ -66,15 +64,15 @@ func Test_Create(t *testing.T) {
 	ass.NoError(err)
 
 	t.Run("email inactive", func(t *testing.T) {
-		in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-		in.Email = iUser.Emails.Secondary[1].Value
+		in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+		in.Credentials.Email = iUser.Emails.Secondary[1].Value
 		_, err := this.SessionCreate(ctx, in)
 		ass.Equal(err.Error(), "user not found")
 	})
 
 	t.Run("password unmatched", func(t *testing.T) {
-		in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-		in.HashedPassword = "invalid-password"
+		in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+		in.Credentials.HashedPassword = "invalid-password"
 		outcome, err := this.SessionCreate(ctx, in)
 
 		ass.NoError(err)
@@ -84,7 +82,7 @@ func Test_Create(t *testing.T) {
 	})
 
 	t.Run("ok", func(t *testing.T) {
-		in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+		in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 		out, err := this.SessionCreate(ctx, in)
 		ass.NoError(err)
 		ass.Equal(oUser.User.ID, out.Session.UserId)
@@ -125,7 +123,7 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 	ass.NoError(err)
 
 	// base input
-	in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+	in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	outcome, err := this.SessionCreate(ctx, in)
 	ass.Error(err)
@@ -143,7 +141,7 @@ func Test_Query(t *testing.T) {
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, _ := this.namespace.NamespaceCreate(ctx, iNamespace)
-	in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+	in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	outcome, err := this.SessionCreate(ctx, in)
 	ass.NoError(err)
@@ -154,7 +152,7 @@ func Test_Query(t *testing.T) {
 	ass.Equal(session.NamespaceId, oNamespace.Namespace.ID)
 	ass.Equal(session.UserId, oUser.User.ID)
 
-	{
+	t.Run("load expired session", func(t *testing.T) {
 		// change session expiration time
 		oneMinDuration, _ := time.ParseDuration("129h")
 		session.ExpiredAt = session.ExpiredAt.Add(-1 * oneMinDuration)
@@ -165,7 +163,11 @@ func Test_Query(t *testing.T) {
 		_, err = this.Session(ctx, *outcome.Token)
 		ass.Error(err)
 		ass.Equal(err.Error(), "session expired")
-	}
+	})
+
+	t.Run("load one-time-login session -> session deleted", func(t *testing.T) {
+		// …
+	})
 }
 
 func Test_Archive(t *testing.T) {
@@ -178,7 +180,7 @@ func Test_Archive(t *testing.T) {
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, _ := this.namespace.NamespaceCreate(ctx, iNamespace)
-	in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+	in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	sessionOutcome, err := this.SessionCreate(ctx, in)
 	ass.NoError(err)
