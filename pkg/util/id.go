@@ -13,8 +13,8 @@ import (
 type Identifier struct {
 }
 
-func (this *Identifier) Encode(input string) string {
-	return base64.StdEncoding.EncodeToString([]byte(input))
+func (this *Identifier) Encode(in string) string {
+	return base64.StdEncoding.EncodeToString([]byte(in))
 }
 
 func (this *Identifier) HashInt64(salt string, current time.Time) (string, error) {

@@ -46,7 +46,7 @@ func (this CoreVariable) access(ctx context.Context, db *gorm.DB, bucketId strin
 
 func (this CoreVariable) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigVariable, error) {
 	variable := &model.ConfigVariable{}
-	
+
 	err := db.
 		Table(connect.TableConfigVariable).
 		First(&variable, "id = ?", id).
@@ -96,8 +96,8 @@ func (this CoreVariable) Create(ctx context.Context, tx *gorm.DB, in dto.Variabl
 	}
 }
 
-func (this CoreVariable) Update(ctx context.Context, tx *gorm.DB, input dto.VariableUpdateInput) (*dto.VariableMutationOutcome, error) {
-	variable, err := this.Load(ctx, tx, input.Id)
+func (this CoreVariable) Update(ctx context.Context, tx *gorm.DB, in dto.VariableUpdateInput) (*dto.VariableMutationOutcome, error) {
+	variable, err := this.Load(ctx, tx, in.Id)
 	if nil != err {
 		return nil, err
 	}
@@ -108,22 +108,22 @@ func (this CoreVariable) Update(ctx context.Context, tx *gorm.DB, input dto.Vari
 		return nil, util.ErrorAccessDenied
 	}
 
-	if variable.Version != input.Version {
+	if variable.Version != in.Version {
 		return nil, util.ErrorVersionConflict
 	} else {
 		changed := false
 
-		if nil != input.Description {
-			if variable.Description != input.Description {
+		if nil != in.Description {
+			if variable.Description != in.Description {
 				changed = true
-				variable.Description = input.Description
+				variable.Description = in.Description
 			}
 		}
 
-		if input.Value != nil {
-			if variable.Value != *input.Value {
+		if in.Value != nil {
+			if variable.Value != *in.Value {
 				changed = true
-				variable.Value = *input.Value
+				variable.Value = *in.Value
 			}
 		}
 
@@ -133,10 +133,10 @@ func (this CoreVariable) Update(ctx context.Context, tx *gorm.DB, input dto.Vari
 			}
 		}
 
-		if nil != input.IsLocked {
-			if variable.IsLocked != *input.IsLocked {
+		if nil != in.IsLocked {
+			if variable.IsLocked != *in.IsLocked {
 				changed = true
-				variable.IsLocked = *input.IsLocked
+				variable.IsLocked = *in.IsLocked
 			}
 		}
 

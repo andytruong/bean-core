@@ -29,11 +29,11 @@ func (this Claims) NamespaceId() string {
 }
 
 func (this *Claims) UnmarshalGQL(v interface{}) error {
-	if input, ok := v.(string); !ok {
+	if in, ok := v.(string); !ok {
 		return fmt.Errorf("JWT must be strings")
 	} else {
 		token, err := jwt.ParseWithClaims(
-			input,
+			in,
 			this,
 			func(token *jwt.Token) (interface{}, error) {
 				return []byte("AllYourBase"), nil

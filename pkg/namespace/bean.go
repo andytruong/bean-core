@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 
 	"bean/pkg/config"
-	"bean/pkg/namespace/api/handler"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/user"
@@ -33,6 +32,7 @@ func NewNamespaceBean(
 	}
 
 	this.Core = &Core{bean: this}
+	this.CoreConfig = &CoreConfig{bean: this}
 	this.CoreDomainName = &CoreDomainName{bean: this}
 	this.CoreMember = &CoreMember{
 		bean:     this,
@@ -51,6 +51,7 @@ type NamespaceBean struct {
 	bConfig *config.ConfigBean
 
 	Core           *Core
+	CoreConfig     *CoreConfig
 	CoreMember     *CoreMember
 	CoreDomainName *CoreDomainName
 }
@@ -88,9 +89,9 @@ func (this NamespaceBean) Load(ctx context.Context, id string) (*model.Namespace
 	return this.Core.Load(ctx, id)
 }
 
-func (this NamespaceBean) NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
+func (this NamespaceBean) NamespaceCreate(ctx context.Context, in dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	txn := this.db.WithContext(ctx).Begin()
-	outcome, err := this.Core.Create(txn, input)
+	outcome, err := this.Core.Create(txn, in)
 
 	if nil != err {
 		txn.Rollback()
@@ -105,18 +106,17 @@ func (this NamespaceBean) DomainNames(ctx context.Context, namespace *model.Name
 }
 
 func (this NamespaceBean) Features(ctx context.Context, namespace *model.Namespace) (*model.NamespaceFeatures, error) {
-	hdl := handler.NamespaceQueryFeaturesHandler{DB: this.db}
-	return hdl.Features(ctx, namespace)
+	return this.CoreConfig.List(ctx, namespace)
 }
 
-func (this NamespaceBean) NamespaceUpdate(ctx context.Context, input dto.NamespaceUpdateInput) (*bool, error) {
-	namespace, err := this.Load(ctx, input.NamespaceID)
+func (this NamespaceBean) NamespaceUpdate(ctx context.Context, in dto.NamespaceUpdateInput) (*bool, error) {
+	namespace, err := this.Load(ctx, in.NamespaceID)
 	if nil != err {
 		return nil, err
 	}
 
 	tx := this.db.WithContext(ctx).Begin()
-	outcome, err := this.Core.Update(tx, namespace, input)
+	outcome, err := this.Core.Update(tx, namespace, in)
 
 	if nil != err {
 		tx.Rollback()

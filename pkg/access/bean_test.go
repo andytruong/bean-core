@@ -66,16 +66,16 @@ func Test_Create(t *testing.T) {
 	ass.NoError(err)
 
 	t.Run("email inactive", func(t *testing.T) {
-		input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-		input.Email = iUser.Emails.Secondary[1].Value
-		_, err := this.SessionCreate(ctx, input)
+		in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+		in.Email = iUser.Emails.Secondary[1].Value
+		_, err := this.SessionCreate(ctx, in)
 		ass.Equal(err.Error(), "user not found")
 	})
 
 	t.Run("password unmatched", func(t *testing.T) {
-		input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-		input.HashedPassword = "invalid-password"
-		outcome, err := this.SessionCreate(ctx, input)
+		in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+		in.HashedPassword = "invalid-password"
+		outcome, err := this.SessionCreate(ctx, in)
 
 		ass.NoError(err)
 		ass.Equal(util.ErrorCodeInput, *outcome.Errors[0].Code)
@@ -84,16 +84,16 @@ func Test_Create(t *testing.T) {
 	})
 
 	t.Run("ok", func(t *testing.T) {
-		input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-		outcome, err := this.SessionCreate(ctx, input)
+		in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+		out, err := this.SessionCreate(ctx, in)
 		ass.NoError(err)
-		ass.Equal(oUser.User.ID, outcome.Session.UserId)
-		ass.Equal(oNamespace.Namespace.ID, outcome.Session.NamespaceId)
-		ass.Len(outcome.Errors, 0)
+		ass.Equal(oUser.User.ID, out.Session.UserId)
+		ass.Equal(oNamespace.Namespace.ID, out.Session.NamespaceId)
+		ass.Len(out.Errors, 0)
 
 		{
 			// check that with outcome.Session we can generate JWT
-			signedString, err := this.SessionResolver.Jwt(ctx, outcome.Session)
+			signedString, err := this.SessionResolver.Jwt(ctx, out.Session)
 			ass.NoError(err)
 			ass.Contains(signedString, "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.")
 
@@ -102,9 +102,9 @@ func Test_Create(t *testing.T) {
 				claims, err := this.SessionResolver.JwtValidation(signedString)
 				ass.NoError(err)
 				ass.NotNil(claims)
-				ass.Equal(claims.SessionId(), outcome.Session.ID)
-				ass.Equal(claims.UserId(), outcome.Session.UserId)
-				ass.Equal(claims.NamespaceId(), outcome.Session.NamespaceId)
+				ass.Equal(claims.SessionId(), out.Session.ID)
+				ass.Equal(claims.UserId(), out.Session.UserId)
+				ass.Equal(claims.NamespaceId(), out.Session.NamespaceId)
 				ass.Equal(claims.Roles, []string{"owner"})
 			}
 		}
@@ -125,9 +125,9 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 	ass.NoError(err)
 
 	// base input
-	input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+	in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
-	outcome, err := this.SessionCreate(ctx, input)
+	outcome, err := this.SessionCreate(ctx, in)
 	ass.Error(err)
 	ass.Nil(outcome)
 	ass.Contains(err.Error(), "user not found")
@@ -143,9 +143,9 @@ func Test_Query(t *testing.T) {
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, _ := this.namespace.NamespaceCreate(ctx, iNamespace)
-	input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+	in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
-	outcome, err := this.SessionCreate(ctx, input)
+	outcome, err := this.SessionCreate(ctx, in)
 	ass.NoError(err)
 
 	// can load session without issue
@@ -178,9 +178,9 @@ func Test_Archive(t *testing.T) {
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, _ := this.namespace.NamespaceCreate(ctx, iNamespace)
-	input := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+	in := fixtures.SessionCreateInputFixture(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
-	sessionOutcome, err := this.SessionCreate(ctx, input)
+	sessionOutcome, err := this.SessionCreate(ctx, in)
 	ass.NoError(err)
 
 	// can archive session without issue

@@ -14,16 +14,16 @@ type CoreDomainName struct {
 	bean *NamespaceBean
 }
 
-func (this *CoreDomainName) createMultiple(tx *gorm.DB, namespace *model.Namespace, input dto.NamespaceCreateInput) error {
-	if nil != input.Object.DomainNames.Primary {
-		err := this.create(tx, namespace, input.Object.DomainNames.Primary, true)
+func (this *CoreDomainName) createMultiple(tx *gorm.DB, namespace *model.Namespace, in dto.NamespaceCreateInput) error {
+	if nil != in.Object.DomainNames.Primary {
+		err := this.create(tx, namespace, in.Object.DomainNames.Primary, true)
 		if nil != err {
 			return err
 		}
 	}
 
-	if nil != input.Object.DomainNames.Secondary {
-		for _, in := range input.Object.DomainNames.Secondary {
+	if nil != in.Object.DomainNames.Secondary {
+		for _, in := range in.Object.DomainNames.Secondary {
 			err := this.create(tx, namespace, in, false)
 			if nil != err {
 				return err
@@ -34,16 +34,16 @@ func (this *CoreDomainName) createMultiple(tx *gorm.DB, namespace *model.Namespa
 	return nil
 }
 
-func (this *CoreDomainName) create(tx *gorm.DB, namespace *model.Namespace, input *dto.DomainNameInput, isPrimary bool) error {
+func (this *CoreDomainName) create(tx *gorm.DB, namespace *model.Namespace, in *dto.DomainNameInput, isPrimary bool) error {
 	domain := model.DomainName{
 		ID:          this.bean.id.MustULID(),
 		NamespaceId: namespace.ID,
-		IsVerified:  *input.Verified,
-		Value:       *input.Value,
+		IsVerified:  *in.Verified,
+		Value:       *in.Value,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 		IsPrimary:   isPrimary,
-		IsActive:    *input.IsActive,
+		IsActive:    *in.IsActive,
 	}
 
 	return tx.Table("namespace_domains").Create(&domain).Error

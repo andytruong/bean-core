@@ -1,4 +1,4 @@
-package handler
+package access
 
 import (
 	"context"
@@ -10,24 +10,21 @@ import (
 
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
-	"bean/pkg/namespace"
 	mNamespace "bean/pkg/namespace/model"
 	mUser "bean/pkg/user/model"
 	"bean/pkg/util"
 	"bean/pkg/util/connect"
 )
 
-type SessionCreateHandler struct {
-	ID             *util.Identifier
-	SessionTimeout time.Duration
-	Namespace      *namespace.NamespaceBean
+type Core struct {
+	bean *AccessBean
 }
 
-func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+func (this Core) Create(tx *gorm.DB, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 	// load email object, so we have userID
 	email := mUser.UserEmail{}
 	{
-		err := tx.First(&email, "value = ?", input.Email).Error
+		err := tx.First(&email, "value = ?", in.Email).Error
 		if nil != err {
 			return nil, errors.New("user not found")
 		}
@@ -46,7 +43,7 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 	// password validation
 	eg.Go(func() error {
 		pass := mUser.UserPassword{}
-		err := tx.First(&pass, "user_id = ? AND hashed_value = ? AND is_active = ?", email.UserId, input.HashedPassword, true).Error
+		err := tx.First(&pass, "user_id = ? AND hashed_value = ? AND is_active = ?", email.UserId, in.HashedPassword, true).Error
 		if err == gorm.ErrRecordNotFound {
 			outcome.Errors = util.NewErrors(util.ErrorCodeInput, []string{"input.namespaceId"}, "invalid password")
 			return nil
@@ -59,7 +56,7 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 	eg.Go(func() error {
 		err := tx.
 			Table(connect.TableNamespaceMemberships).
-			First(&membership, "namespace_id = ? AND user_id = ?", input.NamespaceID, email.UserId).
+			First(&membership, "namespace_id = ? AND user_id = ?", in.NamespaceID, email.UserId).
 			Error
 
 		if err == gorm.ErrRecordNotFound {
@@ -79,34 +76,34 @@ func (this SessionCreateHandler) Handle(ctx context.Context, tx *gorm.DB, input 
 		return outcome, nil
 	}
 
-	return this.createSession(tx, email.UserId, input.NamespaceID, membership)
+	return this.createSession(tx, email.UserId, in.NamespaceID, membership)
 }
 
-func (this SessionCreateHandler) createSession(
+func (this Core) createSession(
 	tx *gorm.DB,
 	userId string,
 	namespaceId string,
 	membership *mNamespace.Membership,
 ) (*dto.SessionCreateOutcome, error) {
-	token := this.ID.MustULID()
+	token := this.bean.id.MustULID()
 	session := &model.Session{
-		ID:          this.ID.MustULID(),
-		Version:     this.ID.MustULID(),
+		ID:          this.bean.id.MustULID(),
+		Version:     this.bean.id.MustULID(),
 		UserId:      userId,
 		NamespaceId: namespaceId,
-		HashedToken: this.ID.Encode(token),
+		HashedToken: this.bean.id.Encode(token),
 		Scopes:      nil, // TODO
 		IsActive:    true,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
-		ExpiredAt:   time.Now().Add(this.SessionTimeout),
+		ExpiredAt:   time.Now().Add(this.bean.config.SessionTimeout),
 	}
 
 	if err := tx.Table(connect.TableAccessSession).Create(&session).Error; nil != err {
 		return nil, err
 	} else {
 		// update membership -> last-time-login
-		err := this.Namespace.MembershipResolver().UpdateLastLoginTime(tx, membership)
+		err := this.bean.namespace.MembershipResolver().UpdateLastLoginTime(tx, membership)
 		if nil != err {
 			return nil, err
 		}
@@ -117,4 +114,39 @@ func (this SessionCreateHandler) createSession(
 		Token:   &token,
 		Session: session,
 	}, nil
+}
+
+func (this Core) Load(ctx context.Context, token string) (*model.Session, error) {
+	session := &model.Session{}
+	err := this.bean.db.
+		WithContext(ctx).
+		Table(connect.TableAccessSession).
+		First(&session, "hashed_token = ?", this.bean.id.Encode(token)).
+		Error
+
+	if err == gorm.ErrRecordNotFound {
+		return nil, errors.New("session not found: " + this.bean.id.Encode(token))
+	}
+
+	if session.ExpiredAt.Unix() <= time.Now().Unix() {
+		return nil, errors.New("session expired")
+	}
+
+	if !session.IsActive {
+		return nil, errors.New("session archived")
+	}
+
+	return session, nil
+}
+
+func (this Core) Delete(ctx context.Context, session *model.Session) (*dto.SessionDeleteOutcome, error) {
+	session.IsActive = false
+	session.Version = this.bean.id.MustULID()
+	session.UpdatedAt = time.Now()
+	err := this.bean.db.WithContext(ctx).Table(connect.TableAccessSession).Save(&session).Error
+	if nil != err {
+		return nil, err
+	}
+
+	return &dto.SessionDeleteOutcome{Errors: nil, Result: true}, nil
 }

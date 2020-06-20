@@ -4,12 +4,10 @@ import (
 	"context"
 	"path"
 	"runtime"
-	"time"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"bean/pkg/access/api/handler"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	"bean/pkg/namespace"
@@ -26,7 +24,7 @@ func NewAccessBean(
 	bNamespace *namespace.NamespaceBean,
 	config *Config,
 ) *AccessBean {
-	bean := &AccessBean{
+	this := &AccessBean{
 		config:    config.init(),
 		logger:    logger,
 		db:        db,
@@ -35,13 +33,15 @@ func NewAccessBean(
 		namespace: bNamespace,
 	}
 
-	bean.SessionResolver = ModelResolver{
+	this.SessionResolver = ModelResolver{
 		logger: logger,
-		bean:   bean,
+		bean:   this,
 		config: config,
 	}
 
-	return bean
+	this.core = &Core{bean: this}
+
+	return this
 }
 
 type (
@@ -51,6 +51,7 @@ type (
 		db              *gorm.DB
 		id              *util.Identifier
 		SessionResolver ModelResolver
+		core            *Core
 
 		// depends on user bean
 		user      *user.UserBean
@@ -82,20 +83,9 @@ func (this AccessBean) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this *AccessBean) SessionCreate(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
-	timeout, _ := time.ParseDuration("128h")
-	if nil != this.config {
-		timeout = this.config.SessionTimeout
-	}
-
-	hdl := handler.SessionCreateHandler{
-		ID:             this.id,
-		SessionTimeout: timeout,
-		Namespace:      this.namespace,
-	}
-
+func (this *AccessBean) SessionCreate(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 	txn := this.db.WithContext(ctx).Begin()
-	outcome, err := hdl.Handle(ctx, txn, input)
+	outcome, err := this.core.Create(txn, in)
 	if nil != err {
 		txn.Rollback()
 
@@ -114,19 +104,9 @@ func (this *AccessBean) SessionArchive(ctx context.Context, token string) (*dto.
 		}, nil
 	}
 
-	hdl := handler.SessionDeleteHandler{
-		ID: this.id,
-		DB: this.db,
-	}
-
-	return hdl.Handle(ctx, session)
+	return this.core.Delete(ctx, session)
 }
 
 func (this AccessBean) Session(ctx context.Context, token string) (*model.Session, error) {
-	hdl := handler.SessionLoadHandler{
-		ID: this.id,
-		DB: this.db,
-	}
-
-	return hdl.Handle(ctx, token)
+	return this.core.Load(ctx, token)
 }

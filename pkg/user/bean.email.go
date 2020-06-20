@@ -56,7 +56,7 @@ func (this CoreEmail) Create(tx *gorm.DB, user *model.User, in dto.UserEmailInpu
 	}
 
 	err := tx.Table(table).Create(&email).Error
-	
+
 	return err
 }
 

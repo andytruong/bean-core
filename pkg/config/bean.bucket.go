@@ -17,23 +17,23 @@ type CoreBucket struct {
 	bean *ConfigBean
 }
 
-func (this CoreBucket) Create(ctx context.Context, tx *gorm.DB, input dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
+func (this CoreBucket) Create(ctx context.Context, tx *gorm.DB, in dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
 	bucket := &model.ConfigBucket{
 		Id:          this.bean.id.MustULID(),
 		Version:     this.bean.id.MustULID(),
-		Slug:        util.NotNilString(input.Slug, this.bean.id.MustULID()),
-		Title:       util.NotNilString(input.Title, ""),
-		Description: input.Description,
+		Slug:        util.NotNilString(in.Slug, this.bean.id.MustULID()),
+		Title:       util.NotNilString(in.Title, ""),
+		Description: in.Description,
 		Access:      "777",
-		Schema:      input.Schema,
-		HostId:      input.HostId,
+		Schema:      in.Schema,
+		HostId:      in.HostId,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
-		IsPublished: input.IsPublished,
+		IsPublished: in.IsPublished,
 	}
 
-	if nil != input.Access {
-		bucket.Access = *input.Access
+	if nil != in.Access {
+		bucket.Access = *in.Access
 	}
 
 	err := tx.Table(connect.TableConfigBucket).Create(&bucket).Error
@@ -44,56 +44,56 @@ func (this CoreBucket) Create(ctx context.Context, tx *gorm.DB, input dto.Bucket
 	return &dto.BucketMutationOutcome{Errors: nil, Bucket: bucket}, nil
 }
 
-func (this CoreBucket) Update(ctx context.Context, tx *gorm.DB, input dto.BucketUpdateInput) (*dto.BucketMutationOutcome, error) {
-	bucket, err := this.Load(ctx, tx, input.Id)
+func (this CoreBucket) Update(ctx context.Context, tx *gorm.DB, in dto.BucketUpdateInput) (*dto.BucketMutationOutcome, error) {
+	bucket, err := this.Load(ctx, tx, in.Id)
 	if nil != err {
 		return nil, err
 	}
 
-	if bucket.Version != input.Version {
+	if bucket.Version != in.Version {
 		return nil, util.ErrorVersionConflict
 	}
 
 	changed := false
-	if input.Title != nil {
-		if bucket.Title != *input.Title {
+	if in.Title != nil {
+		if bucket.Title != *in.Title {
 			changed = true
-			bucket.Title = *input.Title
+			bucket.Title = *in.Title
 		}
 	}
 
-	if input.Description != nil {
-		if bucket.Description != input.Description {
+	if in.Description != nil {
+		if bucket.Description != in.Description {
 			changed = true
-			bucket.Description = input.Description
+			bucket.Description = in.Description
 		}
 	}
 
-	if input.Access != nil {
-		if bucket.Access != *input.Access {
+	if in.Access != nil {
+		if bucket.Access != *in.Access {
 			changed = true
-			bucket.Access = *input.Access
+			bucket.Access = *in.Access
 		}
 	}
 
-	if input.Schema != nil {
-		if bucket.Schema != *input.Schema {
+	if in.Schema != nil {
+		if bucket.Schema != *in.Schema {
 			if bucket.IsPublished {
 				return nil, util.ErrorLocked
 			}
 
 			changed = true
-			bucket.Schema = *input.Schema
+			bucket.Schema = *in.Schema
 		}
 	}
 
-	if nil != input.IsPublished {
-		if *input.IsPublished != bucket.IsPublished {
+	if nil != in.IsPublished {
+		if *in.IsPublished != bucket.IsPublished {
 			if bucket.IsPublished {
 				return nil, errors.Wrap(util.ErrorLocked, "change not un-publish a published bucket")
 			}
 
-			bucket.IsPublished = *input.IsPublished
+			bucket.IsPublished = *in.IsPublished
 		}
 	}
 

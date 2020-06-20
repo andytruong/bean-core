@@ -27,8 +27,8 @@ func (this ScopeList) Value() (driver.Value, error) {
 	return string(bytes), err
 }
 
-func (this *ScopeList) Scan(input interface{}) error {
-	switch value := input.(type) {
+func (this *ScopeList) Scan(in interface{}) error {
+	switch value := in.(type) {
 	case string:
 		return json.Unmarshal([]byte(value), this)
 	case []byte:

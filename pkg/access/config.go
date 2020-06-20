@@ -35,6 +35,10 @@ func (this *Config) init() *Config {
 		this.mutex = &sync.Mutex{}
 	}
 
+	if time.Duration(0) == this.SessionTimeout {
+		this.SessionTimeout, _ = time.ParseDuration("128h")
+	}
+
 	// go time to validate configuration
 	// …
 
