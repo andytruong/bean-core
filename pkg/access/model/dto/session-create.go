@@ -6,10 +6,25 @@ import (
 )
 
 type SessionCreateInput struct {
-	NamespaceID    string                     `json:"namespaceId"`
-	Email          util.EmailAddress          `json:"email"`
-	HashedPassword string                     `json:"hashedPassword"`
-	Context        *SessionCreateContextInput `json:"context"`
+	UseCredentials *SessionCreateUseCredentialsInput `json:"useCredentials"`
+	GenerateOTLT   *SessionCreateGenerateOTLT        `json:"generateOTLT"`
+	UseOTLT        *SessionCreateUseOTLT             `json:"useOTLT"`
+	Context        *SessionCreateContextInput        `json:"context"`
+}
+
+type SessionCreateUseCredentialsInput struct {
+	NamespaceID    string            `json:"namespaceId"`
+	Email          util.EmailAddress `json:"email"`
+	HashedPassword string            `json:"hashedPassword"`
+}
+
+type SessionCreateGenerateOTLT struct {
+	NamespaceID string `json:"namespaceId"`
+	UserID      string `json:"userId"`
+}
+
+type SessionCreateUseOTLT struct {
+	Token string `json:"token"`
 }
 
 type SessionCreateContextInput struct {
