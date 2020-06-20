@@ -22,7 +22,8 @@ gen-key:
 clean:
 	go fmt ./...
 	go mod tidy
-	rm ./pkg/infra/gql/__tmp__*
+	git fetch --prune origin
+	rm -rf ./pkg/infra/gql/__tmp__*
 
 # ---------------------
 # dev commands
