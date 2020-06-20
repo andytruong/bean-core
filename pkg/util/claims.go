@@ -11,10 +11,46 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-type Claims struct {
-	jwt.StandardClaims
-	Roles []string `json:"roles"`
-}
+type (
+	// maxLength: 32
+	Kind string
+
+	Claims struct {
+		jwt.StandardClaims
+		Kind  Kind     `json:"kind"`
+		Roles []string `json:"roles"`
+	}
+)
+
+const (
+	// session created with user/password
+	// with this session, use can access almost endpoints provided for them.
+	KindCredentials Kind = "credentials"
+
+	// For SSO login we need generate a kind of session, from where user can obtain a full authenticated session.
+	// Example flow:
+	//   1. User access login page
+	//   2. User click auth with Google /auth/with/google
+	//   3. User auth using Google login process.
+	//   4. User returned /auth/done/google?code=codeFromGoogle
+	//   5. Our server:
+	//        - Our server load user information from Google.
+	//        - If user record found -> create 'oneTime' session
+	//   6. User is redirected to /auth/oneTime/$oneTimeSession.token
+	//   7. Our server will generate full authenticated session for user, one-time session is deleted.
+	KindOTLT Kind = "onetime"
+
+	// User who simply authenticated but without providing credentials.
+	// With this kind of session, user can not change password.
+	KindAuthenticated Kind = "authenticated"
+
+	// When user forgets password & request for new one, system create a one-time token and send to their
+	// email inbox. From there, they can use that token to generate a new password.
+	KindPasswordForgot Kind = "password-forget"
+
+	// With this kind of session, user can only reset their password.
+	KindPasswordReset Kind = "password-reset"
+)
 
 func (this Claims) UserId() string {
 	return this.Subject

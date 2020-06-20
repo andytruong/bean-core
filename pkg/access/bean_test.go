@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"bean/pkg/access/api/fixtures"
-	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	"bean/pkg/namespace"
 	fNamespace "bean/pkg/namespace/api/fixtures"
@@ -107,6 +106,7 @@ func Test_Create(t *testing.T) {
 					ass.Equal(claims.UserId(), out.Session.UserId)
 					ass.Equal(claims.NamespaceId(), out.Session.NamespaceId)
 					ass.Equal(claims.Roles, []string{"owner"})
+					ass.Equal(claims.Kind, out.Session.Kind)
 				}
 			}
 		})
@@ -122,7 +122,7 @@ func Test_Create(t *testing.T) {
 			})
 
 			ass.NoError(err)
-			ass.Equal(model.KindOTLT, oGenerate.Session.Kind)
+			ass.Equal(util.KindOTLT, oGenerate.Session.Kind)
 
 			// Use it
 			{
@@ -133,7 +133,7 @@ func Test_Create(t *testing.T) {
 				})
 
 				ass.NoError(err)
-				ass.Equal(model.KindAuthenticated, out.Session.Kind)
+				ass.Equal(util.KindAuthenticated, out.Session.Kind)
 
 				// load again -> should not be found
 				{
