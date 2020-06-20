@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 
 	"bean/pkg/access/api/fixtures"
@@ -59,8 +60,11 @@ func Test_Create(t *testing.T) {
 	ass.NoError(err)
 
 	// create namespace
+	ctx = context.WithValue(ctx, util.CxtKeyClaims, &util.Claims{
+		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
+		Kind:           util.KindAuthenticated,
+	})
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
-	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, err := this.namespace.NamespaceCreate(ctx, iNamespace)
 	ass.NoError(err)
 
@@ -175,8 +179,12 @@ func Test_Query(t *testing.T) {
 
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := this.user.UserCreate(ctx, iUser)
+
+	ctx = context.WithValue(ctx, util.CxtKeyClaims, &util.Claims{
+		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
+		Kind:           util.KindAuthenticated,
+	})
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
-	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, _ := this.namespace.NamespaceCreate(ctx, iNamespace)
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
@@ -214,8 +222,11 @@ func Test_Archive(t *testing.T) {
 
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := this.user.UserCreate(ctx, iUser)
+	ctx = context.WithValue(ctx, util.CxtKeyClaims, &util.Claims{
+		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
+		Kind:           util.KindAuthenticated,
+	})
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
-	iNamespace.Context.UserID = oUser.User.ID
 	oNamespace, _ := this.namespace.NamespaceCreate(ctx, iNamespace)
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oNamespace.Namespace.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 

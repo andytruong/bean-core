@@ -7,8 +7,7 @@ import (
 )
 
 type NamespaceCreateInput struct {
-	Object  NamespaceCreateInputObject `json:"object"`
-	Context NamespaceCreateContext     `json:"context"`
+	Object NamespaceCreateInputObject `json:"object"`
 }
 
 type NamespaceCreateInputObject struct {
@@ -18,6 +17,9 @@ type NamespaceCreateInputObject struct {
 	IsActive    bool                   `json:"isActive"`
 	DomainNames *DomainNamesInput      `json:"domainNames"`
 	Features    NamespaceFeaturesInput `json:"features"`
+
+	// Internal field
+	ParentId *string `json:"parentId"`
 }
 
 type DomainNameInput struct {
@@ -33,11 +35,6 @@ type DomainNamesInput struct {
 
 type NamespaceFeaturesInput struct {
 	Register bool `json:"register"`
-}
-
-type NamespaceCreateContext struct {
-	UserID      string  `json:"userId"`
-	NamespaceID *string `json:"namespaceId"`
 }
 
 type NamespaceCreateOutcome struct {

@@ -1586,7 +1586,6 @@ extend type Mutation {
 
 input NamespaceCreateInput {
 	object: NamespaceCreateInputObject!
-	context: NamespaceCreateContext!
 }
 
 input NamespaceCreateInputObject {
@@ -1600,11 +1599,6 @@ input NamespaceCreateInputObject {
 
 input NamespaceFeaturesInput {
 	register: Boolean!
-}
-
-input NamespaceCreateContext {
-	userId: ID!
-	namespaceId: ID
 }
 
 input DomainNamesInput {
@@ -7323,30 +7317,6 @@ func (ec *executionContext) unmarshalInputMembershipsFilterNamespace(ctx context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputNamespaceCreateContext(ctx context.Context, obj interface{}) (dto.NamespaceCreateContext, error) {
-	var it dto.NamespaceCreateContext
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "userId":
-			var err error
-			it.UserID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "namespaceId":
-			var err error
-			it.NamespaceID, err = ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputNamespaceCreateInput(ctx context.Context, obj interface{}) (dto.NamespaceCreateInput, error) {
 	var it dto.NamespaceCreateInput
 	var asMap = obj.(map[string]interface{})
@@ -7356,12 +7326,6 @@ func (ec *executionContext) unmarshalInputNamespaceCreateInput(ctx context.Conte
 		case "object":
 			var err error
 			it.Object, err = ec.unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInputObject(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "context":
-			var err error
-			it.Context, err = ec.unmarshalNNamespaceCreateContext2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9734,10 +9698,6 @@ func (ec *executionContext) marshalNNamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodel�
 		return graphql.Null
 	}
 	return ec._Namespace(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNNamespaceCreateContext2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateContext(ctx context.Context, v interface{}) (dto.NamespaceCreateContext, error) {
-	return ec.unmarshalInputNamespaceCreateContext(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNNamespaceCreateInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateInput(ctx context.Context, v interface{}) (dto.NamespaceCreateInput, error) {

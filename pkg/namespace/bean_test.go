@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 	log "gorm.io/gorm/logger"
 
@@ -56,20 +57,29 @@ func Test_Namespace(t *testing.T) {
 		defer tearDown(this)
 		t.Run("happy case", func(t *testing.T) {
 			now := time.Now()
-			outcome, err := this.NamespaceCreate(context.Background(), iCreate)
+
+			claims := &util.Claims{
+				StandardClaims: jwt.StandardClaims{
+					Audience: this.id.MustULID(),
+					Subject:  this.id.MustULID(),
+				},
+				Kind: util.KindAuthenticated,
+			}
+			ctx := context.WithValue(context.Background(), util.CxtKeyClaims, claims)
+			out, err := this.NamespaceCreate(ctx, iCreate)
 			ass.NoError(err)
-			ass.Nil(outcome.Errors)
-			ass.Equal(model.NamespaceKindOrganisation, outcome.Namespace.Kind)
-			ass.Equal(*iCreate.Object.Title, outcome.Namespace.Title)
-			ass.Equal(iCreate.Object.IsActive, outcome.Namespace.IsActive)
-			ass.True(outcome.Namespace.CreatedAt.UnixNano() >= now.UnixNano())
-			ass.True(outcome.Namespace.UpdatedAt.UnixNano() >= now.UnixNano())
-			ass.Equal(outcome.Namespace.Language, api.LanguageAU)
+			ass.Nil(out.Errors)
+			ass.Equal(model.NamespaceKindOrganisation, out.Namespace.Kind)
+			ass.Equal(*iCreate.Object.Title, out.Namespace.Title)
+			ass.Equal(iCreate.Object.IsActive, out.Namespace.IsActive)
+			ass.True(out.Namespace.CreatedAt.UnixNano() >= now.UnixNano())
+			ass.True(out.Namespace.UpdatedAt.UnixNano() >= now.UnixNano())
+			ass.Equal(out.Namespace.Language, api.LanguageAU)
 
 			// check that owner role is created
 			// -------
 			ownerNS := &model.Namespace{}
-			err = this.db.First(&ownerNS, "parent_id = ?", outcome.Namespace.ID).Error
+			err = this.db.First(&ownerNS, "parent_id = ?", out.Namespace.ID).Error
 			ass.NoError(err)
 			ass.Equal(ownerNS.Title, "owner")
 			ass.Equal(ownerNS.Kind, model.NamespaceKindRole)
@@ -79,13 +89,13 @@ func Test_Namespace(t *testing.T) {
 			var counter int64
 			this.db.
 				Table(connect.TableNamespaceMemberships).
-				Where("user_id = ? AND namespace_id = ?", iCreate.Context.UserID, outcome.Namespace.ID).
+				Where("user_id = ? AND namespace_id = ?", claims.UserId(), out.Namespace.ID).
 				Count(&counter)
 			ass.Equal(int64(1), counter)
 
 			this.db.
 				Table(connect.TableNamespaceMemberships).
-				Where("user_id = ? AND namespace_id = ?", iCreate.Context.UserID, ownerNS.ID).
+				Where("user_id = ? AND namespace_id = ?", claims.UserId(), ownerNS.ID).
 				Count(&counter)
 			ass.Equal(int64(1), counter)
 		})

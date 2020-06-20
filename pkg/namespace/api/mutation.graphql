@@ -7,7 +7,6 @@ extend type Mutation {
 
 input NamespaceCreateInput {
 	object: NamespaceCreateInputObject!
-	context: NamespaceCreateContext!
 }
 
 input NamespaceCreateInputObject {
@@ -21,11 +20,6 @@ input NamespaceCreateInputObject {
 
 input NamespaceFeaturesInput {
 	register: Boolean!
-}
-
-input NamespaceCreateContext {
-	userId: ID!
-	namespaceId: ID
 }
 
 input DomainNamesInput {

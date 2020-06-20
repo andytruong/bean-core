@@ -10,9 +10,6 @@ import (
 func NamespaceCreateInputFixture(register bool) dto.NamespaceCreateInput {
 	input := dto.NamespaceCreateInput{
 		Object: dto.NamespaceCreateInputObject{},
-		Context: dto.NamespaceCreateContext{
-			UserID: "xxxxxxxx",
-		},
 	}
 
 	input.Object = dto.NamespaceCreateInputObject{
