@@ -91,7 +91,7 @@ func (this NamespaceBean) Load(ctx context.Context, id string) (*model.Namespace
 
 func (this NamespaceBean) NamespaceCreate(ctx context.Context, in dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error) {
 	txn := this.db.WithContext(ctx).Begin()
-	outcome, err := this.Core.Create(txn, in)
+	outcome, err := this.Core.Create(ctx, txn, in)
 
 	if nil != err {
 		txn.Rollback()

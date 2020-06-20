@@ -17,7 +17,7 @@ type CoreBucket struct {
 	bean *ConfigBean
 }
 
-func (this CoreBucket) Create(ctx context.Context, tx *gorm.DB, in dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
+func (this CoreBucket) Create(tx *gorm.DB, in dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
 	bucket := &model.ConfigBucket{
 		Id:          this.bean.id.MustULID(),
 		Version:     this.bean.id.MustULID(),

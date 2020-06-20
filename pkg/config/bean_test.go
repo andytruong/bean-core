@@ -38,7 +38,7 @@ func Test_Bucket(t *testing.T) {
 			func(tx *gorm.DB) error {
 				hostId := this.id.MustULID()
 				access := api.AccessMode("444")
-				out, err := this.CoreBucket.Create(ctx, tx, dto.BucketCreateInput{
+				out, err := this.CoreBucket.Create(tx, dto.BucketCreateInput{
 					HostId:      hostId,
 					Slug:        util.NilString("doe"),
 					Title:       util.NilString("Doe"),
@@ -67,7 +67,7 @@ func Test_Bucket(t *testing.T) {
 		defer tx.Rollback()
 
 		privateAccess := api.AccessModePrivate
-		oCreate, _ := this.CoreBucket.Create(ctx, tx, dto.BucketCreateInput{
+		oCreate, _ := this.CoreBucket.Create(tx, dto.BucketCreateInput{
 			HostId:      this.id.MustULID(),
 			Slug:        util.NilString("qa"),
 			Title:       util.NilString("QA"),
@@ -132,7 +132,7 @@ func Test_Bucket(t *testing.T) {
 		tx := db.Begin()
 		defer tx.Rollback()
 
-		oCreate, err = this.CoreBucket.Create(ctx, tx, dto.BucketCreateInput{
+		oCreate, err = this.CoreBucket.Create(tx, dto.BucketCreateInput{
 			HostId:      hostId,
 			Slug:        util.NilString("load-doe"),
 			Title:       util.NilString("Doe"),
@@ -171,7 +171,7 @@ func Test_Variable(t *testing.T) {
 			access := api.AccessModePrivateReadonly
 
 			// create read-only bucket
-			oCreate, err := this.CoreBucket.Create(ctx, tx, dto.BucketCreateInput{
+			oCreate, err := this.CoreBucket.Create(tx, dto.BucketCreateInput{
 				HostId:      hostId,
 				Slug:        util.NilString("load-doe"),
 				Title:       util.NilString("Doe"),
@@ -209,7 +209,7 @@ func Test_Variable(t *testing.T) {
 			access := api.AccessModePrivate
 
 			// create read-only bucket
-			oCreate, err := this.CoreBucket.Create(ctx, tx, dto.BucketCreateInput{
+			oCreate, err := this.CoreBucket.Create(tx, dto.BucketCreateInput{
 				HostId:      userId,
 				Slug:        util.NilString("load-doe"),
 				Title:       util.NilString("Doe"),
@@ -250,7 +250,7 @@ func Test_Variable(t *testing.T) {
 			authorCtx := context.WithValue(context.Background(), util.CxtKeyClaims, authorClaims)
 
 			// create private bucket
-			oBucketCreate, err := this.CoreBucket.Create(authorCtx, tx, dto.BucketCreateInput{
+			oBucketCreate, err := this.CoreBucket.Create(tx, dto.BucketCreateInput{
 				HostId:      authorId,
 				Slug:        util.NilString(this.id.MustULID()),
 				Title:       util.NilString("Doe"),
