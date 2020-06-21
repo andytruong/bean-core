@@ -1,18 +1,18 @@
 server:
-	CONFIG=config.yaml go run cmd/main.go http-server
+	CONFIG=config.yaml go run -mod=vendor cmd/main.go http-server
 
 gql:
 	gqlgen generate
 	rm pkg/infra/__tmp__resolvers.go
 
 migrate:
-	CONFIG=config.yaml go run cmd/main.go migrate
+	CONFIG=config.yaml go run -mod=vendor cmd/main.go migrate
 
 test:
-	go test ./pkg/... -race -v
+	go test -mod=vendor ./pkg/... -race -v
 
 check-size:
-	go build -o /tmp/go-bean cmd/main.go
+	go build -mod=vendor -o /tmp/go-bean cmd/main.go
 	du -h /tmp/go-bean
 	rm /tmp/go-bean
 
