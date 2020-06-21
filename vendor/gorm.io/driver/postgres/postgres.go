@@ -44,6 +44,10 @@ func (dialector Dialector) Migrator(db *gorm.DB) gorm.Migrator {
 	}}}
 }
 
+func (dialector Dialector) DefaultValueOf(field *schema.Field) clause.Expression {
+	return clause.Expr{SQL: "DEFAULT"}
+}
+
 func (dialector Dialector) BindVarTo(writer clause.Writer, stmt *gorm.Statement, v interface{}) {
 	writer.WriteByte('$')
 	writer.WriteString(strconv.Itoa(len(stmt.Vars)))
@@ -99,4 +103,14 @@ func (dialector Dialector) DataTypeOf(field *schema.Field) string {
 	}
 
 	return string(field.DataType)
+}
+
+func (dialectopr Dialector) SavePoint(tx *gorm.DB, name string) error {
+	tx.Exec("SAVEPOINT " + name)
+	return nil
+}
+
+func (dialectopr Dialector) RollbackTo(tx *gorm.DB, name string) error {
+	tx.Exec("ROLLBACK TO SAVEPOINT " + name)
+	return nil
 }

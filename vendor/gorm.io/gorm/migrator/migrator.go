@@ -18,9 +18,8 @@ type Migrator struct {
 
 // Config schema config
 type Config struct {
-	CreateIndexAfterCreateTable             bool
-	AllowDeferredConstraintsWhenAutoMigrate bool
-	DB                                      *gorm.DB
+	CreateIndexAfterCreateTable bool
+	DB                          *gorm.DB
 	gorm.Dialector
 }
 
@@ -57,10 +56,6 @@ func (m Migrator) DataTypeOf(field *schema.Field) string {
 func (m Migrator) FullDataTypeOf(field *schema.Field) (expr clause.Expr) {
 	expr.SQL = m.DataTypeOf(field)
 
-	if field.AutoIncrement {
-		expr.SQL += " AUTO_INCREMENT"
-	}
-
 	if field.NotNull {
 		expr.SQL += " NOT NULL"
 	}
@@ -92,7 +87,7 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 				return err
 			}
 		} else {
-			if err := m.RunWithValue(value, func(stmt *gorm.Statement) error {
+			if err := m.RunWithValue(value, func(stmt *gorm.Statement) (errr error) {
 				for _, field := range stmt.Schema.FieldsByDBName {
 					if !tx.Migrator().HasColumn(value, field.DBName) {
 						if err := tx.Migrator().AddColumn(value, field.DBName); err != nil {
@@ -103,9 +98,11 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 
 				for _, rel := range stmt.Schema.Relationships.Relations {
 					if constraint := rel.ParseConstraint(); constraint != nil {
-						if !tx.Migrator().HasConstraint(value, constraint.Name) {
-							if err := tx.Migrator().CreateConstraint(value, constraint.Name); err != nil {
-								return err
+						if constraint.Schema == stmt.Schema {
+							if !tx.Migrator().HasConstraint(value, constraint.Name) {
+								if err := tx.Migrator().CreateConstraint(value, constraint.Name); err != nil {
+									return err
+								}
 							}
 						}
 					}
@@ -122,9 +119,13 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 					if rel.JoinTable != nil {
 						joinValue := reflect.New(rel.JoinTable.ModelType).Interface()
 						if !tx.Migrator().HasTable(rel.JoinTable.Table) {
-							defer tx.Table(rel.JoinTable.Table).Migrator().CreateTable(joinValue)
+							defer func(table string, joinValue interface{}) {
+								errr = tx.Table(table).Migrator().CreateTable(joinValue)
+							}(rel.JoinTable.Table, joinValue)
 						} else {
-							defer tx.Table(rel.JoinTable.Table).Migrator().AutoMigrate(joinValue)
+							defer func(table string, joinValue interface{}) {
+								errr = tx.Table(table).Migrator().AutoMigrate(joinValue)
+							}(rel.JoinTable.Table, joinValue)
 						}
 					}
 				}
@@ -141,7 +142,7 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 func (m Migrator) CreateTable(values ...interface{}) error {
 	for _, value := range m.ReorderModels(values, false) {
 		tx := m.DB.Session(&gorm.Session{})
-		if err := m.RunWithValue(value, func(stmt *gorm.Statement) error {
+		if err := m.RunWithValue(value, func(stmt *gorm.Statement) (errr error) {
 			var (
 				createTableSQL          = "CREATE TABLE ? ("
 				values                  = []interface{}{clause.Table{Name: stmt.Table}}
@@ -152,7 +153,7 @@ func (m Migrator) CreateTable(values ...interface{}) error {
 				field := stmt.Schema.FieldsByDBName[dbName]
 				createTableSQL += fmt.Sprintf("? ?")
 				hasPrimaryKeyInDataType = hasPrimaryKeyInDataType || strings.Contains(strings.ToUpper(string(field.DataType)), "PRIMARY KEY")
-				values = append(values, clause.Column{Name: dbName}, m.FullDataTypeOf(field))
+				values = append(values, clause.Column{Name: dbName}, m.DB.Migrator().FullDataTypeOf(field))
 				createTableSQL += ","
 			}
 
@@ -168,7 +169,9 @@ func (m Migrator) CreateTable(values ...interface{}) error {
 
 			for _, idx := range stmt.Schema.ParseIndexes() {
 				if m.CreateIndexAfterCreateTable {
-					defer tx.Migrator().CreateIndex(value, idx.Name)
+					defer func(value interface{}, name string) {
+						errr = tx.Migrator().CreateIndex(value, name)
+					}(value, idx.Name)
 				} else {
 					createTableSQL += "INDEX ? ?,"
 					values = append(values, clause.Expr{SQL: idx.Name}, tx.Migrator().(BuildIndexOptionsInterface).BuildIndexOptions(idx.Fields, stmt))
@@ -177,16 +180,20 @@ func (m Migrator) CreateTable(values ...interface{}) error {
 
 			for _, rel := range stmt.Schema.Relationships.Relations {
 				if constraint := rel.ParseConstraint(); constraint != nil {
-					sql, vars := buildConstraint(constraint)
-					createTableSQL += sql + ","
-					values = append(values, vars...)
+					if constraint.Schema == stmt.Schema {
+						sql, vars := buildConstraint(constraint)
+						createTableSQL += sql + ","
+						values = append(values, vars...)
+					}
 				}
 
 				// create join table
 				if rel.JoinTable != nil {
 					joinValue := reflect.New(rel.JoinTable.ModelType).Interface()
 					if !tx.Migrator().HasTable(rel.JoinTable.Table) {
-						defer tx.Table(rel.JoinTable.Table).Migrator().CreateTable(joinValue)
+						defer func(table string, joinValue interface{}) {
+							errr = tx.Table(table).Migrator().CreateTable(joinValue)
+						}(rel.JoinTable.Table, joinValue)
 					}
 				}
 			}
@@ -204,7 +211,8 @@ func (m Migrator) CreateTable(values ...interface{}) error {
 				createTableSQL += fmt.Sprint(tableOption)
 			}
 
-			return tx.Exec(createTableSQL, values...).Error
+			errr = tx.Exec(createTableSQL, values...).Error
+			return errr
 		}); err != nil {
 			return err
 		}
@@ -268,7 +276,7 @@ func (m Migrator) AddColumn(value interface{}, field string) error {
 		if field := stmt.Schema.LookUpField(field); field != nil {
 			return m.DB.Exec(
 				"ALTER TABLE ? ADD ? ?",
-				clause.Table{Name: stmt.Table}, clause.Column{Name: field.DBName}, m.FullDataTypeOf(field),
+				clause.Table{Name: stmt.Table}, clause.Column{Name: field.DBName}, m.DB.Migrator().FullDataTypeOf(field),
 			).Error
 		}
 		return fmt.Errorf("failed to look up field with name: %s", field)
@@ -292,7 +300,7 @@ func (m Migrator) AlterColumn(value interface{}, field string) error {
 		if field := stmt.Schema.LookUpField(field); field != nil {
 			return m.DB.Exec(
 				"ALTER TABLE ? ALTER COLUMN ? TYPE ?",
-				clause.Table{Name: stmt.Table}, clause.Column{Name: field.DBName}, m.FullDataTypeOf(field),
+				clause.Table{Name: stmt.Table}, clause.Column{Name: field.DBName}, m.DB.Migrator().FullDataTypeOf(field),
 			).Error
 		}
 		return fmt.Errorf("failed to look up field with name: %s", field)
@@ -360,7 +368,7 @@ func buildConstraint(constraint *schema.Constraint) (sql string, results []inter
 	}
 
 	if constraint.OnUpdate != "" {
-		sql += " ON UPDATE  " + constraint.OnUpdate
+		sql += " ON UPDATE " + constraint.OnUpdate
 	}
 
 	var foreignKeys, references []interface{}
@@ -427,7 +435,7 @@ func (m Migrator) HasConstraint(value interface{}, name string) bool {
 	m.RunWithValue(value, func(stmt *gorm.Statement) error {
 		currentDatabase := m.DB.Migrator().CurrentDatabase()
 		return m.DB.Raw(
-			"SELECT count(*) FROM INFORMATION_SCHEMA.referential_constraints WHERE constraint_schema = ? AND table_name = ? AND constraint_name = ?",
+			"SELECT count(*) FROM INFORMATION_SCHEMA.table_constraints WHERE constraint_schema = ? AND table_name = ? AND constraint_name = ?",
 			currentDatabase, stmt.Table, name,
 		).Row().Scan(&count)
 	})
@@ -471,11 +479,6 @@ func (m Migrator) CreateIndex(value interface{}, name string) error {
 				createIndexSQL += idx.Class + " "
 			}
 			createIndexSQL += "INDEX ? ON ??"
-
-			if idx.Comment != "" {
-				values = append(values, idx.Comment)
-				createIndexSQL += " COMMENT ?"
-			}
 
 			if idx.Type != "" {
 				createIndexSQL += " USING " + idx.Type
@@ -550,8 +553,12 @@ func (m Migrator) ReorderModels(values []interface{}, autoAdd bool) (results []i
 		dep.Parse(value)
 
 		for _, rel := range dep.Schema.Relationships.Relations {
-			if c := rel.ParseConstraint(); c != nil && c.Schema != c.ReferenceSchema {
+			if c := rel.ParseConstraint(); c != nil && c.Schema == dep.Statement.Schema && c.Schema != c.ReferenceSchema {
 				dep.Depends = append(dep.Depends, c.ReferenceSchema)
+			}
+
+			if rel.JoinTable != nil && rel.Schema != rel.FieldSchema {
+				dep.Depends = append(dep.Depends, rel.FieldSchema)
 			}
 		}
 
@@ -566,6 +573,7 @@ func (m Migrator) ReorderModels(values []interface{}, autoAdd bool) (results []i
 		if _, ok := orderedModelNamesMap[name]; ok {
 			return // avoid loop
 		}
+		orderedModelNamesMap[name] = true
 
 		dep := valuesMap[name]
 		for _, d := range dep.Depends {
@@ -578,7 +586,6 @@ func (m Migrator) ReorderModels(values []interface{}, autoAdd bool) (results []i
 		}
 
 		orderedModelNames = append(orderedModelNames, name)
-		orderedModelNamesMap[name] = true
 	}
 
 	for _, value := range values {

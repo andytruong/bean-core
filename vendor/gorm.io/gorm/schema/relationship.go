@@ -85,6 +85,10 @@ func (schema *Schema) parseRelation(field *Field) {
 	}
 
 	if relation.Type == "has" {
+		if relation.FieldSchema != relation.Schema && relation.Polymorphic == nil {
+			relation.FieldSchema.Relationships.Relations["_"+relation.Schema.Name+"_"+relation.Name] = relation
+		}
+
 		switch field.IndirectFieldType.Kind() {
 		case reflect.Struct:
 			relation.Type = HasOne
@@ -247,16 +251,65 @@ func (schema *Schema) buildMany2ManyRelation(relation *Relationship, field *Fiel
 	}
 	relation.JoinTable.Name = many2many
 	relation.JoinTable.Table = schema.namer.JoinTableName(many2many)
+	relation.JoinTable.PrimaryFields = make([]*Field, len(relation.JoinTable.Fields))
+
+	relName := relation.Schema.Name
+	relRefName := relation.FieldSchema.Name
+	if relName == relRefName {
+		relRefName = relation.Field.Name
+	}
+
+	if _, ok := relation.JoinTable.Relationships.Relations[relName]; !ok {
+		relation.JoinTable.Relationships.Relations[relName] = &Relationship{
+			Name:        relName,
+			Type:        BelongsTo,
+			Schema:      relation.JoinTable,
+			FieldSchema: relation.Schema,
+		}
+	} else {
+		relation.JoinTable.Relationships.Relations[relName].References = []*Reference{}
+	}
+
+	if _, ok := relation.JoinTable.Relationships.Relations[relRefName]; !ok {
+		relation.JoinTable.Relationships.Relations[relRefName] = &Relationship{
+			Name:        relRefName,
+			Type:        BelongsTo,
+			Schema:      relation.JoinTable,
+			FieldSchema: relation.FieldSchema,
+		}
+	} else {
+		relation.JoinTable.Relationships.Relations[relRefName].References = []*Reference{}
+	}
 
 	// build references
-	for _, f := range relation.JoinTable.Fields {
+	for idx, f := range relation.JoinTable.Fields {
 		// use same data type for foreign keys
 		f.DataType = fieldsMap[f.Name].DataType
+		relation.JoinTable.PrimaryFields[idx] = f
+		ownPriamryField := schema == fieldsMap[f.Name].Schema && ownFieldsMap[f.Name]
+
+		if ownPriamryField {
+			joinRel := relation.JoinTable.Relationships.Relations[relName]
+			joinRel.Field = relation.Field
+			joinRel.References = append(joinRel.References, &Reference{
+				PrimaryKey: fieldsMap[f.Name],
+				ForeignKey: f,
+			})
+		} else {
+			joinRefRel := relation.JoinTable.Relationships.Relations[relRefName]
+			if joinRefRel.Field == nil {
+				joinRefRel.Field = relation.Field
+			}
+			joinRefRel.References = append(joinRefRel.References, &Reference{
+				PrimaryKey: fieldsMap[f.Name],
+				ForeignKey: f,
+			})
+		}
 
 		relation.References = append(relation.References, &Reference{
 			PrimaryKey:    fieldsMap[f.Name],
 			ForeignKey:    f,
-			OwnPrimaryKey: schema == fieldsMap[f.Name].Schema && ownFieldsMap[f.Name],
+			OwnPrimaryKey: ownPriamryField,
 		})
 	}
 	return
@@ -384,18 +437,24 @@ func (rel *Relationship) ParseConstraint() *Constraint {
 		Field:    rel.Field,
 		OnUpdate: settings["ONUPDATE"],
 		OnDelete: settings["ONDELETE"],
-		Schema:   rel.Schema,
 	}
 
 	for _, ref := range rel.References {
-		if ref.PrimaryKey != nil && !ref.OwnPrimaryKey {
+		if ref.PrimaryKey != nil {
 			constraint.ForeignKeys = append(constraint.ForeignKeys, ref.ForeignKey)
 			constraint.References = append(constraint.References, ref.PrimaryKey)
-			constraint.ReferenceSchema = ref.PrimaryKey.Schema
+
+			if ref.OwnPrimaryKey {
+				constraint.Schema = ref.ForeignKey.Schema
+				constraint.ReferenceSchema = rel.Schema
+			} else {
+				constraint.Schema = rel.Schema
+				constraint.ReferenceSchema = ref.PrimaryKey.Schema
+			}
 		}
 	}
 
-	if rel.JoinTable != nil || constraint.ReferenceSchema == nil {
+	if rel.JoinTable != nil {
 		return nil
 	}
 
