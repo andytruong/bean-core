@@ -56,7 +56,7 @@ func Test_Create(t *testing.T) {
 
 	// create user
 	iUser := fUser.NewUserCreateInputFixture()
-	oUser, err := this.user.UserCreate(ctx, iUser)
+	oUser, err := this.user.Resolvers.Mutation.UserCreate(ctx, iUser)
 	ass.NoError(err)
 
 	// create namespace
@@ -178,7 +178,7 @@ func Test_Query(t *testing.T) {
 	this := bean()
 
 	iUser := fUser.NewUserCreateInputFixture()
-	oUser, _ := this.user.UserCreate(ctx, iUser)
+	oUser, _ := this.user.Resolvers.Mutation.UserCreate(ctx, iUser)
 
 	ctx = context.WithValue(ctx, util.CxtKeyClaims, &util.Claims{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
@@ -221,7 +221,7 @@ func Test_Archive(t *testing.T) {
 	this := bean()
 
 	iUser := fUser.NewUserCreateInputFixture()
-	oUser, _ := this.user.UserCreate(ctx, iUser)
+	oUser, _ := this.user.Resolvers.Mutation.UserCreate(ctx, iUser)
 	ctx = context.WithValue(ctx, util.CxtKeyClaims, &util.Claims{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
 		Kind:           util.KindAuthenticated,

@@ -11,6 +11,16 @@ type CoreName struct {
 	bean *UserBean
 }
 
+func (this *CoreName) load(db *gorm.DB, userId string) (*model.UserName, error) {
+	name := &model.UserName{}
+	err := db.Where(model.UserName{UserId: userId}).First(&name).Error
+	if nil != err {
+		return nil, err
+	}
+
+	return name, nil
+}
+
 func (this *CoreName) create(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
 	if nil != input.Name {
 		name := model.UserName{

@@ -174,7 +174,7 @@ func Test_Namespace(t *testing.T) {
 				ass.Equal(obj.Language, api.LanguageUS)
 			}
 
-			features, err := this.Features(context.Background(), outcome.Namespace)
+			features, err := this.Resolvers.Object.Features(context.Background(), outcome.Namespace)
 			ass.NoError(err)
 			ass.True(features.Register)
 		})
@@ -209,7 +209,7 @@ func Test_Membership(t *testing.T) {
 
 	// create user
 	iUser := uFixtures.NewUserCreateInputFixture()
-	oUser, err := this.user.UserCreate(context.Background(), iUser)
+	oUser, err := this.user.Resolvers.Mutation.UserCreate(context.Background(), iUser)
 	ass.NoError(err)
 
 	t.Run("Create", func(t *testing.T) {
@@ -297,7 +297,7 @@ func Test_Membership(t *testing.T) {
 
 		// create user
 		iUser := uFixtures.NewUserCreateInputFixture()
-		oUser, err := this.user.UserCreate(context.Background(), iUser)
+		oUser, err := this.user.Resolvers.Mutation.UserCreate(context.Background(), iUser)
 		ass.NoError(err)
 
 		t.Run("create membership", func(t *testing.T) {
@@ -331,21 +331,21 @@ func Test_Membership(t *testing.T) {
 			{
 				// without version
 				{
-					obj, err := this.Membership(context.Background(), membership.ID, nil)
+					obj, err := this.Resolvers.Query.Membership(context.Background(), membership.ID, nil)
 					ass.NoError(err)
 					ass.False(obj.IsActive)
 				}
 
 				// with version
 				{
-					obj, err := this.Membership(context.Background(), membership.ID, &membership.Version)
+					obj, err := this.Resolvers.Query.Membership(context.Background(), membership.ID, &membership.Version)
 					ass.NoError(err)
 					ass.False(obj.IsActive)
 				}
 
 				// with invalid version
 				{
-					obj, err := this.Membership(context.Background(), membership.ID, util.NilString("InvalidVersion"))
+					obj, err := this.Resolvers.Query.Membership(context.Background(), membership.ID, util.NilString("InvalidVersion"))
 					ass.Error(err)
 					ass.Equal(err.Error(), util.ErrorVersionConflict.Error())
 					ass.Nil(obj)

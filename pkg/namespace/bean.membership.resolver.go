@@ -44,7 +44,7 @@ func (this MembershipResolver) Namespace(ctx context.Context, obj *model.Members
 }
 
 func (this MembershipResolver) User(ctx context.Context, obj *model.Membership) (*mUser.User, error) {
-	return this.user.User(ctx, obj.UserID)
+	return this.user.Resolvers.Query.User(ctx, obj.UserID)
 }
 
 func (this MembershipResolver) UpdateLastLoginTime(db *gorm.DB, membership *model.Membership) error {
