@@ -23,7 +23,7 @@ type ModelResolver struct {
 }
 
 func (this ModelResolver) User(ctx context.Context, obj *model.Session) (*user_model.User, error) {
-	return this.bean.user.User(ctx, obj.UserId)
+	return this.bean.user.Resolvers.Query.User(ctx, obj.UserId)
 }
 
 func (this ModelResolver) Context(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {

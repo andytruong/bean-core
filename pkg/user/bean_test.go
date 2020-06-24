@@ -31,13 +31,13 @@ func Test(t *testing.T) {
 
 		t.Run("test happy case, no error", func(t *testing.T) {
 			now := time.Now()
-			out, err := this.UserCreate(context.Background(), iCreate)
+			out, err := this.Resolvers.Mutation.UserCreate(context.Background(), iCreate)
 			ass.NoError(err)
 			ass.Empty(out.Errors)
 			ass.Equal("https://foo.bar", string(*out.User.AvatarURI))
 
 			{
-				theUser, err := this.User(context.Background(), out.User.ID)
+				theUser, err := this.Resolvers.Query.User(context.Background(), out.User.ID)
 				ass.NoError(err)
 				ass.True(theUser.CreatedAt.UnixNano() >= now.UnixNano())
 				ass.Equal("https://foo.bar", string(*theUser.AvatarURI))
@@ -67,12 +67,12 @@ func Test_Update(t *testing.T) {
 		defer tearDown(this)
 
 		// create user so we can edit
-		oCreate, err := this.UserCreate(context.Background(), iCreate)
+		oCreate, err := this.Resolvers.Mutation.UserCreate(context.Background(), iCreate)
 		ass.NoError(err)
 		ass.NotNil(oCreate)
 
 		t.Run("version conflict", func(t *testing.T) {
-			oUpdate, err := this.UserUpdate(context.Background(), dto.UserUpdateInput{
+			oUpdate, err := this.Resolvers.Mutation.UserUpdate(context.Background(), dto.UserUpdateInput{
 				ID:      oCreate.User.ID,
 				Version: this.id.MustULID(), // some other version
 			})
@@ -82,7 +82,7 @@ func Test_Update(t *testing.T) {
 		})
 
 		t.Run("update password", func(t *testing.T) {
-			oUpdate, err := this.UserUpdate(context.Background(), dto.UserUpdateInput{
+			oUpdate, err := this.Resolvers.Mutation.UserUpdate(context.Background(), dto.UserUpdateInput{
 				ID:      oCreate.User.ID,
 				Version: oCreate.User.Version,
 				Values: &dto.UserUpdateValuesInput{

@@ -14,7 +14,6 @@ import (
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/user"
 	"bean/pkg/util"
-	"bean/pkg/util/connect"
 	"bean/pkg/util/migrate"
 )
 
@@ -31,6 +30,7 @@ func NewNamespaceBean(
 		config: config,
 	}
 
+	this.Resolvers = newResolver(this)
 	this.Core = &Core{bean: this}
 	this.CoreConfig = &CoreConfig{bean: this}
 	this.CoreDomainName = &CoreDomainName{bean: this}
@@ -50,6 +50,7 @@ type NamespaceBean struct {
 	user    *user.UserBean
 	bConfig *config.ConfigBean
 
+	Resolvers      *Resolvers
 	Core           *Core
 	CoreConfig     *CoreConfig
 	CoreMember     *CoreMember
@@ -101,14 +102,6 @@ func (this NamespaceBean) NamespaceCreate(ctx context.Context, in dto.NamespaceC
 	}
 }
 
-func (this NamespaceBean) DomainNames(ctx context.Context, namespace *model.Namespace) (*model.DomainNames, error) {
-	return this.CoreDomainName.Find(namespace)
-}
-
-func (this NamespaceBean) Features(ctx context.Context, namespace *model.Namespace) (*model.NamespaceFeatures, error) {
-	return this.CoreConfig.List(ctx, namespace)
-}
-
 func (this NamespaceBean) NamespaceUpdate(ctx context.Context, in dto.NamespaceUpdateInput) (*bool, error) {
 	namespace, err := this.Load(ctx, in.NamespaceID)
 	if nil != err {
@@ -135,12 +128,12 @@ func (this NamespaceBean) NamespaceMembershipCreate(
 		return nil, err
 	}
 
-	user, err := this.user.User(ctx, input.UserID)
+	user, err := this.user.Resolvers.Query.User(ctx, input.UserID)
 	if nil != err {
 		return nil, err
 	}
 
-	features, err := this.Features(ctx, namespace)
+	features, err := this.Resolvers.Object.Features(ctx, namespace)
 	if nil != err {
 		return nil, err
 	}
@@ -161,7 +154,7 @@ func (this NamespaceBean) NamespaceMembershipCreate(
 }
 
 func (this NamespaceBean) NamespaceMembershipUpdate(ctx context.Context, input dto.NamespaceMembershipUpdateInput) (*dto.NamespaceMembershipCreateOutcome, error) {
-	membership, err := this.Membership(ctx, input.Id, util.NilString(input.Version))
+	membership, err := this.Resolvers.Query.Membership(ctx, input.Id, util.NilString(input.Version))
 	if nil != err {
 		return nil, err
 	}
@@ -175,35 +168,4 @@ func (this NamespaceBean) NamespaceMembershipUpdate(ctx context.Context, input d
 	} else {
 		return outcome, tx.Commit().Error
 	}
-}
-
-func (this NamespaceBean) Membership(ctx context.Context, id string, version *string) (*model.Membership, error) {
-	obj := &model.Membership{}
-
-	err := this.db.
-		Table(connect.TableNamespaceMemberships).
-		First(&obj, "id = ?", id).
-		Error
-
-	if nil != err {
-		return nil, err
-	} else if nil != version {
-		if obj.Version != *version {
-			return nil, util.ErrorVersionConflict
-		}
-	}
-
-	return obj, nil
-}
-
-func (this NamespaceBean) Memberships(ctx context.Context, first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {
-	return this.CoreMember.Find(first, after, filters)
-}
-
-func (this NamespaceBean) Parent(ctx context.Context, obj *model.Namespace) (*model.Namespace, error) {
-	if nil == obj.ParentID {
-		return nil, nil
-	}
-
-	return this.Load(ctx, *obj.ParentID)
 }

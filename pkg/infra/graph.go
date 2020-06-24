@@ -20,7 +20,10 @@ type (
 	resolvers struct {
 		*api.Resolver
 		*user.UserBean
+		*user.UserQueryResolver
+		*user.UserMutationResolver
 		*namespace.NamespaceBean
+		*namespace.NamespaceQueryResolver
 		*access.AccessBean
 	}
 )
@@ -54,19 +57,19 @@ func (this *graph) Session() gql.SessionResolver {
 func (this *graph) User() gql.UserResolver {
 	bean, _ := this.can.beans.User()
 
-	return bean
+	return bean.Resolvers.Object
 }
 
 func (this *graph) Namespace() gql.NamespaceResolver {
 	bean, _ := this.can.beans.Namespace()
 
-	return bean
+	return bean.Resolvers.Object
 }
 
 func (this *graph) UserEmail() gql.UserEmailResolver {
 	bean, _ := this.can.beans.User()
 
-	return bean
+	return bean.Resolvers.Object
 }
 
 func (this *graph) getResolvers() *resolvers {
@@ -79,9 +82,12 @@ func (this *graph) getResolvers() *resolvers {
 		bNamespace, _ := this.can.beans.Namespace()
 
 		this.resolvers = &resolvers{
-			UserBean:      bUser,
-			AccessBean:    bAccess,
-			NamespaceBean: bNamespace,
+			UserBean:               bUser,
+			UserQueryResolver:      bUser.Resolvers.Query,
+			UserMutationResolver:   bUser.Resolvers.Mutation,
+			AccessBean:             bAccess,
+			NamespaceBean:          bNamespace,
+			NamespaceQueryResolver: bNamespace.Resolvers.Query,
 		}
 	}
 

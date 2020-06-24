@@ -67,6 +67,7 @@ func (this CoreEmail) List(ctx context.Context, user *model.User) (*model.UserEm
 
 	var rows []*model.UserEmail
 	err := this.bean.db.
+		WithContext(ctx).
 		Raw(`
 			     SELECT *, 1 AS is_verified FROM user_emails            WHERE user_id = ?
 		   UNION SELECT *, 0 AS is_verified FROM user_unverified_emails WHERE user_id = ?

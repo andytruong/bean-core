@@ -1,0 +1,14 @@
+query {
+	s3 {
+		uploadToken(info: {
+			application: "xxxxxxx",
+			namespaceID: "xxxxxxx",
+			userId:      "xxxxxxx",
+			fileName:    "demo.txt",
+			timestamp:   12345
+		}) {
+			errors { code fields message }
+			token
+		}
+	}
+}
