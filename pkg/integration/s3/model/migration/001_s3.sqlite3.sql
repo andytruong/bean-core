@@ -27,7 +27,7 @@ CREATE TABLE s3_application_policy
     is_active      boolean               NOT NULL,
     created_at     timestamp             NOT NULL,
     updated_at     timestamp             NOT NULL,
-    kind           character varying(32) CHECK ( value IN ('file_extensions', 'rate_limit')),
+    kind           character varying(32) CHECK ( kind IN ('file_extensions', 'rate_limit')),
     -- examples:
     --      * file extension: pdf txt zip gz
     --      * rate limit: 1MB/user/hour
@@ -46,12 +46,12 @@ CREATE TABLE s3_upload_token
 -- TODO: Remove file schema of S3 object
 CREATE TABLE s3_file
 (
-    id             character varying(26)    NOT NULL PRIMARY KEY,
-    version        character varying(26)    NOT NULL UNIQUE,
-    application_id character varying(26)    NOT NULL,
-    size           float CHECK (value >= 0) NOT NULL, -- in byte
-    path           character varying(128)   NOT NULL,
-    is_active      boolean                  NOT NULL,
-    created_at     timestamp                NOT NULL,
-    updated_at     timestamp                NOT NULL
+    id             character varying(26)   NOT NULL PRIMARY KEY,
+    version        character varying(26)   NOT NULL UNIQUE,
+    application_id character varying(26)   NOT NULL,
+    size           float CHECK (size >= 0) NOT NULL, -- in byte
+    path           character varying(128)  NOT NULL,
+    is_active      boolean                 NOT NULL,
+    created_at     timestamp               NOT NULL,
+    updated_at     timestamp               NOT NULL
 );

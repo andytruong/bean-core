@@ -7,14 +7,14 @@ import (
 )
 
 type Application struct {
-	Slug          string    `json:"name"`
-	ID            string    `json:"id"`
-	Version       string    `json:"version"`
-	IsActive      bool      `json:"isActive"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
-	DeletedAt     time.Time `json:"deletedAt"`
-	CredentialsId string    `json:"credentialsId"`
+	Slug          string     `json:"name"`
+	ID            string     `json:"id"`
+	Version       string     `json:"version"`
+	IsActive      bool       `json:"isActive"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	UpdatedAt     time.Time  `json:"updatedAt"`
+	DeletedAt     *time.Time `json:"deletedAt"`
+	CredentialsId string     `json:"credentialsId"`
 }
 
 type Credentials struct {

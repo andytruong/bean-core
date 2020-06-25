@@ -23,10 +23,10 @@ http-server:
 databases:
   master:
     driver: "${DB_DRIVER:sqlite3}"
-    url:    "${DB_MASTER_URL:resources/dev.sqlite}"
+    url:    "${DB_MASTER_URL:data/db.sqlite}"
   slave:
     driver: "${DB_SLAVE_URL:sqlite3}"
-    url:    "${DB_SLAVE_URL:resources/dev.sqlite}"
+    url:    "${DB_SLAVE_URL:data/db.sqlite}"
 
 # ---------------------
 # Beans configuration: Each bean may have its own config
