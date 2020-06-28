@@ -23,12 +23,13 @@ type CoreApplication struct {
 }
 
 func (this *CoreApplication) Load(ctx context.Context, id string) (*model.Application, error) {
-	var app *model.Application
+	app := &model.Application{}
 
 	err := this.bean.db.
 		WithContext(ctx).
 		Table(connect.TableIntegrationS3).
-		First(&app, "id = ?", id).
+		Where("id = ?", id).
+		First(&app).
 		Error
 	if nil != err {
 		return nil, err
@@ -109,11 +110,19 @@ func (this *CoreApplication) Update(ctx context.Context, in dto.S3ApplicationUpd
 		}
 	}
 
+	if deletedAt, ok := ctx.Value("bean.integration-s3.delete").(time.Time); ok {
+		app.DeletedAt = &deletedAt
+		changed = true
+	}
+
 	if !changed {
-		return nil, util.ErrorUselessInput
+		if nil == in.Credentials {
+			return nil, util.ErrorUselessInput
+		}
 	}
 
 	app.Version = this.bean.id.MustULID()
+	app.UpdatedAt = time.Now()
 	err = connect.Transaction(
 		ctx,
 		this.bean.db,
@@ -140,6 +149,8 @@ func (this *CoreApplication) Update(ctx context.Context, in dto.S3ApplicationUpd
 }
 
 func (this *CoreApplication) Delete(ctx context.Context, in dto.S3ApplicationDeleteInput) (*dto.S3ApplicationMutationOutcome, error) {
+	ctx = context.WithValue(ctx, "bean.integration-s3.delete", time.Now())
+
 	return this.Update(ctx, dto.S3ApplicationUpdateInput{
 		Id:       in.Id,
 		Version:  in.Version,

@@ -35,6 +35,7 @@ beans:
   integration.s3:
     # Key to encrypt/decrypt the application keys.
     # Length: 16, 24, or 32 bytes -> AES-128, AES-192, AES-256.
+    # Change key will make persisted records not accessible.
     key: "${INTEGRATION_S3_HASH_SALT:01EBWB516AP6BQD7}"
 
   # ---------------------
