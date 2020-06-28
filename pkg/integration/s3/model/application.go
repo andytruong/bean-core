@@ -7,19 +7,19 @@ import (
 )
 
 type Application struct {
-	Slug          string     `json:"name"`
-	ID            string     `json:"id"`
-	Version       string     `json:"version"`
-	IsActive      bool       `json:"isActive"`
-	CreatedAt     time.Time  `json:"createdAt"`
-	UpdatedAt     time.Time  `json:"updatedAt"`
-	DeletedAt     *time.Time `json:"deletedAt"`
-	CredentialsId string     `json:"credentialsId"`
+	Slug      string     `json:"name"`
+	ID        string     `json:"id"`
+	Version   string     `json:"version"`
+	IsActive  bool       `json:"isActive"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
+	DeletedAt *time.Time `json:"deletedAt"`
 }
 
 type Credentials struct {
 	ID               string   `json:"id"`
 	Version          string   `json:"version"`
+	ApplicationId    string   `json:"applicationId"`
 	Endpoint         util.Uri `json:"endpoint"`
 	EncryptedKeyPair string   `json:"encryptedKeyPair"`
 	IsSecure         bool     `json:"isSecure"`

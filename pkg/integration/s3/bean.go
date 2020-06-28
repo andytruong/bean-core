@@ -11,18 +11,31 @@ import (
 	"bean/pkg/util/migrate"
 )
 
-func NewS3Integration(db *gorm.DB, id *util.Identifier, logger *zap.Logger) *S3IntegrationBean {
-	return &S3IntegrationBean{
-		db:     db,
-		id:     id,
-		logger: logger,
+func NewS3Integration(
+	db *gorm.DB,
+	id *util.Identifier,
+	logger *zap.Logger,
+	genetic *Genetic,
+) *S3IntegrationBean {
+	this := &S3IntegrationBean{
+		db:      db,
+		id:      id,
+		logger:  logger,
+		genetic: genetic,
 	}
+
+	this.coreApp = &CoreApplication{bean: this}
+
+	return this
 }
 
 type S3IntegrationBean struct {
-	db     *gorm.DB
-	id     *util.Identifier
-	logger *zap.Logger
+	db      *gorm.DB
+	id      *util.Identifier
+	logger  *zap.Logger
+	genetic *Genetic
+
+	coreApp *CoreApplication
 }
 
 func (this S3IntegrationBean) Migrate(tx *gorm.DB, driver string) error {
@@ -40,7 +53,6 @@ func (this S3IntegrationBean) Migrate(tx *gorm.DB, driver string) error {
 	}
 
 	return runner.Run()
-
 }
 
 func (this S3IntegrationBean) Dependencies() []util.Bean {

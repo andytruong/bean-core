@@ -30,9 +30,7 @@ clean:
 # dev commands
 # ---------------------
 dev-migrate:
-	CONFIG=config.yaml \
-		DB_DRIVER=postgres \
-		DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable  \
+	CONFIG=config.yaml DB_DRIVER=postgres DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable \
 		go run cmd/main.go migrate
 
 docker-db-start:
@@ -42,7 +40,5 @@ docker-db-stop:
 	docker stop hi-pg
 
 dev-server:
-	CONFIG=config.yaml \
-		DB_DRIVER=postgres \
-		DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable  \
+	CONFIG=config.yaml DB_DRIVER=postgres DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable \
 		go run cmd/main.go http-server
