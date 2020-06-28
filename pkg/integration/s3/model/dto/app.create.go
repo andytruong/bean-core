@@ -9,6 +9,7 @@ type S3ApplicationCreateInput struct {
 	Slug        string                              `json:"slug"`
 	IsActive    bool                                `json:"isActive"`
 	Credentials S3ApplicationCredentialsCreateInput `json:"credentials"`
+	Polices     []S3ApplicationPolicyCreateInput    `json:"policies"`
 }
 
 type S3ApplicationCredentialsCreateInput struct {

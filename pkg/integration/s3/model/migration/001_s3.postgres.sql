@@ -12,7 +12,6 @@ CREATE TABLE s3_application
 CREATE TABLE s3_credentials
 (
     id                 character varying(26)  NOT NULL PRIMARY KEY,
-    version            character varying(26)  NOT NULL UNIQUE,
     application_id     character varying(26),
     endpoint           character varying(256) NOT NULL,
     encrypted_key_pair character varying(256) NOT NULL,
@@ -23,7 +22,6 @@ CREATE TABLE s3_credentials
 CREATE TABLE s3_application_policy
 (
     id             character varying(26) NOT NULL PRIMARY KEY,
-    version        character varying(26) NOT NULL UNIQUE,
     application_id character varying(26),
     is_active      boolean               NOT NULL,
     created_at     timestamp             NOT NULL,
