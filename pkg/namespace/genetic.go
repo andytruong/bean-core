@@ -1,6 +1,6 @@
 package namespace
 
-type Config struct {
+type Genetic struct {
 	Manager ManagerConfig `yaml:"manager"`
 }
 

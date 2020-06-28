@@ -88,8 +88,8 @@ type (
 	}
 
 	BeansConfig struct {
-		Access    *access.Config    `yaml:"access"`
-		Namespace *namespace.Config `yaml:"namespace"`
+		Access    *access.Genetic    `yaml:"access"`
+		Namespace *namespace.Genetic `yaml:"namespace"`
 	}
 )
 

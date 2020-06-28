@@ -20,14 +20,14 @@ import (
 func NewNamespaceBean(
 	db *gorm.DB, logger *zap.Logger, id *util.Identifier,
 	bUser *user.UserBean,
-	config *Config,
+	genetics *Genetic,
 ) *NamespaceBean {
 	this := &NamespaceBean{
-		logger: logger,
-		db:     db,
-		id:     id,
-		user:   bUser,
-		config: config,
+		logger:  logger,
+		db:      db,
+		id:      id,
+		user:    bUser,
+		genetic: genetics,
 	}
 
 	this.Resolvers = newResolver(this)
@@ -43,12 +43,12 @@ func NewNamespaceBean(
 }
 
 type NamespaceBean struct {
-	config  *Config
+	genetic *Genetic
 	logger  *zap.Logger
 	db      *gorm.DB
 	id      *util.Identifier
 	user    *user.UserBean
-	bConfig *config.ConfigBean
+	config  *config.ConfigBean
 
 	Resolvers      *Resolvers
 	Core           *Core

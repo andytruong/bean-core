@@ -19,7 +19,7 @@ import (
 type ModelResolver struct {
 	logger *zap.Logger
 	bean   *AccessBean
-	config *Config
+	config *Genetic
 }
 
 func (this ModelResolver) User(ctx context.Context, obj *model.Session) (*user_model.User, error) {
