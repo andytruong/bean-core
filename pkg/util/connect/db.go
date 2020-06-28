@@ -23,17 +23,22 @@ const (
 	TableUserEmail                = "user_emails"
 	TableAccessPassword           = "user_passwords"
 	TableUserEmailUnverified      = "user_unverified_emails"
-	TableIntegrationS3            = "s3_application"
+	TableIntegrationS3App         = "s3_application"
 	TableIntegrationS3Credentials = "s3_credentials"
 )
 
 func Transaction(ctx context.Context, db *gorm.DB, callback func(tx *gorm.DB) error) error {
-	tx := db.WithContext(ctx).Begin()
-	er := callback(tx)
+	txn := db.WithContext(ctx).Begin()
+	err := callback(txn)
 
-	if nil != er {
-		return tx.Rollback().Error
+	if nil != err {
+		rollbackErr := txn.Rollback().Error
+		if nil != rollbackErr {
+			return rollbackErr
+		}
+
+		return err
 	} else {
-		return tx.Commit().Error
+		return txn.Commit().Error
 	}
 }

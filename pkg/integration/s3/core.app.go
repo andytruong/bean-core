@@ -2,12 +2,6 @@ package s3
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"encoding/base64"
-	"fmt"
-	"io"
 	"time"
 
 	"gorm.io/gorm"
@@ -25,9 +19,10 @@ type CoreApplication struct {
 func (this *CoreApplication) Load(ctx context.Context, id string) (*model.Application, error) {
 	app := &model.Application{}
 
+	// TODO: don't allow to load pending deleted S3 applications.
 	err := this.bean.db.
 		WithContext(ctx).
-		Table(connect.TableIntegrationS3).
+		Table(connect.TableIntegrationS3App).
 		Where("id = ?", id).
 		First(&app).
 		Error
@@ -55,24 +50,13 @@ func (this *CoreApplication) Create(ctx context.Context, in dto.S3ApplicationCre
 				DeletedAt: nil,
 			}
 
-			err := tx.Table(connect.TableIntegrationS3).Create(&app).Error
+			err := tx.Table(connect.TableIntegrationS3App).Create(&app).Error
 			if nil != err {
 				return err
-			} else {
-				// create credentials
-				cre := model.Credentials{
-					ID:               this.bean.id.MustULID(),
-					Version:          this.bean.id.MustULID(),
-					ApplicationId:    app.ID,
-					Endpoint:         in.Credentials.Endpoint,
-					EncryptedKeyPair: in.Credentials.AccessKey + " " + this.encrypt(in.Credentials.SecretKey),
-					IsSecure:         in.Credentials.IsSecure,
-				}
-
-				err := tx.Table(connect.TableIntegrationS3Credentials).Create(&cre).Error
-				if nil != err {
-					return err
-				}
+			} else if err := this.bean.coreCredentials.onAppCreate(tx, app, in.Credentials); nil != err {
+				return err
+			} else if err = this.bean.corePolicy.onAppCreate(tx, app, in.Polices); nil != err {
+				return err
 			}
 
 			return nil
@@ -127,18 +111,14 @@ func (this *CoreApplication) Update(ctx context.Context, in dto.S3ApplicationUpd
 		ctx,
 		this.bean.db,
 		func(tx *gorm.DB) error {
-			err := tx.Save(&app).Error
+			err := tx.Table(connect.TableIntegrationS3App).Save(&app).Error
 			if nil != err {
 				return err
 			}
 
-			if nil != in.Credentials {
-				var cred *model.Credentials
-
-				return tx.
-					Table(connect.TableIntegrationS3Credentials).
-					First(cred, "application_id = ?", app.ID).
-					Error
+			err = this.bean.coreCredentials.onAppUpdate(tx, app, in.Credentials)
+			if nil != err {
+				return err
 			}
 
 			return nil
@@ -156,43 +136,4 @@ func (this *CoreApplication) Delete(ctx context.Context, in dto.S3ApplicationDel
 		Version:  in.Version,
 		IsActive: util.NilBool(true),
 	})
-}
-
-func (this CoreApplication) encrypt(text string) string {
-	plaintext := []byte(text)
-
-	block, err := aes.NewCipher(this.bean.genetic.Key)
-	if err != nil {
-		panic(err)
-	}
-
-	cipherText := make([]byte, aes.BlockSize+len(plaintext))
-	iv := cipherText[:aes.BlockSize]
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		panic(err)
-	}
-
-	stream := cipher.NewCFBEncrypter(block, iv)
-	stream.XORKeyStream(cipherText[aes.BlockSize:], plaintext)
-
-	return base64.URLEncoding.EncodeToString(cipherText)
-}
-
-func (this CoreApplication) decrypt(cryptoText string) string {
-	cipherText, _ := base64.URLEncoding.DecodeString(cryptoText)
-	block, err := aes.NewCipher(this.bean.genetic.Key)
-	if err != nil {
-		panic(err)
-	}
-
-	if len(cipherText) < aes.BlockSize {
-		panic("cipherText too short")
-	}
-	iv := cipherText[:aes.BlockSize]
-	cipherText = cipherText[aes.BlockSize:]
-
-	stream := cipher.NewCFBDecrypter(block, iv)
-	stream.XORKeyStream(cipherText, cipherText)
-
-	return fmt.Sprintf("%s", cipherText)
 }

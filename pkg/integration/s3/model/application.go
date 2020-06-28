@@ -18,7 +18,6 @@ type Application struct {
 
 type Credentials struct {
 	ID               string   `json:"id"`
-	Version          string   `json:"version"`
 	ApplicationId    string   `json:"applicationId"`
 	Endpoint         util.Uri `json:"endpoint"`
 	EncryptedKeyPair string   `json:"encryptedKeyPair"`
@@ -27,7 +26,6 @@ type Credentials struct {
 
 type Policy struct {
 	ID            string     `json:"id"`
-	Version       string     `json:"version"`
 	ApplicationId string     `json:"applicationId"`
 	IsActive      bool       `json:"isActive"`
 	CreatedAt     time.Time  `json:"createdAt"`

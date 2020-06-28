@@ -25,7 +25,8 @@ func NewS3Integration(
 	}
 
 	this.coreApp = &CoreApplication{bean: this}
-	this.corePolicy = &CorePolicy{bean: this}
+	this.coreCredentials = &coreCredentials{bean: this}
+	this.corePolicy = &corePolicy{bean: this}
 
 	return this
 }
@@ -36,8 +37,9 @@ type S3IntegrationBean struct {
 	logger  *zap.Logger
 	genetic *Genetic
 
-	coreApp    *CoreApplication
-	corePolicy *CorePolicy
+	coreApp         *CoreApplication
+	coreCredentials *coreCredentials
+	corePolicy      *corePolicy
 }
 
 func (this S3IntegrationBean) Migrate(tx *gorm.DB, driver string) error {

@@ -31,12 +31,14 @@ func Test(t *testing.T) {
 	})
 
 	t.Run("Core Application", func(t *testing.T) {
-		t.Run("Encrypt", func(t *testing.T) {
-			encrypted := this.coreApp.encrypt("xxxxxxxxxxxxxxxxxxxxx")
-			decrypted := this.coreApp.decrypt(encrypted)
+		t.Run("Crentials", func(t *testing.T) {
+			t.Run("Encrypt", func(t *testing.T) {
+				encrypted := this.coreCredentials.encrypt("xxxxxxxxxxxxxxxxxxxxx")
+				decrypted := this.coreCredentials.decrypt(encrypted)
 
-			ass.Equal("xxxxxxxxxxxxxxxxxxxxx", decrypted)
-			ass.True(len(encrypted)*2 <= 256)
+				ass.Equal("xxxxxxxxxxxxxxxxxxxxx", decrypted)
+				ass.True(len(encrypted)*2 <= 256)
+			})
 		})
 
 		t.Run("CRUD", func(t *testing.T) {
