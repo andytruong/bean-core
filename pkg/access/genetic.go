@@ -13,7 +13,7 @@ import (
 )
 
 type (
-	Config struct {
+	Genetic struct {
 		SessionTimeout time.Duration `yaml:"timeout"`
 		Jwt            JwtConfig     `yaml:"jwt"`
 
@@ -30,7 +30,7 @@ type (
 	}
 )
 
-func (this *Config) init() *Config {
+func (this *Genetic) init() *Genetic {
 	if nil == this.mutex {
 		this.mutex = &sync.Mutex{}
 	}
@@ -45,7 +45,7 @@ func (this *Config) init() *Config {
 	return this
 }
 
-func (this *Config) signMethod() jwt.SigningMethod {
+func (this *Genetic) signMethod() jwt.SigningMethod {
 	switch this.Jwt.Algorithm {
 	case "RS512":
 		return jwt.SigningMethodRS512
@@ -55,7 +55,7 @@ func (this *Config) signMethod() jwt.SigningMethod {
 	}
 }
 
-func (this *Config) GetSignKey() (interface{}, error) {
+func (this *Genetic) GetSignKey() (interface{}, error) {
 	if nil == this.privateKey {
 		this.mutex.Lock()
 		defer this.mutex.Unlock()
@@ -76,7 +76,7 @@ func (this *Config) GetSignKey() (interface{}, error) {
 	return this.privateKey, nil
 }
 
-func (this *Config) GetParseKey() (interface{}, error) {
+func (this *Genetic) GetParseKey() (interface{}, error) {
 	if nil == this.publicKey {
 		this.mutex.Lock()
 		defer this.mutex.Unlock()

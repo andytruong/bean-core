@@ -30,6 +30,8 @@ type Config struct {
 	PrepareStmt bool
 	// DisableAutomaticPing
 	DisableAutomaticPing bool
+	// DisableForeignKeyConstraintWhenMigrating
+	DisableForeignKeyConstraintWhenMigrating bool
 
 	// ClauseBuilders clause builder
 	ClauseBuilders map[string]clause.ClauseBuilder
@@ -37,6 +39,8 @@ type Config struct {
 	ConnPool ConnPool
 	// Dialector database dialector
 	Dialector
+	// Plugins registered plugins
+	Plugins map[string]Plugin
 
 	callbacks  *callbacks
 	cacheStore *sync.Map
@@ -83,6 +87,10 @@ func Open(dialector Dialector, config *Config) (db *DB, err error) {
 		config.Dialector = dialector
 	}
 
+	if config.Plugins == nil {
+		config.Plugins = map[string]Plugin{}
+	}
+
 	if config.cacheStore == nil {
 		config.cacheStore = &sync.Map{}
 	}
@@ -102,7 +110,7 @@ func Open(dialector Dialector, config *Config) (db *DB, err error) {
 	if config.PrepareStmt {
 		db.ConnPool = &PreparedStmtDB{
 			ConnPool: db.ConnPool,
-			stmts:    map[string]*sql.Stmt{},
+			Stmts:    map[string]*sql.Stmt{},
 		}
 	}
 
@@ -146,7 +154,7 @@ func (db *DB) Session(config *Session) *DB {
 	if config.PrepareStmt {
 		tx.Statement.ConnPool = &PreparedStmtDB{
 			ConnPool: db.Config.ConnPool,
-			stmts:    map[string]*sql.Stmt{},
+			Stmts:    map[string]*sql.Stmt{},
 		}
 	}
 
@@ -306,4 +314,17 @@ func (db *DB) SetupJoinTable(model interface{}, field string, joinTable interfac
 	}
 
 	return nil
+}
+
+func (db *DB) Use(plugin Plugin) (err error) {
+	name := plugin.Name()
+	if _, ok := db.Plugins[name]; !ok {
+		if err = plugin.Initialize(db); err == nil {
+			db.Plugins[name] = plugin
+		}
+	} else {
+		return ErrRegistered
+	}
+
+	return err
 }

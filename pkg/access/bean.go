@@ -22,10 +22,10 @@ func NewAccessBean(
 	logger *zap.Logger,
 	bUser *user.UserBean,
 	bNamespace *namespace.NamespaceBean,
-	config *Config,
+	genetic *Genetic,
 ) *AccessBean {
 	this := &AccessBean{
-		config:    config.init(),
+		genetic:   genetic.init(),
 		logger:    logger,
 		db:        db,
 		id:        id,
@@ -36,7 +36,7 @@ func NewAccessBean(
 	this.SessionResolver = ModelResolver{
 		logger: logger,
 		bean:   this,
-		config: config,
+		config: genetic,
 	}
 
 	this.coreSession = &CoreSession{bean: this}
@@ -46,7 +46,7 @@ func NewAccessBean(
 
 type (
 	AccessBean struct {
-		config          *Config
+		genetic         *Genetic
 		logger          *zap.Logger
 		db              *gorm.DB
 		id              *util.Identifier

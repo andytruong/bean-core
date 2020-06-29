@@ -16,7 +16,7 @@ import (
 	"bean/pkg/util"
 )
 
-func KeyGenCommand(can *infra.Can) *cli.Command {
+func KeyGenCommand(_ *infra.Can) *cli.Command {
 	return &cli.Command{
 		Name: "gen-key",
 		Flags: []cli.Flag{
@@ -38,15 +38,19 @@ func KeyGenCommand(can *infra.Can) *cli.Command {
 
 func verify() error {
 	// public key
-	pub, err := util.ParseRsaPublicKeyFromFile("resources/keys/id_rsa.pub")
-	if nil != pub && err == nil {
-		fmt.Println("Public key: 🆗 ")
-	} else {
-		fmt.Println("Public key: 🙅 ")
+	{
+		pub, err := util.ParseRsaPublicKeyFromFile("resources/keys/id_rsa.pub")
+		if nil != pub && err == nil {
+			fmt.Println("Public key: 🆗 ")
+		} else {
+			fmt.Println("Public key: 🙅 ")
+		}
 	}
 
 	// private key
-	// …
+	{
+		// …
+	}
 
 	return nil
 }

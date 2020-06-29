@@ -21,6 +21,7 @@ gen-key:
 
 clean:
 	go fmt ./...
+	go mod vendor
 	go mod tidy
 	git fetch --prune origin
 	rm -rf ./pkg/infra/gql/__tmp__*
@@ -29,9 +30,7 @@ clean:
 # dev commands
 # ---------------------
 dev-migrate:
-	CONFIG=config.yaml \
-		DB_DRIVER=postgres \
-		DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable  \
+	CONFIG=config.yaml DB_DRIVER=postgres DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable \
 		go run cmd/main.go migrate
 
 docker-db-start:
@@ -41,7 +40,5 @@ docker-db-stop:
 	docker stop hi-pg
 
 dev-server:
-	CONFIG=config.yaml \
-		DB_DRIVER=postgres \
-		DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable  \
+	CONFIG=config.yaml DB_DRIVER=postgres DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable \
 		go run cmd/main.go http-server

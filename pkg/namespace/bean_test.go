@@ -23,7 +23,7 @@ import (
 func bean() *NamespaceBean {
 	config := &struct {
 		Beans struct {
-			Namespace *Config `yaml:"namespace"`
+			Namespace *Genetic `yaml:"namespace"`
 		} `yaml:"beans"`
 	}{}
 

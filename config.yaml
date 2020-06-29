@@ -23,15 +23,21 @@ http-server:
 databases:
   master:
     driver: "${DB_DRIVER:sqlite3}"
-    url:    "${DB_MASTER_URL:resources/dev.sqlite}"
+    url:    "${DB_MASTER_URL:data/db.sqlite}"
   slave:
     driver: "${DB_SLAVE_URL:sqlite3}"
-    url:    "${DB_SLAVE_URL:resources/dev.sqlite}"
+    url:    "${DB_SLAVE_URL:data/db.sqlite}"
 
 # ---------------------
 # Beans configuration: Each bean may have its own config
 # ---------------------
 beans:
+  integration.s3:
+    # Key to encrypt/decrypt the application keys.
+    # Length: 16, 24, or 32 bytes -> AES-128, AES-192, AES-256.
+    # Change key will make persisted records not accessible.
+    key: "${INTEGRATION_S3_HASH_SALT:01EBWB516AP6BQD7}"
+
   # ---------------------
   # Namespace bean
   # ---------------------

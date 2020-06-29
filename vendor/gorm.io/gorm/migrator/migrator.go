@@ -97,11 +97,13 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 				}
 
 				for _, rel := range stmt.Schema.Relationships.Relations {
-					if constraint := rel.ParseConstraint(); constraint != nil {
-						if constraint.Schema == stmt.Schema {
-							if !tx.Migrator().HasConstraint(value, constraint.Name) {
-								if err := tx.Migrator().CreateConstraint(value, constraint.Name); err != nil {
-									return err
+					if !m.DB.Config.DisableForeignKeyConstraintWhenMigrating {
+						if constraint := rel.ParseConstraint(); constraint != nil {
+							if constraint.Schema == stmt.Schema {
+								if !tx.Migrator().HasConstraint(value, constraint.Name) {
+									if err := tx.Migrator().CreateConstraint(value, constraint.Name); err != nil {
+										return err
+									}
 								}
 							}
 						}
@@ -173,17 +175,22 @@ func (m Migrator) CreateTable(values ...interface{}) error {
 						errr = tx.Migrator().CreateIndex(value, name)
 					}(value, idx.Name)
 				} else {
+					if idx.Class != "" {
+						createTableSQL += idx.Class + " "
+					}
 					createTableSQL += "INDEX ? ?,"
 					values = append(values, clause.Expr{SQL: idx.Name}, tx.Migrator().(BuildIndexOptionsInterface).BuildIndexOptions(idx.Fields, stmt))
 				}
 			}
 
 			for _, rel := range stmt.Schema.Relationships.Relations {
-				if constraint := rel.ParseConstraint(); constraint != nil {
-					if constraint.Schema == stmt.Schema {
-						sql, vars := buildConstraint(constraint)
-						createTableSQL += sql + ","
-						values = append(values, vars...)
+				if !m.DB.DisableForeignKeyConstraintWhenMigrating {
+					if constraint := rel.ParseConstraint(); constraint != nil {
+						if constraint.Schema == stmt.Schema {
+							sql, vars := buildConstraint(constraint)
+							createTableSQL += sql + ","
+							values = append(values, vars...)
+						}
 					}
 				}
 

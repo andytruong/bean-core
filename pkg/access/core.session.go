@@ -131,7 +131,7 @@ func (this CoreSession) create(
 		IsActive:    true,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
-		ExpiredAt:   time.Now().Add(this.bean.config.SessionTimeout),
+		ExpiredAt:   time.Now().Add(this.bean.genetic.SessionTimeout),
 	}
 
 	if err := tx.Table(connect.TableAccessSession).Create(&session).Error; nil != err {

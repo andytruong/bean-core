@@ -21,7 +21,7 @@ import (
 func bean() *AccessBean {
 	config := &struct {
 		Beans struct {
-			Access *Config `yaml:"access"`
+			Access *Genetic `yaml:"access"`
 		} `yaml:"beans"`
 	}{}
 
@@ -44,7 +44,7 @@ func bean() *AccessBean {
 func Test_Config(t *testing.T) {
 	ass := assert.New(t)
 	this := bean()
-	key, err := this.config.GetSignKey()
+	key, err := this.genetic.GetSignKey()
 	ass.NoError(err)
 	ass.NotNil(key)
 }

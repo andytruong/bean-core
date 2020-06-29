@@ -33,6 +33,7 @@ const (
 	ErrorVersionConflict = Err("version conflict")
 	ErrorLocked          = Err("locked")
 	ErrorAccessDenied    = Err("access denied")
+	ErrorUselessInput    = Err("useless input")
 )
 
 func NilPointerErrorValidate(values ...interface{}) error {

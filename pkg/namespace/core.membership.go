@@ -155,7 +155,7 @@ func (this CoreMember) doCreate(tx *gorm.DB, namespaceId string, userId string, 
 }
 
 func (this CoreMember) createRelationships(tx *gorm.DB, obj *model.Membership, managerMemberIds []string) ([]*util.Error, error) {
-	if len(managerMemberIds) > this.bean.config.Manager.MaxNumberOfManager {
+	if len(managerMemberIds) > this.bean.genetic.Manager.MaxNumberOfManager {
 		return util.NewErrors(util.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "exceeded limitation"), nil
 	}
 
