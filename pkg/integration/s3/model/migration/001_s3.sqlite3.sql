@@ -11,11 +11,12 @@ CREATE TABLE s3_application
 
 CREATE TABLE s3_credentials
 (
-    id                 character varying(26)  NOT NULL PRIMARY KEY,
-    application_id     character varying(26),
-    endpoint           character varying(256) NOT NULL,
-    encrypted_key_pair character varying(256) NOT NULL,
-    is_secure          boolean                NOT NULL,
+    id             character varying(26)  NOT NULL PRIMARY KEY,
+    application_id character varying(26)  NOT NULL UNIQUE,
+    endpoint       character varying(256) NOT NULL,
+    access_key     character varying(128) NOT NULL,
+    secret_key     character varying(128) NOT NULL,
+    is_secure      boolean                NOT NULL,
     FOREIGN KEY (application_id) REFERENCES s3_application (id)
 );
 

@@ -25,6 +25,7 @@ const (
 	TableUserEmailUnverified      = "user_unverified_emails"
 	TableIntegrationS3App         = "s3_application"
 	TableIntegrationS3Credentials = "s3_credentials"
+	TableIntegrationS3Policy      = "s3_application_policy"
 )
 
 func Transaction(ctx context.Context, db *gorm.DB, callback func(tx *gorm.DB) error) error {

@@ -7,8 +7,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 	"bean/pkg/util"
+	"bean/pkg/util/connect"
 )
 
 func bean() *S3IntegrationBean {
@@ -31,7 +33,7 @@ func Test(t *testing.T) {
 	})
 
 	t.Run("Core Application", func(t *testing.T) {
-		t.Run("Crentials", func(t *testing.T) {
+		t.Run("Credentials", func(t *testing.T) {
 			t.Run("Encrypt", func(t *testing.T) {
 				encrypted := this.coreCredentials.encrypt("xxxxxxxxxxxxxxxxxxxxx")
 				decrypted := this.coreCredentials.decrypt(encrypted)
@@ -51,12 +53,43 @@ func Test(t *testing.T) {
 					AccessKey: "minio",
 					SecretKey: "minio",
 				},
+				Polices: []dto.S3ApplicationPolicyCreateInput{
+					{
+						Kind:  model.PolicyKindFileExtensions,
+						Value: "jpeg gif png webp",
+					},
+					{
+						Kind:  model.PolicyKindRateLimit,
+						Value: "1MB/user/hour",
+					},
+					{
+						Kind:  model.PolicyKindRateLimit,
+						Value: "1GB/namespace/hour",
+					},
+				},
 			})
 
 			ass.NoError(err)
 			ass.NotNil(oCreate)
 			ass.Equal(false, oCreate.App.IsActive)
 			ass.Equal("qa", oCreate.App.Slug)
+
+			t.Run("policies", func(t *testing.T) {
+				policies := []model.Policy{}
+				err := this.db.
+					Table(connect.TableIntegrationS3Policy).
+					Where("application_id = ?", oCreate.App.ID).
+					Find(&policies).
+					Error
+				ass.NoError(err)
+				ass.Equal(3, len(policies))
+				ass.Equal(policies[0].Kind, model.PolicyKindFileExtensions)
+				ass.Equal(policies[1].Kind, model.PolicyKindRateLimit)
+				ass.Equal(policies[2].Kind, model.PolicyKindRateLimit)
+				ass.Equal(policies[0].Value, "jpeg gif png webp")
+				ass.Equal(policies[1].Value, "1MB/user/hour")
+				ass.Equal(policies[2].Value, "1GB/namespace/hour")
+			})
 
 			t.Run("Update", func(t *testing.T) {
 				t.Run("Useless input", func(t *testing.T) {

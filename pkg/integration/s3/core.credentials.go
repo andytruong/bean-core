@@ -12,6 +12,7 @@ import (
 
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
+	"bean/pkg/util"
 	"bean/pkg/util/connect"
 )
 
@@ -21,11 +22,12 @@ type coreCredentials struct {
 
 func (this *coreCredentials) onAppCreate(tx *gorm.DB, app *model.Application, in dto.S3ApplicationCredentialsCreateInput) error {
 	cre := model.Credentials{
-		ID:               this.bean.id.MustULID(),
-		ApplicationId:    app.ID,
-		Endpoint:         in.Endpoint,
-		EncryptedKeyPair: in.AccessKey + " " + this.encrypt(in.SecretKey),
-		IsSecure:         in.IsSecure,
+		ID:            this.bean.id.MustULID(),
+		ApplicationId: app.ID,
+		Endpoint:      in.Endpoint,
+		AccessKey:     in.AccessKey,
+		SecretKey:     this.encrypt(in.SecretKey),
+		IsSecure:      in.IsSecure,
 	}
 
 	return tx.Table(connect.TableIntegrationS3Credentials).Create(&cre).Error
@@ -36,18 +38,63 @@ func (this *coreCredentials) onAppUpdate(tx *gorm.DB, app *model.Application, in
 		return nil
 	}
 
-	cred := &model.Credentials{}
-	err := tx.
-		Table(connect.TableIntegrationS3Credentials).
-		Where("application_id = ?", app.ID).
-		First(cred).
-		Error
+	// load
+	cre := &model.Credentials{}
+	err := tx.Table(connect.TableIntegrationS3Credentials).Where("application_id = ?", app.ID).First(&cre).Error
 
-	if nil != err {
-		return err
+	if nil == err {
+		// if found -> update
+		changed := false
+
+		if nil != in.Endpoint {
+			changed = true
+			cre.Endpoint = *in.Endpoint
+		}
+
+		if nil != in.IsSecure {
+			changed = true
+			cre.IsSecure = *in.IsSecure
+		}
+
+		if nil != in.AccessKey || nil != in.SecretKey {
+			if nil != in.AccessKey {
+				changed = true
+				cre.AccessKey = *in.AccessKey
+			}
+
+			if nil != in.SecretKey {
+				changed = true
+				cre.SecretKey = this.encrypt(*in.SecretKey)
+			}
+		}
+
+		if changed {
+			return tx.Table(connect.TableIntegrationS3Credentials).Save(&cre).Error
+		}
+
+		return util.ErrorUselessInput
+	} else {
+		if gorm.ErrRecordNotFound != err {
+			return err
+		}
+
+		if nil != in.Endpoint && nil != in.AccessKey && nil != in.SecretKey {
+			// if not found -> create
+			cre = &model.Credentials{
+				ID:            this.bean.id.MustULID(),
+				ApplicationId: app.ID,
+				Endpoint:      *in.Endpoint,
+				AccessKey:     *in.AccessKey,
+				SecretKey:     this.encrypt(*in.SecretKey),
+				IsSecure:      false,
+			}
+
+			err := tx.Table(connect.TableIntegrationS3Credentials).Create(&cre).Error
+			if nil != err {
+				return err
+			}
+		}
 	}
-
-	fmt.Println("TODO -> handle: ", in)
 
 	return nil
 }
