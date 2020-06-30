@@ -1,6 +1,7 @@
 package s3
 
 import (
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -18,6 +19,22 @@ import (
 
 type coreCredentials struct {
 	bean *S3IntegrationBean
+}
+
+func (this *coreCredentials) loadByApplicationId(ctx context.Context, appId string) (*model.Credentials, error) {
+	cred := &model.Credentials{}
+
+	err := this.bean.db.WithContext(ctx).
+		Table(connect.TableIntegrationS3Credentials).
+		Where("application_id = ?", appId).
+		First(&cred).
+		Error
+
+	if nil != err {
+		return nil, err
+	}
+
+	return cred, nil
 }
 
 func (this *coreCredentials) onAppCreate(tx *gorm.DB, app *model.Application, in dto.S3ApplicationCredentialsCreateInput) error {

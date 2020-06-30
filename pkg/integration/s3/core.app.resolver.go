@@ -16,9 +16,9 @@ func (this *ApplicationResolver) S3ApplicationCreate(ctx context.Context, input 
 }
 
 func (this *ApplicationResolver) Polices(ctx context.Context, obj *model.Application) ([]*model.Policy, error) {
-	panic("wip")
+	return this.bean.corePolicy.loadByApplicationId(ctx, obj.ID)
 }
 
 func (this *ApplicationResolver) Credentials(ctx context.Context, obj *model.Application) (*model.Credentials, error) {
-	panic("wip")
+	return this.bean.coreCredentials.loadByApplicationId(ctx, obj.ID)
 }

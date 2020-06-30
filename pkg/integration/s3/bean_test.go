@@ -143,6 +143,16 @@ func Test(t *testing.T) {
 
 					ass.NoError(err)
 					ass.NotNil(oUpdate)
+
+					// reload & assert
+					{
+						cred, err := this.CoreApp.Resolver.Credentials(ctx, app)
+						ass.NoError(err)
+						ass.Equal("http://localhost:9191", string(cred.Endpoint))
+						ass.Equal("minio", cred.AccessKey)
+						ass.NotEqual("minio", cred.SecretKey, "value is encrypted")
+						ass.Equal(false, cred.IsSecure)
+					}
 				})
 
 				t.Run("Policies", func(t *testing.T) {
@@ -191,13 +201,15 @@ func Test(t *testing.T) {
 
 					// after update: add 1, update 1, remove 1
 					{
+						policies, err := this.CoreApp.Resolver.Polices(ctx, app)
+						ass.NoError(err)
 						ass.Equal(3, len(policies))
 						ass.Equal(policies[0].Kind, model.PolicyKindFileExtensions)
 						ass.Equal(policies[1].Kind, model.PolicyKindRateLimit)
-						ass.Equal(policies[2].Kind, model.PolicyKindRateLimit)
+						ass.Equal(policies[2].Kind, model.PolicyKindFileExtensions)
 						ass.Equal(policies[0].Value, "jpeg gif png webp")
-						ass.Equal(policies[1].Value, "1MB/user/hour")
-						ass.Equal(policies[2].Value, "1GB/namespace/hour")
+						ass.Equal(policies[1].Value, "2MB/user/hour")
+						ass.Equal(policies[2].Value, "raw")
 					}
 				})
 			})

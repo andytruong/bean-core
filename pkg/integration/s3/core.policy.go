@@ -1,6 +1,7 @@
 package s3
 
 import (
+	"context"
 	"time"
 
 	"gorm.io/gorm"
@@ -46,6 +47,20 @@ func (this *corePolicy) create(tx *gorm.DB, appId string, kind model.PolicyKind,
 	return policy, nil
 }
 
+func (this *corePolicy) loadByApplicationId(ctx context.Context, appId string) ([]*model.Policy, error) {
+	policies := []*model.Policy{}
+
+	err := this.bean.db.WithContext(ctx).Table(connect.TableIntegrationS3Policy).
+		Where("application_id = ?", appId).
+		Find(&policies).
+		Error
+	if nil != err {
+		return nil, err
+	}
+
+	return policies, nil
+}
+
 func (this *corePolicy) onAppCreate(tx *gorm.DB, app *model.Application, in []dto.S3ApplicationPolicyCreateInput) error {
 	for _, input := range in {
 		_, err := this.create(tx, app.ID, input.Kind, input.Value)
@@ -63,7 +78,7 @@ func (this *corePolicy) onAppUpdate(tx *gorm.DB, app *model.Application, in *dto
 	}
 
 	useless := true
-	
+
 	if nil != in.Create {
 		for _, input := range in.Create {
 			_, err := this.create(tx, app.ID, input.Kind, input.Value)
