@@ -102,7 +102,7 @@ func (this *coreCredentials) onAppUpdate(tx *gorm.DB, app *model.Application, in
 func (this coreCredentials) encrypt(text string) string {
 	plaintext := []byte(text)
 
-	block, err := aes.NewCipher(this.bean.genetic.Key)
+	block, err := aes.NewCipher([]byte(this.bean.genetic.Key))
 	if err != nil {
 		panic(err)
 	}
@@ -121,7 +121,7 @@ func (this coreCredentials) encrypt(text string) string {
 
 func (this coreCredentials) decrypt(cryptoText string) string {
 	cipherText, _ := base64.URLEncoding.DecodeString(cryptoText)
-	block, err := aes.NewCipher(this.bean.genetic.Key)
+	block, err := aes.NewCipher([]byte(this.bean.genetic.Key))
 	if err != nil {
 		panic(err)
 	}

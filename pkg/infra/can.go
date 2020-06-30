@@ -89,9 +89,11 @@ type (
 	}
 
 	BeansConfig struct {
-		Access    *access.Genetic    `yaml:"access"`
-		Namespace *namespace.Genetic `yaml:"namespace"`
-		S3        *s3.Genetic        `yaml:"integration.s3"`
+		Access      *access.Genetic    `yaml:"access"`
+		Namespace   *namespace.Genetic `yaml:"namespace"`
+		Integration struct {
+			S3 *s3.Genetic `yaml:"s3"`
+		} `yaml:"integration"`
 	}
 )
 

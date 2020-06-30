@@ -108,7 +108,7 @@ func (this *beans) S3() (*s3.S3IntegrationBean, error) {
 			return nil, err
 		}
 
-		this.s3 = s3.NewS3Integration(db, this.can.Identifier(), this.can.logger, this.can.Beans.S3)
+		this.s3 = s3.NewS3Integration(db, this.can.Identifier(), this.can.logger, this.can.Beans.Integration.S3)
 	}
 
 	return this.s3, nil

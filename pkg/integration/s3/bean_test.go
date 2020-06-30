@@ -17,7 +17,7 @@ func bean() *S3IntegrationBean {
 	db := util.MockDatabase()
 	id := util.MockIdentifier()
 	logger := util.MockLogger()
-	bean := NewS3Integration(db, id, logger, &Genetic{Key: []byte("01EBWB516AP6BQD7")})
+	bean := NewS3Integration(db, id, logger, &Genetic{Key: "01EBWB516AP6BQD7"})
 	util.MockInstall(bean, db)
 
 	return bean
