@@ -144,6 +144,62 @@ func Test(t *testing.T) {
 					ass.NoError(err)
 					ass.NotNil(oUpdate)
 				})
+
+				t.Run("Policies", func(t *testing.T) {
+					app, _ := this.coreApp.Load(ctx, oCreate.App.ID)
+					policies := []model.Policy{}
+					err := this.db.Table(connect.TableIntegrationS3Policy).Where("application_id = ?", oCreate.App.ID).Find(&policies).Error
+					ass.NoError(err)
+
+					// before update
+					{
+						ass.Equal(3, len(policies))
+						ass.Equal(policies[0].Kind, model.PolicyKindFileExtensions)
+						ass.Equal(policies[1].Kind, model.PolicyKindRateLimit)
+						ass.Equal(policies[2].Kind, model.PolicyKindRateLimit)
+						ass.Equal(policies[0].Value, "jpeg gif png webp")
+						ass.Equal(policies[1].Value, "1MB/user/hour")
+						ass.Equal(policies[2].Value, "1GB/namespace/hour")
+					}
+
+					oUpdate, err := this.coreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+						Id:      app.ID,
+						Version: app.Version,
+						Polices: &dto.S3ApplicationPolicyMutationInput{
+							Create: []dto.S3ApplicationPolicyCreateInput{
+								{
+									Kind:  model.PolicyKindFileExtensions,
+									Value: "raw",
+								},
+							},
+							Update: []dto.S3ApplicationPolicyUpdateInput{
+								{
+									Id:    policies[1].ID,
+									Value: "2MB/user/hour",
+								},
+							},
+							Delete: []dto.S3ApplicationPolicyDeleteInput{
+								{
+									Id: policies[2].ID,
+								},
+							},
+						},
+					})
+
+					ass.NoError(err)
+					ass.NotNil(oUpdate)
+
+					// after update: add 1, update 1, remove 1
+					{
+						ass.Equal(3, len(policies))
+						ass.Equal(policies[0].Kind, model.PolicyKindFileExtensions)
+						ass.Equal(policies[1].Kind, model.PolicyKindRateLimit)
+						ass.Equal(policies[2].Kind, model.PolicyKindRateLimit)
+						ass.Equal(policies[0].Value, "jpeg gif png webp")
+						ass.Equal(policies[1].Value, "1MB/user/hour")
+						ass.Equal(policies[2].Value, "1GB/namespace/hour")
+					}
+				})
 			})
 
 			t.Run("delete", func(t *testing.T) {
