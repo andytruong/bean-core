@@ -64,11 +64,11 @@ func (m Migrator) FullDataTypeOf(field *schema.Field) (expr clause.Expr) {
 		expr.SQL += " UNIQUE"
 	}
 
-	if field.HasDefaultValue && field.DefaultValue != "" {
-		if field.DataType == schema.String && field.DefaultValueInterface != nil {
-			defaultStmt := &gorm.Statement{Vars: []interface{}{field.DefaultValue}}
-			m.Dialector.BindVarTo(defaultStmt, defaultStmt, field.DefaultValue)
-			expr.SQL += " DEFAULT " + m.Dialector.Explain(defaultStmt.SQL.String(), field.DefaultValue)
+	if field.HasDefaultValue && (field.DefaultValueInterface != nil || field.DefaultValue != "") {
+		if field.DefaultValueInterface != nil {
+			defaultStmt := &gorm.Statement{Vars: []interface{}{field.DefaultValueInterface}}
+			m.Dialector.BindVarTo(defaultStmt, defaultStmt, field.DefaultValueInterface)
+			expr.SQL += " DEFAULT " + m.Dialector.Explain(defaultStmt.SQL.String(), field.DefaultValueInterface)
 		} else {
 			expr.SQL += " DEFAULT " + field.DefaultValue
 		}
@@ -114,20 +114,6 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 							if err := tx.Migrator().CreateConstraint(value, chk.Name); err != nil {
 								return err
 							}
-						}
-					}
-
-					// create join table
-					if rel.JoinTable != nil {
-						joinValue := reflect.New(rel.JoinTable.ModelType).Interface()
-						if !tx.Migrator().HasTable(rel.JoinTable.Table) {
-							defer func(table string, joinValue interface{}) {
-								errr = tx.Table(table).Migrator().CreateTable(joinValue)
-							}(rel.JoinTable.Table, joinValue)
-						} else {
-							defer func(table string, joinValue interface{}) {
-								errr = tx.Table(table).Migrator().AutoMigrate(joinValue)
-							}(rel.JoinTable.Table, joinValue)
 						}
 					}
 				}
@@ -191,16 +177,6 @@ func (m Migrator) CreateTable(values ...interface{}) error {
 							createTableSQL += sql + ","
 							values = append(values, vars...)
 						}
-					}
-				}
-
-				// create join table
-				if rel.JoinTable != nil {
-					joinValue := reflect.New(rel.JoinTable.ModelType).Interface()
-					if !tx.Migrator().HasTable(rel.JoinTable.Table) {
-						defer func(table string, joinValue interface{}) {
-							errr = tx.Table(table).Migrator().CreateTable(joinValue)
-						}(rel.JoinTable.Table, joinValue)
 					}
 				}
 			}
@@ -551,9 +527,10 @@ func (m Migrator) ReorderModels(values []interface{}, autoAdd bool) (results []i
 		orderedModelNamesMap          = map[string]bool{}
 		valuesMap                     = map[string]Dependency{}
 		insertIntoOrderedList         func(name string)
+		parseDependence               func(value interface{}, addToList bool)
 	)
 
-	parseDependence := func(value interface{}, addToList bool) {
+	parseDependence = func(value interface{}, addToList bool) {
 		dep := Dependency{
 			Statement: &gorm.Statement{DB: m.DB, Dest: value},
 		}
@@ -564,8 +541,14 @@ func (m Migrator) ReorderModels(values []interface{}, autoAdd bool) (results []i
 				dep.Depends = append(dep.Depends, c.ReferenceSchema)
 			}
 
-			if rel.JoinTable != nil && rel.Schema != rel.FieldSchema {
-				dep.Depends = append(dep.Depends, rel.FieldSchema)
+			if rel.JoinTable != nil {
+				if rel.Schema != rel.FieldSchema {
+					dep.Depends = append(dep.Depends, rel.FieldSchema)
+				}
+				// append join value
+				defer func(joinValue interface{}) {
+					parseDependence(joinValue, autoAdd)
+				}(reflect.New(rel.JoinTable.ModelType).Interface())
 			}
 		}
 

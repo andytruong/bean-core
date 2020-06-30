@@ -15,7 +15,8 @@ github.com/agnivade/levenshtein
 # github.com/alexbrainman/sspi v0.0.0-20180613141037-e580b900e9f5
 github.com/alexbrainman/sspi
 github.com/alexbrainman/sspi/negotiate
-# github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d
+# github.com/cpuguy83/go-md2man/v2 v2.0.0
+## explicit
 github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
@@ -28,7 +29,8 @@ github.com/google/uuid
 # github.com/gorilla/mux v1.7.3
 ## explicit
 github.com/gorilla/mux
-# github.com/gorilla/websocket v1.2.0
+# github.com/gorilla/websocket v1.4.0
+## explicit
 github.com/gorilla/websocket
 # github.com/hashicorp/go-uuid v1.0.2
 github.com/hashicorp/go-uuid
@@ -111,7 +113,8 @@ github.com/minio/minio-go/v6/pkg/tags
 github.com/minio/sha256-simd
 # github.com/mitchellh/go-homedir v1.1.0
 github.com/mitchellh/go-homedir
-# github.com/mitchellh/mapstructure v0.0.0-20180203102830-a4e142e9c047
+# github.com/mitchellh/mapstructure v1.1.2
+## explicit
 github.com/mitchellh/mapstructure
 # github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421
 github.com/modern-go/concurrent
@@ -193,7 +196,7 @@ gorm.io/driver/postgres
 # gorm.io/driver/sqlite v1.0.7
 ## explicit
 gorm.io/driver/sqlite
-# gorm.io/gorm v0.2.15
+# gorm.io/gorm v0.2.19
 ## explicit
 gorm.io/gorm
 gorm.io/gorm/callbacks
