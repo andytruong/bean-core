@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/lib/pq v1.6.0
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
+	github.com/minio/minio-go/v6 v6.0.57
 	github.com/oklog/ulid v1.3.1
 	github.com/pkg/errors v0.9.1
 	github.com/speps/go-hashids v2.0.0+incompatible
