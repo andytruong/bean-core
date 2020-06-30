@@ -8,7 +8,7 @@ type S3ApplicationUpdateInput struct {
 	IsActive    *bool                                `json:"isActive"`
 	Slug        *string                              `json:"slug"`
 	Credentials *S3ApplicationCredentialsUpdateInput `json:"credentials"`
-	Polices     *S3ApplicationPolicyMutationInput     `json:"policies"`
+	Policies    *S3ApplicationPolicyMutationInput    `json:"policies"`
 }
 
 type S3ApplicationCredentialsUpdateInput struct {

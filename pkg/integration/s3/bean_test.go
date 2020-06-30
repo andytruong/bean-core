@@ -175,7 +175,7 @@ func Test(t *testing.T) {
 					oUpdate, err := this.CoreApp.Update(ctx, dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
-						Polices: &dto.S3ApplicationPolicyMutationInput{
+						Policies: &dto.S3ApplicationPolicyMutationInput{
 							Create: []dto.S3ApplicationPolicyCreateInput{
 								{
 									Kind:  model.PolicyKindFileExtensions,

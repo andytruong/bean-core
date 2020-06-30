@@ -101,7 +101,7 @@ func (this *CoreApplication) Update(ctx context.Context, in dto.S3ApplicationUpd
 	}
 
 	if !changed {
-		if nil == in.Credentials && nil == in.Polices {
+		if nil == in.Credentials && nil == in.Policies {
 			return nil, util.ErrorUselessInput
 		}
 	}
@@ -122,7 +122,7 @@ func (this *CoreApplication) Update(ctx context.Context, in dto.S3ApplicationUpd
 				return err
 			}
 
-			err = this.bean.corePolicy.onAppUpdate(tx, app, in.Polices)
+			err = this.bean.corePolicy.onAppUpdate(tx, app, in.Policies)
 			if nil != err {
 				return err
 			}
