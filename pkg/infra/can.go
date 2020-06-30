@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"bean/pkg/access"
+	"bean/pkg/integration/s3"
 	"bean/pkg/namespace"
 	"bean/pkg/util"
 )
@@ -90,6 +91,7 @@ type (
 	BeansConfig struct {
 		Access    *access.Genetic    `yaml:"access"`
 		Namespace *namespace.Genetic `yaml:"namespace"`
+		S3        *s3.Genetic        `yaml:"integration.s3"`
 	}
 )
 

@@ -13,7 +13,8 @@ import (
 )
 
 type CoreApplication struct {
-	bean *S3IntegrationBean
+	bean     *S3IntegrationBean
+	Resolver *ApplicationResolver
 }
 
 func (this *CoreApplication) Load(ctx context.Context, id string) (*model.Application, error) {
@@ -33,7 +34,7 @@ func (this *CoreApplication) Load(ctx context.Context, id string) (*model.Applic
 	return app, nil
 }
 
-func (this *CoreApplication) Create(ctx context.Context, in dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
+func (this *CoreApplication) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
 	var app *model.Application
 
 	err := connect.Transaction(
@@ -55,7 +56,7 @@ func (this *CoreApplication) Create(ctx context.Context, in dto.S3ApplicationCre
 				return err
 			} else if err := this.bean.coreCredentials.onAppCreate(tx, app, in.Credentials); nil != err {
 				return err
-			} else if err = this.bean.corePolicy.onAppCreate(tx, app, in.Polices); nil != err {
+			} else if err = this.bean.corePolicy.onAppCreate(tx, app, in.Policies); nil != err {
 				return err
 			}
 

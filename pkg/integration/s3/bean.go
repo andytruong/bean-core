@@ -24,7 +24,10 @@ func NewS3Integration(
 		genetic: genetic,
 	}
 
-	this.coreApp = &CoreApplication{bean: this}
+	this.CoreApp = &CoreApplication{
+		bean:     this,
+		Resolver: &ApplicationResolver{bean: this},
+	}
 	this.coreCredentials = &coreCredentials{bean: this}
 	this.corePolicy = &corePolicy{bean: this}
 
@@ -37,7 +40,7 @@ type S3IntegrationBean struct {
 	logger  *zap.Logger
 	genetic *Genetic
 
-	coreApp         *CoreApplication
+	CoreApp         *CoreApplication
 	coreCredentials *coreCredentials
 	corePolicy      *corePolicy
 }

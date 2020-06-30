@@ -7,9 +7,9 @@ import (
 )
 
 type Application struct {
-	Slug      string     `json:"name"`
 	ID        string     `json:"id"`
 	Version   string     `json:"version"`
+	Slug      string     `json:"name"`
 	IsActive  bool       `json:"isActive"`
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
@@ -20,9 +20,9 @@ type Credentials struct {
 	ID            string   `json:"id"`
 	ApplicationId string   `json:"applicationId"`
 	Endpoint      util.Uri `json:"endpoint"`
+	IsSecure      bool     `json:"isSecure"`
 	AccessKey     string   `json:"accessKey"`
 	SecretKey     string   `json:"secretKey"`
-	IsSecure      bool     `json:"isSecure"`
 }
 
 type Policy struct {

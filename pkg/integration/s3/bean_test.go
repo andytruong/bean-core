@@ -44,7 +44,7 @@ func Test(t *testing.T) {
 		})
 
 		t.Run("CRUD", func(t *testing.T) {
-			oCreate, err := this.coreApp.Create(ctx, dto.S3ApplicationCreateInput{
+			oCreate, err := this.CoreApp.Create(ctx, &dto.S3ApplicationCreateInput{
 				Slug:     "qa",
 				IsActive: false,
 				Credentials: dto.S3ApplicationCredentialsCreateInput{
@@ -53,7 +53,7 @@ func Test(t *testing.T) {
 					AccessKey: "minio",
 					SecretKey: "minio",
 				},
-				Polices: []dto.S3ApplicationPolicyCreateInput{
+				Policies: []dto.S3ApplicationPolicyCreateInput{
 					{
 						Kind:  model.PolicyKindFileExtensions,
 						Value: "jpeg gif png webp",
@@ -93,7 +93,7 @@ func Test(t *testing.T) {
 
 			t.Run("Update", func(t *testing.T) {
 				t.Run("Useless input", func(t *testing.T) {
-					oUpdate, err := this.coreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					oUpdate, err := this.CoreApp.Update(ctx, dto.S3ApplicationUpdateInput{
 						Id:      oCreate.App.ID,
 						Version: oCreate.App.Version,
 					})
@@ -103,8 +103,8 @@ func Test(t *testing.T) {
 				})
 
 				t.Run("Status", func(t *testing.T) {
-					app, _ := this.coreApp.Load(ctx, oCreate.App.ID)
-					oUpdate, err := this.coreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
+					oUpdate, err := this.CoreApp.Update(ctx, dto.S3ApplicationUpdateInput{
 						Id:       app.ID,
 						Version:  app.Version,
 						IsActive: util.NilBool(true),
@@ -116,8 +116,8 @@ func Test(t *testing.T) {
 				})
 
 				t.Run("Slug", func(t *testing.T) {
-					app, _ := this.coreApp.Load(ctx, oCreate.App.ID)
-					oUpdate, err := this.coreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
+					oUpdate, err := this.CoreApp.Update(ctx, dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
 						Slug:    util.NilString("test"),
@@ -129,8 +129,8 @@ func Test(t *testing.T) {
 				})
 
 				t.Run("Credentials", func(t *testing.T) {
-					app, _ := this.coreApp.Load(ctx, oCreate.App.ID)
-					oUpdate, err := this.coreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
+					oUpdate, err := this.CoreApp.Update(ctx, dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
 						Credentials: &dto.S3ApplicationCredentialsUpdateInput{
@@ -146,7 +146,7 @@ func Test(t *testing.T) {
 				})
 
 				t.Run("Policies", func(t *testing.T) {
-					app, _ := this.coreApp.Load(ctx, oCreate.App.ID)
+					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
 					policies := []model.Policy{}
 					err := this.db.Table(connect.TableIntegrationS3Policy).Where("application_id = ?", oCreate.App.ID).Find(&policies).Error
 					ass.NoError(err)
@@ -162,7 +162,7 @@ func Test(t *testing.T) {
 						ass.Equal(policies[2].Value, "1GB/namespace/hour")
 					}
 
-					oUpdate, err := this.coreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					oUpdate, err := this.CoreApp.Update(ctx, dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
 						Polices: &dto.S3ApplicationPolicyMutationInput{
@@ -203,9 +203,9 @@ func Test(t *testing.T) {
 			})
 
 			t.Run("delete", func(t *testing.T) {
-				app, _ := this.coreApp.Load(ctx, oCreate.App.ID)
+				app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
 				now := time.Now()
-				oDelete, err := this.coreApp.Delete(ctx, dto.S3ApplicationDeleteInput{
+				oDelete, err := this.CoreApp.Delete(ctx, dto.S3ApplicationDeleteInput{
 					Id:      app.ID,
 					Version: app.Version,
 				})

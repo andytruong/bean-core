@@ -1,0 +1,29 @@
+type Application {
+	id: ID!
+	version: ID!
+	slug: String!
+	isActive: Boolean!
+	createdAt: Time!
+	updatedAt: Time!
+	deletedAt: Time!
+	polices: [Policy!]
+	credentials: Credentials!
+}
+
+enum PolicyKind  {FileExtensions, RateLimit}
+
+type Policy {
+	id: ID!
+	createdAt: Time!
+	updatedAt: Time!
+	kind: PolicyKind!
+	value: String!
+}
+
+type Credentials {
+	id: ID!
+	endpoint: Uri!
+	isSecure: Boolean!
+	accesskey: String!
+	# no secret key
+}

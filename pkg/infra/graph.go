@@ -5,6 +5,7 @@ import (
 
 	"bean/pkg/access"
 	"bean/pkg/infra/gql"
+	"bean/pkg/integration/s3"
 	"bean/pkg/namespace"
 	"bean/pkg/user"
 	"bean/pkg/util/api"
@@ -25,8 +26,15 @@ type (
 		*namespace.NamespaceBean
 		*namespace.NamespaceQueryResolver
 		*access.AccessBean
+		*s3.ApplicationResolver
 	}
 )
+
+func (this *graph) Application() gql.ApplicationResolver {
+	bean, _ := this.can.beans.S3()
+
+	return bean.CoreApp.Resolver
+}
 
 func (this *graph) MembershipConnection() gql.MembershipConnectionResolver {
 	bean, _ := this.can.beans.Namespace()
@@ -80,6 +88,7 @@ func (this *graph) getResolvers() *resolvers {
 		bUser, _ := this.can.beans.User()
 		bAccess, _ := this.can.beans.Access()
 		bNamespace, _ := this.can.beans.Namespace()
+		bS3, _ := this.can.beans.S3()
 
 		this.resolvers = &resolvers{
 			UserBean:               bUser,
@@ -88,6 +97,7 @@ func (this *graph) getResolvers() *resolvers {
 			AccessBean:             bAccess,
 			NamespaceBean:          bNamespace,
 			NamespaceQueryResolver: bNamespace.Resolvers.Query,
+			ApplicationResolver:    bS3.CoreApp.Resolver,
 		}
 	}
 

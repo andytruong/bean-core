@@ -4,6 +4,7 @@ schema:
   - pkg/access/api/*.graphql
   - pkg/namespace/api/*.graphql
   - pkg/user/api/*.graphql
+  - pkg/integration/s3/api/*.graphql
 
 exec:
   filename: pkg/infra/gql/schema.go
@@ -29,5 +30,7 @@ autobind:
   - bean/pkg/namespace/model/dto
   - bean/pkg/access/model
   - bean/pkg/access/model/dto
+  - bean/pkg/integration/s3/model
+  - bean/pkg/integration/s3/model/dto
   - bean/pkg/util
   - bean/pkg/util/api
