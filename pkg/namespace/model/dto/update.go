@@ -1,6 +1,8 @@
 package dto
 
-import "bean/pkg/util/api"
+import (
+	"bean/pkg/util/api"
+)
 
 type NamespaceUpdateInput struct {
 	NamespaceID      string                      `json:"namespaceId"`

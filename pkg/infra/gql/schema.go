@@ -59,6 +59,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	Constraint func(ctx context.Context, obj interface{}, next graphql.Resolver, maxLength *int, minLength *int) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -1504,10 +1505,41 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
+	&ast.Source{Name: "pkg/util/api/directives.graphql", Input: `directive @constraint(
+	maxLength: Int,
+	minLength: Int,
+) on INPUT_FIELD_DEFINITION
+`, BuiltIn: false},
+	&ast.Source{Name: "pkg/util/api/enum.graphql", Input: `enum Language { AU US UK VN }
+
+enum ErrorCode   {
+	# Input errors
+	# ---------------------
+	Input
+
+	# internal errors
+	# ---------------------
+	Config
+	Runtime
+
+	# Server errors
+	# ---------------------
+	DB_Timeout
+	DB_Constraint
+}
+
+enum ContentType {
+	ImagePNG ImageJpeg ImageGif
+	ApplicationJson
+	ApplicationJsonLD ApplicationPdf ApplicationGzip ApplicationBzip ApplicationZip
+	AudioMpeg VideoMpeg
+	TextPlain TextCsv
+}
+`, BuiltIn: false},
 	&ast.Source{Name: "pkg/util/api/scalar.graphql", Input: `scalar AccessMode
 scalar Time
 scalar Uri
-scalar QueryString
+scalar QueryPath
 scalar IP
 scalar CountryCode
 scalar EmailAddress
@@ -1526,24 +1558,6 @@ type Error {
 	fields: [String!]
 	message: String!
 }
-
-enum ErrorCode   {
-	# Input errors
-	# ---------------------
-	Input
-
-	# internal errors
-	# ---------------------
-	Config
-	Runtime
-
-	# Server errors
-	# ---------------------
-	DB_Timeout
-	DB_Constraint
-}
-
-enum Language { AU US UK VN }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/config/api/entity.graphql", Input: `type ConfigBucket {
 	id: ID!
@@ -2060,6 +2074,28 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_constraint_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["maxLength"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["maxLength"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["minLength"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["minLength"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_S3ApplicationCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -12188,6 +12224,29 @@ func (ec *executionContext) marshalOIP2ᚖstring(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 	return ec.marshalOIP2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
+	return graphql.UnmarshalInt(v)
+}
+
+func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	return graphql.MarshalInt(v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOInt2int(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOInt2int(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOLanguage2beanᚋpkgᚋutilᚋapiᚐLanguage(ctx context.Context, v interface{}) (api.Language, error) {

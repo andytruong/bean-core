@@ -1,7 +1,7 @@
 scalar AccessMode
 scalar Time
 scalar Uri
-scalar QueryString
+scalar QueryPath
 scalar IP
 scalar CountryCode
 scalar EmailAddress
@@ -20,21 +20,3 @@ type Error {
 	fields: [String!]
 	message: String!
 }
-
-enum ErrorCode   {
-	# Input errors
-	# ---------------------
-	Input
-
-	# internal errors
-	# ---------------------
-	Config
-	Runtime
-
-	# Server errors
-	# ---------------------
-	DB_Timeout
-	DB_Constraint
-}
-
-enum Language { AU US UK VN }

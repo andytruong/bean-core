@@ -1,0 +1,25 @@
+enum Language { AU US UK VN }
+
+enum ErrorCode   {
+	# Input errors
+	# ---------------------
+	Input
+
+	# internal errors
+	# ---------------------
+	Config
+	Runtime
+
+	# Server errors
+	# ---------------------
+	DB_Timeout
+	DB_Constraint
+}
+
+enum ContentType {
+	ImagePNG ImageJpeg ImageGif
+	ApplicationJson
+	ApplicationJsonLD ApplicationPdf ApplicationGzip ApplicationBzip ApplicationZip
+	AudioMpeg VideoMpeg
+	TextPlain TextCsv
+}

@@ -1,0 +1,4 @@
+directive @constraint(
+	maxLength: Int,
+	minLength: Int,
+) on INPUT_FIELD_DEFINITION
