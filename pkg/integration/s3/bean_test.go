@@ -10,6 +10,7 @@ import (
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 	"bean/pkg/util"
+	"bean/pkg/util/api/scalar"
 	"bean/pkg/util/connect"
 )
 
@@ -134,7 +135,7 @@ func Test(t *testing.T) {
 						Id:      app.ID,
 						Version: app.Version,
 						Credentials: &dto.S3ApplicationCredentialsUpdateInput{
-							Endpoint:  util.NilUri("http://localhost:9191"),
+							Endpoint:  scalar.NilUri("http://localhost:9191"),
 							IsSecure:  util.NilBool(false),
 							AccessKey: util.NilString("minio"),
 							SecretKey: util.NilString("minio"),

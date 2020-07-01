@@ -3,6 +3,7 @@ package fixtures
 import (
 	"bean/pkg/user/model/dto"
 	"bean/pkg/util"
+	"bean/pkg/util/api/scalar"
 	"bean/pkg/util/password"
 )
 
@@ -39,7 +40,7 @@ func NewUserCreateInputFixture() *dto.UserCreateInput {
 			Algorithm:   passAlg.Name(),
 			HashedValue: pass,
 		},
-		AvatarURI: util.NilUri("https://foo.bar"),
+		AvatarURI: scalar.NilUri("https://foo.bar"),
 		IsActive:  true,
 	}
 }

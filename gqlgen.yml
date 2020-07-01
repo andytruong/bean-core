@@ -12,17 +12,14 @@ exec:
 model:
   filename: pkg/infra/gql/__tmp__model.go
 
-models:
-  EmailAddress:
-    model: bean/pkg/util.EmailAddress
-  Uri:
-    model: bean/pkg/util.Uri
-
 resolver:
   filename: pkg/infra/__tmp__resolvers.go
   type: Resolver
 
 autobind:
+  - bean/pkg/util/api/scalar
+  - bean/pkg/util
+  - bean/pkg/util/api
   - bean/pkg/config/model
   - bean/pkg/user/model
   - bean/pkg/user/model/dto
@@ -32,6 +29,3 @@ autobind:
   - bean/pkg/access/model/dto
   - bean/pkg/integration/s3/model
   - bean/pkg/integration/s3/model/dto
-  - bean/pkg/util
-  - bean/pkg/util/api
-  - bean/pkg/util/api/scalar

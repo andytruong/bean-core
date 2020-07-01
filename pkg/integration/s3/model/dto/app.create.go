@@ -3,6 +3,7 @@ package dto
 import (
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/util"
+	"bean/pkg/util/api/scalar"
 )
 
 type S3ApplicationCreateInput struct {
@@ -13,10 +14,10 @@ type S3ApplicationCreateInput struct {
 }
 
 type S3ApplicationCredentialsCreateInput struct {
-	Endpoint  util.Uri `json:"endpoint"`
-	IsSecure  bool     `json:"isSecure"`
-	AccessKey string   `json:"accessKey"`
-	SecretKey string   `json:"secretKey"`
+	Endpoint  scalar.Uri `json:"endpoint"`
+	IsSecure  bool       `json:"isSecure"`
+	AccessKey string     `json:"accessKey"`
+	SecretKey string     `json:"secretKey"`
 }
 
 type S3ApplicationMutationOutcome struct {

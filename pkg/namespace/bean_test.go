@@ -17,6 +17,7 @@ import (
 	mUser "bean/pkg/user/model"
 	"bean/pkg/util"
 	"bean/pkg/util/api"
+	"bean/pkg/util/api/scalar"
 	"bean/pkg/util/connect"
 )
 
@@ -127,7 +128,7 @@ func Test_Namespace(t *testing.T) {
 		})
 
 		t.Run("load by domain name -> inactive domain name", func(t *testing.T) {
-			domainName := util.Uri(*iCreate.Object.DomainNames.Secondary[1].Value)
+			domainName := scalar.Uri(*iCreate.Object.DomainNames.Secondary[1].Value)
 			obj, err := this.Namespace(context.Background(), dto.NamespaceFilters{
 				Domain: &domainName,
 			})
@@ -138,7 +139,7 @@ func Test_Namespace(t *testing.T) {
 		})
 
 		t.Run("load by domain name -> verified", func(t *testing.T) {
-			domainName := util.Uri(*iCreate.Object.DomainNames.Primary.Value)
+			domainName := scalar.Uri(*iCreate.Object.DomainNames.Primary.Value)
 			obj, err := this.Namespace(context.Background(), dto.NamespaceFilters{Domain: &domainName})
 
 			ass.NoError(err)

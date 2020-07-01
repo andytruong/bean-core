@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"bean/pkg/util"
+	"bean/pkg/util/api/scalar"
 )
 
 type Application struct {
@@ -17,12 +17,12 @@ type Application struct {
 }
 
 type Credentials struct {
-	ID            string   `json:"id"`
-	ApplicationId string   `json:"applicationId"`
-	Endpoint      util.Uri `json:"endpoint"`
-	IsSecure      bool     `json:"isSecure"`
-	AccessKey     string   `json:"accessKey"`
-	SecretKey     string   `json:"secretKey"`
+	ID            string     `json:"id"`
+	ApplicationId string     `json:"applicationId"`
+	Endpoint      scalar.Uri `json:"endpoint"`
+	IsSecure      bool       `json:"isSecure"`
+	AccessKey     string     `json:"accessKey"`
+	SecretKey     string     `json:"secretKey"`
 }
 
 type Policy struct {

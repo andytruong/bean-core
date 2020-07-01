@@ -3351,9 +3351,9 @@ func (ec *executionContext) _Credentials_endpoint(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(util.Uri)
+	res := resTmp.(scalar.Uri)
 	fc.Result = res
-	return ec.marshalNUri2beanᚋpkgᚋutilᚐUri(ctx, field.Selections, res)
+	return ec.marshalNUri2beanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Credentials_isSecure(ctx context.Context, field graphql.CollectedField, obj *model.Credentials) (ret graphql.Marshaler) {
@@ -6610,9 +6610,9 @@ func (ec *executionContext) _User_avatarUri(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*util.Uri)
+	res := resTmp.(*scalar.Uri)
 	fc.Result = res
-	return ec.marshalOUri2ᚖbeanᚋpkgᚋutilᚐUri(ctx, field.Selections, res)
+	return ec.marshalOUri2ᚖbeanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_isActive(ctx context.Context, field graphql.CollectedField, obj *model2.User) (ret graphql.Marshaler) {
@@ -6848,9 +6848,9 @@ func (ec *executionContext) _UserEmail_value(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(util.EmailAddress)
+	res := resTmp.(scalar.EmailAddress)
 	fc.Result = res
-	return ec.marshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx, field.Selections, res)
+	return ec.marshalNEmailAddress2beanᚋpkgᚋutilᚋapiᚋscalarᚐEmailAddress(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserEmail_createdAt(ctx context.Context, field graphql.CollectedField, obj *model2.UserEmail) (ret graphql.Marshaler) {
@@ -8504,7 +8504,7 @@ func (ec *executionContext) unmarshalInputNamespaceFilters(ctx context.Context, 
 			}
 		case "domain":
 			var err error
-			it.Domain, err = ec.unmarshalOUri2ᚖbeanᚋpkgᚋutilᚐUri(ctx, v)
+			it.Domain, err = ec.unmarshalOUri2ᚖbeanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8696,7 +8696,7 @@ func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ct
 		switch k {
 		case "endpoint":
 			var err error
-			it.Endpoint, err = ec.unmarshalNUri2beanᚋpkgᚋutilᚐUri(ctx, v)
+			it.Endpoint, err = ec.unmarshalNUri2beanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8732,7 +8732,7 @@ func (ec *executionContext) unmarshalInputS3ApplicationCredentialsUpdateInput(ct
 		switch k {
 		case "endpoint":
 			var err error
-			it.Endpoint, err = ec.unmarshalOUri2ᚖbeanᚋpkgᚋutilᚐUri(ctx, v)
+			it.Endpoint, err = ec.unmarshalOUri2ᚖbeanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9014,7 +9014,7 @@ func (ec *executionContext) unmarshalInputSessionCreateUseCredentialsInput(ctx c
 			}
 		case "email":
 			var err error
-			it.Email, err = ec.unmarshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx, v)
+			it.Email, err = ec.unmarshalNEmailAddress2beanᚋpkgᚋutilᚋapiᚋscalarᚐEmailAddress(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9074,7 +9074,7 @@ func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, o
 			}
 		case "avatarUri":
 			var err error
-			it.AvatarURI, err = ec.unmarshalOUri2ᚖbeanᚋpkgᚋutilᚐUri(ctx, v)
+			it.AvatarURI, err = ec.unmarshalOUri2ᚖbeanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9104,7 +9104,7 @@ func (ec *executionContext) unmarshalInputUserEmailInput(ctx context.Context, ob
 			}
 		case "value":
 			var err error
-			it.Value, err = ec.unmarshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx, v)
+			it.Value, err = ec.unmarshalNEmailAddress2beanᚋpkgᚋutilᚋapiᚋscalarᚐEmailAddress(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -11008,12 +11008,12 @@ func (ec *executionContext) unmarshalNDomainNameInput2ᚖbeanᚋpkgᚋnamespace�
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx context.Context, v interface{}) (util.EmailAddress, error) {
-	var res util.EmailAddress
+func (ec *executionContext) unmarshalNEmailAddress2beanᚋpkgᚋutilᚋapiᚋscalarᚐEmailAddress(ctx context.Context, v interface{}) (scalar.EmailAddress, error) {
+	var res scalar.EmailAddress
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx context.Context, sel ast.SelectionSet, v util.EmailAddress) graphql.Marshaler {
+func (ec *executionContext) marshalNEmailAddress2beanᚋpkgᚋutilᚋapiᚋscalarᚐEmailAddress(ctx context.Context, sel ast.SelectionSet, v scalar.EmailAddress) graphql.Marshaler {
 	return v
 }
 
@@ -11466,12 +11466,12 @@ func (ec *executionContext) marshalNTime2ᚖtimeᚐTime(ctx context.Context, sel
 	return ec.marshalNTime2timeᚐTime(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalNUri2beanᚋpkgᚋutilᚐUri(ctx context.Context, v interface{}) (util.Uri, error) {
-	var res util.Uri
+func (ec *executionContext) unmarshalNUri2beanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx context.Context, v interface{}) (scalar.Uri, error) {
+	var res scalar.Uri
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNUri2beanᚋpkgᚋutilᚐUri(ctx context.Context, sel ast.SelectionSet, v util.Uri) graphql.Marshaler {
+func (ec *executionContext) marshalNUri2beanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx context.Context, sel ast.SelectionSet, v scalar.Uri) graphql.Marshaler {
 	return v
 }
 
@@ -12590,24 +12590,24 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return ec.marshalOString2string(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalOUri2beanᚋpkgᚋutilᚐUri(ctx context.Context, v interface{}) (util.Uri, error) {
-	var res util.Uri
+func (ec *executionContext) unmarshalOUri2beanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx context.Context, v interface{}) (scalar.Uri, error) {
+	var res scalar.Uri
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOUri2beanᚋpkgᚋutilᚐUri(ctx context.Context, sel ast.SelectionSet, v util.Uri) graphql.Marshaler {
+func (ec *executionContext) marshalOUri2beanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx context.Context, sel ast.SelectionSet, v scalar.Uri) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOUri2ᚖbeanᚋpkgᚋutilᚐUri(ctx context.Context, v interface{}) (*util.Uri, error) {
+func (ec *executionContext) unmarshalOUri2ᚖbeanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx context.Context, v interface{}) (*scalar.Uri, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOUri2beanᚋpkgᚋutilᚐUri(ctx, v)
+	res, err := ec.unmarshalOUri2beanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOUri2ᚖbeanᚋpkgᚋutilᚐUri(ctx context.Context, sel ast.SelectionSet, v *util.Uri) graphql.Marshaler {
+func (ec *executionContext) marshalOUri2ᚖbeanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx context.Context, sel ast.SelectionSet, v *scalar.Uri) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
