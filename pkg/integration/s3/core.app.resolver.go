@@ -15,6 +15,10 @@ func (this *ApplicationResolver) S3ApplicationCreate(ctx context.Context, input 
 	return this.bean.CoreApp.Create(ctx, input)
 }
 
+func (this *ApplicationResolver) S3ApplicationUpdate(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
+	return this.bean.CoreApp.Update(ctx, in)
+}
+
 func (this *ApplicationResolver) Polices(ctx context.Context, obj *model.Application) ([]*model.Policy, error) {
 	return this.bean.corePolicy.loadByApplicationId(ctx, obj.ID)
 }

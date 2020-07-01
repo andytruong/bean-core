@@ -71,7 +71,7 @@ func (this *CoreApplication) Create(ctx context.Context, in *dto.S3ApplicationCr
 	return &dto.S3ApplicationMutationOutcome{App: app, Errors: nil}, nil
 }
 
-func (this *CoreApplication) Update(ctx context.Context, in dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
+func (this *CoreApplication) Update(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
 	app, err := this.Load(ctx, in.Id)
 
 	if nil != err {
@@ -137,7 +137,7 @@ func (this *CoreApplication) Update(ctx context.Context, in dto.S3ApplicationUpd
 func (this *CoreApplication) Delete(ctx context.Context, in dto.S3ApplicationDeleteInput) (*dto.S3ApplicationMutationOutcome, error) {
 	ctx = context.WithValue(ctx, "bean.integration-s3.delete", time.Now())
 
-	return this.Update(ctx, dto.S3ApplicationUpdateInput{
+	return this.Update(ctx, &dto.S3ApplicationUpdateInput{
 		Id:       in.Id,
 		Version:  in.Version,
 		IsActive: util.NilBool(true),

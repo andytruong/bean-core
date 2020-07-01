@@ -93,7 +93,7 @@ func Test(t *testing.T) {
 
 			t.Run("Update", func(t *testing.T) {
 				t.Run("Useless input", func(t *testing.T) {
-					oUpdate, err := this.CoreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      oCreate.App.ID,
 						Version: oCreate.App.Version,
 					})
@@ -104,7 +104,7 @@ func Test(t *testing.T) {
 
 				t.Run("Status", func(t *testing.T) {
 					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
-					oUpdate, err := this.CoreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:       app.ID,
 						Version:  app.Version,
 						IsActive: util.NilBool(true),
@@ -117,7 +117,7 @@ func Test(t *testing.T) {
 
 				t.Run("Slug", func(t *testing.T) {
 					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
-					oUpdate, err := this.CoreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
 						Slug:    util.NilString("test"),
@@ -130,7 +130,7 @@ func Test(t *testing.T) {
 
 				t.Run("Credentials", func(t *testing.T) {
 					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
-					oUpdate, err := this.CoreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
 						Credentials: &dto.S3ApplicationCredentialsUpdateInput{
@@ -172,7 +172,7 @@ func Test(t *testing.T) {
 						ass.Equal(policies[2].Value, "1GB/namespace/hour")
 					}
 
-					oUpdate, err := this.CoreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
 						Policies: &dto.S3ApplicationPolicyMutationInput{

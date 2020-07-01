@@ -18,7 +18,7 @@ func main() {
 		panic(err)
 	} else {
 		if false {
-			preSignUpload(client)
+			preSignUpload(client, "hello", "path/to/myObject.png")
 		} else {
 			// file info
 			obj, err := client.GetObject("hello", "path/to/myobject.png", minio.GetObjectOptions{})
@@ -32,11 +32,11 @@ func main() {
 	}
 }
 
-func preSignUpload(client *minio.Client) {
+func preSignUpload(client *minio.Client, bucket string, key string) {
 	policy := minio.NewPostPolicy()
-	policy.SetBucket("hello")
-	policy.SetKey("path/to/myobject.png")
-	policy.SetExpires(time.Now().UTC().AddDate(0, 0, 10)) // expires in 10 days
+	policy.SetBucket(bucket)
+	policy.SetKey(key)
+	policy.SetExpires(time.Now().UTC().Add(4 * time.Hour)) // expires in 4 hours
 	policy.SetContentType("image/png")
 	policy.SetContentLengthRange(1, 1024*1024) // 1KB to 1MB
 	policy.SetUserMetadata("app", "playround")

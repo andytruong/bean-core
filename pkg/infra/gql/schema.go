@@ -160,6 +160,7 @@ type ComplexityRoot struct {
 		NamespaceUpdate           func(childComplexity int, input dto.NamespaceUpdateInput) int
 		Ping                      func(childComplexity int) int
 		S3ApplicationCreate       func(childComplexity int, input *dto1.S3ApplicationCreateInput) int
+		S3ApplicationUpdate       func(childComplexity int, input *dto1.S3ApplicationUpdateInput) int
 		SessionArchive            func(childComplexity int, token string) int
 		SessionCreate             func(childComplexity int, input *dto2.SessionCreateInput) int
 		UserCreate                func(childComplexity int, input *dto3.UserCreateInput) int
@@ -315,6 +316,7 @@ type MutationResolver interface {
 	UserCreate(ctx context.Context, input *dto3.UserCreateInput) (*dto3.UserMutationOutcome, error)
 	UserUpdate(ctx context.Context, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error)
 	S3ApplicationCreate(ctx context.Context, input *dto1.S3ApplicationCreateInput) (*dto1.S3ApplicationMutationOutcome, error)
+	S3ApplicationUpdate(ctx context.Context, input *dto1.S3ApplicationUpdateInput) (*dto1.S3ApplicationMutationOutcome, error)
 }
 type NamespaceResolver interface {
 	DomainNames(ctx context.Context, obj *model1.Namespace) (*model1.DomainNames, error)
@@ -840,6 +842,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.S3ApplicationCreate(childComplexity, args["input"].(*dto1.S3ApplicationCreateInput)), true
+
+	case "Mutation.S3ApplicationUpdate":
+		if e.complexity.Mutation.S3ApplicationUpdate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_S3ApplicationUpdate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.S3ApplicationUpdate(childComplexity, args["input"].(*dto1.S3ApplicationUpdateInput)), true
 
 	case "Mutation.sessionArchive":
 		if e.complexity.Mutation.SessionArchive == nil {
@@ -1969,7 +1983,10 @@ type Credentials {
 	# no secret key
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "pkg/integration/s3/api/mutation.graphql", Input: `extend type Mutation  {
+	&ast.Source{Name: "pkg/integration/s3/api/mutation.graphql", Input: `# ---------------------
+# Application: Create
+# ---------------------
+extend type Mutation  {
 	S3ApplicationCreate(input: S3ApplicationCreateInput): S3ApplicationMutationOutcome!
 }
 
@@ -1996,6 +2013,44 @@ type S3ApplicationMutationOutcome {
 	app: Application
 	errors: [Error!]
 }
+
+# ---------------------
+# Application: Update
+# ---------------------
+extend type Mutation  {
+	S3ApplicationUpdate(input: S3ApplicationUpdateInput): S3ApplicationMutationOutcome!
+}
+
+input S3ApplicationUpdateInput {
+	id: ID!
+	version: ID!
+	isActive: Boolean
+	slug: String
+	credentials: S3ApplicationCredentialsUpdateInput
+	policies: S3ApplicationPolicyMutationInput
+}
+
+input S3ApplicationCredentialsUpdateInput {
+	endpoint: Uri
+	isSecure: Boolean
+	accessKey: String
+	secretKey: String
+}
+
+input S3ApplicationPolicyMutationInput {
+	create: [S3ApplicationPolicyCreateInput!]
+	update: [S3ApplicationPolicyUpdateInput!]
+	delete: [S3ApplicationPolicyDeleteInput!]
+}
+
+input S3ApplicationPolicyUpdateInput {
+	id: ID!
+	value: String!
+}
+
+input S3ApplicationPolicyDeleteInput {
+	id: ID!
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -2010,6 +2065,20 @@ func (ec *executionContext) field_Mutation_S3ApplicationCreate_args(ctx context.
 	var arg0 *dto1.S3ApplicationCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		arg0, err = ec.unmarshalOS3ApplicationCreateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCreateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_S3ApplicationUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *dto1.S3ApplicationUpdateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalOS3ApplicationUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationUpdateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -4631,6 +4700,47 @@ func (ec *executionContext) _Mutation_S3ApplicationCreate(ctx context.Context, f
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().S3ApplicationCreate(rctx, args["input"].(*dto1.S3ApplicationCreateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto1.S3ApplicationMutationOutcome)
+	fc.Result = res
+	return ec.marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_S3ApplicationUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_S3ApplicationUpdate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().S3ApplicationUpdate(rctx, args["input"].(*dto1.S3ApplicationUpdateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8612,6 +8722,42 @@ func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ct
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputS3ApplicationCredentialsUpdateInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationCredentialsUpdateInput, error) {
+	var it dto1.S3ApplicationCredentialsUpdateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "endpoint":
+			var err error
+			it.Endpoint, err = ec.unmarshalOUri2ᚖbeanᚋpkgᚋutilᚐUri(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isSecure":
+			var err error
+			it.IsSecure, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "accessKey":
+			var err error
+			it.AccessKey, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "secretKey":
+			var err error
+			it.SecretKey, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputS3ApplicationPolicyCreateInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationPolicyCreateInput, error) {
 	var it dto1.S3ApplicationPolicyCreateInput
 	var asMap = obj.(map[string]interface{})
@@ -8627,6 +8773,126 @@ func (ec *executionContext) unmarshalInputS3ApplicationPolicyCreateInput(ctx con
 		case "value":
 			var err error
 			it.Value, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputS3ApplicationPolicyDeleteInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationPolicyDeleteInput, error) {
+	var it dto1.S3ApplicationPolicyDeleteInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.Id, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputS3ApplicationPolicyMutationInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationPolicyMutationInput, error) {
+	var it dto1.S3ApplicationPolicyMutationInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "create":
+			var err error
+			it.Create, err = ec.unmarshalOS3ApplicationPolicyCreateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "update":
+			var err error
+			it.Update, err = ec.unmarshalOS3ApplicationPolicyUpdateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "delete":
+			var err error
+			it.Delete, err = ec.unmarshalOS3ApplicationPolicyDeleteInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputS3ApplicationPolicyUpdateInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationPolicyUpdateInput, error) {
+	var it dto1.S3ApplicationPolicyUpdateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.Id, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "value":
+			var err error
+			it.Value, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputS3ApplicationUpdateInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationUpdateInput, error) {
+	var it dto1.S3ApplicationUpdateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.Id, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "version":
+			var err error
+			it.Version, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isActive":
+			var err error
+			it.IsActive, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "slug":
+			var err error
+			it.Slug, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "credentials":
+			var err error
+			it.Credentials, err = ec.unmarshalOS3ApplicationCredentialsUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsUpdateInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "policies":
+			var err error
+			it.Policies, err = ec.unmarshalOS3ApplicationPolicyMutationInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyMutationInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9621,6 +9887,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_userUpdate(ctx, field)
 		case "S3ApplicationCreate":
 			out.Values[i] = ec._Mutation_S3ApplicationCreate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "S3ApplicationUpdate":
+			out.Values[i] = ec._Mutation_S3ApplicationUpdate(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -11111,6 +11382,14 @@ func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2ᚕbeanᚋp
 	return res, nil
 }
 
+func (ec *executionContext) unmarshalNS3ApplicationPolicyDeleteInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInput(ctx context.Context, v interface{}) (dto1.S3ApplicationPolicyDeleteInput, error) {
+	return ec.unmarshalInputS3ApplicationPolicyDeleteInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNS3ApplicationPolicyUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInput(ctx context.Context, v interface{}) (dto1.S3ApplicationPolicyUpdateInput, error) {
+	return ec.unmarshalInputS3ApplicationPolicyUpdateInput(ctx, v)
+}
+
 func (ec *executionContext) marshalNSessionCreateOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto2.SessionCreateOutcome) graphql.Marshaler {
 	return ec._SessionCreateOutcome(ctx, sel, &v)
 }
@@ -12073,6 +12352,102 @@ func (ec *executionContext) unmarshalOS3ApplicationCreateInput2ᚖbeanᚋpkgᚋi
 		return nil, nil
 	}
 	res, err := ec.unmarshalOS3ApplicationCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCreateInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOS3ApplicationCredentialsUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsUpdateInput(ctx context.Context, v interface{}) (dto1.S3ApplicationCredentialsUpdateInput, error) {
+	return ec.unmarshalInputS3ApplicationCredentialsUpdateInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOS3ApplicationCredentialsUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsUpdateInput(ctx context.Context, v interface{}) (*dto1.S3ApplicationCredentialsUpdateInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOS3ApplicationCredentialsUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsUpdateInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOS3ApplicationPolicyCreateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInputᚄ(ctx context.Context, v interface{}) ([]dto1.S3ApplicationPolicyCreateInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]dto1.S3ApplicationPolicyCreateInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNS3ApplicationPolicyCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOS3ApplicationPolicyDeleteInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInputᚄ(ctx context.Context, v interface{}) ([]dto1.S3ApplicationPolicyDeleteInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]dto1.S3ApplicationPolicyDeleteInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNS3ApplicationPolicyDeleteInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOS3ApplicationPolicyMutationInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyMutationInput(ctx context.Context, v interface{}) (dto1.S3ApplicationPolicyMutationInput, error) {
+	return ec.unmarshalInputS3ApplicationPolicyMutationInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOS3ApplicationPolicyMutationInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyMutationInput(ctx context.Context, v interface{}) (*dto1.S3ApplicationPolicyMutationInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOS3ApplicationPolicyMutationInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyMutationInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOS3ApplicationPolicyUpdateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInputᚄ(ctx context.Context, v interface{}) ([]dto1.S3ApplicationPolicyUpdateInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]dto1.S3ApplicationPolicyUpdateInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNS3ApplicationPolicyUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOS3ApplicationUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationUpdateInput(ctx context.Context, v interface{}) (dto1.S3ApplicationUpdateInput, error) {
+	return ec.unmarshalInputS3ApplicationUpdateInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOS3ApplicationUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationUpdateInput(ctx context.Context, v interface{}) (*dto1.S3ApplicationUpdateInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOS3ApplicationUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationUpdateInput(ctx, v)
 	return &res, err
 }
 
