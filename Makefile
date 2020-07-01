@@ -1,3 +1,6 @@
+test:
+	go test -mod=vendor ./pkg/... -race -v
+
 server:
 	CONFIG=config.yaml go run -mod=vendor cmd/main.go http-server
 
@@ -7,9 +10,6 @@ gql:
 
 migrate:
 	CONFIG=config.yaml go run -mod=vendor cmd/main.go migrate
-
-test:
-	go test -mod=vendor ./pkg/... -race -v
 
 check-size:
 	go build -mod=vendor -o /tmp/go-bean cmd/main.go

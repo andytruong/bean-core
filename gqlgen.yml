@@ -34,3 +34,4 @@ autobind:
   - bean/pkg/integration/s3/model/dto
   - bean/pkg/util
   - bean/pkg/util/api
+  - bean/pkg/util/api/scalar

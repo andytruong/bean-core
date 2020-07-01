@@ -1,4 +1,4 @@
-package api
+package scalar
 
 import (
 	"testing"
@@ -10,6 +10,8 @@ func Test_AccessMode(t *testing.T) {
 	ass := assert.New(t)
 
 	t.Run("valid", func(t *testing.T) {
+		t.Parallel()
+
 		ass.Equal("4", AccessModePublicRead.Owner())
 		ass.Equal("4", AccessModePublicRead.Group())
 		ass.Equal("4", AccessModePublicRead.Public())
@@ -23,6 +25,8 @@ func Test_AccessMode(t *testing.T) {
 	})
 
 	t.Run("invalid", func(t *testing.T) {
+		t.Parallel()
+
 		t.Run("max length is 3", func(t *testing.T) {
 			val := AccessMode("000")
 			err := val.UnmarshalGQL("1234")
@@ -39,6 +43,8 @@ func Test_AccessMode(t *testing.T) {
 	})
 
 	t.Run("access checking", func(t *testing.T) {
+		t.Parallel()
+
 		t.Run("AccessModeSystemDisabled: all disabled", func(t *testing.T) {
 			ass.False(AccessModeSystemDisabled.CanRead(true, true))
 			ass.False(AccessModeSystemDisabled.CanRead(false, false))

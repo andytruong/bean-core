@@ -3,10 +3,10 @@ package fixtures
 import (
 	"bean/pkg/config/model/dto"
 	"bean/pkg/util"
-	"bean/pkg/util/api"
+	"bean/pkg/util/api/scalar"
 )
 
-func NewConfigBucketCreate(access api.AccessMode) *dto.BucketCreateInput {
+func NewConfigBucketCreate(access scalar.AccessMode) *dto.BucketCreateInput {
 	id := util.MockIdentifier()
 
 	return &dto.BucketCreateInput{

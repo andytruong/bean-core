@@ -12,7 +12,7 @@ import (
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
 	"bean/pkg/util"
-	"bean/pkg/util/api"
+	"bean/pkg/util/api/scalar"
 	"bean/pkg/util/connect"
 )
 
@@ -25,6 +25,8 @@ func bean() *ConfigBean {
 }
 
 func Test_Bucket(t *testing.T) {
+	t.Parallel()
+
 	ass := assert.New(t)
 	ctx := context.Background()
 	this := bean()
@@ -37,7 +39,7 @@ func Test_Bucket(t *testing.T) {
 			db,
 			func(tx *gorm.DB) error {
 				hostId := this.id.MustULID()
-				access := api.AccessMode("444")
+				access := scalar.AccessMode("444")
 				out, err := this.CoreBucket.Create(tx, dto.BucketCreateInput{
 					HostId:      hostId,
 					Slug:        util.NilString("doe"),
@@ -66,7 +68,7 @@ func Test_Bucket(t *testing.T) {
 		tx := db.Begin()
 		defer tx.Rollback()
 
-		privateAccess := api.AccessModePrivate
+		privateAccess := scalar.AccessModePrivate
 		oCreate, _ := this.CoreBucket.Create(tx, dto.BucketCreateInput{
 			HostId:      this.id.MustULID(),
 			Slug:        util.NilString("qa"),
@@ -77,7 +79,7 @@ func Test_Bucket(t *testing.T) {
 			IsPublished: false,
 		})
 
-		publicAccess := api.AccessModePublicRead
+		publicAccess := scalar.AccessModePublicRead
 		oUpdate, err := this.CoreBucket.Update(ctx, tx, dto.BucketUpdateInput{
 			Id:          oCreate.Bucket.Id,
 			Version:     oCreate.Bucket.Version,
@@ -128,7 +130,7 @@ func Test_Bucket(t *testing.T) {
 		var oCreate *dto.BucketMutationOutcome
 		var bucket *model.ConfigBucket
 		hostId := this.id.MustULID()
-		access := api.AccessMode("444")
+		access := scalar.AccessMode("444")
 		tx := db.Begin()
 		defer tx.Rollback()
 
@@ -168,7 +170,7 @@ func Test_Variable(t *testing.T) {
 			tx := db.Begin(&sql.TxOptions{})
 			defer tx.Rollback()
 			hostId := this.id.MustULID()
-			access := api.AccessModePrivateReadonly
+			access := scalar.AccessModePrivateReadonly
 
 			// create read-only bucket
 			oCreate, err := this.CoreBucket.Create(tx, dto.BucketCreateInput{
@@ -206,7 +208,7 @@ func Test_Variable(t *testing.T) {
 			})
 			tx := db.Begin()
 			defer tx.Rollback()
-			access := api.AccessModePrivate
+			access := scalar.AccessModePrivate
 
 			// create read-only bucket
 			oCreate, err := this.CoreBucket.Create(tx, dto.BucketCreateInput{
@@ -243,7 +245,7 @@ func Test_Variable(t *testing.T) {
 		tx := db.Begin()
 		defer tx.Rollback()
 
-		setup := func(access api.AccessMode) (context.Context, *model.ConfigBucket, *model.ConfigVariable) {
+		setup := func(access scalar.AccessMode) (context.Context, *model.ConfigBucket, *model.ConfigVariable) {
 			authorId := this.id.MustULID()
 			authorClaims := &util.Claims{}
 			authorClaims.Subject = authorId
@@ -277,7 +279,7 @@ func Test_Variable(t *testing.T) {
 		}
 
 		t.Run("load on private bucket", func(t *testing.T) {
-			_, _, variable := setup(api.AccessModePrivate)
+			_, _, variable := setup(scalar.AccessModePrivate)
 
 			// load & assert outcome
 			otherCtx := context.Background()
@@ -287,7 +289,7 @@ func Test_Variable(t *testing.T) {
 		})
 
 		t.Run("load on read only bucket", func(t *testing.T) {
-			ctx, bucket, variable := setup(api.AccessModePrivate)
+			ctx, bucket, variable := setup(scalar.AccessModePrivate)
 
 			// load & assert outcome
 			load, err := this.CoreVariable.Load(ctx, tx, variable.Id)

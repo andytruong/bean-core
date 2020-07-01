@@ -14,6 +14,7 @@ import (
 	dto3 "bean/pkg/user/model/dto"
 	"bean/pkg/util"
 	"bean/pkg/util/api"
+	"bean/pkg/util/api/scalar"
 	"bytes"
 	"context"
 	"errors"
@@ -1506,6 +1507,7 @@ var sources = []*ast.Source{
 	&ast.Source{Name: "pkg/util/api/scalar.graphql", Input: `scalar AccessMode
 scalar Time
 scalar Uri
+scalar QueryString
 scalar IP
 scalar CountryCode
 scalar EmailAddress
@@ -2876,9 +2878,9 @@ func (ec *executionContext) _ConfigBucket_access(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(api.AccessMode)
+	res := resTmp.(scalar.AccessMode)
 	fc.Result = res
-	return ec.marshalNAccessMode2beanᚋpkgᚋutilᚋapiᚐAccessMode(ctx, field.Selections, res)
+	return ec.marshalNAccessMode2beanᚋpkgᚋutilᚋapiᚋscalarᚐAccessMode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ConfigBucket_isPublished(ctx context.Context, field graphql.CollectedField, obj *model4.ConfigBucket) (ret graphql.Marshaler) {
@@ -10943,12 +10945,12 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalNAccessMode2beanᚋpkgᚋutilᚋapiᚐAccessMode(ctx context.Context, v interface{}) (api.AccessMode, error) {
-	var res api.AccessMode
+func (ec *executionContext) unmarshalNAccessMode2beanᚋpkgᚋutilᚋapiᚋscalarᚐAccessMode(ctx context.Context, v interface{}) (scalar.AccessMode, error) {
+	var res scalar.AccessMode
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNAccessMode2beanᚋpkgᚋutilᚋapiᚐAccessMode(ctx context.Context, sel ast.SelectionSet, v api.AccessMode) graphql.Marshaler {
+func (ec *executionContext) marshalNAccessMode2beanᚋpkgᚋutilᚋapiᚋscalarᚐAccessMode(ctx context.Context, sel ast.SelectionSet, v scalar.AccessMode) graphql.Marshaler {
 	return v
 }
 

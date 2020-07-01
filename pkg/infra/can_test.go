@@ -21,6 +21,8 @@ func NewMockCan() *Can {
 }
 
 func Test(t *testing.T) {
+	t.Parallel()
+
 	ass := assert.New(t)
 	can := NewMockCan()
 	id := can.Identifier()
@@ -35,6 +37,8 @@ func Test(t *testing.T) {
 }
 
 func Test_Request_JWT(t *testing.T) {
+	t.Parallel()
+
 	ass := assert.New(t)
 	can := NewMockCan()
 

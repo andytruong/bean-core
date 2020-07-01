@@ -1,6 +1,8 @@
 package dto
 
-import "bean/pkg/util"
+import (
+	"bean/pkg/util"
+)
 
 type S3ApplicationUpdateInput struct {
 	Id          string                               `json:"id"`
