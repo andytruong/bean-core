@@ -2,14 +2,14 @@ package fixtures
 
 import (
 	"bean/pkg/access/model/dto"
-	"bean/pkg/util"
+	"bean/pkg/util/api"
 )
 
 func SessionCreateInputFixtureUseCredentials(namespaceId string, email string, hashedPassword string) *dto.SessionCreateInput {
 	return &dto.SessionCreateInput{
 		UseCredentials: &dto.SessionCreateUseCredentialsInput{
 			NamespaceID:    namespaceId,
-			Email:          util.EmailAddress(email),
+			Email:          api.EmailAddress(email),
 			HashedPassword: hashedPassword,
 		},
 		Context: &dto.SessionCreateContextInput{

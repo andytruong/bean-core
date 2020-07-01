@@ -3,7 +3,6 @@ package util
 import (
 	"fmt"
 	"io"
-	"net/mail"
 	"net/url"
 	"strings"
 	"time"
@@ -12,11 +11,10 @@ import (
 )
 
 type (
-	UUID         string
-	ULID         string
-	EmailAddress string
-	Uri          string
-	FilePath     string
+	UUID     string
+	ULID     string
+	Uri      string
+	FilePath string
 
 	// Useful for simple DB query.
 	ValueWrapper struct {
@@ -31,32 +29,6 @@ func (this FilePath) String() string {
 	}
 
 	return migrate.RootDirectory() + "/" + out
-}
-
-func (this EmailAddress) LowerCaseValue() EmailAddress {
-	stringRaw := string(this)
-	stringLower := strings.ToLower(stringRaw)
-
-	return EmailAddress(stringLower)
-}
-
-func (this *EmailAddress) UnmarshalGQL(v interface{}) error {
-	if in, ok := v.(string); !ok {
-		return fmt.Errorf("email-address must be strings")
-	} else {
-		_, err := mail.ParseAddress(in)
-		if nil != err {
-			return err
-		}
-
-		*this = EmailAddress(in)
-	}
-
-	return nil
-}
-
-func (this EmailAddress) MarshalGQL(w io.Writer) {
-	fmt.Fprintf(w, `"%s"`, this)
 }
 
 func (this *Uri) UnmarshalGQL(v interface{}) error {
