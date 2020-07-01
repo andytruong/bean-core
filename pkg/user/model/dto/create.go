@@ -3,7 +3,6 @@ package dto
 import (
 	"bean/pkg/user/model"
 	"bean/pkg/util"
-	"bean/pkg/util/api"
 )
 
 type UserCreateInput struct {
@@ -20,9 +19,9 @@ type UserEmailsInput struct {
 }
 
 type UserEmailInput struct {
-	Verified bool             `json:"verified"`
-	Value    api.EmailAddress `json:"value"`
-	IsActive bool             `json:"isActive"`
+	Verified bool              `json:"verified"`
+	Value    util.EmailAddress `json:"value"`
+	IsActive bool              `json:"isActive"`
 }
 
 type UserNameInput struct {

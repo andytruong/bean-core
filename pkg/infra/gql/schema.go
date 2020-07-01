@@ -3,14 +3,6 @@
 package gql
 
 import (
-	"bytes"
-	"context"
-	"errors"
-	"strconv"
-	"sync"
-	"sync/atomic"
-	"time"
-
 	model3 "bean/pkg/access/model"
 	dto2 "bean/pkg/access/model/dto"
 	model4 "bean/pkg/config/model"
@@ -22,10 +14,17 @@ import (
 	dto3 "bean/pkg/user/model/dto"
 	"bean/pkg/util"
 	"bean/pkg/util/api"
+	"bytes"
+	"context"
+	"errors"
+	"strconv"
+	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/vektah/gqlparser/v2"
+	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -6847,7 +6846,7 @@ func (ec *executionContext) _UserEmail_value(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(api.EmailAddress)
+	res := resTmp.(util.EmailAddress)
 	fc.Result = res
 	return ec.marshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx, field.Selections, res)
 }
@@ -11007,12 +11006,12 @@ func (ec *executionContext) unmarshalNDomainNameInput2ᚖbeanᚋpkgᚋnamespace�
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx context.Context, v interface{}) (api.EmailAddress, error) {
-	var res api.EmailAddress
+func (ec *executionContext) unmarshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx context.Context, v interface{}) (util.EmailAddress, error) {
+	var res util.EmailAddress
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx context.Context, sel ast.SelectionSet, v api.EmailAddress) graphql.Marshaler {
+func (ec *executionContext) marshalNEmailAddress2beanᚋpkgᚋutilᚐEmailAddress(ctx context.Context, sel ast.SelectionSet, v util.EmailAddress) graphql.Marshaler {
 	return v
 }
 

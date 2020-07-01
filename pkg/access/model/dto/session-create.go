@@ -3,7 +3,6 @@ package dto
 import (
 	"bean/pkg/access/model"
 	"bean/pkg/util"
-	"bean/pkg/util/api"
 )
 
 type SessionCreateInput struct {
@@ -14,9 +13,9 @@ type SessionCreateInput struct {
 }
 
 type SessionCreateUseCredentialsInput struct {
-	NamespaceID    string           `json:"namespaceId"`
-	Email          api.EmailAddress `json:"email"`
-	HashedPassword string           `json:"hashedPassword"`
+	NamespaceID    string            `json:"namespaceId"`
+	Email          util.EmailAddress `json:"email"`
+	HashedPassword string            `json:"hashedPassword"`
 }
 
 type SessionCreateGenerateOTLT struct {
