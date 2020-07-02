@@ -6,6 +6,7 @@ scalar IP
 scalar CountryCode
 scalar EmailAddress
 scalar JWT
+scalar Map
 
 type Query {
 	ping: String!

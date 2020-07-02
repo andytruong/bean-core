@@ -31,3 +31,13 @@ func NotNilBool(in *bool, defaultValue bool) bool {
 
 	return defaultValue
 }
+
+func NoError(errors ...error) error {
+	for _, err := range errors {
+		if nil != err {
+			return err
+		}
+	}
+
+	return nil
+}

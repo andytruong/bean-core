@@ -8,7 +8,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"strings"
 
+	"github.com/minio/minio-go/v6"
 	"gorm.io/gorm"
 
 	"bean/pkg/integration/s3/model"
@@ -42,6 +44,7 @@ func (this *coreCredentials) onAppCreate(tx *gorm.DB, app *model.Application, in
 		ID:            this.bean.id.MustULID(),
 		ApplicationId: app.ID,
 		Endpoint:      in.Endpoint,
+		Bucket:        in.Bucket,
 		AccessKey:     in.AccessKey,
 		SecretKey:     this.encrypt(in.SecretKey),
 		IsSecure:      in.IsSecure,
@@ -66,6 +69,11 @@ func (this *coreCredentials) onAppUpdate(tx *gorm.DB, app *model.Application, in
 		if nil != in.Endpoint {
 			changed = true
 			cre.Endpoint = *in.Endpoint
+		}
+
+		if nil != in.Bucket {
+			changed = true
+			cre.Bucket = *in.Bucket
 		}
 
 		if nil != in.IsSecure {
@@ -153,4 +161,23 @@ func (this coreCredentials) decrypt(cryptoText string) string {
 	stream.XORKeyStream(cipherText, cipherText)
 
 	return fmt.Sprintf("%s", cipherText)
+}
+
+func (this *coreCredentials) client(credentials *model.Credentials) (*minio.Client, error) {
+	endpoint := string(credentials.Endpoint)
+	endpoint = strings.Replace(endpoint, "http://", "", 1)
+	endpoint = strings.Replace(endpoint, "https://", "", 1)
+
+	client, err := minio.New(
+		endpoint,
+		credentials.AccessKey,
+		this.decrypt(credentials.SecretKey),
+		credentials.IsSecure,
+	)
+
+	if nil != err {
+		panic(err)
+	}
+
+	return client, err
 }

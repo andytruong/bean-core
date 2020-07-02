@@ -1,7 +1,6 @@
 type Application {
 	id: ID!
 	version: ID!
-	slug: String!
 	isActive: Boolean!
 	createdAt: Time!
 	updatedAt: Time!
@@ -23,7 +22,7 @@ type Policy {
 type Credentials {
 	id: ID!
 	endpoint: Uri!
+	bucket: String!
 	isSecure: Boolean!
-	accesskey: String!
-	# no secret key
+	accesskey: String! @comment(value: "no secret key")
 }

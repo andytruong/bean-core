@@ -9,7 +9,6 @@ import (
 type Application struct {
 	ID        string     `json:"id"`
 	Version   string     `json:"version"`
-	Slug      string     `json:"name"`
 	IsActive  bool       `json:"isActive"`
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
@@ -20,6 +19,7 @@ type Credentials struct {
 	ID            string     `json:"id"`
 	ApplicationId string     `json:"applicationId"`
 	Endpoint      scalar.Uri `json:"endpoint"`
+	Bucket        string     `json:"bucket"`
 	IsSecure      bool       `json:"isSecure"`
 	AccessKey     string     `json:"accessKey"`
 	SecretKey     string     `json:"secretKey"`

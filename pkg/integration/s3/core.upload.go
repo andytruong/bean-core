@@ -6,43 +6,35 @@ import (
 
 	"github.com/minio/minio-go/v6"
 
+	"bean/components/scalar"
 	"bean/pkg/integration/s3/model"
+	"bean/pkg/util"
 )
 
 type coreUpload struct {
 }
 
-func (this *coreUpload) sign(ctx context.Context, app *model.Application, bucket string, filePath string) error {
-	var err error
-
+func (this *coreUpload) sign(
+	ctx context.Context,
+	claims util.Claims,
+	app *model.Application,
+	bucket string,
+	filePath string,
+) error {
 	policy := minio.NewPostPolicy()
+	
+	err := scalar.NoError(
+		policy.SetBucket(bucket),
+		policy.SetKey(filePath),
+		policy.SetExpires(time.Now().UTC().Add(4*time.Hour)),
+		policy.SetContentType("image/png"),
+		policy.SetUserMetadata("app", app.ID),
+		policy.SetUserMetadata("sid", claims.SessionId()),
+		policy.SetUserMetadata("nid", claims.NamespaceId()),
+		policy.SetContentLengthRange(1, 18*1024*1024), // TODO: generate per application's policy
+	)
 
-	if err = policy.SetBucket(bucket); nil != err {
-		return err
-	}
-
-	if err = policy.SetKey(filePath); nil != err {
-		return err
-	}
-
-	if err = policy.SetExpires(time.Now().UTC().Add(4 * time.Hour)); nil != err {
-		return err
-	}
-
-	if err = policy.SetContentType("image/png"); nil != err {
-		return err
-	}
-
-	if err = policy.SetUserMetadata("app", app.ID); nil != err {
-		return err
-	}
-
-	// tag -> appId
-	// tag -> sessionId -> user/device/…
-	// tag -> namespaceId
-
-	// TODO: generate per application's policy
-	if err = policy.SetContentLengthRange(1, 1024*1024); nil != err {
+	if nil != err {
 		return err
 	}
 

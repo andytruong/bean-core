@@ -60,6 +60,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	Comment     func(ctx context.Context, obj interface{}, next graphql.Resolver, value string) (res interface{}, err error)
 	Constraint  func(ctx context.Context, obj interface{}, next graphql.Resolver, maxLength *int, minLength *int) (res interface{}, err error)
 	RequireAuth func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
@@ -72,7 +73,6 @@ type ComplexityRoot struct {
 		ID          func(childComplexity int) int
 		IsActive    func(childComplexity int) int
 		Polices     func(childComplexity int) int
-		Slug        func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
 		Version     func(childComplexity int) int
 	}
@@ -104,6 +104,7 @@ type ComplexityRoot struct {
 
 	Credentials struct {
 		AccessKey func(childComplexity int) int
+		Bucket    func(childComplexity int) int
 		Endpoint  func(childComplexity int) int
 		ID        func(childComplexity int) int
 		IsSecure  func(childComplexity int) int
@@ -322,7 +323,7 @@ type MutationResolver interface {
 	UserUpdate(ctx context.Context, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error)
 	S3ApplicationCreate(ctx context.Context, input *dto1.S3ApplicationCreateInput) (*dto1.S3ApplicationMutationOutcome, error)
 	S3ApplicationUpdate(ctx context.Context, input *dto1.S3ApplicationUpdateInput) (*dto1.S3ApplicationMutationOutcome, error)
-	S3UploadToken(ctx context.Context, input dto1.S3UploadTokenInput) (string, error)
+	S3UploadToken(ctx context.Context, input dto1.S3UploadTokenInput) (map[string]interface{}, error)
 }
 type NamespaceResolver interface {
 	DomainNames(ctx context.Context, obj *model1.Namespace) (*model1.DomainNames, error)
@@ -410,13 +411,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Polices(childComplexity), true
-
-	case "Application.slug":
-		if e.complexity.Application.Slug == nil {
-			break
-		}
-
-		return e.complexity.Application.Slug(childComplexity), true
 
 	case "Application.updatedAt":
 		if e.complexity.Application.UpdatedAt == nil {
@@ -571,6 +565,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Credentials.AccessKey(childComplexity), true
+
+	case "Credentials.bucket":
+		if e.complexity.Credentials.Bucket == nil {
+			break
+		}
+
+		return e.complexity.Credentials.Bucket(childComplexity), true
 
 	case "Credentials.endpoint":
 		if e.complexity.Credentials.Endpoint == nil {
@@ -1521,7 +1522,8 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	&ast.Source{Name: "pkg/util/api/directives.graphql", Input: `directive @requireAuth on FIELD_DEFINITION
+	&ast.Source{Name: "pkg/util/api/directives.graphql", Input: `directive @comment(value: String!) on FIELD_DEFINITION
+directive @requireAuth on FIELD_DEFINITION
 
 directive @constraint(
 	maxLength: Int,
@@ -1562,6 +1564,7 @@ scalar IP
 scalar CountryCode
 scalar EmailAddress
 scalar JWT
+scalar Map
 
 type Query {
 	ping: String!
@@ -1990,7 +1993,6 @@ input UserUpdateValuesInput {
 	&ast.Source{Name: "pkg/integration/s3/api/entity.graphql", Input: `type Application {
 	id: ID!
 	version: ID!
-	slug: String!
 	isActive: Boolean!
 	createdAt: Time!
 	updatedAt: Time!
@@ -2012,9 +2014,9 @@ type Policy {
 type Credentials {
 	id: ID!
 	endpoint: Uri!
+	bucket: String!
 	isSecure: Boolean!
-	accesskey: String!
-	# no secret key
+	accesskey: String! @comment(value: "no secret key")
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "pkg/integration/s3/api/mutation.graphql", Input: `# ---------------------
@@ -2025,7 +2027,6 @@ extend type Mutation  {
 }
 
 input S3ApplicationCreateInput {
-	slug: String!
 	isActive: Boolean!
 	credentials: S3ApplicationCredentialsCreateInput!
 	policies: [S3ApplicationPolicyCreateInput!]!
@@ -2033,6 +2034,7 @@ input S3ApplicationCreateInput {
 
 input S3ApplicationCredentialsCreateInput {
 	endpoint: Uri!
+	bucket: String!
 	isSecure: Boolean!
 	accessKey: String!
 	secretKey: String!
@@ -2059,13 +2061,13 @@ input S3ApplicationUpdateInput {
 	id: ID!
 	version: ID!
 	isActive: Boolean
-	slug: String
 	credentials: S3ApplicationCredentialsUpdateInput
 	policies: S3ApplicationPolicyMutationInput
 }
 
 input S3ApplicationCredentialsUpdateInput {
 	endpoint: Uri
+	bucket: String
 	isSecure: Boolean
 	accessKey: String
 	secretKey: String
@@ -2090,7 +2092,7 @@ input S3ApplicationPolicyDeleteInput {
 # Upload token
 # ---------------------
 extend type Mutation  {
-	S3UploadToken(input: S3UploadTokenInput!): String! @requireAuth
+	S3UploadToken(input: S3UploadTokenInput!): Map! @requireAuth
 }
 
 input S3UploadTokenInput {
@@ -2105,6 +2107,20 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_comment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["value"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["value"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) dir_constraint_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -2492,40 +2508,6 @@ func (ec *executionContext) _Application_version(ctx context.Context, field grap
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Application_slug(ctx context.Context, field graphql.CollectedField, obj *model.Application) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Application",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Slug, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_isActive(ctx context.Context, field graphql.CollectedField, obj *model.Application) (ret graphql.Marshaler) {
@@ -3437,6 +3419,40 @@ func (ec *executionContext) _Credentials_endpoint(ctx context.Context, field gra
 	return ec.marshalNUri2beanᚋcomponentsᚋscalarᚐUri(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Credentials_bucket(ctx context.Context, field graphql.CollectedField, obj *model.Credentials) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Credentials",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Bucket, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Credentials_isSecure(ctx context.Context, field graphql.CollectedField, obj *model.Credentials) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3487,8 +3503,32 @@ func (ec *executionContext) _Credentials_accesskey(ctx context.Context, field gr
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AccessKey, nil
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.AccessKey, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			value, err := ec.unmarshalNString2string(ctx, "no secret key")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Comment == nil {
+				return nil, errors.New("directive comment is not implemented")
+			}
+			return ec.directives.Comment(ctx, obj, directive0, value)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4881,10 +4921,10 @@ func (ec *executionContext) _Mutation_S3UploadToken(ctx context.Context, field g
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(string); ok {
+		if data, ok := tmp.(map[string]interface{}); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be map[string]interface{}`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4896,9 +4936,9 @@ func (ec *executionContext) _Mutation_S3UploadToken(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(map[string]interface{})
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNMap2map(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Namespace_id(ctx context.Context, field graphql.CollectedField, obj *model1.Namespace) (ret graphql.Marshaler) {
@@ -8800,12 +8840,6 @@ func (ec *executionContext) unmarshalInputS3ApplicationCreateInput(ctx context.C
 
 	for k, v := range asMap {
 		switch k {
-		case "slug":
-			var err error
-			it.Slug, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "isActive":
 			var err error
 			it.IsActive, err = ec.unmarshalNBoolean2bool(ctx, v)
@@ -8842,6 +8876,12 @@ func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ct
 			if err != nil {
 				return it, err
 			}
+		case "bucket":
+			var err error
+			it.Bucket, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "isSecure":
 			var err error
 			it.IsSecure, err = ec.unmarshalNBoolean2bool(ctx, v)
@@ -8875,6 +8915,12 @@ func (ec *executionContext) unmarshalInputS3ApplicationCredentialsUpdateInput(ct
 		case "endpoint":
 			var err error
 			it.Endpoint, err = ec.unmarshalOUri2ᚖbeanᚋcomponentsᚋscalarᚐUri(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "bucket":
+			var err error
+			it.Bucket, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9019,12 +9065,6 @@ func (ec *executionContext) unmarshalInputS3ApplicationUpdateInput(ctx context.C
 		case "isActive":
 			var err error
 			it.IsActive, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "slug":
-			var err error
-			it.Slug, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9488,11 +9528,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "slug":
-			out.Values[i] = ec._Application_slug(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "isActive":
 			out.Values[i] = ec._Application_isActive(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9700,6 +9735,11 @@ func (ec *executionContext) _Credentials(ctx context.Context, sel ast.SelectionS
 			}
 		case "endpoint":
 			out.Values[i] = ec._Credentials_endpoint(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "bucket":
+			out.Values[i] = ec._Credentials_bucket(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -11324,6 +11364,29 @@ func (ec *executionContext) unmarshalNLanguage2beanᚋpkgᚋutilᚋapiᚐLanguag
 
 func (ec *executionContext) marshalNLanguage2beanᚋpkgᚋutilᚋapiᚐLanguage(ctx context.Context, sel ast.SelectionSet, v api.Language) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {
+	if v == nil {
+		return nil, nil
+	}
+	return graphql.UnmarshalMap(v)
+}
+
+func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.SelectionSet, v map[string]interface{}) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := graphql.MarshalMap(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNMembership2beanᚋpkgᚋnamespaceᚋmodelᚐMembership(ctx context.Context, sel ast.SelectionSet, v model1.Membership) graphql.Marshaler {

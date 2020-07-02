@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 
 	"bean/components/scalar"
@@ -46,13 +47,13 @@ func Test(t *testing.T) {
 
 		t.Run("CRUD", func(t *testing.T) {
 			oCreate, err := this.CoreApp.Create(ctx, &dto.S3ApplicationCreateInput{
-				Slug:     "qa",
 				IsActive: false,
 				Credentials: dto.S3ApplicationCredentialsCreateInput{
-					Endpoint:  "http://localhost:9090",
+					Endpoint:  "http://localhost:9000",
+					Bucket:    "test",
 					IsSecure:  false,
-					AccessKey: "minio",
-					SecretKey: "minio",
+					AccessKey: "minioadmin",
+					SecretKey: "minioadmin",
 				},
 				Policies: []dto.S3ApplicationPolicyCreateInput{
 					{
@@ -73,7 +74,6 @@ func Test(t *testing.T) {
 			ass.NoError(err)
 			ass.NotNil(oCreate)
 			ass.Equal(false, oCreate.App.IsActive)
-			ass.Equal("qa", oCreate.App.Slug)
 
 			t.Run("policies", func(t *testing.T) {
 				policies := []model.Policy{}
@@ -116,17 +116,16 @@ func Test(t *testing.T) {
 					ass.Equal(true, oUpdate.App.IsActive)
 				})
 
-				t.Run("Slug", func(t *testing.T) {
+				t.Run("Bucket", func(t *testing.T) {
 					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
 					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
-						Slug:    scalar.NilString("test"),
 					})
 
-					ass.NoError(err)
-					ass.NotNil(oUpdate)
-					ass.Equal("test", oUpdate.App.Slug)
+					ass.Error(err)
+					ass.Equal(err, util.ErrorUselessInput)
+					ass.Nil(oUpdate)
 				})
 
 				t.Run("Credentials", func(t *testing.T) {
@@ -136,6 +135,7 @@ func Test(t *testing.T) {
 						Version: app.Version,
 						Credentials: &dto.S3ApplicationCredentialsUpdateInput{
 							Endpoint:  scalar.NilUri("http://localhost:9191"),
+							Bucket:    scalar.NilString("test"),
 							IsSecure:  scalar.NilBool(false),
 							AccessKey: scalar.NilString("minio"),
 							SecretKey: scalar.NilString("minio"),
@@ -150,6 +150,7 @@ func Test(t *testing.T) {
 						cred, err := this.CoreApp.Resolver.Credentials(ctx, app)
 						ass.NoError(err)
 						ass.Equal("http://localhost:9191", string(cred.Endpoint))
+						ass.Equal("test", cred.Bucket)
 						ass.Equal("minio", cred.AccessKey)
 						ass.NotEqual("minio", cred.SecretKey, "value is encrypted")
 						ass.Equal(false, cred.IsSecure)
@@ -227,6 +228,33 @@ func Test(t *testing.T) {
 				ass.NotNil(oDelete)
 				ass.True(now.UnixNano() <= oDelete.App.DeletedAt.UnixNano())
 			})
+
+			t.Run("upload token", func(t *testing.T) {
+				ctx = context.WithValue(ctx, util.CxtKeyClaims, &util.Claims{
+					StandardClaims: jwt.StandardClaims{
+						Audience: this.id.MustULID(),
+						Id:       this.id.MustULID(),
+						Subject:  this.id.MustULID(),
+					},
+					Kind: util.KindAuthenticated,
+				})
+
+				formData, err := this.CoreApp.Resolver.S3UploadToken(ctx, dto.S3UploadTokenInput{
+					ApplicationId: oCreate.App.ID,
+					FilePath:      "/path/to/image.png",
+					ContentType:   scalar.ImagePNG,
+				})
+
+				ass.NoError(err)
+				ass.Equal(formData["bucket"], "test")
+				ass.Equal(formData["key"], "/path/to/image.png")
+				ass.Equal(formData["Content-Type"], string(scalar.ImagePNG))
+				ass.NotEmpty(formData["policy"])
+				ass.NotEmpty(formData["x-amz-credential"])
+				ass.NotEmpty(formData["x-amz-meta-nid"])
+				ass.NotEmpty(formData["x-amz-signature"])
+			})
 		})
+
 	})
 }

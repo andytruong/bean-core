@@ -43,7 +43,6 @@ func (this *CoreApplication) Create(ctx context.Context, in *dto.S3ApplicationCr
 		this.bean.db,
 		func(tx *gorm.DB) error {
 			app = &model.Application{
-				Slug:      in.Slug,
 				ID:        this.bean.id.MustULID(),
 				Version:   this.bean.id.MustULID(),
 				IsActive:  in.IsActive,
@@ -85,13 +84,6 @@ func (this *CoreApplication) Update(ctx context.Context, in *dto.S3ApplicationUp
 	if nil != in.IsActive {
 		if app.IsActive != *in.IsActive {
 			app.IsActive = *in.IsActive
-			changed = true
-		}
-	}
-
-	if nil != in.Slug {
-		if app.Slug != *in.Slug {
-			app.Slug = *in.Slug
 			changed = true
 		}
 	}

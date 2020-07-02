@@ -1,3 +1,4 @@
+directive @comment(value: String!) on FIELD_DEFINITION
 directive @requireAuth on FIELD_DEFINITION
 
 directive @constraint(

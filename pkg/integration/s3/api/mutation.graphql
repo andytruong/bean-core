@@ -6,7 +6,6 @@ extend type Mutation  {
 }
 
 input S3ApplicationCreateInput {
-	slug: String!
 	isActive: Boolean!
 	credentials: S3ApplicationCredentialsCreateInput!
 	policies: [S3ApplicationPolicyCreateInput!]!
@@ -14,6 +13,7 @@ input S3ApplicationCreateInput {
 
 input S3ApplicationCredentialsCreateInput {
 	endpoint: Uri!
+	bucket: String!
 	isSecure: Boolean!
 	accessKey: String!
 	secretKey: String!
@@ -40,13 +40,13 @@ input S3ApplicationUpdateInput {
 	id: ID!
 	version: ID!
 	isActive: Boolean
-	slug: String
 	credentials: S3ApplicationCredentialsUpdateInput
 	policies: S3ApplicationPolicyMutationInput
 }
 
 input S3ApplicationCredentialsUpdateInput {
 	endpoint: Uri
+	bucket: String
 	isSecure: Boolean
 	accessKey: String
 	secretKey: String

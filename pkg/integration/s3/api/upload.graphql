@@ -2,7 +2,7 @@
 # Upload token
 # ---------------------
 extend type Mutation  {
-	S3UploadToken(input: S3UploadTokenInput!): String! @requireAuth
+	S3UploadToken(input: S3UploadTokenInput!): Map! @requireAuth
 }
 
 input S3UploadTokenInput {

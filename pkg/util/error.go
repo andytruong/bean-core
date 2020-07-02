@@ -32,6 +32,7 @@ const (
 	ErrorQuery           = Err("query error")
 	ErrorVersionConflict = Err("version conflict")
 	ErrorLocked          = Err("locked")
+	ErrorAuthRequired    = Err("auth required")
 	ErrorAccessDenied    = Err("access denied")
 	ErrorUselessInput    = Err("useless input")
 )
