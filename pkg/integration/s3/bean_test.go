@@ -255,6 +255,5 @@ func Test(t *testing.T) {
 				ass.NotEmpty(formData["x-amz-signature"])
 			})
 		})
-
 	})
 }

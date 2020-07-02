@@ -105,7 +105,7 @@ func (this NamespaceBean) NamespaceCreate(ctx context.Context, in dto.NamespaceC
 	}
 }
 
-func (this NamespaceBean) NamespaceUpdate(ctx context.Context, in dto.NamespaceUpdateInput) (*bool, error) {
+func (this NamespaceBean) NamespaceUpdate(ctx context.Context, in dto.NamespaceUpdateInput) (*dto.NamespaceCreateOutcome, error) {
 	namespace, err := this.Load(ctx, in.NamespaceID)
 	if nil != err {
 		return nil, err

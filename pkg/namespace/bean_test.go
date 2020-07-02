@@ -219,7 +219,7 @@ func Test_Membership(t *testing.T) {
 		t.Run("create membership", func(t *testing.T) {
 			// change feature ON
 			{
-				ok, err := this.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
+				oUpdate, err := this.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
 					NamespaceID:      oNamespace.Namespace.ID,
 					NamespaceVersion: oNamespace.Namespace.Version,
 					Object: &dto.NamespaceUpdateInputObject{
@@ -230,7 +230,8 @@ func Test_Membership(t *testing.T) {
 				})
 
 				ass.NoError(err)
-				ass.True(*ok)
+				ass.NotNil(oUpdate)
+				ass.NotEqual(oNamespace.Namespace.Version, oUpdate.Namespace.Version)
 			}
 
 			input := dto.NamespaceMembershipCreateInput{
@@ -253,7 +254,7 @@ func Test_Membership(t *testing.T) {
 
 			// change feature off
 			{
-				ok, err := this.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
+				oUpdate, err := this.NamespaceUpdate(context.Background(), dto.NamespaceUpdateInput{
 					NamespaceID:      namespace.ID,
 					NamespaceVersion: namespace.Version,
 					Object: &dto.NamespaceUpdateInputObject{
@@ -264,7 +265,9 @@ func Test_Membership(t *testing.T) {
 				})
 
 				ass.NoError(err)
-				ass.True(*ok)
+				ass.NotNil(oUpdate)
+				ass.Nil(oUpdate.Errors)
+				ass.NotEqual(namespace.Version, oUpdate.Namespace.Version)
 			}
 
 			// create

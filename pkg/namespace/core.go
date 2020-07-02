@@ -142,7 +142,7 @@ func (this *Core) createRelationships(tx *gorm.DB, namespace *model.Namespace, i
 	return nil
 }
 
-func (this Core) Update(tx *gorm.DB, obj *model.Namespace, in dto.NamespaceUpdateInput) (*bool, error) {
+func (this Core) Update(tx *gorm.DB, obj *model.Namespace, in dto.NamespaceUpdateInput) (*dto.NamespaceCreateOutcome, error) {
 	// check version for conflict
 	if in.NamespaceVersion != obj.Version {
 		return nil, util.ErrorVersionConflict
@@ -163,5 +163,8 @@ func (this Core) Update(tx *gorm.DB, obj *model.Namespace, in dto.NamespaceUpdat
 		return nil, err
 	}
 
-	return scalar.NilBool(true), nil
+	return &dto.NamespaceCreateOutcome{
+		Errors:    nil,
+		Namespace: obj,
+	}, nil
 }
