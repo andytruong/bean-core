@@ -7,6 +7,8 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -32,7 +34,19 @@ func (this *Can) HttpRouter(router *mux.Router) *mux.Router {
 func (this *Can) handleQueryRequest() func(http.ResponseWriter, *http.Request) {
 	cnf := gql.Config{Resolvers: this.graph}
 	schema := gql.NewExecutableSchema(cnf)
-	hdl := handler.NewDefaultServer(schema)
+	srv := handler.New(schema)
+
+	if this.HttpServer.GraphQL.Transports.Post {
+		srv.AddTransport(transport.POST{})
+	}
+
+	if this.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval != 0 {
+		srv.AddTransport(transport.Websocket{KeepAlivePingInterval: this.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval})
+	}
+
+	if this.HttpServer.GraphQL.Introspection {
+		srv.Use(extension.Introspection{})
+	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := this.beforeServeHTTP(r)
@@ -51,7 +65,7 @@ func (this *Can) handleQueryRequest() func(http.ResponseWriter, *http.Request) {
 
 			w.Write(content)
 		} else {
-			hdl.ServeHTTP(w, r)
+			srv.ServeHTTP(w, r)
 		}
 	}
 }

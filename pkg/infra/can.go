@@ -6,11 +6,11 @@ import (
 
 	"go.uber.org/zap"
 
+	"bean/components/conf"
 	"bean/components/unique"
 	"bean/pkg/access"
 	"bean/pkg/integration/s3"
 	"bean/pkg/namespace"
-	"bean/pkg/util"
 )
 
 func NewCan(path string) (*Can, error) {
@@ -26,7 +26,7 @@ func NewCan(path string) (*Can, error) {
 	}
 
 	// parse configuration from YAML configuration file & env variables.
-	if err := util.ParseFile(path, &this); nil != err {
+	if err := conf.ParseFile(path, &this); nil != err {
 		return nil, err
 	}
 
@@ -79,7 +79,14 @@ type (
 		WriteTimeout time.Duration `yaml:"writeTimeout"`
 		IdleTimeout  time.Duration `yaml:"idleTimeout"`
 		GraphQL      struct {
-			Playround PlayroundConfig
+			Introspection bool `yaml:"introspection"`
+			Transports    struct {
+				Post      bool `yaml:"post"`
+				Websocket struct {
+					KeepAlivePingInterval time.Duration `yaml:"keepAlivePingInterval"`
+				} `yaml:"websocket"`
+			} `yaml:"transports"`
+			Playround PlayroundConfig `yaml:"playround"`
 		} `yaml:"graphql"`
 	}
 

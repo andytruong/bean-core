@@ -8,6 +8,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 
+	"bean/components/conf"
 	"bean/pkg/access/api/fixtures"
 	"bean/pkg/access/model/dto"
 	"bean/pkg/namespace"
@@ -25,7 +26,7 @@ func bean() *AccessBean {
 		} `yaml:"beans"`
 	}{}
 
-	err := util.ParseFile("../../config.yaml", config)
+	err := conf.ParseFile("../../config.yaml", config)
 	if nil != err {
 		panic(err)
 	}
