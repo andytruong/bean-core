@@ -7,11 +7,13 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"bean/components/module"
+	"bean/components/module/migrate"
+	"bean/components/unique"
 	"bean/pkg/util"
-	"bean/pkg/util/migrate"
 )
 
-func NewUserBean(db *gorm.DB, logger *zap.Logger, id *util.Identifier) *UserBean {
+func NewUserBean(db *gorm.DB, logger *zap.Logger, id *unique.Identifier) *UserBean {
 	if err := util.NilPointerErrorValidate(db, logger, id); nil != err {
 		panic(err)
 	}
@@ -35,7 +37,7 @@ func NewUserBean(db *gorm.DB, logger *zap.Logger, id *util.Identifier) *UserBean
 type UserBean struct {
 	logger                   *zap.Logger
 	db                       *gorm.DB
-	id                       *util.Identifier
+	id                       *unique.Identifier
 	maxSecondaryEmailPerUser uint8
 	Resolvers                *Resolvers
 	Core                     *Core
@@ -44,7 +46,7 @@ type UserBean struct {
 	CorePassword             *CorePassword
 }
 
-func (this UserBean) Dependencies() []util.Bean {
+func (this UserBean) Dependencies() []module.Bean {
 	return nil
 }
 

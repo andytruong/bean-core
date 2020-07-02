@@ -7,11 +7,12 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"bean/pkg/util"
-	"bean/pkg/util/migrate"
+	"bean/components/module"
+	"bean/components/module/migrate"
+	"bean/components/unique"
 )
 
-func NewConfigBean(id *util.Identifier, logger *zap.Logger) *ConfigBean {
+func NewConfigBean(id *unique.Identifier, logger *zap.Logger) *ConfigBean {
 	this := &ConfigBean{
 		id:     id,
 		logger: logger,
@@ -24,7 +25,7 @@ func NewConfigBean(id *util.Identifier, logger *zap.Logger) *ConfigBean {
 }
 
 type ConfigBean struct {
-	id           *util.Identifier
+	id           *unique.Identifier
 	logger       *zap.Logger
 	CoreBucket   *CoreBucket
 	CoreVariable *CoreVariable
@@ -47,6 +48,6 @@ func (this ConfigBean) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this ConfigBean) Dependencies() []util.Bean {
+func (this ConfigBean) Dependencies() []module.Bean {
 	return nil
 }

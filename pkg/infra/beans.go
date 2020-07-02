@@ -1,11 +1,11 @@
 package infra
 
 import (
+	"bean/components/module"
 	"bean/pkg/access"
 	"bean/pkg/integration/s3"
 	"bean/pkg/namespace"
 	"bean/pkg/user"
-	"bean/pkg/util"
 )
 
 type (
@@ -18,12 +18,12 @@ type (
 	}
 )
 
-func (this *beans) List() []util.Bean {
+func (this *beans) List() []module.Bean {
 	mUser, _ := this.User()
 	mNamespace, _ := this.Namespace()
 	mAccess, _ := this.Access()
 
-	return []util.Bean{mUser, mNamespace, mAccess}
+	return []module.Bean{mUser, mNamespace, mAccess}
 }
 
 func (this *beans) User() (*user.UserBean, error) {

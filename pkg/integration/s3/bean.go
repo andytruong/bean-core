@@ -7,13 +7,14 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"bean/pkg/util"
-	"bean/pkg/util/migrate"
+	"bean/components/module"
+	"bean/components/module/migrate"
+	"bean/components/unique"
 )
 
 func NewS3Integration(
 	db *gorm.DB,
-	id *util.Identifier,
+	id *unique.Identifier,
 	logger *zap.Logger,
 	genetic *Genetic,
 ) *S3IntegrationBean {
@@ -36,7 +37,7 @@ func NewS3Integration(
 
 type S3IntegrationBean struct {
 	db      *gorm.DB
-	id      *util.Identifier
+	id      *unique.Identifier
 	logger  *zap.Logger
 	genetic *Genetic
 
@@ -62,6 +63,6 @@ func (this S3IntegrationBean) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this S3IntegrationBean) Dependencies() []util.Bean {
+func (this S3IntegrationBean) Dependencies() []module.Bean {
 	return nil
 }

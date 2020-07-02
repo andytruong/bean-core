@@ -3,7 +3,7 @@ package scalar
 import (
 	"strings"
 
-	"bean/pkg/util/migrate"
+	"bean/components/module/migrate"
 )
 
 type FilePath string

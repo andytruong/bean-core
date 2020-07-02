@@ -8,17 +8,19 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"bean/components/module"
+	"bean/components/module/migrate"
+	"bean/components/unique"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	"bean/pkg/namespace"
 	"bean/pkg/user"
 	"bean/pkg/util"
-	"bean/pkg/util/migrate"
 )
 
 func NewAccessBean(
 	db *gorm.DB,
-	id *util.Identifier,
+	id *unique.Identifier,
 	logger *zap.Logger,
 	bUser *user.UserBean,
 	bNamespace *namespace.NamespaceBean,
@@ -49,7 +51,7 @@ type (
 		genetic         *Genetic
 		logger          *zap.Logger
 		db              *gorm.DB
-		id              *util.Identifier
+		id              *unique.Identifier
 		SessionResolver ModelResolver
 		coreSession     *CoreSession
 
@@ -59,8 +61,8 @@ type (
 	}
 )
 
-func (this AccessBean) Dependencies() []util.Bean {
-	return []util.Bean{
+func (this AccessBean) Dependencies() []module.Bean {
+	return []module.Bean{
 		this.user,
 		this.namespace,
 	}

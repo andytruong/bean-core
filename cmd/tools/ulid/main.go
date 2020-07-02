@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 
-	"bean/pkg/util"
+	"bean/components/unique"
 )
 
 func main() {
-	id := util.Identifier{}
+	id := unique.Identifier{}
 
 	fmt.Println("ULID: ", id.MustULID())
 }

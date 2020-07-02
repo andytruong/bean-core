@@ -1,9 +1,9 @@
 package fixtures
 
 import (
+	"bean/components/password"
 	"bean/components/scalar"
 	"bean/pkg/user/model/dto"
-	"bean/pkg/util/password"
 )
 
 func NewUserCreateInputFixture() *dto.UserCreateInput {
