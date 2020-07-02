@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	log "gorm.io/gorm/logger"
 
+	"bean/components/conf"
 	"bean/components/scalar"
 	"bean/pkg/namespace/api/fixtures"
 	"bean/pkg/namespace/model"
@@ -28,7 +29,7 @@ func bean() *NamespaceBean {
 		} `yaml:"beans"`
 	}{}
 
-	err := util.ParseFile("../../config.yaml", &config)
+	err := conf.ParseFile("../../config.yaml", &config)
 	if nil != err {
 		panic(err)
 	}

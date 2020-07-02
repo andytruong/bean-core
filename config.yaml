@@ -12,6 +12,11 @@ http-server:
   writeTimeout: 15s
   idleTimeout: 15s
   graphql:
+    introspection: true
+    transports:
+      post: true
+      websocket:
+        keepAlivePingInterval: 15s
     playround:
       title: "GraphQL playground"
       enabled: true
