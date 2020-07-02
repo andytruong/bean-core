@@ -7,11 +7,11 @@ import (
 
 	"gorm.io/gorm"
 
+	"bean/components/scalar"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/util"
 	"bean/pkg/util/api"
-	"bean/pkg/util/api/scalar"
 	"bean/pkg/util/connect"
 )
 

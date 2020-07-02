@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	log "gorm.io/gorm/logger"
 
+	"bean/components/scalar"
 	"bean/pkg/namespace/api/fixtures"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
@@ -17,7 +18,6 @@ import (
 	mUser "bean/pkg/user/model"
 	"bean/pkg/util"
 	"bean/pkg/util/api"
-	"bean/pkg/util/api/scalar"
 	"bean/pkg/util/connect"
 )
 

@@ -1,9 +1,9 @@
 package dto
 
 import (
+	"bean/components/scalar"
 	"bean/pkg/config/model"
 	"bean/pkg/util"
-	"bean/pkg/util/api/scalar"
 )
 
 type BucketCreateInput struct {

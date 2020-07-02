@@ -1,9 +1,9 @@
 package fixtures
 
 import (
+	"bean/components/scalar"
 	"bean/pkg/config/model/dto"
 	"bean/pkg/util"
-	"bean/pkg/util/api/scalar"
 )
 
 func NewConfigBucketCreate(access scalar.AccessMode) *dto.BucketCreateInput {

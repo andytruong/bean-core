@@ -6,10 +6,10 @@ import (
 
 	"gorm.io/gorm"
 
+	"bean/components/scalar"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 	"bean/pkg/util"
-	"bean/pkg/util/api/scalar"
 	"bean/pkg/util/connect"
 )
 

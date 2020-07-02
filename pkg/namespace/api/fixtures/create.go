@@ -1,10 +1,10 @@
 package fixtures
 
 import (
+	"bean/components/scalar"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/util/api"
-	"bean/pkg/util/api/scalar"
 )
 
 func NamespaceCreateInputFixture(register bool) dto.NamespaceCreateInput {

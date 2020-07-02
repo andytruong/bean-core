@@ -3,8 +3,8 @@ package model
 import (
 	"time"
 
+	"bean/components/scalar"
 	"bean/pkg/util/api"
-	"bean/pkg/util/api/scalar"
 )
 
 type User struct {

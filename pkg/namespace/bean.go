@@ -9,12 +9,12 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"bean/components/scalar"
 	"bean/pkg/config"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/user"
 	"bean/pkg/util"
-	"bean/pkg/util/api/scalar"
 	"bean/pkg/util/migrate"
 )
 

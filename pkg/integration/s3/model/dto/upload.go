@@ -1,6 +1,6 @@
 package dto
 
-import "bean/pkg/util/api/scalar"
+import "bean/components/scalar"
 
 type S3UploadTokenInput struct {
 	ApplicationId string             `json:"applicationId"`

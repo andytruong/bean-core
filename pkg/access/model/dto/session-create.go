@@ -1,9 +1,9 @@
 package dto
 
 import (
+	"bean/components/scalar"
 	"bean/pkg/access/model"
 	"bean/pkg/util"
-	"bean/pkg/util/api/scalar"
 )
 
 type SessionCreateInput struct {

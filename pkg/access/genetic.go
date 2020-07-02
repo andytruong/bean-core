@@ -9,8 +9,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
+	"bean/components/scalar"
 	"bean/pkg/util"
-	"bean/pkg/util/api/scalar"
 )
 
 type (

@@ -17,7 +17,7 @@ resolver:
   type: Resolver
 
 autobind:
-  - bean/pkg/util/api/scalar
+  - bean/components/scalar
   - bean/pkg/util
   - bean/pkg/util/api
   - bean/pkg/config/model

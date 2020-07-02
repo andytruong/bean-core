@@ -1,8 +1,8 @@
 package fixtures
 
 import (
+	"bean/components/scalar"
 	"bean/pkg/access/model/dto"
-	"bean/pkg/util/api/scalar"
 )
 
 func SessionCreateInputFixtureUseCredentials(namespaceId string, email string, hashedPassword string) *dto.SessionCreateInput {

@@ -1,8 +1,8 @@
 package fixtures
 
 import (
+	"bean/components/scalar"
 	"bean/pkg/user/model/dto"
-	"bean/pkg/util/api/scalar"
 	"bean/pkg/util/password"
 )
 

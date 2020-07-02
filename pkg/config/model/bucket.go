@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"bean/pkg/util/api/scalar"
+	"bean/components/scalar"
 )
 
 // Any entity may have its own configuration: system, namespace, user, content, …

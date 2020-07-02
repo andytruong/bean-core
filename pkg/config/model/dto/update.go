@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"bean/pkg/util/api/scalar"
+	"bean/components/scalar"
 )
 
 type BucketUpdateInput struct {
