@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"bean/components/scalar"
 	"bean/pkg/user/model"
 	"bean/pkg/util"
 )
@@ -9,7 +10,7 @@ type UserCreateInput struct {
 	Name      *UserNameInput     `json:"name"`
 	Emails    *UserEmailsInput   `json:"emails"`
 	Password  *UserPasswordInput `json:"password"`
-	AvatarURI *util.Uri          `json:"avatarUri"`
+	AvatarURI *scalar.Uri        `json:"avatarUri"`
 	IsActive  bool               `json:"isActive"`
 }
 
@@ -19,9 +20,9 @@ type UserEmailsInput struct {
 }
 
 type UserEmailInput struct {
-	Verified bool              `json:"verified"`
-	Value    util.EmailAddress `json:"value"`
-	IsActive bool              `json:"isActive"`
+	Verified bool                `json:"verified"`
+	Value    scalar.EmailAddress `json:"value"`
+	IsActive bool                `json:"isActive"`
 }
 
 type UserNameInput struct {

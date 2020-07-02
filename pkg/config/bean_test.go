@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 
+	"bean/components/scalar"
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
 	"bean/pkg/util"
-	"bean/pkg/util/api"
 	"bean/pkg/util/connect"
 )
 
@@ -25,6 +25,8 @@ func bean() *ConfigBean {
 }
 
 func Test_Bucket(t *testing.T) {
+	t.Parallel()
+
 	ass := assert.New(t)
 	ctx := context.Background()
 	this := bean()
@@ -37,12 +39,12 @@ func Test_Bucket(t *testing.T) {
 			db,
 			func(tx *gorm.DB) error {
 				hostId := this.id.MustULID()
-				access := api.AccessMode("444")
+				access := scalar.AccessMode("444")
 				out, err := this.CoreBucket.Create(tx, dto.BucketCreateInput{
 					HostId:      hostId,
-					Slug:        util.NilString("doe"),
-					Title:       util.NilString("Doe"),
-					Description: util.NilString("Just for John Doe"),
+					Slug:        scalar.NilString("doe"),
+					Title:       scalar.NilString("Doe"),
+					Description: scalar.NilString("Just for John Doe"),
 					Access:      &access,
 					Schema:      `{"type:"number"}`,
 				})
@@ -66,26 +68,26 @@ func Test_Bucket(t *testing.T) {
 		tx := db.Begin()
 		defer tx.Rollback()
 
-		privateAccess := api.AccessModePrivate
+		privateAccess := scalar.AccessModePrivate
 		oCreate, _ := this.CoreBucket.Create(tx, dto.BucketCreateInput{
 			HostId:      this.id.MustULID(),
-			Slug:        util.NilString("qa"),
-			Title:       util.NilString("QA"),
-			Description: util.NilString("Just for QA"),
+			Slug:        scalar.NilString("qa"),
+			Title:       scalar.NilString("QA"),
+			Description: scalar.NilString("Just for QA"),
 			Access:      &privateAccess,
 			Schema:      `{"type:"number"}`,
 			IsPublished: false,
 		})
 
-		publicAccess := api.AccessModePublicRead
+		publicAccess := scalar.AccessModePublicRead
 		oUpdate, err := this.CoreBucket.Update(ctx, tx, dto.BucketUpdateInput{
 			Id:          oCreate.Bucket.Id,
 			Version:     oCreate.Bucket.Version,
-			Title:       util.NilString("Test"),
-			Description: util.NilString("Just for Testing"),
+			Title:       scalar.NilString("Test"),
+			Description: scalar.NilString("Just for Testing"),
 			Access:      &publicAccess,
-			Schema:      util.NilString(`{"type":"string"}`),
-			IsPublished: util.NilBool(true),
+			Schema:      scalar.NilString(`{"type":"string"}`),
+			IsPublished: scalar.NilBool(true),
 		})
 
 		ass.NoError(err)
@@ -101,7 +103,7 @@ func Test_Bucket(t *testing.T) {
 			_, err := this.CoreBucket.Update(ctx, tx, dto.BucketUpdateInput{
 				Id:          oUpdate.Bucket.Id,
 				Version:     oUpdate.Bucket.Version,
-				IsPublished: util.NilBool(false),
+				IsPublished: scalar.NilBool(false),
 			})
 
 			ass.Error(err)
@@ -112,10 +114,10 @@ func Test_Bucket(t *testing.T) {
 			_, err := this.CoreBucket.Update(ctx, tx, dto.BucketUpdateInput{
 				Id:          oCreate.Bucket.Id,
 				Version:     oCreate.Bucket.Version,
-				Title:       util.NilString("Test"),
-				Description: util.NilString("Just for Testing"),
+				Title:       scalar.NilString("Test"),
+				Description: scalar.NilString("Just for Testing"),
 				Access:      &publicAccess,
-				Schema:      util.NilString(`{"type":"int"}`),
+				Schema:      scalar.NilString(`{"type":"int"}`),
 			})
 
 			ass.Error(err)
@@ -128,15 +130,15 @@ func Test_Bucket(t *testing.T) {
 		var oCreate *dto.BucketMutationOutcome
 		var bucket *model.ConfigBucket
 		hostId := this.id.MustULID()
-		access := api.AccessMode("444")
+		access := scalar.AccessMode("444")
 		tx := db.Begin()
 		defer tx.Rollback()
 
 		oCreate, err = this.CoreBucket.Create(tx, dto.BucketCreateInput{
 			HostId:      hostId,
-			Slug:        util.NilString("load-doe"),
-			Title:       util.NilString("Doe"),
-			Description: util.NilString("Just for John Doe"),
+			Slug:        scalar.NilString("load-doe"),
+			Title:       scalar.NilString("Doe"),
+			Description: scalar.NilString("Just for John Doe"),
 			Access:      &access,
 			Schema:      `{"type:"number"}`,
 			IsPublished: true,
@@ -168,14 +170,14 @@ func Test_Variable(t *testing.T) {
 			tx := db.Begin(&sql.TxOptions{})
 			defer tx.Rollback()
 			hostId := this.id.MustULID()
-			access := api.AccessModePrivateReadonly
+			access := scalar.AccessModePrivateReadonly
 
 			// create read-only bucket
 			oCreate, err := this.CoreBucket.Create(tx, dto.BucketCreateInput{
 				HostId:      hostId,
-				Slug:        util.NilString("load-doe"),
-				Title:       util.NilString("Doe"),
-				Description: util.NilString("Just for John Doe"),
+				Slug:        scalar.NilString("load-doe"),
+				Title:       scalar.NilString("Doe"),
+				Description: scalar.NilString("Just for John Doe"),
 				Access:      &access,
 				Schema:      `{"type:"number"}`,
 				IsPublished: true,
@@ -190,7 +192,7 @@ func Test_Variable(t *testing.T) {
 				Name:        "foo",
 				Description: nil,
 				Value:       "1",
-				IsLocked:    util.NilBool(false),
+				IsLocked:    scalar.NilBool(false),
 			})
 
 			// assert error
@@ -206,14 +208,14 @@ func Test_Variable(t *testing.T) {
 			})
 			tx := db.Begin()
 			defer tx.Rollback()
-			access := api.AccessModePrivate
+			access := scalar.AccessModePrivate
 
 			// create read-only bucket
 			oCreate, err := this.CoreBucket.Create(tx, dto.BucketCreateInput{
 				HostId:      userId,
-				Slug:        util.NilString("load-doe"),
-				Title:       util.NilString("Doe"),
-				Description: util.NilString("Just for John Doe"),
+				Slug:        scalar.NilString("load-doe"),
+				Title:       scalar.NilString("Doe"),
+				Description: scalar.NilString("Just for John Doe"),
 				Access:      &access,
 				Schema:      `{"type:"number"}`,
 				IsPublished: true,
@@ -228,7 +230,7 @@ func Test_Variable(t *testing.T) {
 				Name:        "foo",
 				Description: nil,
 				Value:       "1",
-				IsLocked:    util.NilBool(false),
+				IsLocked:    scalar.NilBool(false),
 			})
 
 			// assert error
@@ -243,7 +245,7 @@ func Test_Variable(t *testing.T) {
 		tx := db.Begin()
 		defer tx.Rollback()
 
-		setup := func(access api.AccessMode) (context.Context, *model.ConfigBucket, *model.ConfigVariable) {
+		setup := func(access scalar.AccessMode) (context.Context, *model.ConfigBucket, *model.ConfigVariable) {
 			authorId := this.id.MustULID()
 			authorClaims := &util.Claims{}
 			authorClaims.Subject = authorId
@@ -252,9 +254,9 @@ func Test_Variable(t *testing.T) {
 			// create private bucket
 			oBucketCreate, err := this.CoreBucket.Create(tx, dto.BucketCreateInput{
 				HostId:      authorId,
-				Slug:        util.NilString(this.id.MustULID()),
-				Title:       util.NilString("Doe"),
-				Description: util.NilString("Just for John Doe"),
+				Slug:        scalar.NilString(this.id.MustULID()),
+				Title:       scalar.NilString("Doe"),
+				Description: scalar.NilString("Just for John Doe"),
 				Access:      &access,
 				Schema:      `{"type:"number"}`,
 				IsPublished: true,
@@ -268,7 +270,7 @@ func Test_Variable(t *testing.T) {
 				Name:        "foo",
 				Description: nil,
 				Value:       "1",
-				IsLocked:    util.NilBool(false),
+				IsLocked:    scalar.NilBool(false),
 			})
 
 			ass.NoError(err)
@@ -277,7 +279,7 @@ func Test_Variable(t *testing.T) {
 		}
 
 		t.Run("load on private bucket", func(t *testing.T) {
-			_, _, variable := setup(api.AccessModePrivate)
+			_, _, variable := setup(scalar.AccessModePrivate)
 
 			// load & assert outcome
 			otherCtx := context.Background()
@@ -287,7 +289,7 @@ func Test_Variable(t *testing.T) {
 		})
 
 		t.Run("load on read only bucket", func(t *testing.T) {
-			ctx, bucket, variable := setup(api.AccessModePrivate)
+			ctx, bucket, variable := setup(scalar.AccessModePrivate)
 
 			// load & assert outcome
 			load, err := this.CoreVariable.Load(ctx, tx, variable.Id)

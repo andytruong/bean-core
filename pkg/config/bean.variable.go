@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"bean/components/scalar"
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
 	"bean/pkg/util"
@@ -79,7 +80,7 @@ func (this CoreVariable) Create(ctx context.Context, tx *gorm.DB, in dto.Variabl
 		Name:        in.Name,
 		Description: in.Description,
 		Value:       in.Value,
-		IsLocked:    util.NotNilBool(in.IsLocked, false),
+		IsLocked:    scalar.NotNilBool(in.IsLocked, false),
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}

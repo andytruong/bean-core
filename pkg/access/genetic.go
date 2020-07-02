@@ -9,6 +9,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
+	"bean/components/scalar"
 	"bean/pkg/util"
 )
 
@@ -23,10 +24,10 @@ type (
 	}
 
 	JwtConfig struct {
-		Algorithm  string        `yaml:"algorithm"`
-		PrivateKey util.FilePath `yaml:"privateKey"`
-		PublicKey  util.FilePath `yaml:"publicKey"`
-		Timeout    time.Duration `yaml:"timeout"`
+		Algorithm  string          `yaml:"algorithm"`
+		PrivateKey scalar.FilePath `yaml:"privateKey"`
+		PublicKey  scalar.FilePath `yaml:"publicKey"`
+		Timeout    time.Duration   `yaml:"timeout"`
 	}
 )
 

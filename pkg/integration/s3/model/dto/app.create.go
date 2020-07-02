@@ -1,22 +1,23 @@
 package dto
 
 import (
+	"bean/components/scalar"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/util"
 )
 
 type S3ApplicationCreateInput struct {
-	Slug        string                              `json:"slug"`
 	IsActive    bool                                `json:"isActive"`
 	Credentials S3ApplicationCredentialsCreateInput `json:"credentials"`
-	Polices     []S3ApplicationPolicyCreateInput    `json:"policies"`
+	Policies    []S3ApplicationPolicyCreateInput    `json:"policies"`
 }
 
 type S3ApplicationCredentialsCreateInput struct {
-	Endpoint  util.Uri `json:"endpoint"`
-	IsSecure  bool     `json:"isSecure"`
-	AccessKey string   `json:"accessKey"`
-	SecretKey string   `json:"secretKey"`
+	Endpoint  scalar.Uri `json:"endpoint"`
+	Bucket    string     `json:"bucket"`
+	IsSecure  bool       `json:"isSecure"`
+	AccessKey string     `json:"accessKey"`
+	SecretKey string     `json:"secretKey"`
 }
 
 type S3ApplicationMutationOutcome struct {

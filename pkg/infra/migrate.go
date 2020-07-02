@@ -3,8 +3,8 @@ package infra
 import (
 	"context"
 
+	"bean/components/module/migrate"
 	"bean/pkg/util/connect"
-	"bean/pkg/util/migrate"
 )
 
 func (this *Can) Migrate(ctx context.Context) error {

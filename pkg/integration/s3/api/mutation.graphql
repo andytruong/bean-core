@@ -1,0 +1,68 @@
+# ---------------------
+# Application: Create
+# ---------------------
+extend type Mutation  {
+	S3ApplicationCreate(input: S3ApplicationCreateInput): S3ApplicationMutationOutcome!
+}
+
+input S3ApplicationCreateInput {
+	isActive: Boolean!
+	credentials: S3ApplicationCredentialsCreateInput!
+	policies: [S3ApplicationPolicyCreateInput!]!
+}
+
+input S3ApplicationCredentialsCreateInput {
+	endpoint: Uri!
+	bucket: String!
+	isSecure: Boolean!
+	accessKey: String!
+	secretKey: String!
+}
+
+input S3ApplicationPolicyCreateInput {
+	kind: PolicyKind!
+	value: String!
+}
+
+type S3ApplicationMutationOutcome {
+	app: Application
+	errors: [Error!]
+}
+
+# ---------------------
+# Application: Update
+# ---------------------
+extend type Mutation  {
+	S3ApplicationUpdate(input: S3ApplicationUpdateInput): S3ApplicationMutationOutcome!
+}
+
+input S3ApplicationUpdateInput {
+	id: ID!
+	version: ID!
+	isActive: Boolean
+	credentials: S3ApplicationCredentialsUpdateInput
+	policies: S3ApplicationPolicyMutationInput
+}
+
+input S3ApplicationCredentialsUpdateInput {
+	endpoint: Uri
+	bucket: String
+	isSecure: Boolean
+	accessKey: String
+	secretKey: String
+}
+
+input S3ApplicationPolicyMutationInput {
+	create: [S3ApplicationPolicyCreateInput!]
+	update: [S3ApplicationPolicyUpdateInput!]
+	delete: [S3ApplicationPolicyDeleteInput!]
+}
+
+input S3ApplicationPolicyUpdateInput {
+	id: ID!
+	value: String!
+}
+
+input S3ApplicationPolicyDeleteInput {
+	id: ID!
+}

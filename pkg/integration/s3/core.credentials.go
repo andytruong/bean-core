@@ -1,13 +1,16 @@
 package s3
 
 import (
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"io"
+	"strings"
 
+	"github.com/minio/minio-go/v6"
 	"gorm.io/gorm"
 
 	"bean/pkg/integration/s3/model"
@@ -20,11 +23,28 @@ type coreCredentials struct {
 	bean *S3IntegrationBean
 }
 
+func (this *coreCredentials) loadByApplicationId(ctx context.Context, appId string) (*model.Credentials, error) {
+	cred := &model.Credentials{}
+
+	err := this.bean.db.WithContext(ctx).
+		Table(connect.TableIntegrationS3Credentials).
+		Where("application_id = ?", appId).
+		First(&cred).
+		Error
+
+	if nil != err {
+		return nil, err
+	}
+
+	return cred, nil
+}
+
 func (this *coreCredentials) onAppCreate(tx *gorm.DB, app *model.Application, in dto.S3ApplicationCredentialsCreateInput) error {
 	cre := model.Credentials{
 		ID:            this.bean.id.MustULID(),
 		ApplicationId: app.ID,
 		Endpoint:      in.Endpoint,
+		Bucket:        in.Bucket,
 		AccessKey:     in.AccessKey,
 		SecretKey:     this.encrypt(in.SecretKey),
 		IsSecure:      in.IsSecure,
@@ -49,6 +69,11 @@ func (this *coreCredentials) onAppUpdate(tx *gorm.DB, app *model.Application, in
 		if nil != in.Endpoint {
 			changed = true
 			cre.Endpoint = *in.Endpoint
+		}
+
+		if nil != in.Bucket {
+			changed = true
+			cre.Bucket = *in.Bucket
 		}
 
 		if nil != in.IsSecure {
@@ -102,7 +127,7 @@ func (this *coreCredentials) onAppUpdate(tx *gorm.DB, app *model.Application, in
 func (this coreCredentials) encrypt(text string) string {
 	plaintext := []byte(text)
 
-	block, err := aes.NewCipher(this.bean.genetic.Key)
+	block, err := aes.NewCipher([]byte(this.bean.genetic.Key))
 	if err != nil {
 		panic(err)
 	}
@@ -121,7 +146,7 @@ func (this coreCredentials) encrypt(text string) string {
 
 func (this coreCredentials) decrypt(cryptoText string) string {
 	cipherText, _ := base64.URLEncoding.DecodeString(cryptoText)
-	block, err := aes.NewCipher(this.bean.genetic.Key)
+	block, err := aes.NewCipher([]byte(this.bean.genetic.Key))
 	if err != nil {
 		panic(err)
 	}
@@ -136,4 +161,23 @@ func (this coreCredentials) decrypt(cryptoText string) string {
 	stream.XORKeyStream(cipherText, cipherText)
 
 	return fmt.Sprintf("%s", cipherText)
+}
+
+func (this *coreCredentials) client(credentials *model.Credentials) (*minio.Client, error) {
+	endpoint := string(credentials.Endpoint)
+	endpoint = strings.Replace(endpoint, "http://", "", 1)
+	endpoint = strings.Replace(endpoint, "https://", "", 1)
+
+	client, err := minio.New(
+		endpoint,
+		credentials.AccessKey,
+		this.decrypt(credentials.SecretKey),
+		credentials.IsSecure,
+	)
+
+	if nil != err {
+		panic(err)
+	}
+
+	return client, err
 }

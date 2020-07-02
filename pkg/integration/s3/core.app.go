@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"bean/components/scalar"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 	"bean/pkg/util"
@@ -13,7 +14,8 @@ import (
 )
 
 type CoreApplication struct {
-	bean *S3IntegrationBean
+	bean     *S3IntegrationBean
+	Resolver *ApplicationResolver
 }
 
 func (this *CoreApplication) Load(ctx context.Context, id string) (*model.Application, error) {
@@ -33,7 +35,7 @@ func (this *CoreApplication) Load(ctx context.Context, id string) (*model.Applic
 	return app, nil
 }
 
-func (this *CoreApplication) Create(ctx context.Context, in dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
+func (this *CoreApplication) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
 	var app *model.Application
 
 	err := connect.Transaction(
@@ -41,7 +43,6 @@ func (this *CoreApplication) Create(ctx context.Context, in dto.S3ApplicationCre
 		this.bean.db,
 		func(tx *gorm.DB) error {
 			app = &model.Application{
-				Slug:      in.Slug,
 				ID:        this.bean.id.MustULID(),
 				Version:   this.bean.id.MustULID(),
 				IsActive:  in.IsActive,
@@ -55,7 +56,7 @@ func (this *CoreApplication) Create(ctx context.Context, in dto.S3ApplicationCre
 				return err
 			} else if err := this.bean.coreCredentials.onAppCreate(tx, app, in.Credentials); nil != err {
 				return err
-			} else if err = this.bean.corePolicy.onAppCreate(tx, app, in.Polices); nil != err {
+			} else if err = this.bean.corePolicy.onAppCreate(tx, app, in.Policies); nil != err {
 				return err
 			}
 
@@ -70,7 +71,7 @@ func (this *CoreApplication) Create(ctx context.Context, in dto.S3ApplicationCre
 	return &dto.S3ApplicationMutationOutcome{App: app, Errors: nil}, nil
 }
 
-func (this *CoreApplication) Update(ctx context.Context, in dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
+func (this *CoreApplication) Update(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
 	app, err := this.Load(ctx, in.Id)
 
 	if nil != err {
@@ -87,20 +88,13 @@ func (this *CoreApplication) Update(ctx context.Context, in dto.S3ApplicationUpd
 		}
 	}
 
-	if nil != in.Slug {
-		if app.Slug != *in.Slug {
-			app.Slug = *in.Slug
-			changed = true
-		}
-	}
-
 	if deletedAt, ok := ctx.Value("bean.integration-s3.delete").(time.Time); ok {
 		app.DeletedAt = &deletedAt
 		changed = true
 	}
 
 	if !changed {
-		if nil == in.Credentials {
+		if nil == in.Credentials && nil == in.Policies {
 			return nil, util.ErrorUselessInput
 		}
 	}
@@ -121,6 +115,11 @@ func (this *CoreApplication) Update(ctx context.Context, in dto.S3ApplicationUpd
 				return err
 			}
 
+			err = this.bean.corePolicy.onAppUpdate(tx, app, in.Policies)
+			if nil != err {
+				return err
+			}
+
 			return nil
 		},
 	)
@@ -131,9 +130,9 @@ func (this *CoreApplication) Update(ctx context.Context, in dto.S3ApplicationUpd
 func (this *CoreApplication) Delete(ctx context.Context, in dto.S3ApplicationDeleteInput) (*dto.S3ApplicationMutationOutcome, error) {
 	ctx = context.WithValue(ctx, "bean.integration-s3.delete", time.Now())
 
-	return this.Update(ctx, dto.S3ApplicationUpdateInput{
+	return this.Update(ctx, &dto.S3ApplicationUpdateInput{
 		Id:       in.Id,
 		Version:  in.Version,
-		IsActive: util.NilBool(true),
+		IsActive: scalar.NilBool(true),
 	})
 }

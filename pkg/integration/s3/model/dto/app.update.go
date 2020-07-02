@@ -1,19 +1,21 @@
 package dto
 
-import "bean/pkg/util"
+import (
+	"bean/components/scalar"
+)
 
 type S3ApplicationUpdateInput struct {
 	Id          string                               `json:"id"`
 	Version     string                               `json:"version"`
 	IsActive    *bool                                `json:"isActive"`
-	Slug        *string                              `json:"slug"`
 	Credentials *S3ApplicationCredentialsUpdateInput `json:"credentials"`
-	Polices     S3ApplicationPolicyMutationInput     `json:"policies"`
+	Policies    *S3ApplicationPolicyMutationInput    `json:"policies"`
 }
 
 type S3ApplicationCredentialsUpdateInput struct {
-	Endpoint  *util.Uri `json:"endpoint"`
-	IsSecure  *bool     `json:"isSecure"`
-	AccessKey *string   `json:"accessKey"`
-	SecretKey *string   `json:"secretKey"`
+	Endpoint  *scalar.Uri `json:"endpoint"`
+	Bucket    *string     `json:"bucket"`
+	IsSecure  *bool       `json:"isSecure"`
+	AccessKey *string     `json:"accessKey"`
+	SecretKey *string     `json:"secretKey"`
 }

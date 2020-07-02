@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"bean/components/scalar"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	mUser "bean/pkg/user/model"
@@ -50,12 +51,12 @@ func (this CoreMember) Find(first int, after *string, filters dto.MembershipsFil
 			if len(con.Nodes) > 0 {
 				startEntity := con.Nodes[0]
 				if startEntity.LoggedInAt != nil {
-					con.PageInfo.StartCursor = util.NilString(startEntity.LoggedInAt.String())
+					con.PageInfo.StartCursor = scalar.NilString(startEntity.LoggedInAt.String())
 				}
 
 				endEntity := con.Nodes[len(con.Nodes)-1]
 				if nil != endEntity.LoggedInAt {
-					con.PageInfo.EndCursor = util.NilString(endEntity.LoggedInAt.String())
+					con.PageInfo.EndCursor = scalar.NilString(endEntity.LoggedInAt.String())
 				}
 			}
 		}

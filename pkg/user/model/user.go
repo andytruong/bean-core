@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"bean/pkg/util"
+	"bean/components/scalar"
 	"bean/pkg/util/api"
 )
 
@@ -13,6 +13,6 @@ type User struct {
 	IsActive  bool         `json:"isActive"`
 	CreatedAt time.Time    `json:"createdAt"`
 	UpdatedAt time.Time    `json:"updatedAt"`
-	AvatarURI *util.Uri    `json:"avatarUri"`
+	AvatarURI *scalar.Uri  `json:"avatarUri"`
 	Language  api.Language `json:"language"`
 }

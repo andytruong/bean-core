@@ -7,8 +7,10 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"bean/components/module"
+	"bean/components/module/migrate"
+	"bean/components/unique"
 	"bean/pkg/util/connect"
-	"bean/pkg/util/migrate"
 )
 
 func MockDatabase() *gorm.DB {
@@ -27,11 +29,11 @@ func MockLogger() *zap.Logger {
 	return zap.NewNop()
 }
 
-func MockIdentifier() *Identifier {
-	return &Identifier{}
+func MockIdentifier() *unique.Identifier {
+	return &unique.Identifier{}
 }
 
-func MockInstall(bean Bean, db *gorm.DB) {
+func MockInstall(bean module.Bean, db *gorm.DB) {
 	tx := db.Begin()
 
 	err := mockInstall(bean, tx)
@@ -42,7 +44,7 @@ func MockInstall(bean Bean, db *gorm.DB) {
 	}
 }
 
-func mockInstall(bean Bean, tx *gorm.DB) error {
+func mockInstall(bean module.Bean, tx *gorm.DB) error {
 	if !tx.Migrator().HasTable(migrate.Migration{}) {
 		if err := tx.Migrator().CreateTable(migrate.Migration{}); nil != err {
 			return err

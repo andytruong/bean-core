@@ -1,3 +1,6 @@
+test:
+	go test -mod=vendor ./pkg/... -race -v
+
 server:
 	CONFIG=config.yaml go run -mod=vendor cmd/main.go http-server
 
@@ -8,23 +11,38 @@ gql:
 migrate:
 	CONFIG=config.yaml go run -mod=vendor cmd/main.go migrate
 
-test:
-	go test -mod=vendor ./pkg/... -race -v
-
 check-size:
 	go build -mod=vendor -o /tmp/go-bean cmd/main.go
 	du -h /tmp/go-bean
 	rm /tmp/go-bean
 
-gen-key:
-	CONFIG=config.yaml go run cmd/main.go gen-key
-
 clean:
-	go fmt ./...
 	go mod vendor
+	go fmt ./...
 	go mod tidy
 	git fetch --prune origin
 	rm -rf ./pkg/infra/gql/__tmp__*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # ---------------------
 # dev commands
@@ -42,3 +60,6 @@ docker-db-stop:
 dev-server:
 	CONFIG=config.yaml DB_DRIVER=postgres DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable \
 		go run cmd/main.go http-server
+
+gen-key:
+	CONFIG=config.yaml go run cmd/main.go gen-key

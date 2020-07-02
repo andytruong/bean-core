@@ -6,7 +6,9 @@ import (
 
 	"go.uber.org/zap"
 
+	"bean/components/unique"
 	"bean/pkg/access"
+	"bean/pkg/integration/s3"
 	"bean/pkg/namespace"
 	"bean/pkg/util"
 )
@@ -59,7 +61,7 @@ type (
 		Beans      BeansConfig               `json:"beans"`
 
 		mu     *sync.Mutex
-		id     *util.Identifier
+		id     *unique.Identifier
 		graph  *graph
 		dbs    databases
 		beans  beans
@@ -88,8 +90,11 @@ type (
 	}
 
 	BeansConfig struct {
-		Access    *access.Genetic    `yaml:"access"`
-		Namespace *namespace.Genetic `yaml:"namespace"`
+		Access      *access.Genetic    `yaml:"access"`
+		Namespace   *namespace.Genetic `yaml:"namespace"`
+		Integration struct {
+			S3 *s3.Genetic `yaml:"s3"`
+		} `yaml:"integration"`
 	}
 )
 
@@ -97,10 +102,10 @@ func (this *Can) Logger() *zap.Logger {
 	return this.logger
 }
 
-func (this *Can) Identifier() *util.Identifier {
+func (this *Can) Identifier() *unique.Identifier {
 	if this.id == nil {
 		this.mu.Lock()
-		this.id = &util.Identifier{}
+		this.id = &unique.Identifier{}
 		this.mu.Unlock()
 	}
 

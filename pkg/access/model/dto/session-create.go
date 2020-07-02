@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"bean/components/scalar"
 	"bean/pkg/access/model"
 	"bean/pkg/util"
 )
@@ -13,9 +14,9 @@ type SessionCreateInput struct {
 }
 
 type SessionCreateUseCredentialsInput struct {
-	NamespaceID    string            `json:"namespaceId"`
-	Email          util.EmailAddress `json:"email"`
-	HashedPassword string            `json:"hashedPassword"`
+	NamespaceID    string              `json:"namespaceId"`
+	Email          scalar.EmailAddress `json:"email"`
+	HashedPassword string              `json:"hashedPassword"`
 }
 
 type SessionCreateGenerateOTLT struct {

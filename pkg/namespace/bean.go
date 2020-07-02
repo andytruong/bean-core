@@ -9,16 +9,19 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"bean/components/module"
+	"bean/components/module/migrate"
+	"bean/components/scalar"
+	"bean/components/unique"
 	"bean/pkg/config"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/user"
 	"bean/pkg/util"
-	"bean/pkg/util/migrate"
 )
 
 func NewNamespaceBean(
-	db *gorm.DB, logger *zap.Logger, id *util.Identifier,
+	db *gorm.DB, logger *zap.Logger, id *unique.Identifier,
 	bUser *user.UserBean,
 	genetics *Genetic,
 ) *NamespaceBean {
@@ -46,7 +49,7 @@ type NamespaceBean struct {
 	genetic *Genetic
 	logger  *zap.Logger
 	db      *gorm.DB
-	id      *util.Identifier
+	id      *unique.Identifier
 	user    *user.UserBean
 	config  *config.ConfigBean
 
@@ -61,8 +64,8 @@ func (this *NamespaceBean) MembershipResolver() MembershipResolver {
 	return this.CoreMember.Resolver
 }
 
-func (this *NamespaceBean) Dependencies() []util.Bean {
-	return []util.Bean{this.user}
+func (this *NamespaceBean) Dependencies() []module.Bean {
+	return []module.Bean{this.user}
 }
 
 func (this NamespaceBean) Migrate(tx *gorm.DB, driver string) error {
@@ -154,7 +157,7 @@ func (this NamespaceBean) NamespaceMembershipCreate(
 }
 
 func (this NamespaceBean) NamespaceMembershipUpdate(ctx context.Context, input dto.NamespaceMembershipUpdateInput) (*dto.NamespaceMembershipCreateOutcome, error) {
-	membership, err := this.Resolvers.Query.Membership(ctx, input.Id, util.NilString(input.Version))
+	membership, err := this.Resolvers.Query.Membership(ctx, input.Id, scalar.NilString(input.Version))
 	if nil != err {
 		return nil, err
 	}

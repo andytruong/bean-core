@@ -1,0 +1,12 @@
+# ---------------------
+# Upload token
+# ---------------------
+extend type Mutation  {
+	S3UploadToken(input: S3UploadTokenInput!): Map! @requireAuth
+}
+
+input S3UploadTokenInput {
+	applicationId: ID!
+	filePath: Uri! @constraint(minLength: 7, maxLength: 128)
+	contentType: ContentType!
+}

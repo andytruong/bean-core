@@ -7,6 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"bean/components/scalar"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/util"
@@ -115,7 +116,7 @@ func (this *Core) createRelationships(tx *gorm.DB, namespace *model.Namespace, i
 			Object: dto.NamespaceCreateInputObject{
 				ParentId: &namespace.ID,
 				Kind:     model.NamespaceKindRole,
-				Title:    util.NilString("owner"),
+				Title:    scalar.NilString("owner"),
 				Language: api.LanguageDefault,
 				IsActive: true,
 			},
@@ -162,5 +163,5 @@ func (this Core) Update(tx *gorm.DB, obj *model.Namespace, in dto.NamespaceUpdat
 		return nil, err
 	}
 
-	return util.NilBool(true), nil
+	return scalar.NilBool(true), nil
 }

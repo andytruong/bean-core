@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
+	"bean/components/scalar"
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
 	"bean/pkg/util"
@@ -21,8 +22,8 @@ func (this CoreBucket) Create(tx *gorm.DB, in dto.BucketCreateInput) (*dto.Bucke
 	bucket := &model.ConfigBucket{
 		Id:          this.bean.id.MustULID(),
 		Version:     this.bean.id.MustULID(),
-		Slug:        util.NotNilString(in.Slug, this.bean.id.MustULID()),
-		Title:       util.NotNilString(in.Title, ""),
+		Slug:        scalar.NotNilString(in.Slug, this.bean.id.MustULID()),
+		Title:       scalar.NotNilString(in.Title, ""),
 		Description: in.Description,
 		Access:      "777",
 		Schema:      in.Schema,

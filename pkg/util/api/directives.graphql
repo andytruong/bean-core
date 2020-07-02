@@ -1,0 +1,7 @@
+directive @comment(value: String!) on FIELD_DEFINITION
+directive @requireAuth on FIELD_DEFINITION
+
+directive @constraint(
+	maxLength: Int,
+	minLength: Int,
+) on INPUT_FIELD_DEFINITION

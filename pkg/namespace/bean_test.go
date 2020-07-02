@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	log "gorm.io/gorm/logger"
 
+	"bean/components/scalar"
 	"bean/pkg/namespace/api/fixtures"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
@@ -127,7 +128,7 @@ func Test_Namespace(t *testing.T) {
 		})
 
 		t.Run("load by domain name -> inactive domain name", func(t *testing.T) {
-			domainName := util.Uri(*iCreate.Object.DomainNames.Secondary[1].Value)
+			domainName := scalar.Uri(*iCreate.Object.DomainNames.Secondary[1].Value)
 			obj, err := this.Namespace(context.Background(), dto.NamespaceFilters{
 				Domain: &domainName,
 			})
@@ -138,7 +139,7 @@ func Test_Namespace(t *testing.T) {
 		})
 
 		t.Run("load by domain name -> verified", func(t *testing.T) {
-			domainName := util.Uri(*iCreate.Object.DomainNames.Primary.Value)
+			domainName := scalar.Uri(*iCreate.Object.DomainNames.Primary.Value)
 			obj, err := this.Namespace(context.Background(), dto.NamespaceFilters{Domain: &domainName})
 
 			ass.NoError(err)
@@ -163,7 +164,7 @@ func Test_Namespace(t *testing.T) {
 				Object: &dto.NamespaceUpdateInputObject{
 					Language: api.LanguageUS.Nil(),
 					Features: &dto.NamespaceUpdateInputFeatures{
-						Register: util.NilBool(true),
+						Register: scalar.NilBool(true),
 					},
 				},
 			})
@@ -185,7 +186,7 @@ func Test_Namespace(t *testing.T) {
 				NamespaceVersion: "invalid-version",
 				Object: &dto.NamespaceUpdateInputObject{
 					Features: &dto.NamespaceUpdateInputFeatures{
-						Register: util.NilBool(true),
+						Register: scalar.NilBool(true),
 					},
 				},
 			})
@@ -223,7 +224,7 @@ func Test_Membership(t *testing.T) {
 					NamespaceVersion: oNamespace.Namespace.Version,
 					Object: &dto.NamespaceUpdateInputObject{
 						Features: &dto.NamespaceUpdateInputFeatures{
-							Register: util.NilBool(true),
+							Register: scalar.NilBool(true),
 						},
 					},
 				})
@@ -257,7 +258,7 @@ func Test_Membership(t *testing.T) {
 					NamespaceVersion: namespace.Version,
 					Object: &dto.NamespaceUpdateInputObject{
 						Features: &dto.NamespaceUpdateInputFeatures{
-							Register: util.NilBool(false),
+							Register: scalar.NilBool(false),
 						},
 					},
 				})
@@ -345,7 +346,7 @@ func Test_Membership(t *testing.T) {
 
 				// with invalid version
 				{
-					obj, err := this.Resolvers.Query.Membership(context.Background(), membership.ID, util.NilString("InvalidVersion"))
+					obj, err := this.Resolvers.Query.Membership(context.Background(), membership.ID, scalar.NilString("InvalidVersion"))
 					ass.Error(err)
 					ass.Equal(err.Error(), util.ErrorVersionConflict.Error())
 					ass.Nil(obj)

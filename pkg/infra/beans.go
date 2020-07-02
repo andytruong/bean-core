@@ -1,10 +1,11 @@
 package infra
 
 import (
+	"bean/components/module"
 	"bean/pkg/access"
+	"bean/pkg/integration/s3"
 	"bean/pkg/namespace"
 	"bean/pkg/user"
-	"bean/pkg/util"
 )
 
 type (
@@ -13,15 +14,16 @@ type (
 		user      *user.UserBean
 		namespace *namespace.NamespaceBean
 		access    *access.AccessBean
+		s3        *s3.S3IntegrationBean
 	}
 )
 
-func (this *beans) List() []util.Bean {
+func (this *beans) List() []module.Bean {
 	mUser, _ := this.User()
 	mNamespace, _ := this.Namespace()
 	mAccess, _ := this.Access()
 
-	return []util.Bean{mUser, mNamespace, mAccess}
+	return []module.Bean{mUser, mNamespace, mAccess}
 }
 
 func (this *beans) User() (*user.UserBean, error) {
@@ -97,4 +99,17 @@ func (this *beans) Access() (*access.AccessBean, error) {
 	}
 
 	return this.access, nil
+}
+
+func (this *beans) S3() (*s3.S3IntegrationBean, error) {
+	if nil == this.s3 {
+		db, err := this.can.dbs.master()
+		if nil != err {
+			return nil, err
+		}
+
+		this.s3 = s3.NewS3Integration(db, this.can.Identifier(), this.can.logger, this.can.Beans.Integration.S3)
+	}
+
+	return this.s3, nil
 }

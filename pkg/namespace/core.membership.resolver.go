@@ -7,10 +7,10 @@ import (
 
 	"gorm.io/gorm"
 
+	"bean/components/scalar"
 	"bean/pkg/namespace/model"
 	"bean/pkg/user"
 	mUser "bean/pkg/user/model"
-	"bean/pkg/util"
 	"bean/pkg/util/connect"
 )
 
@@ -48,7 +48,7 @@ func (this MembershipResolver) User(ctx context.Context, obj *model.Membership) 
 }
 
 func (this MembershipResolver) UpdateLastLoginTime(db *gorm.DB, membership *model.Membership) error {
-	membership.LoggedInAt = util.NilTime(time.Now())
+	membership.LoggedInAt = scalar.NilTime(time.Now())
 
 	return db.
 		Table(connect.TableNamespaceMemberships).

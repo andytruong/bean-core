@@ -1,10 +1,12 @@
 scalar AccessMode
 scalar Time
 scalar Uri
+scalar QueryPath
 scalar IP
 scalar CountryCode
 scalar EmailAddress
 scalar JWT
+scalar Map
 
 type Query {
 	ping: String!
@@ -19,21 +21,3 @@ type Error {
 	fields: [String!]
 	message: String!
 }
-
-enum ErrorCode   {
-	# Input errors
-	# ---------------------
-	Input
-
-	# internal errors
-	# ---------------------
-	Config
-	Runtime
-
-	# Server errors
-	# ---------------------
-	DB_Timeout
-	DB_Constraint
-}
-
-enum Language { AU US UK VN }

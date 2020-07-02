@@ -1,8 +1,10 @@
 package dto
 
-import "bean/pkg/util"
+import (
+	"bean/components/scalar"
+)
 
 type NamespaceFilters struct {
-	ID     *string   `json:"id"`
-	Domain *util.Uri `json:"domain"`
+	ID     *string     `json:"id"`
+	Domain *scalar.Uri `json:"domain"`
 }

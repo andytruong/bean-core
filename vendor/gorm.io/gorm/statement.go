@@ -12,6 +12,7 @@ import (
 
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
+	"gorm.io/gorm/utils"
 )
 
 // Statement statement
@@ -37,6 +38,7 @@ type Statement struct {
 	SQL                  strings.Builder
 	Vars                 []interface{}
 	NamedVars            []sql.NamedArg
+	CurDestIndex         int
 	attrs                []interface{}
 	assigns              []interface{}
 }
@@ -271,22 +273,26 @@ func (stmt *Statement) BuildCondition(query interface{}, args ...interface{}) (c
 				switch reflectValue.Kind() {
 				case reflect.Struct:
 					for _, field := range s.Fields {
-						if v, isZero := field.ValueOf(reflectValue); !isZero {
-							if field.DBName == "" {
-								conds = append(conds, clause.Eq{Column: clause.Column{Table: s.Table, Name: field.Name}, Value: v})
-							} else {
-								conds = append(conds, clause.Eq{Column: clause.Column{Table: s.Table, Name: field.DBName}, Value: v})
+						if field.Readable {
+							if v, isZero := field.ValueOf(reflectValue); !isZero {
+								if field.DBName == "" {
+									conds = append(conds, clause.Eq{Column: clause.Column{Table: s.Table, Name: field.Name}, Value: v})
+								} else {
+									conds = append(conds, clause.Eq{Column: clause.Column{Table: s.Table, Name: field.DBName}, Value: v})
+								}
 							}
 						}
 					}
 				case reflect.Slice, reflect.Array:
 					for i := 0; i < reflectValue.Len(); i++ {
 						for _, field := range s.Fields {
-							if v, isZero := field.ValueOf(reflectValue.Index(i)); !isZero {
-								if field.DBName == "" {
-									conds = append(conds, clause.Eq{Column: clause.Column{Table: s.Table, Name: field.Name}, Value: v})
-								} else {
-									conds = append(conds, clause.Eq{Column: clause.Column{Table: s.Table, Name: field.DBName}, Value: v})
+							if field.Readable {
+								if v, isZero := field.ValueOf(reflectValue.Index(i)); !isZero {
+									if field.DBName == "" {
+										conds = append(conds, clause.Eq{Column: clause.Column{Table: s.Table, Name: field.Name}, Value: v})
+									} else {
+										conds = append(conds, clause.Eq{Column: clause.Column{Table: s.Table, Name: field.DBName}, Value: v})
+									}
 								}
 							}
 						}
@@ -365,4 +371,128 @@ func (stmt *Statement) clone() *Statement {
 	})
 
 	return newStmt
+}
+
+// Helpers
+// SetColumn set column's value
+func (stmt *Statement) SetColumn(name string, value interface{}) {
+	if v, ok := stmt.Dest.(map[string]interface{}); ok {
+		v[name] = value
+	} else if stmt.Schema != nil {
+		if field := stmt.Schema.LookUpField(name); field != nil {
+			switch stmt.ReflectValue.Kind() {
+			case reflect.Slice, reflect.Array:
+				field.Set(stmt.ReflectValue.Index(stmt.CurDestIndex), value)
+			case reflect.Struct:
+				field.Set(stmt.ReflectValue, value)
+			}
+		} else {
+			stmt.AddError(ErrInvalidField)
+		}
+	} else {
+		stmt.AddError(ErrInvalidField)
+	}
+}
+
+// Changed check model changed or not when updating
+func (stmt *Statement) Changed(fields ...string) bool {
+	modelValue := reflect.ValueOf(stmt.Model)
+	for modelValue.Kind() == reflect.Ptr {
+		modelValue = modelValue.Elem()
+	}
+
+	switch modelValue.Kind() {
+	case reflect.Slice, reflect.Array:
+		modelValue = stmt.ReflectValue.Index(stmt.CurDestIndex)
+	}
+
+	selectColumns, restricted := stmt.SelectAndOmitColumns(false, true)
+	changed := func(field *schema.Field) bool {
+		fieldValue, _ := field.ValueOf(modelValue)
+		if v, ok := selectColumns[field.DBName]; (ok && v) || (!ok && !restricted) {
+			if v, ok := stmt.Dest.(map[string]interface{}); ok {
+				if fv, ok := v[field.Name]; ok {
+					return !utils.AssertEqual(fv, fieldValue)
+				} else if fv, ok := v[field.DBName]; ok {
+					return !utils.AssertEqual(fv, fieldValue)
+				}
+			} else {
+				changedValue, _ := field.ValueOf(stmt.ReflectValue)
+				return !utils.AssertEqual(changedValue, fieldValue)
+			}
+		}
+		return false
+	}
+
+	if len(fields) == 0 {
+		for _, field := range stmt.Schema.FieldsByDBName {
+			if changed(field) {
+				return true
+			}
+		}
+	} else {
+		for _, name := range fields {
+			if field := stmt.Schema.LookUpField(name); field != nil {
+				if changed(field) {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+// SelectAndOmitColumns get select and omit columns, select -> true, omit -> false
+func (stmt *Statement) SelectAndOmitColumns(requireCreate, requireUpdate bool) (map[string]bool, bool) {
+	results := map[string]bool{}
+	notRestricted := false
+
+	// select columns
+	for _, column := range stmt.Selects {
+		if column == "*" {
+			notRestricted = true
+			for _, dbName := range stmt.Schema.DBNames {
+				results[dbName] = true
+			}
+		} else if column == clause.Associations {
+			for _, rel := range stmt.Schema.Relationships.Relations {
+				results[rel.Name] = true
+			}
+		} else if field := stmt.Schema.LookUpField(column); field != nil && field.DBName != "" {
+			results[field.DBName] = true
+		} else {
+			results[column] = true
+		}
+	}
+
+	// omit columns
+	for _, omit := range stmt.Omits {
+		if omit == clause.Associations {
+			for _, rel := range stmt.Schema.Relationships.Relations {
+				results[rel.Name] = false
+			}
+		} else if field := stmt.Schema.LookUpField(omit); field != nil && field.DBName != "" {
+			results[field.DBName] = false
+		} else {
+			results[omit] = false
+		}
+	}
+
+	if stmt.Schema != nil {
+		for _, field := range stmt.Schema.Fields {
+			name := field.DBName
+			if name == "" {
+				name = field.Name
+			}
+
+			if requireCreate && !field.Creatable {
+				results[name] = false
+			} else if requireUpdate && !field.Updatable {
+				results[name] = false
+			}
+		}
+	}
+
+	return results, !notRestricted && len(stmt.Selects) > 0
 }

@@ -5,8 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 
+	"bean/components/scalar"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 	"bean/pkg/util"
@@ -17,7 +19,7 @@ func bean() *S3IntegrationBean {
 	db := util.MockDatabase()
 	id := util.MockIdentifier()
 	logger := util.MockLogger()
-	bean := NewS3Integration(db, id, logger, &Genetic{Key: []byte("01EBWB516AP6BQD7")})
+	bean := NewS3Integration(db, id, logger, &Genetic{Key: "01EBWB516AP6BQD7"})
 	util.MockInstall(bean, db)
 
 	return bean
@@ -44,16 +46,16 @@ func Test(t *testing.T) {
 		})
 
 		t.Run("CRUD", func(t *testing.T) {
-			oCreate, err := this.coreApp.Create(ctx, dto.S3ApplicationCreateInput{
-				Slug:     "qa",
+			oCreate, err := this.CoreApp.Create(ctx, &dto.S3ApplicationCreateInput{
 				IsActive: false,
 				Credentials: dto.S3ApplicationCredentialsCreateInput{
-					Endpoint:  "http://localhost:9090",
+					Endpoint:  "http://localhost:9000",
+					Bucket:    "test",
 					IsSecure:  false,
-					AccessKey: "minio",
-					SecretKey: "minio",
+					AccessKey: "minioadmin",
+					SecretKey: "minioadmin",
 				},
-				Polices: []dto.S3ApplicationPolicyCreateInput{
+				Policies: []dto.S3ApplicationPolicyCreateInput{
 					{
 						Kind:  model.PolicyKindFileExtensions,
 						Value: "jpeg gif png webp",
@@ -72,7 +74,6 @@ func Test(t *testing.T) {
 			ass.NoError(err)
 			ass.NotNil(oCreate)
 			ass.Equal(false, oCreate.App.IsActive)
-			ass.Equal("qa", oCreate.App.Slug)
 
 			t.Run("policies", func(t *testing.T) {
 				policies := []model.Policy{}
@@ -93,7 +94,7 @@ func Test(t *testing.T) {
 
 			t.Run("Update", func(t *testing.T) {
 				t.Run("Useless input", func(t *testing.T) {
-					oUpdate, err := this.coreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      oCreate.App.ID,
 						Version: oCreate.App.Version,
 					})
@@ -103,11 +104,11 @@ func Test(t *testing.T) {
 				})
 
 				t.Run("Status", func(t *testing.T) {
-					app, _ := this.coreApp.Load(ctx, oCreate.App.ID)
-					oUpdate, err := this.coreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
+					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:       app.ID,
 						Version:  app.Version,
-						IsActive: util.NilBool(true),
+						IsActive: scalar.NilBool(true),
 					})
 
 					ass.NoError(err)
@@ -115,41 +116,110 @@ func Test(t *testing.T) {
 					ass.Equal(true, oUpdate.App.IsActive)
 				})
 
-				t.Run("Slug", func(t *testing.T) {
-					app, _ := this.coreApp.Load(ctx, oCreate.App.ID)
-					oUpdate, err := this.coreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+				t.Run("Bucket", func(t *testing.T) {
+					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
+					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
-						Slug:    util.NilString("test"),
 					})
 
-					ass.NoError(err)
-					ass.NotNil(oUpdate)
-					ass.Equal("test", oUpdate.App.Slug)
+					ass.Error(err)
+					ass.Equal(err, util.ErrorUselessInput)
+					ass.Nil(oUpdate)
 				})
 
 				t.Run("Credentials", func(t *testing.T) {
-					app, _ := this.coreApp.Load(ctx, oCreate.App.ID)
-					oUpdate, err := this.coreApp.Update(ctx, dto.S3ApplicationUpdateInput{
+					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
+					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
 						Credentials: &dto.S3ApplicationCredentialsUpdateInput{
-							Endpoint:  util.NilUri("http://localhost:9191"),
-							IsSecure:  util.NilBool(false),
-							AccessKey: util.NilString("minio"),
-							SecretKey: util.NilString("minio"),
+							Endpoint:  scalar.NilUri("http://localhost:9191"),
+							Bucket:    scalar.NilString("test"),
+							IsSecure:  scalar.NilBool(false),
+							AccessKey: scalar.NilString("minio"),
+							SecretKey: scalar.NilString("minio"),
 						},
 					})
 
 					ass.NoError(err)
 					ass.NotNil(oUpdate)
+
+					// reload & assert
+					{
+						cred, err := this.CoreApp.Resolver.Credentials(ctx, app)
+						ass.NoError(err)
+						ass.Equal("http://localhost:9191", string(cred.Endpoint))
+						ass.Equal("test", cred.Bucket)
+						ass.Equal("minio", cred.AccessKey)
+						ass.NotEqual("minio", cred.SecretKey, "value is encrypted")
+						ass.Equal(false, cred.IsSecure)
+					}
+				})
+
+				t.Run("Policies", func(t *testing.T) {
+					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
+					policies := []model.Policy{}
+					err := this.db.Table(connect.TableIntegrationS3Policy).Where("application_id = ?", oCreate.App.ID).Find(&policies).Error
+					ass.NoError(err)
+
+					// before update
+					{
+						ass.Equal(3, len(policies))
+						ass.Equal(policies[0].Kind, model.PolicyKindFileExtensions)
+						ass.Equal(policies[1].Kind, model.PolicyKindRateLimit)
+						ass.Equal(policies[2].Kind, model.PolicyKindRateLimit)
+						ass.Equal(policies[0].Value, "jpeg gif png webp")
+						ass.Equal(policies[1].Value, "1MB/user/hour")
+						ass.Equal(policies[2].Value, "1GB/namespace/hour")
+					}
+
+					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
+						Id:      app.ID,
+						Version: app.Version,
+						Policies: &dto.S3ApplicationPolicyMutationInput{
+							Create: []dto.S3ApplicationPolicyCreateInput{
+								{
+									Kind:  model.PolicyKindFileExtensions,
+									Value: "raw",
+								},
+							},
+							Update: []dto.S3ApplicationPolicyUpdateInput{
+								{
+									Id:    policies[1].ID,
+									Value: "2MB/user/hour",
+								},
+							},
+							Delete: []dto.S3ApplicationPolicyDeleteInput{
+								{
+									Id: policies[2].ID,
+								},
+							},
+						},
+					})
+
+					ass.NoError(err)
+					ass.NotNil(oUpdate)
+
+					// after update: add 1, update 1, remove 1
+					{
+						policies, err := this.CoreApp.Resolver.Polices(ctx, app)
+						ass.NoError(err)
+						ass.Equal(3, len(policies))
+						ass.Equal(policies[0].Kind, model.PolicyKindFileExtensions)
+						ass.Equal(policies[1].Kind, model.PolicyKindRateLimit)
+						ass.Equal(policies[2].Kind, model.PolicyKindFileExtensions)
+						ass.Equal(policies[0].Value, "jpeg gif png webp")
+						ass.Equal(policies[1].Value, "2MB/user/hour")
+						ass.Equal(policies[2].Value, "raw")
+					}
 				})
 			})
 
 			t.Run("delete", func(t *testing.T) {
-				app, _ := this.coreApp.Load(ctx, oCreate.App.ID)
+				app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
 				now := time.Now()
-				oDelete, err := this.coreApp.Delete(ctx, dto.S3ApplicationDeleteInput{
+				oDelete, err := this.CoreApp.Delete(ctx, dto.S3ApplicationDeleteInput{
 					Id:      app.ID,
 					Version: app.Version,
 				})
@@ -158,6 +228,33 @@ func Test(t *testing.T) {
 				ass.NotNil(oDelete)
 				ass.True(now.UnixNano() <= oDelete.App.DeletedAt.UnixNano())
 			})
+
+			t.Run("upload token", func(t *testing.T) {
+				ctx = context.WithValue(ctx, util.CxtKeyClaims, &util.Claims{
+					StandardClaims: jwt.StandardClaims{
+						Audience: this.id.MustULID(),
+						Id:       this.id.MustULID(),
+						Subject:  this.id.MustULID(),
+					},
+					Kind: util.KindAuthenticated,
+				})
+
+				formData, err := this.CoreApp.Resolver.S3UploadToken(ctx, dto.S3UploadTokenInput{
+					ApplicationId: oCreate.App.ID,
+					FilePath:      "/path/to/image.png",
+					ContentType:   scalar.ImagePNG,
+				})
+
+				ass.NoError(err)
+				ass.Equal(formData["bucket"], "test")
+				ass.Equal(formData["key"], "/path/to/image.png")
+				ass.Equal(formData["Content-Type"], string(scalar.ImagePNG))
+				ass.NotEmpty(formData["policy"])
+				ass.NotEmpty(formData["x-amz-credential"])
+				ass.NotEmpty(formData["x-amz-meta-nid"])
+				ass.NotEmpty(formData["x-amz-signature"])
+			})
 		})
+
 	})
 }
