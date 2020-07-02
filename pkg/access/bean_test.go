@@ -8,6 +8,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 
+	"bean/components/claim"
 	"bean/components/conf"
 	"bean/pkg/access/api/fixtures"
 	"bean/pkg/access/model/dto"
@@ -61,9 +62,9 @@ func Test_Create(t *testing.T) {
 	ass.NoError(err)
 
 	// create namespace
-	ctx = context.WithValue(ctx, util.CxtKeyClaims, &util.Claims{
+	ctx = context.WithValue(ctx, claim.ContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
-		Kind:           util.KindAuthenticated,
+		Kind:           claim.KindAuthenticated,
 	})
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	oNamespace, err := this.namespace.NamespaceCreate(ctx, iNamespace)
@@ -127,7 +128,7 @@ func Test_Create(t *testing.T) {
 			})
 
 			ass.NoError(err)
-			ass.Equal(util.KindOTLT, oGenerate.Session.Kind)
+			ass.Equal(claim.KindOTLT, oGenerate.Session.Kind)
 
 			// Use it
 			{
@@ -138,7 +139,7 @@ func Test_Create(t *testing.T) {
 				})
 
 				ass.NoError(err)
-				ass.Equal(util.KindAuthenticated, out.Session.Kind)
+				ass.Equal(claim.KindAuthenticated, out.Session.Kind)
 
 				// load again -> should not be found
 				{
@@ -181,9 +182,9 @@ func Test_Query(t *testing.T) {
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := this.user.Resolvers.Mutation.UserCreate(ctx, iUser)
 
-	ctx = context.WithValue(ctx, util.CxtKeyClaims, &util.Claims{
+	ctx = context.WithValue(ctx, claim.ContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
-		Kind:           util.KindAuthenticated,
+		Kind:           claim.KindAuthenticated,
 	})
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	oNamespace, _ := this.namespace.NamespaceCreate(ctx, iNamespace)
@@ -223,9 +224,9 @@ func Test_Archive(t *testing.T) {
 
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := this.user.Resolvers.Mutation.UserCreate(ctx, iUser)
-	ctx = context.WithValue(ctx, util.CxtKeyClaims, &util.Claims{
+	ctx = context.WithValue(ctx, claim.ContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
-		Kind:           util.KindAuthenticated,
+		Kind:           claim.KindAuthenticated,
 	})
 	iNamespace := fNamespace.NamespaceCreateInputFixture(false)
 	oNamespace, _ := this.namespace.NamespaceCreate(ctx, iNamespace)

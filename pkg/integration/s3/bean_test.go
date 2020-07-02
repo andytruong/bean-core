@@ -8,6 +8,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 
+	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
@@ -228,32 +229,62 @@ func Test(t *testing.T) {
 				ass.NotNil(oDelete)
 				ass.True(now.UnixNano() <= oDelete.App.DeletedAt.UnixNano())
 			})
-
-			t.Run("upload token", func(t *testing.T) {
-				ctx = context.WithValue(ctx, util.CxtKeyClaims, &util.Claims{
-					StandardClaims: jwt.StandardClaims{
-						Audience: this.id.MustULID(),
-						Id:       this.id.MustULID(),
-						Subject:  this.id.MustULID(),
-					},
-					Kind: util.KindAuthenticated,
-				})
-
-				formData, err := this.CoreApp.Resolver.S3UploadToken(ctx, dto.S3UploadTokenInput{
-					ApplicationId: oCreate.App.ID,
-					FilePath:      "/path/to/image.png",
-					ContentType:   scalar.ImagePNG,
-				})
-
-				ass.NoError(err)
-				ass.Equal(formData["bucket"], "test")
-				ass.Equal(formData["key"], "/path/to/image.png")
-				ass.Equal(formData["Content-Type"], string(scalar.ImagePNG))
-				ass.NotEmpty(formData["policy"])
-				ass.NotEmpty(formData["x-amz-credential"])
-				ass.NotEmpty(formData["x-amz-meta-nid"])
-				ass.NotEmpty(formData["x-amz-signature"])
-			})
 		})
 	})
+}
+
+func Test_UploadToken(t *testing.T) {
+	ass := assert.New(t)
+	this := bean()
+	ctx := context.WithValue(context.Background(), claim.ContextKey, &claim.Payload{
+		StandardClaims: jwt.StandardClaims{
+			Audience: this.id.MustULID(),
+			Id:       this.id.MustULID(),
+			Subject:  this.id.MustULID(),
+		},
+		Kind: claim.KindAuthenticated,
+	})
+
+	oCreate, err := this.CoreApp.Create(ctx, &dto.S3ApplicationCreateInput{
+		IsActive: false,
+		Credentials: dto.S3ApplicationCredentialsCreateInput{
+			Endpoint:  "http://localhost:9000",
+			Bucket:    "test",
+			IsSecure:  false,
+			AccessKey: "minioadmin",
+			SecretKey: "minioadmin",
+		},
+		Policies: []dto.S3ApplicationPolicyCreateInput{
+			{
+				Kind:  model.PolicyKindFileExtensions,
+				Value: "jpeg gif png webp",
+			},
+			{
+				Kind:  model.PolicyKindRateLimit,
+				Value: "1MB/user/hour",
+			},
+			{
+				Kind:  model.PolicyKindRateLimit,
+				Value: "1GB/namespace/hour",
+			},
+		},
+	})
+
+	ass.NoError(err)
+	ass.NotNil(oCreate)
+
+	formData, err := this.CoreApp.Resolver.S3UploadToken(ctx, dto.S3UploadTokenInput{
+		ApplicationId: oCreate.App.ID,
+		FilePath:      "/path/to/image.png",
+		ContentType:   scalar.ImagePNG,
+	})
+
+	ass.NoError(err)
+	ass.Equal(formData["bucket"], "test")
+	ass.Equal(formData["key"], "/path/to/image.png")
+	ass.Equal(formData["Content-Type"], string(scalar.ImagePNG))
+	ass.NotEmpty(formData["policy"])
+	ass.NotEmpty(formData["x-amz-credential"])
+	ass.NotEmpty(formData["x-amz-meta-nid"])
+	ass.NotEmpty(formData["x-amz-signature"])
 }

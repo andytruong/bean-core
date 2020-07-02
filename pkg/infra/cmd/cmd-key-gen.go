@@ -12,8 +12,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 
+	"bean/components/claim"
 	"bean/pkg/infra"
-	"bean/pkg/util"
 )
 
 func KeyGenCommand(_ *infra.Can) *cli.Command {
@@ -39,7 +39,7 @@ func KeyGenCommand(_ *infra.Can) *cli.Command {
 func verify() error {
 	// public key
 	{
-		pub, err := util.ParseRsaPublicKeyFromFile("resources/keys/id_rsa.pub")
+		pub, err := claim.ParseRsaPublicKeyFromFile("resources/keys/id_rsa.pub")
 		if nil != pub && err == nil {
 			fmt.Println("Public key: 🆗 ")
 		} else {

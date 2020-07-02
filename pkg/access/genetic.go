@@ -9,6 +9,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
+	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/pkg/util"
 )
@@ -82,7 +83,7 @@ func (this *Genetic) GetParseKey() (interface{}, error) {
 		this.mutex.Lock()
 		defer this.mutex.Unlock()
 
-		pub, err := util.ParseRsaPublicKeyFromFile(this.Jwt.PublicKey.String())
+		pub, err := claim.ParseRsaPublicKeyFromFile(this.Jwt.PublicKey.String())
 		if err != nil {
 			return nil, err
 		} else {

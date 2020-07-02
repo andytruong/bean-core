@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 
+	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
@@ -203,7 +204,7 @@ func Test_Variable(t *testing.T) {
 
 		t.Run("on writable bucket", func(t *testing.T) {
 			userId := this.id.MustULID()
-			ctx := context.WithValue(context.Background(), util.CxtKeyClaims, &util.Claims{
+			ctx := context.WithValue(context.Background(), claim.ContextKey, &claim.Payload{
 				StandardClaims: jwt.StandardClaims{Subject: userId},
 			})
 			tx := db.Begin()
@@ -247,9 +248,9 @@ func Test_Variable(t *testing.T) {
 
 		setup := func(access scalar.AccessMode) (context.Context, *model.ConfigBucket, *model.ConfigVariable) {
 			authorId := this.id.MustULID()
-			authorClaims := &util.Claims{}
+			authorClaims := &claim.Payload{}
 			authorClaims.Subject = authorId
-			authorCtx := context.WithValue(context.Background(), util.CxtKeyClaims, authorClaims)
+			authorCtx := context.WithValue(context.Background(), claim.ContextKey, authorClaims)
 
 			// create private bucket
 			oBucketCreate, err := this.CoreBucket.Create(tx, dto.BucketCreateInput{

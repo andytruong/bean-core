@@ -6,9 +6,9 @@ import (
 
 	"github.com/minio/minio-go/v6"
 
+	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/pkg/integration/s3/model"
-	"bean/pkg/util"
 )
 
 type coreUpload struct {
@@ -16,7 +16,7 @@ type coreUpload struct {
 
 func (this *coreUpload) sign(
 	ctx context.Context,
-	claims util.Claims,
+	claims claim.Payload,
 	app *model.Application,
 	bucket string,
 	filePath string,
