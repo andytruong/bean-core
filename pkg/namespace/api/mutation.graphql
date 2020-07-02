@@ -2,7 +2,7 @@
 # Create namespace
 # ---------------------
 extend type Mutation {
-	namespaceCreate(input: NamespaceCreateInput!): NamespaceCreateOutcome
+	namespaceCreate(input: NamespaceCreateInput!): NamespaceCreateOutcome!
 }
 
 input NamespaceCreateInput {
@@ -42,7 +42,7 @@ type NamespaceCreateOutcome {
 # Update namespace
 # ---------------------
 extend type Mutation {
-	namespaceUpdate(input: NamespaceUpdateInput!): Boolean
+	namespaceUpdate(input: NamespaceUpdateInput!): NamespaceCreateOutcome!
 }
 
 input NamespaceUpdateInput {

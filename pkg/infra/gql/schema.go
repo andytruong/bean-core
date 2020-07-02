@@ -318,7 +318,7 @@ type MutationResolver interface {
 	NamespaceMembershipCreate(ctx context.Context, input dto.NamespaceMembershipCreateInput) (*dto.NamespaceMembershipCreateOutcome, error)
 	NamespaceMembershipUpdate(ctx context.Context, input dto.NamespaceMembershipUpdateInput) (*dto.NamespaceMembershipCreateOutcome, error)
 	NamespaceCreate(ctx context.Context, input dto.NamespaceCreateInput) (*dto.NamespaceCreateOutcome, error)
-	NamespaceUpdate(ctx context.Context, input dto.NamespaceUpdateInput) (*bool, error)
+	NamespaceUpdate(ctx context.Context, input dto.NamespaceUpdateInput) (*dto.NamespaceCreateOutcome, error)
 	UserCreate(ctx context.Context, input *dto3.UserCreateInput) (*dto3.UserMutationOutcome, error)
 	UserUpdate(ctx context.Context, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error)
 	S3ApplicationCreate(ctx context.Context, input *dto1.S3ApplicationCreateInput) (*dto1.S3ApplicationMutationOutcome, error)
@@ -1825,7 +1825,7 @@ type MembershipInfo {
 # Create namespace
 # ---------------------
 extend type Mutation {
-	namespaceCreate(input: NamespaceCreateInput!): NamespaceCreateOutcome
+	namespaceCreate(input: NamespaceCreateInput!): NamespaceCreateOutcome!
 }
 
 input NamespaceCreateInput {
@@ -1865,7 +1865,7 @@ type NamespaceCreateOutcome {
 # Update namespace
 # ---------------------
 extend type Mutation {
-	namespaceUpdate(input: NamespaceUpdateInput!): Boolean
+	namespaceUpdate(input: NamespaceUpdateInput!): NamespaceCreateOutcome!
 }
 
 input NamespaceUpdateInput {
@@ -4677,11 +4677,14 @@ func (ec *executionContext) _Mutation_namespaceCreate(ctx context.Context, field
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*dto.NamespaceCreateOutcome)
 	fc.Result = res
-	return ec.marshalONamespaceCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx, field.Selections, res)
+	return ec.marshalNNamespaceCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_namespaceUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4715,11 +4718,14 @@ func (ec *executionContext) _Mutation_namespaceUpdate(ctx context.Context, field
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*dto.NamespaceCreateOutcome)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalNNamespaceCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10116,8 +10122,14 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "namespaceCreate":
 			out.Values[i] = ec._Mutation_namespaceCreate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "namespaceUpdate":
 			out.Values[i] = ec._Mutation_namespaceUpdate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "userCreate":
 			out.Values[i] = ec._Mutation_userCreate(ctx, field)
 		case "userUpdate":
@@ -11548,6 +11560,20 @@ func (ec *executionContext) unmarshalNNamespaceCreateInputObject2beanᚋpkgᚋna
 	return ec.unmarshalInputNamespaceCreateInputObject(ctx, v)
 }
 
+func (ec *executionContext) marshalNNamespaceCreateOutcome2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto.NamespaceCreateOutcome) graphql.Marshaler {
+	return ec._NamespaceCreateOutcome(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNNamespaceCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.NamespaceCreateOutcome) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._NamespaceCreateOutcome(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNNamespaceFeaturesInput2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceFeaturesInput(ctx context.Context, v interface{}) (dto.NamespaceFeaturesInput, error) {
 	return ec.unmarshalInputNamespaceFeaturesInput(ctx, v)
 }
@@ -12562,17 +12588,6 @@ func (ec *executionContext) marshalONamespace2ᚖbeanᚋpkgᚋnamespaceᚋmodel�
 		return graphql.Null
 	}
 	return ec._Namespace(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalONamespaceCreateOutcome2beanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto.NamespaceCreateOutcome) graphql.Marshaler {
-	return ec._NamespaceCreateOutcome(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalONamespaceCreateOutcome2ᚖbeanᚋpkgᚋnamespaceᚋmodelᚋdtoᚐNamespaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.NamespaceCreateOutcome) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._NamespaceCreateOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalONamespaceFeatures2beanᚋpkgᚋnamespaceᚋmodelᚐNamespaceFeatures(ctx context.Context, sel ast.SelectionSet, v model1.NamespaceFeatures) graphql.Marshaler {
