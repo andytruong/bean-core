@@ -5,7 +5,7 @@ Claims
 
 ```json
 {
-	"aud": "Namespace ID",   Audience  string `json:""`
+	"aud": "Namespace ID",
 	"exp": "ExpiresAt int64",
 	"jti": "Session ID",
 	"iat": "IssuedAt  int64",
