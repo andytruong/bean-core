@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -59,7 +60,8 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	Constraint func(ctx context.Context, obj interface{}, next graphql.Resolver, maxLength *int, minLength *int) (res interface{}, err error)
+	Constraint  func(ctx context.Context, obj interface{}, next graphql.Resolver, maxLength *int, minLength *int) (res interface{}, err error)
+	RequireAuth func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -163,6 +165,7 @@ type ComplexityRoot struct {
 		Ping                      func(childComplexity int) int
 		S3ApplicationCreate       func(childComplexity int, input *dto1.S3ApplicationCreateInput) int
 		S3ApplicationUpdate       func(childComplexity int, input *dto1.S3ApplicationUpdateInput) int
+		S3UploadToken             func(childComplexity int, input dto1.S3UploadTokenInput) int
 		SessionArchive            func(childComplexity int, token string) int
 		SessionCreate             func(childComplexity int, input *dto2.SessionCreateInput) int
 		UserCreate                func(childComplexity int, input *dto3.UserCreateInput) int
@@ -319,6 +322,7 @@ type MutationResolver interface {
 	UserUpdate(ctx context.Context, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error)
 	S3ApplicationCreate(ctx context.Context, input *dto1.S3ApplicationCreateInput) (*dto1.S3ApplicationMutationOutcome, error)
 	S3ApplicationUpdate(ctx context.Context, input *dto1.S3ApplicationUpdateInput) (*dto1.S3ApplicationMutationOutcome, error)
+	S3UploadToken(ctx context.Context, input dto1.S3UploadTokenInput) (string, error)
 }
 type NamespaceResolver interface {
 	DomainNames(ctx context.Context, obj *model1.Namespace) (*model1.DomainNames, error)
@@ -856,6 +860,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.S3ApplicationUpdate(childComplexity, args["input"].(*dto1.S3ApplicationUpdateInput)), true
+
+	case "Mutation.S3UploadToken":
+		if e.complexity.Mutation.S3UploadToken == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_S3UploadToken_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.S3UploadToken(childComplexity, args["input"].(dto1.S3UploadTokenInput)), true
 
 	case "Mutation.sessionArchive":
 		if e.complexity.Mutation.SessionArchive == nil {
@@ -1505,7 +1521,9 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	&ast.Source{Name: "pkg/util/api/directives.graphql", Input: `directive @constraint(
+	&ast.Source{Name: "pkg/util/api/directives.graphql", Input: `directive @requireAuth on FIELD_DEFINITION
+
+directive @constraint(
 	maxLength: Int,
 	minLength: Int,
 ) on INPUT_FIELD_DEFINITION
@@ -2068,6 +2086,19 @@ input S3ApplicationPolicyDeleteInput {
 	id: ID!
 }
 `, BuiltIn: false},
+	&ast.Source{Name: "pkg/integration/s3/api/upload.graphql", Input: `# ---------------------
+# Upload token
+# ---------------------
+extend type Mutation  {
+	S3UploadToken(input: S3UploadTokenInput!): String! @requireAuth
+}
+
+input S3UploadTokenInput {
+	applicationId: ID!
+	filePath: Uri! @constraint(minLength: 7, maxLength: 128)
+	contentType: ContentType!
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -2117,6 +2148,20 @@ func (ec *executionContext) field_Mutation_S3ApplicationUpdate_args(ctx context.
 	var arg0 *dto1.S3ApplicationUpdateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		arg0, err = ec.unmarshalOS3ApplicationUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationUpdateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_S3UploadToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 dto1.S3UploadTokenInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNS3UploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadTokenInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -4793,6 +4838,67 @@ func (ec *executionContext) _Mutation_S3ApplicationUpdate(ctx context.Context, f
 	res := resTmp.(*dto1.S3ApplicationMutationOutcome)
 	fc.Result = res
 	return ec.marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_S3UploadToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_S3UploadToken_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().S3UploadToken(rctx, args["input"].(dto1.S3UploadTokenInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.RequireAuth == nil {
+				return nil, errors.New("directive requireAuth is not implemented")
+			}
+			return ec.directives.RequireAuth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Namespace_id(ctx context.Context, field graphql.CollectedField, obj *model1.Namespace) (ret graphql.Marshaler) {
@@ -8940,6 +9046,59 @@ func (ec *executionContext) unmarshalInputS3ApplicationUpdateInput(ctx context.C
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputS3UploadTokenInput(ctx context.Context, obj interface{}) (dto1.S3UploadTokenInput, error) {
+	var it dto1.S3UploadTokenInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "applicationId":
+			var err error
+			it.ApplicationId, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "filePath":
+			var err error
+			directive0 := func(ctx context.Context) (interface{}, error) {
+				return ec.unmarshalNUri2beanᚋpkgᚋutilᚋapiᚋscalarᚐUri(ctx, v)
+			}
+			directive1 := func(ctx context.Context) (interface{}, error) {
+				maxLength, err := ec.unmarshalOInt2ᚖint(ctx, 128)
+				if err != nil {
+					return nil, err
+				}
+				minLength, err := ec.unmarshalOInt2ᚖint(ctx, 7)
+				if err != nil {
+					return nil, err
+				}
+				if ec.directives.Constraint == nil {
+					return nil, errors.New("directive constraint is not implemented")
+				}
+				return ec.directives.Constraint(ctx, obj, directive0, maxLength, minLength)
+			}
+
+			tmp, err := directive1(ctx)
+			if err != nil {
+				return it, err
+			}
+			if data, ok := tmp.(scalar.Uri); ok {
+				it.FilePath = data
+			} else {
+				return it, fmt.Errorf(`unexpected type %T from directive, should be bean/pkg/util/api/scalar.Uri`, tmp)
+			}
+		case "contentType":
+			var err error
+			it.ContentType, err = ec.unmarshalNContentType2beanᚋpkgᚋutilᚋapiᚋscalarᚐContentType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSessionCreateContextInput(ctx context.Context, obj interface{}) (dto2.SessionCreateContextInput, error) {
 	var it dto2.SessionCreateContextInput
 	var asMap = obj.(map[string]interface{})
@@ -9930,6 +10089,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "S3ApplicationUpdate":
 			out.Values[i] = ec._Mutation_S3ApplicationUpdate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "S3UploadToken":
+			out.Values[i] = ec._Mutation_S3UploadToken(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -11004,6 +11168,21 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNContentType2beanᚋpkgᚋutilᚋapiᚋscalarᚐContentType(ctx context.Context, v interface{}) (scalar.ContentType, error) {
+	tmp, err := graphql.UnmarshalString(v)
+	return scalar.ContentType(tmp), err
+}
+
+func (ec *executionContext) marshalNContentType2beanᚋpkgᚋutilᚋapiᚋscalarᚐContentType(ctx context.Context, sel ast.SelectionSet, v scalar.ContentType) graphql.Marshaler {
+	res := graphql.MarshalString(string(v))
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNCredentials2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐCredentials(ctx context.Context, sel ast.SelectionSet, v model.Credentials) graphql.Marshaler {
 	return ec._Credentials(ctx, sel, &v)
 }
@@ -11426,6 +11605,10 @@ func (ec *executionContext) unmarshalNS3ApplicationPolicyDeleteInput2beanᚋpkg�
 
 func (ec *executionContext) unmarshalNS3ApplicationPolicyUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInput(ctx context.Context, v interface{}) (dto1.S3ApplicationPolicyUpdateInput, error) {
 	return ec.unmarshalInputS3ApplicationPolicyUpdateInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNS3UploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadTokenInput(ctx context.Context, v interface{}) (dto1.S3UploadTokenInput, error) {
+	return ec.unmarshalInputS3UploadTokenInput(ctx, v)
 }
 
 func (ec *executionContext) marshalNSessionCreateOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto2.SessionCreateOutcome) graphql.Marshaler {

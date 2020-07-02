@@ -14,6 +14,7 @@ import (
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/user"
 	"bean/pkg/util"
+	"bean/pkg/util/api/scalar"
 	"bean/pkg/util/migrate"
 )
 
@@ -154,7 +155,7 @@ func (this NamespaceBean) NamespaceMembershipCreate(
 }
 
 func (this NamespaceBean) NamespaceMembershipUpdate(ctx context.Context, input dto.NamespaceMembershipUpdateInput) (*dto.NamespaceMembershipCreateOutcome, error) {
-	membership, err := this.Resolvers.Query.Membership(ctx, input.Id, util.NilString(input.Version))
+	membership, err := this.Resolvers.Query.Membership(ctx, input.Id, scalar.NilString(input.Version))
 	if nil != err {
 		return nil, err
 	}

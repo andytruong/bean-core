@@ -2,7 +2,6 @@ package fixtures
 
 import (
 	"bean/pkg/user/model/dto"
-	"bean/pkg/util"
 	"bean/pkg/util/api/scalar"
 	"bean/pkg/util/password"
 )
@@ -13,9 +12,9 @@ func NewUserCreateInputFixture() *dto.UserCreateInput {
 
 	return &dto.UserCreateInput{
 		Name: &dto.UserNameInput{
-			FirstName:     util.NilString("John"),
-			LastName:      util.NilString("Doe"),
-			PreferredName: util.NilString("Jon"),
+			FirstName:     scalar.NilString("John"),
+			LastName:      scalar.NilString("Doe"),
+			PreferredName: scalar.NilString("Jon"),
 		},
 		Emails: &dto.UserEmailsInput{
 			Primary: &dto.UserEmailInput{

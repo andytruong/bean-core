@@ -1,4 +1,4 @@
-package util
+package scalar
 
 import (
 	"time"

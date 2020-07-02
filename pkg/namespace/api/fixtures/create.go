@@ -3,8 +3,8 @@ package fixtures
 import (
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
-	"bean/pkg/util"
 	"bean/pkg/util/api"
+	"bean/pkg/util/api/scalar"
 )
 
 func NamespaceCreateInputFixture(register bool) dto.NamespaceCreateInput {
@@ -14,7 +14,7 @@ func NamespaceCreateInputFixture(register bool) dto.NamespaceCreateInput {
 
 	input.Object = dto.NamespaceCreateInputObject{
 		Kind:        model.NamespaceKindOrganisation,
-		Title:       util.NilString("Home of QA"),
+		Title:       scalar.NilString("Home of QA"),
 		IsActive:    true,
 		Language:    api.LanguageAU,
 		DomainNames: nil,
@@ -25,21 +25,21 @@ func NamespaceCreateInputFixture(register bool) dto.NamespaceCreateInput {
 
 	input.Object.DomainNames = &dto.DomainNamesInput{}
 	input.Object.DomainNames.Primary = &dto.DomainNameInput{
-		Verified: util.NilBool(true),
-		Value:    util.NilString("http://test.qa"),
-		IsActive: util.NilBool(true),
+		Verified: scalar.NilBool(true),
+		Value:    scalar.NilString("http://test.qa"),
+		IsActive: scalar.NilBool(true),
 	}
 
 	input.Object.DomainNames.Secondary = []*dto.DomainNameInput{
 		{
-			Verified: util.NilBool(true),
-			Value:    util.NilString("http://beta.test.qa"),
-			IsActive: util.NilBool(true),
+			Verified: scalar.NilBool(true),
+			Value:    scalar.NilString("http://beta.test.qa"),
+			IsActive: scalar.NilBool(true),
 		},
 		{
-			Verified: util.NilBool(true),
-			Value:    util.NilString("http://rc.test.qa"),
-			IsActive: util.NilBool(false),
+			Verified: scalar.NilBool(true),
+			Value:    scalar.NilString("http://rc.test.qa"),
+			IsActive: scalar.NilBool(false),
 		},
 	}
 

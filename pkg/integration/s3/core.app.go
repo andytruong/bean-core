@@ -9,6 +9,7 @@ import (
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 	"bean/pkg/util"
+	"bean/pkg/util/api/scalar"
 	"bean/pkg/util/connect"
 )
 
@@ -140,6 +141,6 @@ func (this *CoreApplication) Delete(ctx context.Context, in dto.S3ApplicationDel
 	return this.Update(ctx, &dto.S3ApplicationUpdateInput{
 		Id:       in.Id,
 		Version:  in.Version,
-		IsActive: util.NilBool(true),
+		IsActive: scalar.NilBool(true),
 	})
 }

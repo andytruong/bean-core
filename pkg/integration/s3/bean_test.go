@@ -108,7 +108,7 @@ func Test(t *testing.T) {
 					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:       app.ID,
 						Version:  app.Version,
-						IsActive: util.NilBool(true),
+						IsActive: scalar.NilBool(true),
 					})
 
 					ass.NoError(err)
@@ -121,7 +121,7 @@ func Test(t *testing.T) {
 					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
-						Slug:    util.NilString("test"),
+						Slug:    scalar.NilString("test"),
 					})
 
 					ass.NoError(err)
@@ -136,9 +136,9 @@ func Test(t *testing.T) {
 						Version: app.Version,
 						Credentials: &dto.S3ApplicationCredentialsUpdateInput{
 							Endpoint:  scalar.NilUri("http://localhost:9191"),
-							IsSecure:  util.NilBool(false),
-							AccessKey: util.NilString("minio"),
-							SecretKey: util.NilString("minio"),
+							IsSecure:  scalar.NilBool(false),
+							AccessKey: scalar.NilString("minio"),
+							SecretKey: scalar.NilString("minio"),
 						},
 					})
 
