@@ -40,11 +40,6 @@ func (this ModelResolver) Namespace(ctx context.Context, obj *model.Session) (*n
 }
 
 func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (string, error) {
-	key, err := this.config.GetSignKey()
-	if nil != err {
-		return "", errors.Wrap(util.ErrorConfig, err.Error())
-	}
-
 	roles, err := this.bean.namespace.MembershipResolver().FindRoles(ctx, session.UserId, session.NamespaceId)
 	if nil != err {
 		return "", err
@@ -71,15 +66,18 @@ func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (stri
 		},
 	}
 
-	signedString, err := jwt.
-		NewWithClaims(this.config.signMethod(), claims).
-		SignedString(key)
+	return this.Sign(claims)
+}
 
+func (this ModelResolver) Sign(claims jwt.Claims) (string, error) {
+	key, err := this.config.GetSignKey()
 	if nil != err {
-		return "", err
+		return "", errors.Wrap(util.ErrorConfig, err.Error())
 	}
 
-	return signedString, err
+	return jwt.
+		NewWithClaims(this.config.signMethod(), claims).
+		SignedString(key)
 }
 
 func (this ModelResolver) JwtValidation(authHeader string) (*claim.Payload, error) {
