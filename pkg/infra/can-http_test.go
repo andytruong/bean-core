@@ -16,7 +16,7 @@ func Test_Authorization(t *testing.T) {
 	ass := assert.New(t)
 	can := NewMockCan()
 	router := can.HttpRouter(mux.NewRouter())
-	
+
 	t.Run("ping without auth", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest("POST", "/query", strings.NewReader(`{ "query": "{ ping }" }`))
@@ -44,8 +44,8 @@ func Test_Authorization(t *testing.T) {
 		r.Header.Set("Content-Type", "application/json")
 		r.Header.Add("Authorization", func() string {
 			claims := jwt.StandardClaims{Id: "1"}
-			b, _ := can.beans.Access()
-			token, _ := b.SessionResolver.Sign(claims)
+			access, _ := can.beans.Access()
+			token, _ := access.Sign(claims)
 
 			return "Bearer " + token
 		}())

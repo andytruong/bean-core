@@ -5,6 +5,8 @@ import (
 	"path"
 	"runtime"
 
+	"github.com/dgrijalva/jwt-go"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -124,4 +126,15 @@ func (this *AccessBean) SessionArchive(ctx context.Context, token string) (*dto.
 
 func (this AccessBean) Session(ctx context.Context, token string) (*model.Session, error) {
 	return this.coreSession.Load(ctx, this.db, token)
+}
+
+func (this AccessBean) Sign(claims jwt.Claims) (string, error) {
+	key, err := this.genetic.GetSignKey()
+	if nil != err {
+		return "", errors.Wrap(util.ErrorConfig, err.Error())
+	}
+
+	return jwt.
+		NewWithClaims(this.genetic.signMethod(), claims).
+		SignedString(key)
 }

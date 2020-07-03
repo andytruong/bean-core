@@ -7,14 +7,12 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"bean/components/claim"
 	"bean/pkg/access/model"
 	namespace_model "bean/pkg/namespace/model"
 	user_model "bean/pkg/user/model"
-	"bean/pkg/util"
 )
 
 type ModelResolver struct {
@@ -66,18 +64,7 @@ func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (stri
 		},
 	}
 
-	return this.Sign(claims)
-}
-
-func (this ModelResolver) Sign(claims jwt.Claims) (string, error) {
-	key, err := this.config.GetSignKey()
-	if nil != err {
-		return "", errors.Wrap(util.ErrorConfig, err.Error())
-	}
-
-	return jwt.
-		NewWithClaims(this.config.signMethod(), claims).
-		SignedString(key)
+	return this.bean.Sign(claims)
 }
 
 func (this ModelResolver) JwtValidation(authHeader string) (*claim.Payload, error) {
