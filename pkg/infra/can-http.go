@@ -20,23 +20,9 @@ import (
 )
 
 func (this *Can) HttpRouter(router *mux.Router) *mux.Router {
-	router.HandleFunc("/query", this.handleQueryRequest())
-
-	if this.HttpServer.GraphQL.Playround.Enabled {
-		hdl := playground.Handler(this.HttpServer.GraphQL.Playround.Title, "/query")
-		router.Handle(this.HttpServer.GraphQL.Playround.Path, hdl)
-	}
-
-	return router
-}
-
-// Handle request to /query.
-//  Verify JWT authorization if provided.
-func (this *Can) handleQueryRequest() func(http.ResponseWriter, *http.Request) {
 	cnf := gql.Config{Resolvers: this.graph}
 	schema := gql.NewExecutableSchema(cnf)
 	srv := handler.New(schema)
-
 	if this.HttpServer.GraphQL.Transports.Post {
 		srv.AddTransport(transport.POST{})
 	}
@@ -49,6 +35,19 @@ func (this *Can) handleQueryRequest() func(http.ResponseWriter, *http.Request) {
 		srv.Use(extension.Introspection{})
 	}
 
+	router.HandleFunc("/query", this.handleQueryRequest(srv))
+
+	if this.HttpServer.GraphQL.Playround.Enabled {
+		hdl := playground.Handler(this.HttpServer.GraphQL.Playround.Title, "/query")
+		router.Handle(this.HttpServer.GraphQL.Playround.Path, hdl)
+	}
+
+	return router
+}
+
+// Handle request to /query.
+//  Verify JWT authorization if provided.
+func (this *Can) handleQueryRequest(srv *handler.Server) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := this.beforeServeHTTP(r)
 		if nil != err {
