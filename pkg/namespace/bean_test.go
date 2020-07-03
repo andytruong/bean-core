@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	log "gorm.io/gorm/logger"
 
+	"bean/components/claim"
 	"bean/components/conf"
 	"bean/components/scalar"
 	"bean/pkg/namespace/api/fixtures"
@@ -60,14 +61,14 @@ func Test_Namespace(t *testing.T) {
 		t.Run("happy case", func(t *testing.T) {
 			now := time.Now()
 
-			claims := &util.Claims{
+			claims := &claim.Payload{
 				StandardClaims: jwt.StandardClaims{
 					Audience: this.id.MustULID(),
 					Subject:  this.id.MustULID(),
 				},
-				Kind: util.KindAuthenticated,
+				Kind: claim.KindAuthenticated,
 			}
-			ctx := context.WithValue(context.Background(), util.CxtKeyClaims, claims)
+			ctx := context.WithValue(context.Background(), claim.ContextKey, claims)
 			out, err := this.NamespaceCreate(ctx, iCreate)
 			ass.NoError(err)
 			ass.Nil(out.Errors)

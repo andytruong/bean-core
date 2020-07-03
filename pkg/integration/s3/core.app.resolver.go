@@ -6,6 +6,7 @@ import (
 
 	"github.com/minio/minio-go/v6"
 
+	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
@@ -34,7 +35,7 @@ func (this *ApplicationResolver) Credentials(ctx context.Context, obj *model.App
 
 func (this *ApplicationResolver) S3UploadToken(ctx context.Context, in dto.S3UploadTokenInput) (map[string]interface{}, error) {
 	// get claims from context
-	claims, ok := ctx.Value(util.CxtKeyClaims).(*util.Claims)
+	claims, ok := ctx.Value(claim.ContextKey).(*claim.Payload)
 	if !ok {
 		return nil, util.ErrorAuthRequired
 	}

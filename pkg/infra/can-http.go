@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
+	"bean/components/claim"
 	"bean/pkg/infra/gql"
 	"bean/pkg/util"
 )
@@ -82,7 +83,7 @@ func (this *Can) beforeServeHTTP(r *http.Request) error {
 		if err != nil {
 			return err
 		} else if nil != claims {
-			ctx := context.WithValue(r.Context(), util.CxtKeyClaims, claims)
+			ctx := context.WithValue(r.Context(), claim.ContextKey, claims)
 			r = r.WithContext(ctx)
 		}
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"bean/components/claim"
 	"bean/pkg/access/model"
 	namespace_model "bean/pkg/namespace/model"
 	user_model "bean/pkg/user/model"
@@ -49,7 +50,7 @@ func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (stri
 		return "", err
 	}
 
-	claims := util.Claims{
+	claims := claim.Payload{
 		Kind: session.Kind,
 		Roles: func() []string {
 			var roleNames []string
@@ -81,14 +82,14 @@ func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (stri
 	return signedString, err
 }
 
-func (this ModelResolver) JwtValidation(authHeader string) (*util.Claims, error) {
+func (this ModelResolver) JwtValidation(authHeader string) (*claim.Payload, error) {
 	chunks := strings.Split(authHeader, " ")
 	authHeader = chunks[len(chunks)-1]
 
 	if parts := strings.Split(authHeader, "."); 3 == len(parts) {
 		token, err := jwt.ParseWithClaims(
 			authHeader,
-			&util.Claims{},
+			&claim.Payload{},
 			func(token *jwt.Token) (interface{}, error) {
 				return this.config.GetParseKey()
 			},
@@ -97,7 +98,7 @@ func (this ModelResolver) JwtValidation(authHeader string) (*util.Claims, error)
 		if nil != err {
 			return nil, err
 		} else {
-			return token.Claims.(*util.Claims), nil
+			return token.Claims.(*claim.Payload), nil
 		}
 	}
 

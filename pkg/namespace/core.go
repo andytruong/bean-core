@@ -7,6 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
@@ -81,7 +82,7 @@ func (this *Core) create(tx *gorm.DB, in dto.NamespaceCreateInput) (*model.Names
 	if nil != in.Object.ParentId {
 		namespace.ParentID = in.Object.ParentId
 	} else {
-		claims := util.CxtKeyClaims.Actor(tx.Statement.Context)
+		claims := claim.ContextToPayload(tx.Statement.Context)
 		if nil != claims {
 			parentNamespaceId := claims.NamespaceId()
 			namespace.ParentID = &parentNamespaceId
@@ -107,7 +108,7 @@ func (this *Core) createRelationships(tx *gorm.DB, namespace *model.Namespace, i
 		}
 	}
 
-	claims := util.CxtKeyClaims.Actor(tx.Statement.Context)
+	claims := claim.ContextToPayload(tx.Statement.Context)
 	if nil != claims {
 		// setup roles
 		//  - create 'owner' role for the new namespace
