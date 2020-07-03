@@ -7,14 +7,12 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"bean/components/claim"
 	"bean/pkg/access/model"
 	namespace_model "bean/pkg/namespace/model"
 	user_model "bean/pkg/user/model"
-	"bean/pkg/util"
 )
 
 type ModelResolver struct {
@@ -40,11 +38,6 @@ func (this ModelResolver) Namespace(ctx context.Context, obj *model.Session) (*n
 }
 
 func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (string, error) {
-	key, err := this.config.GetSignKey()
-	if nil != err {
-		return "", errors.Wrap(util.ErrorConfig, err.Error())
-	}
-
 	roles, err := this.bean.namespace.MembershipResolver().FindRoles(ctx, session.UserId, session.NamespaceId)
 	if nil != err {
 		return "", err
@@ -71,15 +64,7 @@ func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (stri
 		},
 	}
 
-	signedString, err := jwt.
-		NewWithClaims(this.config.signMethod(), claims).
-		SignedString(key)
-
-	if nil != err {
-		return "", err
-	}
-
-	return signedString, err
+	return this.bean.Sign(claims)
 }
 
 func (this ModelResolver) JwtValidation(authHeader string) (*claim.Payload, error) {
