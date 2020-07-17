@@ -26,12 +26,7 @@ http-server:
 # Database connections
 # ---------------------
 databases:
-  master:
-    driver: "${DB_DRIVER:sqlite3}"
-    url:    "${DB_MASTER_URL:data/db.sqlite}"
-  slave:
-    driver: "${DB_SLAVE_URL:sqlite3}"
-    url:    "${DB_SLAVE_URL:data/db.sqlite}"
+  $ref: "resources/config/env.${ENV:dev}/databases.yaml"
 
 # ---------------------
 # Beans configuration: Each bean may have its own config

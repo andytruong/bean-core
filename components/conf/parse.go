@@ -2,7 +2,6 @@ package conf
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"regexp"
 
@@ -10,7 +9,8 @@ import (
 )
 
 func ParseFile(path string, out interface{}) error {
-	content, err := ioutil.ReadFile(path)
+	content, err := ReadWithJSONPointers(path)
+
 	if nil != err {
 		return err
 	}

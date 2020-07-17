@@ -1,5 +1,5 @@
 test:
-	go test -mod=vendor ./pkg/... -race -v
+	go test -mod=vendor ./... -race -v
 
 server:
 	CONFIG=config.yaml go run -mod=vendor cmd/main.go http-server
@@ -17,6 +17,11 @@ clean:
 	go mod tidy
 	git fetch --prune origin
 	rm -rf ./pkg/infra/gql/__tmp__*
+
+
+
+
+
 
 
 

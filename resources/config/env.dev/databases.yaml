@@ -1,0 +1,7 @@
+master:
+  driver: "${DB_DRIVER:sqlite3}"
+  url:    "${DB_MASTER_URL:data/db.sqlite}"
+
+slave:
+  driver: "${DB_SLAVE_URL:sqlite3}"
+  url:    "${DB_SLAVE_URL:data/db.sqlite}"
