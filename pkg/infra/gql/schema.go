@@ -163,7 +163,6 @@ type ComplexityRoot struct {
 		NamespaceMembershipCreate func(childComplexity int, input dto.NamespaceMembershipCreateInput) int
 		NamespaceMembershipUpdate func(childComplexity int, input dto.NamespaceMembershipUpdateInput) int
 		NamespaceUpdate           func(childComplexity int, input dto.NamespaceUpdateInput) int
-		Ping                      func(childComplexity int) int
 		S3ApplicationCreate       func(childComplexity int, input *dto1.S3ApplicationCreateInput) int
 		S3ApplicationUpdate       func(childComplexity int, input *dto1.S3ApplicationUpdateInput) int
 		S3UploadToken             func(childComplexity int, input dto1.S3UploadTokenInput) int
@@ -213,7 +212,6 @@ type ComplexityRoot struct {
 		Membership  func(childComplexity int, id string, version *string) int
 		Memberships func(childComplexity int, first int, after *string, filters dto.MembershipsFilter) int
 		Namespace   func(childComplexity int, filters dto.NamespaceFilters) int
-		Ping        func(childComplexity int) int
 		Session     func(childComplexity int, token string) int
 		User        func(childComplexity int, id string) int
 	}
@@ -312,7 +310,6 @@ type MembershipConnectionResolver interface {
 	Edges(ctx context.Context, obj *model1.MembershipConnection) ([]*model1.MembershipEdge, error)
 }
 type MutationResolver interface {
-	Ping(ctx context.Context) (string, error)
 	SessionCreate(ctx context.Context, input *dto2.SessionCreateInput) (*dto2.SessionCreateOutcome, error)
 	SessionArchive(ctx context.Context, token string) (*dto2.SessionDeleteOutcome, error)
 	NamespaceMembershipCreate(ctx context.Context, input dto.NamespaceMembershipCreateInput) (*dto.NamespaceMembershipCreateOutcome, error)
@@ -332,7 +329,6 @@ type NamespaceResolver interface {
 	Parent(ctx context.Context, obj *model1.Namespace) (*model1.Namespace, error)
 }
 type QueryResolver interface {
-	Ping(ctx context.Context) (string, error)
 	Session(ctx context.Context, token string) (*model3.Session, error)
 	Membership(ctx context.Context, id string, version *string) (*model1.Membership, error)
 	Memberships(ctx context.Context, first int, after *string, filters dto.MembershipsFilter) (*model1.MembershipConnection, error)
@@ -831,13 +827,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.NamespaceUpdate(childComplexity, args["input"].(dto.NamespaceUpdateInput)), true
 
-	case "Mutation.ping":
-		if e.complexity.Mutation.Ping == nil {
-			break
-		}
-
-		return e.complexity.Mutation.Ping(childComplexity), true
-
 	case "Mutation.S3ApplicationCreate":
 		if e.complexity.Mutation.S3ApplicationCreate == nil {
 			break
@@ -1104,13 +1093,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Namespace(childComplexity, args["filters"].(dto.NamespaceFilters)), true
-
-	case "Query.ping":
-		if e.complexity.Query.Ping == nil {
-			break
-		}
-
-		return e.complexity.Query.Ping(childComplexity), true
 
 	case "Query.session":
 		if e.complexity.Query.Session == nil {
@@ -1565,14 +1547,6 @@ scalar CountryCode
 scalar EmailAddress
 scalar JWT
 scalar Map
-
-type Query {
-	ping: String!
-}
-
-type Mutation {
-	ping: String!
-}
 
 type Error {
 	code: ErrorCode
@@ -4448,40 +4422,6 @@ func (ec *executionContext) _MembershipInfo_startCursor(ctx context.Context, fie
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_ping(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Ping(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5621,40 +5561,6 @@ func (ec *executionContext) _Policy_value(ctx context.Context, field graphql.Col
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Value, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_ping(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Ping(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10095,11 +10001,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "ping":
-			out.Values[i] = ec._Mutation_ping(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "sessionCreate":
 			out.Values[i] = ec._Mutation_sessionCreate(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -10393,20 +10294,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "ping":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_ping(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "session":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

@@ -8,7 +8,6 @@ import (
 	"bean/pkg/integration/s3"
 	"bean/pkg/namespace"
 	"bean/pkg/user"
-	"bean/pkg/util/api"
 )
 
 type (
@@ -19,7 +18,6 @@ type (
 	}
 
 	resolvers struct {
-		*api.Resolver
 		*user.UserBean
 		*user.UserQueryResolver
 		*user.UserMutationResolver
