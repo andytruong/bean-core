@@ -2,15 +2,19 @@ package conf
 
 import (
 	"bytes"
-	"io/ioutil"
+	"errors"
 	"os"
 	"regexp"
 
 	"gopkg.in/yaml.v2"
 )
 
+var ErrExceededRefLimit = errors.New("exceeded limit of nested references")
+var refLimit = 1000
+
 func ParseFile(path string, out interface{}) error {
-	content, err := ioutil.ReadFile(path)
+	content, err := read(path)
+
 	if nil != err {
 		return err
 	}
