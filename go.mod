@@ -11,7 +11,7 @@ require (
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/lib/pq v1.6.0
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	github.com/minio/minio-go/v6 v6.0.57
+	github.com/minio/minio-go/v7 v7.0.1
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/oklog/ulid v1.3.1
 	github.com/pkg/errors v0.9.1

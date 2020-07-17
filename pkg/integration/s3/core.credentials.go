@@ -8,9 +8,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 
-	"github.com/minio/minio-go/v6"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"gorm.io/gorm"
 
 	"bean/pkg/integration/s3/model"
@@ -20,7 +22,8 @@ import (
 )
 
 type coreCredentials struct {
-	bean *S3IntegrationBean
+	bean      *S3IntegrationBean
+	transport http.RoundTripper
 }
 
 func (this *coreCredentials) loadByApplicationId(ctx context.Context, appId string) (*model.Credentials, error) {
@@ -163,21 +166,17 @@ func (this coreCredentials) decrypt(cryptoText string) string {
 	return fmt.Sprintf("%s", cipherText)
 }
 
-func (this *coreCredentials) client(credentials *model.Credentials) (*minio.Client, error) {
-	endpoint := string(credentials.Endpoint)
+func (this *coreCredentials) client(creds *model.Credentials) (*minio.Client, error) {
+	endpoint := string(creds.Endpoint)
 	endpoint = strings.Replace(endpoint, "http://", "", 1)
 	endpoint = strings.Replace(endpoint, "https://", "", 1)
 
-	client, err := minio.New(
+	return minio.New(
 		endpoint,
-		credentials.AccessKey,
-		this.decrypt(credentials.SecretKey),
-		credentials.IsSecure,
+		&minio.Options{
+			Creds:     credentials.NewStaticV4(creds.AccessKey, this.decrypt(creds.SecretKey), ""),
+			Secure:    creds.IsSecure,
+			Transport: this.transport,
+		},
 	)
-
-	if nil != err {
-		panic(err)
-	}
-
-	return client, err
 }

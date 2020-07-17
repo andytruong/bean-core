@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/minio/minio-go/v6"
+	"github.com/minio/minio-go/v7"
 
 	"bean/components/claim"
 	"bean/components/scalar"
@@ -66,7 +66,7 @@ func (this *ApplicationResolver) S3UploadToken(ctx context.Context, in dto.S3Upl
 
 			if nil != err {
 				return nil, err
-			} else if _, formData, err := client.PresignedPostPolicy(policy); nil != err {
+			} else if _, formData, err := client.PresignedPostPolicy(ctx, policy); nil != err {
 				return nil, err
 			} else {
 				response := map[string]interface{}{}
