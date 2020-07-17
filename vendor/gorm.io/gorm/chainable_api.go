@@ -2,6 +2,7 @@ package gorm
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"gorm.io/gorm/clause"
@@ -40,20 +41,30 @@ func (db *DB) Clauses(conds ...clause.Expression) (tx *DB) {
 	return
 }
 
+var tableRegexp = regexp.MustCompile(`(?i).+ AS (\w+)\s*$`)
+
 // Table specify the table you would like to run db operations
 func (db *DB) Table(name string) (tx *DB) {
 	tx = db.getInstance()
+	if strings.Contains(name, " ") {
+		tx.Statement.FullTable = name
+		if results := tableRegexp.FindStringSubmatch(name); len(results) == 2 {
+			tx.Statement.Table = results[1]
+			return
+		}
+	}
+
 	tx.Statement.Table = name
 	return
 }
 
 // Distinct specify distinct fields that you want querying
 func (db *DB) Distinct(args ...interface{}) (tx *DB) {
-	tx = db
+	tx = db.getInstance()
+	tx.Statement.Distinct = true
 	if len(args) > 0 {
 		tx = tx.Select(args[0], args[1:]...)
 	}
-	tx.Statement.Distinct = true
 	return tx
 }
 
@@ -91,6 +102,7 @@ func (db *DB) Select(query interface{}, args ...interface{}) (tx *DB) {
 					tx.Statement.Selects = append(tx.Statement.Selects, arg...)
 				default:
 					tx.Statement.AddClause(clause.Select{
+						Distinct:   db.Statement.Distinct,
 						Expression: clause.Expr{SQL: v, Vars: args},
 					})
 					return
@@ -98,6 +110,7 @@ func (db *DB) Select(query interface{}, args ...interface{}) (tx *DB) {
 			}
 		} else {
 			tx.Statement.AddClause(clause.Select{
+				Distinct:   db.Statement.Distinct,
 				Expression: clause.Expr{SQL: v, Vars: args},
 			})
 		}
@@ -142,7 +155,7 @@ func (db *DB) Not(query interface{}, args ...interface{}) (tx *DB) {
 func (db *DB) Or(query interface{}, args ...interface{}) (tx *DB) {
 	tx = db.getInstance()
 	if conds := tx.Statement.BuildCondition(query, args...); len(conds) > 0 {
-		tx.Statement.AddClause(clause.Where{Exprs: []clause.Expression{clause.Or(conds...)}})
+		tx.Statement.AddClause(clause.Where{Exprs: []clause.Expression{clause.Or(clause.And(conds...))}})
 	}
 	return
 }
@@ -162,8 +175,10 @@ func (db *DB) Joins(query string, args ...interface{}) (tx *DB) {
 // Group specify the group method on the find
 func (db *DB) Group(name string) (tx *DB) {
 	tx = db.getInstance()
+
+	fields := strings.FieldsFunc(name, utils.IsChar)
 	tx.Statement.AddClause(clause.GroupBy{
-		Columns: []clause.Column{{Name: name}},
+		Columns: []clause.Column{{Name: name, Raw: len(fields) != 1}},
 	})
 	return
 }
@@ -263,6 +278,11 @@ func (db *DB) Unscoped() (tx *DB) {
 func (db *DB) Raw(sql string, values ...interface{}) (tx *DB) {
 	tx = db.getInstance()
 	tx.Statement.SQL = strings.Builder{}
-	clause.Expr{SQL: sql, Vars: values}.Build(tx.Statement)
+
+	if strings.Contains(sql, "@") {
+		clause.NamedExpr{SQL: sql, Vars: values}.Build(tx.Statement)
+	} else {
+		clause.Expr{SQL: sql, Vars: values}.Build(tx.Statement)
+	}
 	return
 }

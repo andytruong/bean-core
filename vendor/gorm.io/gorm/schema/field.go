@@ -25,12 +25,12 @@ const (
 
 const (
 	Bool   DataType = "bool"
-	Int             = "int"
-	Uint            = "uint"
-	Float           = "float"
-	String          = "string"
-	Time            = "time"
-	Bytes           = "bytes"
+	Int    DataType = "int"
+	Uint   DataType = "uint"
+	Float  DataType = "float"
+	String DataType = "string"
+	Time   DataType = "time"
+	Bytes  DataType = "bytes"
 )
 
 type Field struct {
@@ -105,28 +105,30 @@ func (schema *Schema) ParseField(fieldStruct reflect.StructField) *Field {
 	// if field is valuer, used its value or first fields as data type
 	valuer, isValuer := fieldValue.Interface().(driver.Valuer)
 	if isValuer {
-		var overrideFieldValue bool
-		if v, err := valuer.Value(); v != nil && err == nil {
-			overrideFieldValue = true
-			fieldValue = reflect.ValueOf(v)
-		}
+		if _, ok := fieldValue.Interface().(GormDataTypeInterface); !ok {
+			var overrideFieldValue bool
+			if v, err := valuer.Value(); v != nil && err == nil {
+				overrideFieldValue = true
+				fieldValue = reflect.ValueOf(v)
+			}
 
-		if field.IndirectFieldType.Kind() == reflect.Struct {
-			for i := 0; i < field.IndirectFieldType.NumField(); i++ {
-				if !overrideFieldValue {
-					newFieldType := field.IndirectFieldType.Field(i).Type
-					for newFieldType.Kind() == reflect.Ptr {
-						newFieldType = newFieldType.Elem()
+			if field.IndirectFieldType.Kind() == reflect.Struct {
+				for i := 0; i < field.IndirectFieldType.NumField(); i++ {
+					if !overrideFieldValue {
+						newFieldType := field.IndirectFieldType.Field(i).Type
+						for newFieldType.Kind() == reflect.Ptr {
+							newFieldType = newFieldType.Elem()
+						}
+
+						fieldValue = reflect.New(newFieldType)
+						overrideFieldValue = true
 					}
 
-					fieldValue = reflect.New(newFieldType)
-					overrideFieldValue = true
-				}
-
-				// copy tag settings from valuer
-				for key, value := range ParseTagSetting(field.IndirectFieldType.Field(i).Tag.Get("gorm"), ";") {
-					if _, ok := field.TagSettings[key]; !ok {
-						field.TagSettings[key] = value
+					// copy tag settings from valuer
+					for key, value := range ParseTagSetting(field.IndirectFieldType.Field(i).Tag.Get("gorm"), ";") {
+						if _, ok := field.TagSettings[key]; !ok {
+							field.TagSettings[key] = value
+						}
 					}
 				}
 			}
@@ -179,22 +181,22 @@ func (schema *Schema) ParseField(fieldStruct reflect.StructField) *Field {
 	switch reflect.Indirect(fieldValue).Kind() {
 	case reflect.Bool:
 		field.DataType = Bool
-		if field.HasDefaultValue {
+		if field.HasDefaultValue && field.DefaultValue != "" {
 			field.DefaultValueInterface, _ = strconv.ParseBool(field.DefaultValue)
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		field.DataType = Int
-		if field.HasDefaultValue {
+		if field.HasDefaultValue && field.DefaultValue != "" {
 			field.DefaultValueInterface, _ = strconv.ParseInt(field.DefaultValue, 0, 64)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		field.DataType = Uint
-		if field.HasDefaultValue {
+		if field.HasDefaultValue && field.DefaultValue != "" {
 			field.DefaultValueInterface, _ = strconv.ParseUint(field.DefaultValue, 0, 64)
 		}
 	case reflect.Float32, reflect.Float64:
 		field.DataType = Float
-		if field.HasDefaultValue {
+		if field.HasDefaultValue && field.DefaultValue != "" {
 			field.DefaultValueInterface, _ = strconv.ParseFloat(field.DefaultValue, 64)
 		}
 	case reflect.String:
@@ -455,13 +457,13 @@ func (field *Field) setupValuerAndSetter() {
 
 			if valuer, ok := v.(driver.Valuer); ok {
 				if v, err = valuer.Value(); err == nil {
-					setter(value, v)
+					err = setter(value, v)
 				}
 			} else if reflectV.Kind() == reflect.Ptr {
 				if reflectV.IsNil() {
 					field.ReflectValueOf(value).Set(reflect.New(field.FieldType).Elem())
 				} else {
-					setter(value, reflectV.Elem().Interface())
+					err = setter(value, reflectV.Elem().Interface())
 				}
 			} else {
 				return fmt.Errorf("failed to set value %+v to field %v", v, field.Name)
@@ -479,7 +481,11 @@ func (field *Field) setupValuerAndSetter() {
 			case bool:
 				field.ReflectValueOf(value).SetBool(data)
 			case *bool:
-				field.ReflectValueOf(value).SetBool(*data)
+				if data != nil {
+					field.ReflectValueOf(value).SetBool(*data)
+				} else {
+					field.ReflectValueOf(value).SetBool(false)
+				}
 			case int64:
 				if data > 0 {
 					field.ReflectValueOf(value).SetBool(true)
@@ -655,7 +661,11 @@ func (field *Field) setupValuerAndSetter() {
 				case time.Time:
 					field.ReflectValueOf(value).Set(reflect.ValueOf(v))
 				case *time.Time:
-					field.ReflectValueOf(value).Set(reflect.ValueOf(v).Elem())
+					if data != nil {
+						field.ReflectValueOf(value).Set(reflect.ValueOf(data).Elem())
+					} else {
+						field.ReflectValueOf(value).Set(reflect.ValueOf(time.Time{}))
+					}
 				case string:
 					if t, err := now.Parse(data); err == nil {
 						field.ReflectValueOf(value).Set(reflect.ValueOf(t))
@@ -736,7 +746,7 @@ func (field *Field) setupValuerAndSetter() {
 						if reflectV.IsNil() {
 							field.ReflectValueOf(value).Set(reflect.New(field.FieldType).Elem())
 						} else {
-							field.Set(value, reflectV.Elem().Interface())
+							err = field.Set(value, reflectV.Elem().Interface())
 						}
 					} else {
 						fieldValue := field.ReflectValueOf(value)

@@ -27,7 +27,7 @@ func (this CoreVariable) access(ctx context.Context, db *gorm.DB, bucketId strin
 	if nil == bucket {
 		return false, nil
 	}
-	
+
 	claims := claim.ContextToPayload(ctx)
 	isOwner := (nil != claims) && claims.UserId() == bucket.HostId
 	isMember := (nil != claims) && claims.NamespaceId() == bucket.HostId

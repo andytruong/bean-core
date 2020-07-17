@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/utils"
 )
 
 // Create insert the value into database
@@ -137,11 +138,11 @@ func (tx *DB) assignExprsToValue(exprs []clause.Expression) {
 			switch column := eq.Column.(type) {
 			case string:
 				if field := tx.Statement.Schema.LookUpField(column); field != nil {
-					field.Set(tx.Statement.ReflectValue, eq.Value)
+					tx.AddError(field.Set(tx.Statement.ReflectValue, eq.Value))
 				}
 			case clause.Column:
 				if field := tx.Statement.Schema.LookUpField(column.Name); field != nil {
-					field.Set(tx.Statement.ReflectValue, eq.Value)
+					tx.AddError(field.Set(tx.Statement.ReflectValue, eq.Value))
 				}
 			default:
 			}
@@ -268,6 +269,7 @@ func (db *DB) Count(count *int64) (tx *DB) {
 
 	if len(tx.Statement.Selects) == 0 {
 		tx.Statement.AddClause(clause.Select{Expression: clause.Expr{SQL: "count(1)"}})
+		defer tx.Statement.AddClause(clause.Select{})
 	} else if !strings.Contains(strings.ToLower(tx.Statement.Selects[0]), "count(") {
 		expr := clause.Expr{SQL: "count(1)"}
 
@@ -280,6 +282,7 @@ func (db *DB) Count(count *int64) (tx *DB) {
 		}
 
 		tx.Statement.AddClause(clause.Select{Expression: expr})
+		defer tx.Statement.AddClause(clause.Select{})
 	}
 
 	tx.Statement.Dest = count
@@ -325,9 +328,10 @@ func (db *DB) Pluck(column string, dest interface{}) (tx *DB) {
 		tx.AddError(ErrorModelValueRequired)
 	}
 
+	fields := strings.FieldsFunc(column, utils.IsChar)
 	tx.Statement.AddClauseIfNotExists(clause.Select{
 		Distinct: tx.Statement.Distinct,
-		Columns:  []clause.Column{{Name: column}},
+		Columns:  []clause.Column{{Name: column, Raw: len(fields) != 1}},
 	})
 	tx.Statement.Dest = dest
 	tx.callbacks.Query().Execute(tx)
@@ -429,7 +433,7 @@ func (db *DB) Rollback() *DB {
 
 func (db *DB) SavePoint(name string) *DB {
 	if savePointer, ok := db.Dialector.(SavePointerDialectorInterface); ok {
-		savePointer.SavePoint(db, name)
+		db.AddError(savePointer.SavePoint(db, name))
 	} else {
 		db.AddError(ErrUnsupportedDriver)
 	}
@@ -438,7 +442,7 @@ func (db *DB) SavePoint(name string) *DB {
 
 func (db *DB) RollbackTo(name string) *DB {
 	if savePointer, ok := db.Dialector.(SavePointerDialectorInterface); ok {
-		savePointer.RollbackTo(db, name)
+		db.AddError(savePointer.RollbackTo(db, name))
 	} else {
 		db.AddError(ErrUnsupportedDriver)
 	}
@@ -449,7 +453,13 @@ func (db *DB) RollbackTo(name string) *DB {
 func (db *DB) Exec(sql string, values ...interface{}) (tx *DB) {
 	tx = db.getInstance()
 	tx.Statement.SQL = strings.Builder{}
-	clause.Expr{SQL: sql, Vars: values}.Build(tx.Statement)
+
+	if strings.Contains(sql, "@") {
+		clause.NamedExpr{SQL: sql, Vars: values}.Build(tx.Statement)
+	} else {
+		clause.Expr{SQL: sql, Vars: values}.Build(tx.Statement)
+	}
+
 	tx.callbacks.Raw().Execute(tx)
 	return
 }

@@ -71,9 +71,9 @@ func (schema *Schema) parseRelation(field *Field) {
 		return
 	}
 
-	if polymorphic, _ := field.TagSettings["POLYMORPHIC"]; polymorphic != "" {
+	if polymorphic := field.TagSettings["POLYMORPHIC"]; polymorphic != "" {
 		schema.buildPolymorphicRelation(relation, field, polymorphic)
-	} else if many2many, _ := field.TagSettings["MANY2MANY"]; many2many != "" {
+	} else if many2many := field.TagSettings["MANY2MANY"]; many2many != "" {
 		schema.buildMany2ManyRelation(relation, field, many2many)
 	} else {
 		switch field.IndirectFieldType.Kind() {
@@ -130,7 +130,7 @@ func (schema *Schema) buildPolymorphicRelation(relation *Relationship, field *Fi
 		PolymorphicID:   relation.FieldSchema.FieldsByName[polymorphic+"ID"],
 	}
 
-	if value, ok := field.TagSettings["POLYMORPHIC_VALUE"]; ok {
+	if value, ok := field.TagSettings["POLYMORPHICVALUE"]; ok {
 		relation.Polymorphic.Value = strings.TrimSpace(value)
 	}
 
@@ -210,7 +210,7 @@ func (schema *Schema) buildMany2ManyRelation(relation *Relationship, field *Fiel
 	for idx, ownField := range ownForeignFields {
 		joinFieldName := schema.Name + ownField.Name
 		if len(joinForeignKeys) > idx {
-			joinFieldName = joinForeignKeys[idx]
+			joinFieldName = strings.Title(joinForeignKeys[idx])
 		}
 
 		ownFieldsMap[joinFieldName] = true
@@ -226,7 +226,7 @@ func (schema *Schema) buildMany2ManyRelation(relation *Relationship, field *Fiel
 	for idx, relField := range refForeignFields {
 		joinFieldName := relation.FieldSchema.Name + relField.Name
 		if len(joinReferences) > idx {
-			joinFieldName = joinReferences[idx]
+			joinFieldName = strings.Title(joinReferences[idx])
 		}
 
 		if _, ok := ownFieldsMap[joinFieldName]; ok {
@@ -312,7 +312,6 @@ func (schema *Schema) buildMany2ManyRelation(relation *Relationship, field *Fiel
 			OwnPrimaryKey: ownPriamryField,
 		})
 	}
-	return
 }
 
 func (schema *Schema) guessRelation(relation *Relationship, field *Field, guessHas bool) {
@@ -462,10 +461,12 @@ func (rel *Relationship) ParseConstraint() *Constraint {
 }
 
 func (rel *Relationship) ToQueryConditions(reflectValue reflect.Value) (conds []clause.Expression) {
+	table := rel.FieldSchema.Table
 	foreignFields := []*Field{}
 	relForeignKeys := []string{}
 
 	if rel.JoinTable != nil {
+		table = rel.JoinTable.Table
 		for _, ref := range rel.References {
 			if ref.OwnPrimaryKey {
 				foreignFields = append(foreignFields, ref.PrimaryKey)
@@ -500,7 +501,7 @@ func (rel *Relationship) ToQueryConditions(reflectValue reflect.Value) (conds []
 	}
 
 	_, foreignValues := GetIdentityFieldValuesMap(reflectValue, foreignFields)
-	column, values := ToQueryValues(relForeignKeys, foreignValues)
+	column, values := ToQueryValues(table, relForeignKeys, foreignValues)
 
 	conds = append(conds, clause.IN{Column: column, Values: values})
 	return

@@ -5,8 +5,6 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"gorm.io/gorm/schema"
-	"gorm.io/gorm/utils"
 )
 
 func SaveBeforeAssociations(db *gorm.DB) {
@@ -15,7 +13,7 @@ func SaveBeforeAssociations(db *gorm.DB) {
 
 		// Save Belongs To associations
 		for _, rel := range db.Statement.Schema.Relationships.BelongsTo {
-			if !saveAssociationCheck(db, rel, selectColumns, restricted) {
+			if v, ok := selectColumns[rel.Name]; (ok && !v) || (!ok && restricted) {
 				continue
 			}
 
@@ -23,7 +21,7 @@ func SaveBeforeAssociations(db *gorm.DB) {
 				for _, ref := range rel.References {
 					if !ref.OwnPrimaryKey {
 						pv, _ := ref.PrimaryKey.ValueOf(elem)
-						ref.ForeignKey.Set(obj, pv)
+						db.AddError(ref.ForeignKey.Set(obj, pv))
 
 						if dest, ok := db.Statement.Dest.(map[string]interface{}); ok {
 							dest[ref.ForeignKey.DBName] = pv
@@ -94,7 +92,7 @@ func SaveAfterAssociations(db *gorm.DB) {
 
 		// Save Has One associations
 		for _, rel := range db.Statement.Schema.Relationships.HasOne {
-			if !saveAssociationCheck(db, rel, selectColumns, restricted) {
+			if v, ok := selectColumns[rel.Name]; (ok && !v) || (!ok && restricted) {
 				continue
 			}
 
@@ -123,9 +121,9 @@ func SaveAfterAssociations(db *gorm.DB) {
 						for _, ref := range rel.References {
 							if ref.OwnPrimaryKey {
 								fv, _ := ref.PrimaryKey.ValueOf(obj)
-								ref.ForeignKey.Set(rv, fv)
+								db.AddError(ref.ForeignKey.Set(rv, fv))
 							} else if ref.PrimaryValue != "" {
-								ref.ForeignKey.Set(rv, ref.PrimaryValue)
+								db.AddError(ref.ForeignKey.Set(rv, ref.PrimaryValue))
 							}
 						}
 
@@ -139,10 +137,10 @@ func SaveAfterAssociations(db *gorm.DB) {
 						assignmentColumns = append(assignmentColumns, ref.ForeignKey.DBName)
 					}
 
-					db.Session(&gorm.Session{}).Clauses(clause.OnConflict{
+					db.AddError(db.Session(&gorm.Session{}).Clauses(clause.OnConflict{
 						Columns:   []clause.Column{{Name: rel.FieldSchema.PrioritizedPrimaryField.DBName}},
 						DoUpdates: clause.AssignmentColumns(assignmentColumns),
-					}).Create(elems.Interface())
+					}).Create(elems.Interface()).Error)
 				}
 			case reflect.Struct:
 				if _, zero := rel.Field.ValueOf(db.Statement.ReflectValue); !zero {
@@ -162,17 +160,17 @@ func SaveAfterAssociations(db *gorm.DB) {
 						assignmentColumns = append(assignmentColumns, ref.ForeignKey.DBName)
 					}
 
-					db.Session(&gorm.Session{}).Clauses(clause.OnConflict{
+					db.AddError(db.Session(&gorm.Session{}).Clauses(clause.OnConflict{
 						Columns:   []clause.Column{{Name: rel.FieldSchema.PrioritizedPrimaryField.DBName}},
 						DoUpdates: clause.AssignmentColumns(assignmentColumns),
-					}).Create(f.Interface())
+					}).Create(f.Interface()).Error)
 				}
 			}
 		}
 
 		// Save Has Many associations
 		for _, rel := range db.Statement.Schema.Relationships.HasMany {
-			if !saveAssociationCheck(db, rel, selectColumns, restricted) {
+			if v, ok := selectColumns[rel.Name]; (ok && !v) || (!ok && restricted) {
 				continue
 			}
 
@@ -221,16 +219,16 @@ func SaveAfterAssociations(db *gorm.DB) {
 					assignmentColumns = append(assignmentColumns, ref.ForeignKey.DBName)
 				}
 
-				db.Session(&gorm.Session{}).Clauses(clause.OnConflict{
+				db.AddError(db.Session(&gorm.Session{}).Clauses(clause.OnConflict{
 					Columns:   []clause.Column{{Name: rel.FieldSchema.PrioritizedPrimaryField.DBName}},
 					DoUpdates: clause.AssignmentColumns(assignmentColumns),
-				}).Create(elems.Interface())
+				}).Create(elems.Interface()).Error)
 			}
 		}
 
 		// Save Many2Many associations
 		for _, rel := range db.Statement.Schema.Relationships.Many2Many {
-			if !saveAssociationCheck(db, rel, selectColumns, restricted) {
+			if v, ok := selectColumns[rel.Name]; (ok && !v) || (!ok && restricted) {
 				continue
 			}
 
@@ -286,7 +284,7 @@ func SaveAfterAssociations(db *gorm.DB) {
 			}
 
 			if elems.Len() > 0 {
-				db.Session(&gorm.Session{}).Clauses(clause.OnConflict{DoNothing: true}).Create(elems.Interface())
+				db.AddError(db.Session(&gorm.Session{}).Clauses(clause.OnConflict{DoNothing: true}).Create(elems.Interface()).Error)
 
 				for i := 0; i < elems.Len(); i++ {
 					appendToJoins(objs[i], elems.Index(i))
@@ -294,23 +292,8 @@ func SaveAfterAssociations(db *gorm.DB) {
 			}
 
 			if joins.Len() > 0 {
-				db.Session(&gorm.Session{}).Clauses(clause.OnConflict{DoNothing: true}).Create(joins.Interface())
+				db.AddError(db.Session(&gorm.Session{}).Clauses(clause.OnConflict{DoNothing: true}).Create(joins.Interface()).Error)
 			}
 		}
 	}
-}
-
-func saveAssociationCheck(db *gorm.DB, rel *schema.Relationship, selectColumns map[string]bool, restricted bool) bool {
-	savable := true
-	if value, ok := db.Get("gorm:save_association"); ok {
-		savable = utils.CheckTruth(value)
-	}
-
-	if savable {
-		if v, ok := selectColumns[rel.Name]; (ok && v) || (!ok && !restricted) {
-			return true
-		}
-	}
-
-	return false
 }
