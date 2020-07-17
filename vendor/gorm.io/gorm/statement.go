@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,6 +19,7 @@ import (
 // Statement statement
 type Statement struct {
 	*DB
+	FullTable            string
 	Table                string
 	Model                interface{}
 	Unscoped             bool
@@ -37,7 +39,6 @@ type Statement struct {
 	UpdatingColumn       bool
 	SQL                  strings.Builder
 	Vars                 []interface{}
-	NamedVars            []sql.NamedArg
 	CurDestIndex         int
 	attrs                []interface{}
 	assigns              []interface{}
@@ -59,9 +60,8 @@ func (stmt *Statement) WriteByte(c byte) error {
 }
 
 // WriteQuoted write quoted value
-func (stmt *Statement) WriteQuoted(value interface{}) error {
+func (stmt *Statement) WriteQuoted(value interface{}) {
 	stmt.QuoteTo(&stmt.SQL, value)
-	return nil
 }
 
 // QuoteTo write quoted value to writer
@@ -69,7 +69,11 @@ func (stmt *Statement) QuoteTo(writer clause.Writer, field interface{}) {
 	switch v := field.(type) {
 	case clause.Table:
 		if v.Name == clause.CurrentTable {
-			stmt.DB.Dialector.QuoteTo(writer, stmt.Table)
+			if stmt.FullTable != "" {
+				writer.WriteString(stmt.FullTable)
+			} else {
+				stmt.DB.Dialector.QuoteTo(writer, stmt.Table)
+			}
 		} else if v.Raw {
 			writer.WriteString(v.Name)
 		} else {
@@ -106,6 +110,15 @@ func (stmt *Statement) QuoteTo(writer clause.Writer, field interface{}) {
 			writer.WriteString(" AS ")
 			stmt.DB.Dialector.QuoteTo(writer, v.Alias)
 		}
+	case []clause.Column:
+		writer.WriteByte('(')
+		for idx, d := range v {
+			if idx > 0 {
+				writer.WriteString(",")
+			}
+			stmt.QuoteTo(writer, d)
+		}
+		writer.WriteByte(')')
 	case string:
 		stmt.DB.Dialector.QuoteTo(writer, v)
 	case []string:
@@ -138,14 +151,7 @@ func (stmt *Statement) AddVar(writer clause.Writer, vars ...interface{}) {
 
 		switch v := v.(type) {
 		case sql.NamedArg:
-			if len(v.Name) > 0 {
-				stmt.NamedVars = append(stmt.NamedVars, v)
-				writer.WriteByte('@')
-				writer.WriteString(v.Name)
-			} else {
-				stmt.Vars = append(stmt.Vars, v.Value)
-				stmt.DB.Dialector.BindVarTo(writer, stmt, v.Value)
-			}
+			stmt.Vars = append(stmt.Vars, v.Value)
 		case clause.Column, clause.Table:
 			stmt.QuoteTo(writer, v)
 		case clause.Expr:
@@ -208,7 +214,7 @@ func (stmt *Statement) AddClause(v clause.Interface) {
 		optimizer.ModifyStatement(stmt)
 	} else {
 		name := v.Name()
-		c, _ := stmt.Clauses[name]
+		c := stmt.Clauses[name]
 		c.Name = name
 		v.MergeClause(&c)
 		stmt.Clauses[name] = c
@@ -224,16 +230,19 @@ func (stmt *Statement) AddClauseIfNotExists(v clause.Interface) {
 
 // BuildCondition build condition
 func (stmt *Statement) BuildCondition(query interface{}, args ...interface{}) (conds []clause.Expression) {
-	if sql, ok := query.(string); ok {
+	if s, ok := query.(string); ok {
 		// if it is a number, then treats it as primary key
-		if _, err := strconv.Atoi(sql); err != nil {
-			if sql == "" && len(args) == 0 {
+		if _, err := strconv.Atoi(s); err != nil {
+			if s == "" && len(args) == 0 {
 				return
-			} else if len(args) == 0 || (len(args) > 0 && strings.Contains(sql, "?")) || strings.Contains(sql, "@") {
+			} else if len(args) == 0 || (len(args) > 0 && strings.Contains(s, "?")) {
 				// looks like a where condition
-				return []clause.Expression{clause.Expr{SQL: sql, Vars: args}}
+				return []clause.Expression{clause.Expr{SQL: s, Vars: args}}
+			} else if len(args) > 0 && strings.Contains(s, "@") {
+				// looks like a named query
+				return []clause.Expression{clause.NamedExpr{SQL: s, Vars: args}}
 			} else if len(args) == 1 {
-				return []clause.Expression{clause.Eq{Column: sql, Value: args[0]}}
+				return []clause.Expression{clause.Eq{Column: s, Value: args[0]}}
 			}
 		}
 	}
@@ -260,12 +269,35 @@ func (stmt *Statement) BuildCondition(query interface{}, args ...interface{}) (c
 				conds = append(conds, clause.Eq{Column: i, Value: j})
 			}
 		case map[string]string:
-			for i, j := range v {
-				conds = append(conds, clause.Eq{Column: i, Value: j})
+			var keys = make([]string, 0, len(v))
+			for i := range v {
+				keys = append(keys, i)
+			}
+			sort.Strings(keys)
+
+			for _, key := range keys {
+				conds = append(conds, clause.Eq{Column: key, Value: v[key]})
 			}
 		case map[string]interface{}:
-			for i, j := range v {
-				conds = append(conds, clause.Eq{Column: i, Value: j})
+			var keys = make([]string, 0, len(v))
+			for i := range v {
+				keys = append(keys, i)
+			}
+			sort.Strings(keys)
+
+			for _, key := range keys {
+				reflectValue := reflect.Indirect(reflect.ValueOf(v[key]))
+				switch reflectValue.Kind() {
+				case reflect.Slice, reflect.Array:
+					values := make([]interface{}, reflectValue.Len())
+					for i := 0; i < reflectValue.Len(); i++ {
+						values[i] = reflectValue.Index(i).Interface()
+					}
+
+					conds = append(conds, clause.IN{Column: key, Values: values})
+				default:
+					conds = append(conds, clause.Eq{Column: key, Value: v[key]})
+				}
 			}
 		default:
 			reflectValue := reflect.Indirect(reflect.ValueOf(arg))
@@ -299,6 +331,21 @@ func (stmt *Statement) BuildCondition(query interface{}, args ...interface{}) (c
 					}
 				}
 			} else if len(conds) == 0 {
+				if len(args) == 1 {
+					switch reflectValue.Kind() {
+					case reflect.Slice, reflect.Array:
+						values := make([]interface{}, reflectValue.Len())
+						for i := 0; i < reflectValue.Len(); i++ {
+							values[i] = reflectValue.Index(i).Interface()
+						}
+
+						if len(values) > 0 {
+							conds = append(conds, clause.IN{Column: clause.PrimaryColumn, Values: values})
+						}
+						return
+					}
+				}
+
 				conds = append(conds, clause.IN{Column: clause.PrimaryColumn, Values: args})
 			}
 		}
@@ -331,6 +378,7 @@ func (stmt *Statement) Build(clauses ...string) {
 func (stmt *Statement) Parse(value interface{}) (err error) {
 	if stmt.Schema, err = schema.Parse(value, stmt.DB.cacheStore, stmt.DB.NamingStrategy); err == nil && stmt.Table == "" {
 		stmt.Table = stmt.Schema.Table
+		stmt.FullTable = stmt.Schema.Table
 	}
 	return err
 }

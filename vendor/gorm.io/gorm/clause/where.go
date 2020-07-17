@@ -33,8 +33,6 @@ func (where Where) Build(builder Builder) {
 
 		expr.Build(builder)
 	}
-
-	return
 }
 
 // MergeClause merge where clauses
@@ -128,7 +126,7 @@ func (not NotConditions) Build(builder Builder) {
 		if negationBuilder, ok := c.(NegationExpressionBuilder); ok {
 			negationBuilder.NegationBuild(builder)
 		} else {
-			builder.WriteString(" NOT ")
+			builder.WriteString("NOT ")
 			c.Build(builder)
 		}
 	}

@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -20,6 +21,7 @@ type IndexOption struct {
 	Sort       string // DESC, ASC
 	Collate    string
 	Length     int
+	priority   int
 }
 
 // ParseIndexes parse schema indexes
@@ -27,7 +29,7 @@ func (schema *Schema) ParseIndexes() map[string]Index {
 	var indexes = map[string]Index{}
 
 	for _, field := range schema.Fields {
-		if field.TagSettings["INDEX"] != "" || field.TagSettings["UNIQUE_INDEX"] != "" {
+		if field.TagSettings["INDEX"] != "" || field.TagSettings["UNIQUEINDEX"] != "" {
 			for _, index := range parseFieldIndexes(field) {
 				idx := indexes[index.Name]
 				idx.Name = index.Name
@@ -43,7 +45,12 @@ func (schema *Schema) ParseIndexes() map[string]Index {
 				if idx.Comment == "" {
 					idx.Comment = index.Comment
 				}
+
 				idx.Fields = append(idx.Fields, index.Fields...)
+				sort.Slice(idx.Fields, func(i, j int) bool {
+					return idx.Fields[i].priority < idx.Fields[j].priority
+				})
+
 				indexes[index.Name] = idx
 			}
 		}
@@ -76,7 +83,7 @@ func parseFieldIndexes(field *Field) (indexes []Index) {
 		if value != "" {
 			v := strings.Split(value, ":")
 			k := strings.TrimSpace(strings.ToUpper(v[0]))
-			if k == "INDEX" || k == "UNIQUE_INDEX" {
+			if k == "INDEX" || k == "UNIQUEINDEX" {
 				var (
 					name      string
 					tag       = strings.Join(v[1:], ":")
@@ -97,8 +104,13 @@ func parseFieldIndexes(field *Field) (indexes []Index) {
 					name = field.Schema.namer.IndexName(field.Schema.Table, field.Name)
 				}
 
-				if (k == "UNIQUE_INDEX") || settings["UNIQUE"] != "" {
+				if (k == "UNIQUEINDEX") || settings["UNIQUE"] != "" {
 					settings["CLASS"] = "UNIQUE"
+				}
+
+				priority, err := strconv.Atoi(settings["PRIORITY"])
+				if err != nil {
+					priority = 10
 				}
 
 				indexes = append(indexes, Index{
@@ -113,6 +125,7 @@ func parseFieldIndexes(field *Field) (indexes []Index) {
 						Sort:       settings["SORT"],
 						Collate:    settings["COLLATE"],
 						Length:     length,
+						priority:   priority,
 					}},
 				})
 			}

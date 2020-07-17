@@ -187,8 +187,11 @@ func Parse(dest interface{}, cacheStore *sync.Map, namer Namer) (*Schema, error)
 			if !field.HasDefaultValue || field.DefaultValueInterface != nil {
 				schema.FieldsWithDefaultDBValue = append(schema.FieldsWithDefaultDBValue, field)
 			}
-			field.HasDefaultValue = true
-			field.AutoIncrement = true
+
+			if _, ok := field.TagSettings["AUTOINCREMENT"]; !ok {
+				field.HasDefaultValue = true
+				field.AutoIncrement = true
+			}
 		}
 	}
 
@@ -204,13 +207,13 @@ func Parse(dest interface{}, cacheStore *sync.Map, namer Namer) (*Schema, error)
 		}
 	}
 
-	cacheStore.Store(modelType, schema)
-
-	// parse relations for unidentified fields
-	for _, field := range schema.Fields {
-		if field.DataType == "" && field.Creatable {
-			if schema.parseRelation(field); schema.err != nil {
-				return schema, schema.err
+	if _, loaded := cacheStore.LoadOrStore(modelType, schema); !loaded {
+		// parse relations for unidentified fields
+		for _, field := range schema.Fields {
+			if field.DataType == "" && field.Creatable {
+				if schema.parseRelation(field); schema.err != nil {
+					return schema, schema.err
+				}
 			}
 		}
 	}
