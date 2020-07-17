@@ -63,3 +63,6 @@ dev-server:
 
 gen-key:
 	CONFIG=config.yaml go run cmd/main.go gen-key
+
+gen-ulid:
+	go run cmd/tools/ulid/main.go
