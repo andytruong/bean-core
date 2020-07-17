@@ -2,6 +2,9 @@ package s3
 
 import (
 	"context"
+	"io/ioutil"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -236,6 +239,23 @@ func Test(t *testing.T) {
 func Test_UploadToken(t *testing.T) {
 	ass := assert.New(t)
 	this := bean()
+
+	this.coreCredentials.transport = util.MockRoundTrip{
+		Callback: func(request *http.Request) (*http.Response, error) {
+			response := &http.Response{
+				Status:     "OK",
+				StatusCode: http.StatusOK,
+			}
+
+			content := `<?xml version="1.0" encoding="UTF-8"?>`
+			content += `<LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">Europe</LocationConstraint>`
+			body := strings.NewReader(content)
+			response.Body = ioutil.NopCloser(body)
+
+			return response, nil
+		},
+	}
+
 	ctx := context.WithValue(context.Background(), claim.ContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{
 			Audience: this.id.MustULID(),
