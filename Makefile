@@ -1,5 +1,5 @@
 test:
-	go test -mod=vendor ./... -race -v
+	go test -mod=vendor -race -count=1 ./... -v
 
 server:
 	CONFIG=config.yaml go run -mod=vendor cmd/main.go http-server
