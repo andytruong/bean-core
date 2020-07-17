@@ -11,11 +11,6 @@ gql:
 migrate:
 	CONFIG=config.yaml go run -mod=vendor cmd/main.go migrate
 
-check-size:
-	go build -mod=vendor -o /tmp/go-bean cmd/main.go
-	du -h /tmp/go-bean
-	rm /tmp/go-bean
-
 clean:
 	go mod vendor
 	go fmt ./...
@@ -47,6 +42,11 @@ clean:
 # ---------------------
 # dev commands
 # ---------------------
+check-size:
+	go build -mod=vendor -o /tmp/go-bean cmd/main.go
+	du -h /tmp/go-bean
+	rm /tmp/go-bean
+
 dev-migrate:
 	CONFIG=config.yaml DB_DRIVER=postgres DB_MASTER_URL=postgres://postgres:and1bean@127.0.0.1/core?sslmode=disable \
 		go run cmd/main.go migrate
