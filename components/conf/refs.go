@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func ReadWithJSONPointers(path string) ([]byte, error) {
+func read(path string) ([]byte, error) {
 	configBytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -83,14 +83,6 @@ func jsonPointer(path string, object interface{}) (interface{}, error) {
 	}
 	return object, nil
 }
-
-// ------------------------------------------------------------------------------
-
-// ErrExceededRefLimit is returned when a configuration hierarchy results in
-// nested references beyond a hard coded limit. This is intended to prevent
-// looped references from blocking the service.
-var ErrExceededRefLimit = errors.New("exceeded limit of nested references")
-var refLimit = 1000
 
 func get(obj interface{}) interface{} {
 	switch x := obj.(type) {

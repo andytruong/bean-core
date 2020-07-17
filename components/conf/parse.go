@@ -2,14 +2,18 @@ package conf
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"regexp"
 
 	"gopkg.in/yaml.v2"
 )
 
+var ErrExceededRefLimit = errors.New("exceeded limit of nested references")
+var refLimit = 1000
+
 func ParseFile(path string, out interface{}) error {
-	content, err := ReadWithJSONPointers(path)
+	content, err := read(path)
 
 	if nil != err {
 		return err
