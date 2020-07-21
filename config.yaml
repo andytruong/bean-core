@@ -7,7 +7,7 @@ env: "${ENV:dev}"
 # Server configuration
 # ---------------------
 http-server:
-  address: ":8484"
+  address: ":${PORT:8484}"
   readTimeout:  15s
   writeTimeout: 15s
   idleTimeout: 15s

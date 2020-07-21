@@ -19,7 +19,7 @@ import (
 // Statement statement
 type Statement struct {
 	*DB
-	FullTable            string
+	TableExpr            *clause.Expr
 	Table                string
 	Model                interface{}
 	Unscoped             bool
@@ -69,8 +69,8 @@ func (stmt *Statement) QuoteTo(writer clause.Writer, field interface{}) {
 	switch v := field.(type) {
 	case clause.Table:
 		if v.Name == clause.CurrentTable {
-			if stmt.FullTable != "" {
-				writer.WriteString(stmt.FullTable)
+			if stmt.TableExpr != nil {
+				stmt.TableExpr.Build(stmt)
 			} else {
 				stmt.DB.Dialector.QuoteTo(writer, stmt.Table)
 			}
@@ -377,8 +377,13 @@ func (stmt *Statement) Build(clauses ...string) {
 
 func (stmt *Statement) Parse(value interface{}) (err error) {
 	if stmt.Schema, err = schema.Parse(value, stmt.DB.cacheStore, stmt.DB.NamingStrategy); err == nil && stmt.Table == "" {
+		if tables := strings.Split(stmt.Schema.Table, "."); len(tables) == 2 {
+			stmt.TableExpr = &clause.Expr{SQL: stmt.Quote(stmt.Schema.Table)}
+			stmt.Table = tables[1]
+			return
+		}
+
 		stmt.Table = stmt.Schema.Table
-		stmt.FullTable = stmt.Schema.Table
 	}
 	return err
 }
@@ -503,7 +508,7 @@ func (stmt *Statement) SelectAndOmitColumns(requireCreate, requireUpdate bool) (
 			for _, dbName := range stmt.Schema.DBNames {
 				results[dbName] = true
 			}
-		} else if column == clause.Associations {
+		} else if column == clause.Associations && stmt.Schema != nil {
 			for _, rel := range stmt.Schema.Relationships.Relations {
 				results[rel.Name] = true
 			}
@@ -517,8 +522,10 @@ func (stmt *Statement) SelectAndOmitColumns(requireCreate, requireUpdate bool) (
 	// omit columns
 	for _, omit := range stmt.Omits {
 		if omit == clause.Associations {
-			for _, rel := range stmt.Schema.Relationships.Relations {
-				results[rel.Name] = false
+			if stmt.Schema != nil {
+				for _, rel := range stmt.Schema.Relationships.Relations {
+					results[rel.Name] = false
+				}
 			}
 		} else if field := stmt.Schema.LookUpField(omit); field != nil && field.DBName != "" {
 			results[field.DBName] = false

@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/stdlib"
 	"gorm.io/gorm"
 	"gorm.io/gorm/callbacks"
 	"gorm.io/gorm/clause"
@@ -16,11 +18,21 @@ import (
 )
 
 type Dialector struct {
-	DSN string
+	*Config
+}
+
+type Config struct {
+	DSN                  string
+	PreferSimpleProtocol bool
+	Conn                 *sql.DB
 }
 
 func Open(dsn string) gorm.Dialector {
-	return &Dialector{DSN: dsn}
+	return &Dialector{&Config{DSN: dsn}}
+}
+
+func New(config Config) gorm.Dialector {
+	return &Dialector{Config: &config}
 }
 
 func (dialector Dialector) Name() string {
@@ -32,7 +44,25 @@ func (dialector Dialector) Initialize(db *gorm.DB) (err error) {
 	callbacks.RegisterDefaultCallbacks(db, &callbacks.Config{
 		WithReturning: true,
 	})
-	db.ConnPool, err = sql.Open("postgres", dialector.DSN)
+
+	if dialector.Conn != nil {
+		db.ConnPool = dialector.Conn
+	} else {
+		var config *pgx.ConnConfig
+
+		config, err = pgx.ParseConfig(dialector.Config.DSN)
+		if dialector.Config.PreferSimpleProtocol {
+			config.PreferSimpleProtocol = true
+		}
+
+		result := regexp.MustCompile("(time_zone|TimeZone)=(.*)($|&| )").FindStringSubmatch(dialector.Config.DSN)
+		if len(result) > 2 {
+			config.RuntimeParams["timezone"] = result[2]
+		}
+
+		db.ConnPool = stdlib.OpenDB(*config)
+	}
+
 	return
 }
 
@@ -55,8 +85,18 @@ func (dialector Dialector) BindVarTo(writer clause.Writer, stmt *gorm.Statement,
 
 func (dialector Dialector) QuoteTo(writer clause.Writer, str string) {
 	writer.WriteByte('"')
-	writer.WriteString(str)
-	writer.WriteByte('"')
+	if strings.Contains(str, ".") {
+		for idx, str := range strings.Split(str, ".") {
+			if idx > 0 {
+				writer.WriteString(`."`)
+			}
+			writer.WriteString(str)
+			writer.WriteByte('"')
+		}
+	} else {
+		writer.WriteString(str)
+		writer.WriteByte('"')
+	}
 }
 
 var numericPlaceholder = regexp.MustCompile("\\$(\\d+)")
@@ -70,7 +110,7 @@ func (dialector Dialector) DataTypeOf(field *schema.Field) string {
 	case schema.Bool:
 		return "boolean"
 	case schema.Int, schema.Uint:
-		if field.AutoIncrement || field == field.Schema.PrioritizedPrimaryField {
+		if field.AutoIncrement {
 			switch {
 			case field.Size < 16:
 				return "smallserial"
