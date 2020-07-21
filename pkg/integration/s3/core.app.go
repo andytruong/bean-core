@@ -24,7 +24,6 @@ func (this *CoreApplication) Load(ctx context.Context, id string) (*model.Applic
 	// TODO: don't allow to load pending deleted S3 applications.
 	err := this.bean.db.
 		WithContext(ctx).
-		Table(connect.TableIntegrationS3App).
 		Where("id = ?", id).
 		First(&app).
 		Error
@@ -51,7 +50,7 @@ func (this *CoreApplication) Create(ctx context.Context, in *dto.S3ApplicationCr
 				DeletedAt: nil,
 			}
 
-			err := tx.Table(connect.TableIntegrationS3App).Create(&app).Error
+			err := tx.Create(&app).Error
 			if nil != err {
 				return err
 			} else if err := this.bean.coreCredentials.onAppCreate(tx, app, in.Credentials); nil != err {
@@ -105,7 +104,7 @@ func (this *CoreApplication) Update(ctx context.Context, in *dto.S3ApplicationUp
 		ctx,
 		this.bean.db,
 		func(tx *gorm.DB) error {
-			err := tx.Table(connect.TableIntegrationS3App).Save(&app).Error
+			err := tx.Save(&app).Error
 			if nil != err {
 				return err
 			}

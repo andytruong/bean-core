@@ -9,7 +9,6 @@ import (
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 	"bean/pkg/util"
-	"bean/pkg/util/connect"
 )
 
 type corePolicy struct {
@@ -18,7 +17,7 @@ type corePolicy struct {
 
 func (this *corePolicy) load(tx *gorm.DB, appId string, id string) (*model.Policy, error) {
 	policy := &model.Policy{}
-	err := tx.Table(connect.TableIntegrationS3Policy).
+	err := tx.
 		Where("application_id = ?", appId).
 		Where("id = ?", id).
 		First(policy).Error
@@ -39,7 +38,7 @@ func (this *corePolicy) create(tx *gorm.DB, appId string, kind model.PolicyKind,
 		Value:         value,
 	}
 
-	err := tx.Table(connect.TableIntegrationS3Policy).Create(&policy).Error
+	err := tx.Create(&policy).Error
 	if nil != err {
 		return nil, err
 	}
@@ -50,7 +49,7 @@ func (this *corePolicy) create(tx *gorm.DB, appId string, kind model.PolicyKind,
 func (this *corePolicy) loadByApplicationId(ctx context.Context, appId string) ([]*model.Policy, error) {
 	policies := []*model.Policy{}
 
-	err := this.bean.db.WithContext(ctx).Table(connect.TableIntegrationS3Policy).
+	err := this.bean.db.WithContext(ctx).
 		Where("application_id = ?", appId).
 		Find(&policies).
 		Error
@@ -97,7 +96,7 @@ func (this *corePolicy) onAppUpdate(tx *gorm.DB, app *model.Application, in *dto
 			} else {
 				policy.Value = input.Value
 				policy.UpdatedAt = time.Now()
-				err := tx.Table(connect.TableIntegrationS3Policy).Save(policy).Error
+				err := tx.Save(policy).Error
 				if nil != err {
 					return err
 				}
@@ -112,7 +111,7 @@ func (this *corePolicy) onAppUpdate(tx *gorm.DB, app *model.Application, in *dto
 			if policy, err := this.load(tx, app.ID, input.Id); nil != err {
 				return err
 			} else {
-				err := tx.Table(connect.TableIntegrationS3Policy).Delete(policy).Error
+				err := tx.Delete(policy).Error
 				if nil != err {
 					return err
 				}

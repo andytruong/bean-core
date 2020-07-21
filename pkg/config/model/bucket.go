@@ -21,3 +21,7 @@ type ConfigBucket struct {
 	UpdatedAt   time.Time         `json:"updatedAt"`
 	IsPublished bool              `json:"isPublished"`
 }
+
+func (this ConfigBucket) TableName() string {
+	return "config_buckets"
+}

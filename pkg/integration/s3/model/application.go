@@ -15,6 +15,10 @@ type Application struct {
 	DeletedAt *time.Time `json:"deletedAt"`
 }
 
+func (this Application) TableName() string {
+	return "s3_application"
+}
+
 type Credentials struct {
 	ID            string     `json:"id"`
 	ApplicationId string     `json:"applicationId"`
@@ -25,6 +29,10 @@ type Credentials struct {
 	SecretKey     string     `json:"secretKey"`
 }
 
+func (this Credentials) TableName() string {
+	return "s3_credentials"
+}
+
 type Policy struct {
 	ID            string     `json:"id"`
 	ApplicationId string     `json:"applicationId"`
@@ -32,6 +40,10 @@ type Policy struct {
 	UpdatedAt     time.Time  `json:"updatedAt"`
 	Kind          PolicyKind `json:"kind"`
 	Value         string     `json:"value"`
+}
+
+func (this Policy) TableName() string {
+	return "s3_application_policy"
 }
 
 type PolicyKind string

@@ -67,7 +67,6 @@ func (this CoreMember) Find(first int, after *string, filters dto.MembershipsFil
 
 func (this CoreMember) findUnlimited(afterRaw *string, filters dto.MembershipsFilter) (*gorm.DB, error) {
 	query := this.bean.db.
-		Table(connect.TableNamespaceMemberships).
 		Where("namespace_memberships.user_id = ?", filters.UserID).
 		Where("namespace_memberships.is_active = ?", filters.IsActive).
 		Order("namespace_memberships.logged_in_at DESC")
@@ -148,7 +147,7 @@ func (this CoreMember) doCreate(tx *gorm.DB, namespaceId string, userId string, 
 		UpdatedAt:   time.Now(),
 	}
 
-	if err := tx.Table(connect.TableNamespaceMemberships).Create(&membership).Error; nil != err {
+	if err := tx.Create(&membership).Error; nil != err {
 		return nil, err
 	}
 
@@ -164,7 +163,7 @@ func (this CoreMember) createRelationships(tx *gorm.DB, obj *model.Membership, m
 	{
 		var counter int64
 		err := tx.
-			Table(connect.TableNamespaceMemberships).
+			Model(&model.Membership{}).
 			Where("namespace_id = ?", obj.NamespaceID).
 			Where("id IN (?)", managerMemberIds).
 			Where("is_active = ?", true).
@@ -200,18 +199,14 @@ func (this CoreMember) createRelationship(tx *gorm.DB, obj *model.Membership, ma
 		UpdatedAt:       time.Now(),
 	}
 
-	return tx.Table(connect.TableManagerEdge).Save(&relationship).Error
+	return tx.Save(&relationship).Error
 }
 
 func (this CoreMember) Update(tx *gorm.DB, in dto.NamespaceMembershipUpdateInput, obj *model.Membership) (*dto.NamespaceMembershipCreateOutcome, error) {
 	obj.Version = this.bean.id.MustULID()
 	obj.IsActive = in.IsActive
 
-	err := tx.
-		Table(connect.TableNamespaceMemberships).
-		Save(&obj).
-		Error
-
+	err := tx.Save(&obj).Error
 	if nil != err {
 		return nil, err
 	} else {

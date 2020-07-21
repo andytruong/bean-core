@@ -11,3 +11,7 @@ type UserPassword struct {
 	UpdatedAt   time.Time `json:"updatedAt"`
 	IsActive    bool      `json:"isActive"`
 }
+
+func (this UserPassword) TableName() string {
+	return "user_passwords"
+}

@@ -13,6 +13,10 @@ type DomainName struct {
 	IsActive    bool      `json:"isActive"`
 }
 
+func (this DomainName) TableName() string {
+	return "namespace_domains"
+}
+
 type DomainNames struct {
 	Primary   *DomainName   `json:"primary"`
 	Secondary []*DomainName `json:"secondary"`

@@ -7,7 +7,6 @@ import (
 
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
-	"bean/pkg/util/connect"
 )
 
 type CoreDomainName struct {
@@ -57,7 +56,6 @@ func (this *CoreDomainName) Find(namespace *model.Namespace) (*model.DomainNames
 
 	var domainNames []*model.DomainName
 	err := this.bean.db.
-		Table(connect.TableNamespaceDomains).
 		Where("namespace_id = ?", namespace.ID).
 		Find(&domainNames).
 		Error

@@ -11,7 +11,6 @@ import (
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
 	"bean/pkg/util"
-	"bean/pkg/util/connect"
 )
 
 type CoreVariable struct {
@@ -49,11 +48,7 @@ func (this CoreVariable) access(ctx context.Context, db *gorm.DB, bucketId strin
 func (this CoreVariable) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigVariable, error) {
 	variable := &model.ConfigVariable{}
 
-	err := db.
-		Table(connect.TableConfigVariable).
-		First(&variable, "id = ?", id).
-		Error
-
+	err := db.First(&variable, "id = ?", id).Error
 	if nil != err {
 		return nil, err
 	}
@@ -86,8 +81,7 @@ func (this CoreVariable) Create(ctx context.Context, tx *gorm.DB, in dto.Variabl
 		UpdatedAt:   time.Now(),
 	}
 
-	err := tx.Table(connect.TableConfigVariable).Create(&variable).Error
-
+	err := tx.Create(&variable).Error
 	if nil != err {
 		return nil, err
 	} else {
@@ -145,7 +139,7 @@ func (this CoreVariable) Update(ctx context.Context, tx *gorm.DB, in dto.Variabl
 		if changed {
 			version := variable.Version
 			variable.Version = this.bean.id.MustULID()
-			err = tx.Table(connect.TableConfigVariable).
+			err = tx.
 				Where("version = ?", version).
 				Save(&variable).
 				Error
@@ -174,10 +168,7 @@ func (this CoreVariable) Delete(ctx context.Context, tx *gorm.DB, in dto.Variabl
 			return nil, util.ErrorAccessDenied
 		}
 
-		err := tx.
-			Table(connect.TableConfigVariable).
-			Delete(variable, "id = ?", variable.Id).
-			Error
+		err := tx.Delete(variable, "id = ?", variable.Id).Error
 		if nil != err {
 			return nil, err
 		}

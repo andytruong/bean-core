@@ -6,7 +6,6 @@ import (
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/util"
-	"bean/pkg/util/connect"
 )
 
 func newResolver(bean *NamespaceBean) *Resolvers {
@@ -59,11 +58,7 @@ func (this NamespaceQueryResolver) Memberships(ctx context.Context, first int, a
 func (this NamespaceQueryResolver) Membership(ctx context.Context, id string, version *string) (*model.Membership, error) {
 	obj := &model.Membership{}
 
-	err := this.bean.db.WithContext(ctx).
-		Table(connect.TableNamespaceMemberships).
-		First(&obj, "id = ?", id).
-		Error
-
+	err := this.bean.db.WithContext(ctx).First(&obj, "id = ?", id).Error
 	if nil != err {
 		return nil, err
 	} else if nil != version {

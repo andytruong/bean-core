@@ -16,7 +16,6 @@ import (
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 	"bean/pkg/util"
-	"bean/pkg/util/connect"
 )
 
 func bean() *S3IntegrationBean {
@@ -82,7 +81,6 @@ func Test(t *testing.T) {
 			t.Run("policies", func(t *testing.T) {
 				policies := []model.Policy{}
 				err := this.db.
-					Table(connect.TableIntegrationS3Policy).
 					Where("application_id = ?", oCreate.App.ID).
 					Find(&policies).
 					Error
@@ -164,7 +162,7 @@ func Test(t *testing.T) {
 				t.Run("Policies", func(t *testing.T) {
 					app, _ := this.CoreApp.Load(ctx, oCreate.App.ID)
 					policies := []model.Policy{}
-					err := this.db.Table(connect.TableIntegrationS3Policy).Where("application_id = ?", oCreate.App.ID).Find(&policies).Error
+					err := this.db.Where("application_id = ?", oCreate.App.ID).Find(&policies).Error
 					ass.NoError(err)
 
 					// before update

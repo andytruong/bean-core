@@ -35,6 +35,10 @@ type (
 	}
 )
 
+func (this Membership) TableName() string {
+	return "namespace_memberships"
+}
+
 func MembershipNodeCursor(node Membership) string {
 	after := connect.Cursor{
 		Entity:   "Membership",
