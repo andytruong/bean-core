@@ -7,7 +7,6 @@ import (
 
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
-	"bean/pkg/util/connect"
 )
 
 type CorePassword struct {
@@ -30,14 +29,14 @@ func (this *CorePassword) create(tx *gorm.DB, user *model.User, in *dto.UserPass
 	}
 
 	{
-		err := tx.Create(pass).Table(connect.TableAccessPassword).Error
+		err := tx.Create(pass).Error
 		if nil != err {
 			return err
 		}
 	}
 
 	// set other passwords to inactive
-	return tx.Table(connect.TableAccessPassword).
+	return tx.
 		Where("user_id == ?", pass.UserId).
 		Where("id != ?", pass.ID).
 		Updates(model.UserPassword{IsActive: false}).

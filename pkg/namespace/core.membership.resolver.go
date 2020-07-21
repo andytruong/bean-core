@@ -50,10 +50,7 @@ func (this MembershipResolver) User(ctx context.Context, obj *model.Membership) 
 func (this MembershipResolver) UpdateLastLoginTime(db *gorm.DB, membership *model.Membership) error {
 	membership.LoggedInAt = scalar.NilTime(time.Now())
 
-	return db.
-		Table(connect.TableNamespaceMemberships).
-		Save(&membership).
-		Error
+	return db.Save(&membership).Error
 }
 
 func (this MembershipResolver) Roles(ctx context.Context, obj *model.Membership) ([]*model.Namespace, error) {
@@ -64,7 +61,7 @@ func (this MembershipResolver) FindRoles(ctx context.Context, userId string, nam
 	var roles []*model.Namespace
 
 	err := this.bean.db.
-		Table(connect.TableNamespace).
+		WithContext(ctx).
 		Joins(
 			fmt.Sprintf(
 				"INNER JOIN %s ON %s.namespace_id = %s.id AND %s.user_id = ?",

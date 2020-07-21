@@ -11,7 +11,6 @@ import (
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
 	"bean/pkg/util"
-	"bean/pkg/util/connect"
 )
 
 type CoreBucket struct {
@@ -37,7 +36,7 @@ func (this CoreBucket) Create(tx *gorm.DB, in dto.BucketCreateInput) (*dto.Bucke
 		bucket.Access = *in.Access
 	}
 
-	err := tx.Table(connect.TableConfigBucket).Create(&bucket).Error
+	err := tx.Create(&bucket).Error
 	if nil != err {
 		return nil, err
 	}
@@ -100,10 +99,7 @@ func (this CoreBucket) Update(ctx context.Context, tx *gorm.DB, in dto.BucketUpd
 
 	if changed {
 		bucket.Version = this.bean.id.MustULID()
-		err = tx.
-			Table(connect.TableConfigBucket).
-			Save(&bucket).
-			Error
+		err = tx.Save(&bucket).Error
 		if nil != err {
 			return nil, err
 		}
@@ -119,12 +115,7 @@ func (this CoreBucket) Update(ctx context.Context, tx *gorm.DB, in dto.BucketUpd
 func (this CoreBucket) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigBucket, error) {
 	bucket := &model.ConfigBucket{}
 
-	err := db.
-		WithContext(ctx).
-		Table(connect.TableConfigBucket).
-		Where("id = ?", id).
-		First(&bucket).
-		Error
+	err := db.WithContext(ctx).Where("id = ?", id).First(&bucket).Error
 	if nil != err {
 		return nil, err
 	}

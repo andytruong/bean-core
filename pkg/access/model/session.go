@@ -24,6 +24,10 @@ type Session struct {
 	ExpiredAt   time.Time  `json:"expiredAt"`
 }
 
+func (this Session) TableName() string {
+	return "access_session"
+}
+
 type ScopeList []*AccessScope
 
 func (this ScopeList) Value() (driver.Value, error) {

@@ -13,7 +13,6 @@ import (
 	"bean/pkg/namespace/model/dto"
 	"bean/pkg/util"
 	"bean/pkg/util/api"
-	"bean/pkg/util/connect"
 )
 
 type Core struct {
@@ -35,12 +34,7 @@ func (this Core) Find(ctx context.Context, filters dto.NamespaceFilters) (*model
 		return this.Load(ctx, *filters.ID)
 	} else if nil != filters.Domain {
 		domain := &model.DomainName{}
-		err := this.bean.db.
-			Table(connect.TableNamespaceDomains).
-			Where("value = ?", filters.Domain).
-			First(&domain).
-			Error
-
+		err := this.bean.db.Where("value = ?", filters.Domain).First(&domain).Error
 		if nil != err {
 			return nil, err
 		} else if !domain.IsActive {
@@ -89,7 +83,7 @@ func (this *Core) create(tx *gorm.DB, in dto.NamespaceCreateInput) (*model.Names
 		}
 	}
 
-	if err := tx.Create(&namespace).Error; nil != err {
+	if err := tx.Table("namespaces").Create(&namespace).Error; nil != err {
 		return nil, err
 	}
 

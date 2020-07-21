@@ -17,3 +17,7 @@ type Namespace struct {
 	UpdatedAt time.Time     `json:"updatedAt"`
 	Language  api.Language  `json:"language"`
 }
+
+func (this Namespace) TableName() string {
+	return "namespaces"
+}

@@ -12,3 +12,7 @@ type NamespaceConfig struct {
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
+
+func (this NamespaceConfig) TableName() string {
+	return "namespace_config"
+}

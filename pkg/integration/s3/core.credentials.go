@@ -18,7 +18,6 @@ import (
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 	"bean/pkg/util"
-	"bean/pkg/util/connect"
 )
 
 type coreCredentials struct {
@@ -30,7 +29,6 @@ func (this *coreCredentials) loadByApplicationId(ctx context.Context, appId stri
 	cred := &model.Credentials{}
 
 	err := this.bean.db.WithContext(ctx).
-		Table(connect.TableIntegrationS3Credentials).
 		Where("application_id = ?", appId).
 		First(&cred).
 		Error
@@ -53,7 +51,7 @@ func (this *coreCredentials) onAppCreate(tx *gorm.DB, app *model.Application, in
 		IsSecure:      in.IsSecure,
 	}
 
-	return tx.Table(connect.TableIntegrationS3Credentials).Create(&cre).Error
+	return tx.Create(&cre).Error
 }
 
 func (this *coreCredentials) onAppUpdate(tx *gorm.DB, app *model.Application, in *dto.S3ApplicationCredentialsUpdateInput) error {
@@ -63,7 +61,7 @@ func (this *coreCredentials) onAppUpdate(tx *gorm.DB, app *model.Application, in
 
 	// load
 	cre := &model.Credentials{}
-	err := tx.Table(connect.TableIntegrationS3Credentials).Where("application_id = ?", app.ID).First(&cre).Error
+	err := tx.Where("application_id = ?", app.ID).First(&cre).Error
 
 	if nil == err {
 		// if found -> update
@@ -97,7 +95,7 @@ func (this *coreCredentials) onAppUpdate(tx *gorm.DB, app *model.Application, in
 		}
 
 		if changed {
-			return tx.Table(connect.TableIntegrationS3Credentials).Save(&cre).Error
+			return tx.Save(&cre).Error
 		}
 
 		return util.ErrorUselessInput
@@ -117,7 +115,7 @@ func (this *coreCredentials) onAppUpdate(tx *gorm.DB, app *model.Application, in
 				IsSecure:      false,
 			}
 
-			err := tx.Table(connect.TableIntegrationS3Credentials).Create(&cre).Error
+			err := tx.Create(&cre).Error
 			if nil != err {
 				return err
 			}

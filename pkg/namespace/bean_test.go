@@ -46,7 +46,7 @@ func bean() *NamespaceBean {
 }
 
 func tearDown(bean *NamespaceBean) {
-	bean.db.Table(connect.TableNamespaceDomains).Where("id != ?", "").Delete(&model.DomainName{})
+	bean.db.Model(model.DomainName{}).Where("id != ?", "").Delete(&model.DomainName{})
 	bean.db.Table(connect.TableUserEmail).Where("id != ?", "").Delete(&mUser.UserEmail{})
 }
 
@@ -91,13 +91,13 @@ func Test_Namespace(t *testing.T) {
 			// check that memberships are setup correctly.
 			var counter int64
 			this.db.
-				Table(connect.TableNamespaceMemberships).
+				Model(&model.Membership{}).
 				Where("user_id = ? AND namespace_id = ?", claims.UserId(), out.Namespace.ID).
 				Count(&counter)
 			ass.Equal(int64(1), counter)
 
 			this.db.
-				Table(connect.TableNamespaceMemberships).
+				Model(&model.Membership{}).
 				Where("user_id = ? AND namespace_id = ?", claims.UserId(), ownerNS.ID).
 				Count(&counter)
 			ass.Equal(int64(1), counter)

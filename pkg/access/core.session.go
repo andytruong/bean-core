@@ -13,7 +13,6 @@ import (
 	mNamespace "bean/pkg/namespace/model"
 	mUser "bean/pkg/user/model"
 	"bean/pkg/util"
-	"bean/pkg/util/connect"
 )
 
 type CoreSession struct {
@@ -109,7 +108,6 @@ func (this CoreSession) create(
 	// validate membership
 	{
 		err := tx.
-			Table(connect.TableNamespaceMemberships).
 			First(&membership, "namespace_id = ? AND user_id = ?", namespaceId, userId).
 			Error
 
@@ -135,7 +133,7 @@ func (this CoreSession) create(
 		ExpiredAt:   time.Now().Add(this.bean.genetic.SessionTimeout),
 	}
 
-	if err := tx.Table(connect.TableAccessSession).Create(&session).Error; nil != err {
+	if err := tx.Create(&session).Error; nil != err {
 		return nil, err
 	} else {
 		// update membership -> last-time-login
@@ -156,7 +154,6 @@ func (this CoreSession) Load(ctx context.Context, db *gorm.DB, token string) (*m
 	session := &model.Session{}
 	err := db.
 		WithContext(ctx).
-		Table(connect.TableAccessSession).
 		First(&session, "hashed_token = ?", this.bean.id.Encode(token)).
 		Error
 
@@ -179,7 +176,7 @@ func (this CoreSession) Delete(tx *gorm.DB, session *model.Session) (*dto.Sessio
 	session.IsActive = false
 	session.Version = this.bean.id.MustULID()
 	session.UpdatedAt = time.Now()
-	err := tx.Table(connect.TableAccessSession).Save(&session).Error
+	err := tx.Save(&session).Error
 	if nil != err {
 		return nil, err
 	}

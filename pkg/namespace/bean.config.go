@@ -8,7 +8,6 @@ import (
 
 	"bean/pkg/namespace/model"
 	"bean/pkg/namespace/model/dto"
-	"bean/pkg/util/connect"
 )
 
 type CoreConfig struct {
@@ -38,7 +37,7 @@ func (this *CoreConfig) CreateFeature(
 		UpdatedAt:   time.Now(),
 	}
 
-	return tx.Table(connect.TableNamespaceConfig).Create(&config).Error
+	return tx.Create(&config).Error
 }
 
 func (this *CoreConfig) List(ctx context.Context, namespace *model.Namespace) (*model.NamespaceFeatures, error) {
@@ -47,10 +46,7 @@ func (this *CoreConfig) List(ctx context.Context, namespace *model.Namespace) (*
 	}
 
 	var configList []model.NamespaceConfig
-	err := this.bean.db.
-		Table(connect.TableNamespaceConfig).
-		Find(&configList, "namespace_id = ?", namespace.ID).Error
-
+	err := this.bean.db.Find(&configList, "namespace_id = ?", namespace.ID).Error
 	if nil != err {
 		return nil, err
 	}
@@ -93,7 +89,6 @@ func (this *CoreConfig) updateFeature(
 	obj *model.Namespace, bucket string, key string, value []byte,
 ) error {
 	return tx.
-		Table(connect.TableNamespaceConfig).
 		Where("namespace_id = ? AND bucket = ? AND key = ?", obj.ID, bucket, key).
 		Updates(&model.NamespaceConfig{
 			Version:   this.bean.id.MustULID(),
