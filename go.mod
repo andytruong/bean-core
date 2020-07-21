@@ -20,10 +20,10 @@ require (
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/vektah/gqlparser/v2 v2.0.1
 	go.uber.org/zap v1.15.0
-	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	gopkg.in/yaml.v2 v2.3.0
-	gorm.io/driver/postgres v0.2.3
-	gorm.io/driver/sqlite v1.0.7
-	gorm.io/gorm v0.2.22
+	gorm.io/driver/postgres v0.2.6
+	gorm.io/driver/sqlite v1.0.8
+	gorm.io/gorm v0.2.23
 )
