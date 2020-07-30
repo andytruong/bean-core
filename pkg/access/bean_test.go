@@ -109,7 +109,7 @@ func Test_Create(t *testing.T) {
 
 			// check that with outcome.Session we can generate JWT
 			{
-				signedString, err := this.SessionResolver.Jwt(ctx, out.Session)
+				signedString, err := this.SessionResolver.Jwt(ctx, out.Session, "0123456789")
 				ass.NoError(err)
 				ass.Contains(signedString, "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.")
 

@@ -227,7 +227,7 @@ type ComplexityRoot struct {
 		ExpiredAt func(childComplexity int) int
 		ID        func(childComplexity int) int
 		IsActive  func(childComplexity int) int
-		Jwt       func(childComplexity int) int
+		Jwt       func(childComplexity int, codeVerifier string) int
 		Namespace func(childComplexity int) int
 		Scopes    func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
@@ -341,7 +341,7 @@ type SessionResolver interface {
 	Scopes(ctx context.Context, obj *model3.Session) ([]*model3.AccessScope, error)
 	Context(ctx context.Context, obj *model3.Session) (*model3.SessionContext, error)
 
-	Jwt(ctx context.Context, obj *model3.Session) (string, error)
+	Jwt(ctx context.Context, obj *model3.Session, codeVerifier string) (string, error)
 }
 type UserResolver interface {
 	Name(ctx context.Context, obj *model2.User) (*model2.UserName, error)
@@ -1172,7 +1172,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Session.Jwt(childComplexity), true
+		args, err := ec.field_Session_jwt_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Session.Jwt(childComplexity, args["codeVerifier"].(string)), true
 
 	case "Session.namespace":
 		if e.complexity.Session.Namespace == nil {
@@ -1592,7 +1597,7 @@ type Session {
 	createdAt: Time!
 	updatedAt: Time!
 	expiredAt: Time!
-	jwt: JWT!
+	jwt(codeVerifier: String!): JWT!
 }
 
 type SessionContext {
@@ -2381,6 +2386,20 @@ func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Session_jwt_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["codeVerifier"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["codeVerifier"] = arg0
 	return args, nil
 }
 
@@ -6248,9 +6267,16 @@ func (ec *executionContext) _Session_jwt(ctx context.Context, field graphql.Coll
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Session_jwt_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Session().Jwt(rctx, obj)
+		return ec.resolvers.Session().Jwt(rctx, obj, args["codeVerifier"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
