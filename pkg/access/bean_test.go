@@ -96,14 +96,25 @@ func Test_Create(t *testing.T) {
 			ass.Equal(oNamespace.Namespace.ID, out.Session.NamespaceId)
 			ass.Len(out.Errors, 0)
 
+			// check that code challenged & method are saved correctly
 			{
-				// check that with outcome.Session we can generate JWT
+				session, err := this.coreSession.Load(ctx, this.db, *out.Token)
+				ass.NoError(err)
+				ass.Equal("S256", session.CodeChallengeMethod)
+				ass.Equal(
+					"84d89877f0d4041efb6bf91a16f0248f2fd573e6af05c19f96bedb9f882f7882",
+					session.CodeChallenge,
+				)
+			}
+
+			// check that with outcome.Session we can generate JWT
+			{
 				signedString, err := this.SessionResolver.Jwt(ctx, out.Session)
 				ass.NoError(err)
 				ass.Contains(signedString, "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.")
 
+				// check that JWT is valid
 				{
-					// check that JWT is valid
 					claims, err := this.SessionResolver.JwtValidation(signedString)
 					ass.NoError(err)
 					ass.NotNil(claims)

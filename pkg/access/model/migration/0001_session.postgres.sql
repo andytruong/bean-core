@@ -12,9 +12,8 @@ CREATE TABLE access_session
     created_at            timestamp                         NOT NULL,
     updated_at            timestamp                         NOT NULL,
     expired_at            timestamp                         NOT NULL,
-    code_challenge_method character varying(16)             NOT NULL,
-    code_challenge        character varying(128)            NOT NULL,
-
+    code_challenge_method character varying(16)             NULL,
+    code_challenge        character varying(128)            NULL,
     CONSTRAINT session_version UNIQUE (version),
     FOREIGN KEY (user_id) REFERENCES users (user_id),
     FOREIGN KEY (namespace_id) REFERENCES namespaces (namespace_id),
