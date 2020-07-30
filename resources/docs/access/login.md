@@ -4,7 +4,7 @@ Access › Login
 1. Start session using credentials
 ====
 
-Using credentials to get access-token (outcome.session.jwt) and refresh token (outcome.token) to access system:
+Using credentials to get refresh token (`outcome.token`) to access system:
 
 ```graphql
 mutation ($namespaceId: ID!, $email: EmailAddress!) {
@@ -15,15 +15,11 @@ mutation ($namespaceId: ID!, $email: EmailAddress!) {
                 email: $email
                 hashedPassword: String!
                 codeChallengeMethod: "S256",
-                codeChallenge: "SHA256(…)"
+                codeChallenge: "SHA256($codeVerifier)"
             }
         }
     ) {
         errors  { code fields message }
-
-        # JWT can be used to access system, expire in 5m
-        # -------
-        session { jwt }
 
         # Token can be used to refresh the token.
         # -------
@@ -32,15 +28,16 @@ mutation ($namespaceId: ID!, $email: EmailAddress!) {
 }
 ```
 
-2. Refresh token
+2. Access token
 ====
 
-When JWT is expired, we can refresh it
+Go get access token (in JWT format) to access the system. It's fast to be expired, use session's `refreshToken`
+and `$codeVerifier` to get it:
 
 ```graphql
-query ($token: String!, $codeVerifier: String!) {
-    session(token: $token) {
-        jwt($codeVerifier)
+query ($refreshToken: String!, $codeVerifier: String!) {
+    session(token: $refreshToken) {
+        accessToken: jwt($codeVerifier)
     }
 }
 ```
@@ -67,8 +64,16 @@ mutation (token: String!) {
 4. Terminate the session
 ====
 
+> TODO: To be implemented.
+
+Related sessions will be also terminated.
+
 ```graphql
-# TODO
+mutation {
+    sessionDelete(token: $accessToken) {
+        errors { code message }
+    }
+}
 ```
 
 References
