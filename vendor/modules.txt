@@ -180,7 +180,7 @@ gorm.io/driver/postgres
 # gorm.io/driver/sqlite v1.0.8
 ## explicit
 gorm.io/driver/sqlite
-# gorm.io/gorm v0.2.24
+# gorm.io/gorm v0.2.25
 ## explicit
 gorm.io/gorm
 gorm.io/gorm/callbacks
