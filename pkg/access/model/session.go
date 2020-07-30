@@ -19,7 +19,7 @@ type Session struct {
 	UserId              string     `json:"userId"`
 	NamespaceId         string     `json:"namespaceId"`
 	HashedToken         string     `json:"hashedToken"`
-	Scopes              ScopeList  `json:"scopes",sql:"type:text"`
+	Scopes              ScopeList  `json:"scopes" sql:"type:text"`
 	IsActive            bool       `json:"isActive"`
 	CreatedAt           time.Time  `json:"createdAt"`
 	UpdatedAt           time.Time  `json:"updatedAt"`
