@@ -1628,6 +1628,8 @@ input SessionCreateUseCredentialsInput {
 	namespaceId: String!
 	email: EmailAddress!
 	hashedPassword: String!
+	codeChallengeMethod: String!
+	codeChallenge: String!
 }
 
 input SessionCreateGenerateOTLT {
@@ -1637,6 +1639,7 @@ input SessionCreateGenerateOTLT {
 
 input SessionCreateUseOTLT {
 	token: String!
+	codeVerifier: String!
 }
 
 input SessionCreateContextInput {
@@ -9171,6 +9174,18 @@ func (ec *executionContext) unmarshalInputSessionCreateUseCredentialsInput(ctx c
 			if err != nil {
 				return it, err
 			}
+		case "codeChallengeMethod":
+			var err error
+			it.CodeChallengeMethod, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "codeChallenge":
+			var err error
+			it.CodeChallenge, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -9186,6 +9201,12 @@ func (ec *executionContext) unmarshalInputSessionCreateUseOTLT(ctx context.Conte
 		case "token":
 			var err error
 			it.Token, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "codeVerifier":
+			var err error
+			it.CodeVerifier, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
