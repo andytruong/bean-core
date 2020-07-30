@@ -27,7 +27,8 @@ input SessionCreateGenerateOTLT {
 
 input SessionCreateUseOTLT {
 	token: String!
-	codeVerifier: String!
+	codeChallengeMethod: String!
+	codeChallenge: String!
 }
 
 input SessionCreateContextInput {

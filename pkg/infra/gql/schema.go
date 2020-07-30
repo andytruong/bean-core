@@ -1639,7 +1639,8 @@ input SessionCreateGenerateOTLT {
 
 input SessionCreateUseOTLT {
 	token: String!
-	codeVerifier: String!
+	codeChallengeMethod: String!
+	codeChallenge: String!
 }
 
 input SessionCreateContextInput {
@@ -9204,9 +9205,15 @@ func (ec *executionContext) unmarshalInputSessionCreateUseOTLT(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
-		case "codeVerifier":
+		case "codeChallengeMethod":
 			var err error
-			it.CodeVerifier, err = ec.unmarshalNString2string(ctx, v)
+			it.CodeChallengeMethod, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "codeChallenge":
+			var err error
+			it.CodeChallenge, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

@@ -1,7 +1,7 @@
 Access › Login
 ====
 
-1. Start session
+1. Start session using credentials
 ====
 
 Using credentials to get access-token (outcome.session.jwt) and refresh token (outcome.token) to access system:
@@ -32,7 +32,20 @@ mutation ($namespaceId: ID!, $email: EmailAddress!) {
 }
 ```
 
-2. In session
+2. Refresh token
+====
+
+When JWT is expired, we can refresh it
+
+```graphql
+query ($token: String!, $codeVerifier: String!) {
+    session(token: $token) {
+        jwt($codeVerifier)
+    }
+}
+```
+
+3. Start session using one-time login token
 ====
 
 ```graphql
@@ -40,7 +53,8 @@ mutation (token: String!) {
     sessionCreate(
         input: {
             oneTimeLogin: { token: $token }
-            codeVerifier: "YOUR CODE VERIFIER"
+            codeChallengeMethod: "S256",
+            codeChallenge: "SHA256(…)"
         }
     ) {
         errors  { code fields message }
@@ -50,10 +64,11 @@ mutation (token: String!) {
 }
 ```
 
-3. Terminate the session
-===
+4. Terminate the session
+====
 
 ```graphql
+# TODO
 ```
 
 References

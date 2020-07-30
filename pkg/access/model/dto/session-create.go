@@ -18,7 +18,7 @@ type SessionCreateUseCredentialsInput struct {
 	Email               scalar.EmailAddress `json:"email"`
 	HashedPassword      string              `json:"hashedPassword"`
 	CodeChallengeMethod string              `json:"codeChallengeMethod"`
-	CodeChallenge       string              `json:"codeChallengeMethod"`
+	CodeChallenge       string              `json:"codeChallenge"`
 }
 
 type SessionCreateGenerateOTLT struct {
@@ -27,8 +27,9 @@ type SessionCreateGenerateOTLT struct {
 }
 
 type SessionCreateUseOTLT struct {
-	Token        string `json:"token"`
-	CodeVerifier string `json:"codeVerifier"`
+	Token               string `json:"token"`
+	CodeChallengeMethod string `json:"codeChallengeMethod"`
+	CodeChallenge       string `json:"codeChallenge"`
 }
 
 type SessionCreateContextInput struct {

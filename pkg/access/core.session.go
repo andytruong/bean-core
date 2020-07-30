@@ -84,7 +84,10 @@ func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dt
 		return nil, util.ErrorInvalidArgument
 	}
 
-	out, err := this.create(tx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.NamespaceId, nil)
+	out, err := this.create(tx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.NamespaceId, func(session *model.Session) {
+		session.CodeChallengeMethod = in.CodeChallengeMethod
+		session.CodeChallenge = in.CodeChallenge
+	})
 	if nil != err {
 		return nil, err
 	}

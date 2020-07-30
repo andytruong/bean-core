@@ -140,12 +140,9 @@ func Test_Create(t *testing.T) {
 			ass.NoError(err)
 			ass.Equal(claim.KindOTLT, oGenerate.Session.Kind)
 
-			// Use it
 			{
 				out, err := this.SessionCreate(ctx, &dto.SessionCreateInput{
-					UseOTLT: &dto.SessionCreateUseOTLT{
-						Token: *oGenerate.Token,
-					},
+					UseOTLT: &dto.SessionCreateUseOTLT{Token: *oGenerate.Token},
 				})
 
 				ass.NoError(err)

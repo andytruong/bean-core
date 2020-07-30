@@ -1,9 +1,11 @@
 package model
 
 import (
+	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"bean/components/claim"
@@ -28,6 +30,18 @@ type Session struct {
 
 func (this Session) TableName() string {
 	return "access_session"
+}
+
+func (this Session) Verify(codeVerifier string) bool {
+	switch this.CodeChallengeMethod {
+	case "S256":
+		actual := fmt.Sprintf("%x", sha256.Sum256([]byte(codeVerifier)))
+
+		return this.CodeChallenge == actual
+
+	default:
+		return false
+	}
 }
 
 type ScopeList []*AccessScope
