@@ -10,18 +10,20 @@ import (
 )
 
 type Session struct {
-	ID          string     `json:"id"`
-	Version     string     `json:"version"`
-	ParentId    string     `json:"parentId"`
-	Kind        claim.Kind `json:"kind"`
-	UserId      string     `json:"userId"`
-	NamespaceId string     `json:"namespaceId"`
-	HashedToken string     `json:"hashedToken"`
-	Scopes      ScopeList  `json:"scopes",sql:"type:text"`
-	IsActive    bool       `json:"isActive"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   time.Time  `json:"updatedAt"`
-	ExpiredAt   time.Time  `json:"expiredAt"`
+	ID                  string     `json:"id"`
+	Version             string     `json:"version"`
+	ParentId            string     `json:"parentId"`
+	Kind                claim.Kind `json:"kind"`
+	UserId              string     `json:"userId"`
+	NamespaceId         string     `json:"namespaceId"`
+	HashedToken         string     `json:"hashedToken"`
+	Scopes              ScopeList  `json:"scopes",sql:"type:text"`
+	IsActive            bool       `json:"isActive"`
+	CreatedAt           time.Time  `json:"createdAt"`
+	UpdatedAt           time.Time  `json:"updatedAt"`
+	ExpiredAt           time.Time  `json:"expiredAt"`
+	CodeChallengeMethod string     `json:"codeChallengeMethod"`
+	CodeChallenge       string     `json:"codeChallenge"`
 }
 
 func (this Session) TableName() string {

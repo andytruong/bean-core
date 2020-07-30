@@ -16,6 +16,8 @@ input SessionCreateUseCredentialsInput {
 	namespaceId: String!
 	email: EmailAddress!
 	hashedPassword: String!
+	codeChallengeMethod: String!
+	codeChallenge: String!
 }
 
 input SessionCreateGenerateOTLT {
@@ -25,6 +27,7 @@ input SessionCreateGenerateOTLT {
 
 input SessionCreateUseOTLT {
 	token: String!
+	codeVerifier: String!
 }
 
 input SessionCreateContextInput {
