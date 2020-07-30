@@ -64,11 +64,14 @@ func (this *CoreSession) createUseCredentials(tx *gorm.DB, in *dto.SessionCreate
 		}
 	}
 
-	return this.create(tx, claim.KindCredentials, email.UserId, in.NamespaceID)
+	return this.create(tx, claim.KindCredentials, email.UserId, in.NamespaceID, func(session *model.Session) {
+		session.CodeChallengeMethod = in.CodeChallengeMethod
+		session.CodeChallenge = in.CodeChallenge
+	})
 }
 
 func (this *CoreSession) generateOTLT(tx *gorm.DB, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
-	return this.create(tx, claim.KindOTLT, in.UserID, in.NamespaceID)
+	return this.create(tx, claim.KindOTLT, in.UserID, in.NamespaceID, nil)
 }
 
 func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
@@ -81,7 +84,10 @@ func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dt
 		return nil, util.ErrorInvalidArgument
 	}
 
-	out, err := this.create(tx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.NamespaceId)
+	out, err := this.create(tx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.NamespaceId, func(session *model.Session) {
+		session.CodeChallengeMethod = in.CodeChallengeMethod
+		session.CodeChallenge = in.CodeChallenge
+	})
 	if nil != err {
 		return nil, err
 	}
@@ -99,9 +105,8 @@ func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dt
 
 func (this CoreSession) create(
 	tx *gorm.DB,
-	kind claim.Kind,
-	userId string,
-	namespaceId string,
+	kind claim.Kind, userId string, namespaceId string,
+	create func(*model.Session),
 ) (*dto.SessionCreateOutcome, error) {
 	membership := &mNamespace.Membership{}
 
@@ -131,6 +136,10 @@ func (this CoreSession) create(
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 		ExpiredAt:   time.Now().Add(this.bean.genetic.SessionTimeout),
+	}
+
+	if nil != create {
+		create(session)
 	}
 
 	if err := tx.Create(&session).Error; nil != err {

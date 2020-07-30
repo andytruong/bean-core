@@ -1,31 +1,47 @@
 package model
 
 import (
+	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"bean/components/claim"
 )
 
 type Session struct {
-	ID          string     `json:"id"`
-	Version     string     `json:"version"`
-	ParentId    string     `json:"parentId"`
-	Kind        claim.Kind `json:"kind"`
-	UserId      string     `json:"userId"`
-	NamespaceId string     `json:"namespaceId"`
-	HashedToken string     `json:"hashedToken"`
-	Scopes      ScopeList  `json:"scopes",sql:"type:text"`
-	IsActive    bool       `json:"isActive"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   time.Time  `json:"updatedAt"`
-	ExpiredAt   time.Time  `json:"expiredAt"`
+	ID                  string     `json:"id"`
+	Version             string     `json:"version"`
+	ParentId            string     `json:"parentId"`
+	Kind                claim.Kind `json:"kind"`
+	UserId              string     `json:"userId"`
+	NamespaceId         string     `json:"namespaceId"`
+	HashedToken         string     `json:"hashedToken"`
+	Scopes              ScopeList  `json:"scopes" sql:"type:text"`
+	IsActive            bool       `json:"isActive"`
+	CreatedAt           time.Time  `json:"createdAt"`
+	UpdatedAt           time.Time  `json:"updatedAt"`
+	ExpiredAt           time.Time  `json:"expiredAt"`
+	CodeChallengeMethod string     `json:"codeChallengeMethod"`
+	CodeChallenge       string     `json:"codeChallenge"`
 }
 
 func (this Session) TableName() string {
 	return "access_session"
+}
+
+func (this Session) Verify(codeVerifier string) bool {
+	switch this.CodeChallengeMethod {
+	case "S256":
+		actual := fmt.Sprintf("%x", sha256.Sum256([]byte(codeVerifier)))
+
+		return this.CodeChallenge == actual
+
+	default:
+		return false
+	}
 }
 
 type ScopeList []*AccessScope

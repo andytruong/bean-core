@@ -11,7 +11,7 @@ type Session {
 	createdAt: Time!
 	updatedAt: Time!
 	expiredAt: Time!
-	jwt: JWT!
+	jwt(codeVerifier: String!): JWT!
 }
 
 type SessionContext {

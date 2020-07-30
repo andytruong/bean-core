@@ -37,10 +37,14 @@ func (this ModelResolver) Namespace(ctx context.Context, obj *model.Session) (*n
 	return this.bean.namespace.Load(ctx, obj.NamespaceId)
 }
 
-func (this ModelResolver) Jwt(ctx context.Context, session *model.Session) (string, error) {
+func (this ModelResolver) Jwt(ctx context.Context, session *model.Session, codeVerifier string) (string, error) {
 	roles, err := this.bean.namespace.MembershipResolver().FindRoles(ctx, session.UserId, session.NamespaceId)
 	if nil != err {
 		return "", err
+	}
+
+	if !session.Verify(codeVerifier) {
+		return "", fmt.Errorf("can not verify")
 	}
 
 	claims := claim.Payload{
