@@ -31,6 +31,6 @@ func Test(t *testing.T) {
 	ass.NoError(err)
 	ass.NotNil(sv)
 	ass.Equal("128h0m0s", can.Beans.Access.SessionTimeout.String())
-	ass.Equal(100, can.Beans.Namespace.Manager.MaxNumberOfManager)
+	ass.Equal(100, can.Beans.Space.Manager.MaxNumberOfManager)
 	ass.Equal("01EBWB516AP6BQD7", can.Beans.Integration.S3.Key)
 }

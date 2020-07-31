@@ -60,7 +60,7 @@ func (this *ApplicationResolver) S3UploadToken(ctx context.Context, in dto.S3Upl
 				policy.SetContentType(string(in.ContentType)),
 				policy.SetUserMetadata("app", app.ID),
 				policy.SetUserMetadata("sid", claims.SessionId()),
-				policy.SetUserMetadata("nid", claims.NamespaceId()),
+				policy.SetUserMetadata("nid", claims.SpaceId()),
 				policy.SetContentLengthRange(1, 10*1024*1024), // TODO: generate per application's policy
 			)
 

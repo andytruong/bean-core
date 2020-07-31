@@ -4,7 +4,7 @@ type Session {
 	id: ID!
 	version: ID!
 	user: User
-	namespace: Namespace!
+	space: Space!
 	scopes: [AccessScope]
 	context: SessionContext
 	isActive: Boolean!

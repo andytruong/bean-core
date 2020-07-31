@@ -2,7 +2,7 @@ schema:
   - pkg/util/api/*.graphql
   - pkg/config/api/*.graphql
   - pkg/access/api/*.graphql
-  - pkg/namespace/api/*.graphql
+  - pkg/space/api/*.graphql
   - pkg/user/api/*.graphql
   - pkg/integration/s3/api/*.graphql
 
@@ -23,8 +23,8 @@ autobind:
   - bean/pkg/config/model
   - bean/pkg/user/model
   - bean/pkg/user/model/dto
-  - bean/pkg/namespace/model
-  - bean/pkg/namespace/model/dto
+  - bean/pkg/space/model
+  - bean/pkg/space/model/dto
   - bean/pkg/access/model
   - bean/pkg/access/model/dto
   - bean/pkg/integration/s3/model

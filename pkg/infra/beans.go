@@ -4,26 +4,26 @@ import (
 	"bean/components/module"
 	"bean/pkg/access"
 	"bean/pkg/integration/s3"
-	"bean/pkg/namespace"
+	"bean/pkg/space"
 	"bean/pkg/user"
 )
 
 type (
 	beans struct {
-		can       *Can
-		user      *user.UserBean
-		namespace *namespace.NamespaceBean
-		access    *access.AccessBean
-		s3        *s3.S3IntegrationBean
+		can    *Can
+		user   *user.UserBean
+		space  *space.SpaceBean
+		access *access.AccessBean
+		s3     *s3.S3IntegrationBean
 	}
 )
 
 func (this *beans) List() []module.Bean {
 	mUser, _ := this.User()
-	mNamespace, _ := this.Namespace()
+	mSpace, _ := this.Space()
 	mAccess, _ := this.Access()
 
-	return []module.Bean{mUser, mNamespace, mAccess}
+	return []module.Bean{mUser, mSpace, mAccess}
 }
 
 func (this *beans) User() (*user.UserBean, error) {
@@ -45,10 +45,10 @@ func (this *beans) User() (*user.UserBean, error) {
 	return this.user, err
 }
 
-func (this *beans) Namespace() (*namespace.NamespaceBean, error) {
+func (this *beans) Space() (*space.SpaceBean, error) {
 	var err error
 
-	if nil == this.namespace {
+	if nil == this.space {
 		db, err := this.can.dbs.master()
 		if nil != err {
 			return nil, err
@@ -59,16 +59,16 @@ func (this *beans) Namespace() (*namespace.NamespaceBean, error) {
 			return nil, err
 		}
 
-		this.namespace = namespace.NewNamespaceBean(
+		this.space = space.NewSpaceBean(
 			db,
 			this.can.logger,
 			this.can.Identifier(),
 			mUser,
-			this.can.Beans.Namespace,
+			this.can.Beans.Space,
 		)
 	}
 
-	return this.namespace, err
+	return this.space, err
 }
 
 func (this *beans) Access() (*access.AccessBean, error) {
@@ -83,7 +83,7 @@ func (this *beans) Access() (*access.AccessBean, error) {
 			return nil, err
 		}
 
-		mNamespace, err := this.Namespace()
+		mSpace, err := this.Space()
 		if nil != err {
 			return nil, err
 		}
@@ -93,7 +93,7 @@ func (this *beans) Access() (*access.AccessBean, error) {
 			this.can.Identifier(),
 			this.can.logger,
 			mUser,
-			mNamespace,
+			mSpace,
 			this.can.Beans.Access,
 		)
 	}

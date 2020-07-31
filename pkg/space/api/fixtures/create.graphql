@@ -1,0 +1,34 @@
+mutation {
+    spaceCreate(
+        input: {
+            object: {
+                title: "Testing",
+                isActive: true,
+                domainNames: {
+                    primary: {
+                        verified: true,
+                        value: "local:8484",
+                        isActive: true
+                    }
+                }
+            },
+            context: {
+                userId: "xxxxxxx"
+            }
+        },
+    ) {
+        errors { code fields}
+        space {
+            id
+            version
+            title
+            createdAt
+            updatedAt
+            isActive
+            domainNames {
+                primary    { isActive isVerified value createdAt }
+                secondary  { isActive isVerified value createdAt }
+            }
+        }
+    }
+}

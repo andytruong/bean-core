@@ -30,7 +30,7 @@ func (this Payload) SessionId() string {
 	return this.Id
 }
 
-func (this Payload) NamespaceId() string {
+func (this Payload) SpaceId() string {
 	return this.Audience
 }
 

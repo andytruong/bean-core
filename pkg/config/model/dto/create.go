@@ -8,7 +8,7 @@ import (
 
 type BucketCreateInput struct {
 	// ID of host entity.
-	//  If bucket is created for namespace -> bucket.HostId -> namespace.ID
+	//  If bucket is created for space -> bucket.HostId -> space.ID
 	//  If bucket is created for user      -> bucket.HostId -> user.ID
 	HostId      string             `json:"hostId"`
 	Slug        *string            `json:"slug"`
