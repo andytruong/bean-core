@@ -8,7 +8,7 @@ type LogoutInput struct {
 	HashedToken string `json:"hashedToken"`
 }
 
-type SessionDeleteOutcome struct {
+type SessionArchiveOutcome struct {
 	Errors []*util.Error `json:"errors"`
 	Result bool          `json:"result"`
 }

@@ -48,10 +48,10 @@ type SessionCreateOutcome {
 # SessionDelete // Logout
 # ---------------------
 extend type Mutation {
-	sessionArchive(token: String!): SessionDeleteOutcome!
+	sessionArchive: SessionArchiveOutcome! @requireAuth
 }
 
-type SessionDeleteOutcome {
+type SessionArchiveOutcome {
 	errors: [Error!]
 	result: Boolean!
 }

@@ -98,7 +98,7 @@ func Test_Create(t *testing.T) {
 
 			// check that code challenged & method are saved correctly
 			{
-				session, err := this.coreSession.Load(ctx, this.db, *out.Token)
+				session, err := this.coreSession.LoadByToken(ctx, this.db, *out.Token)
 				ass.NoError(err)
 				ass.Equal("S256", session.CodeChallengeMethod)
 				ass.Equal(
@@ -242,17 +242,24 @@ func Test_Archive(t *testing.T) {
 	sessionOutcome, err := this.SessionCreate(ctx, in)
 	ass.NoError(err)
 
-	// can archive session without issue
 	{
-		outcome, err := this.SessionArchive(ctx, *sessionOutcome.Token)
-		ass.NoError(err)
-		ass.Equal(outcome.Result, true)
-	}
+		ctx = context.WithValue(context.Background(), claim.ContextKey, &claim.Payload{
+			StandardClaims: jwt.StandardClaims{Id: sessionOutcome.Session.ID, Subject: oUser.User.ID},
+			Kind:           claim.KindAuthenticated,
+		})
 
-	// archive again -> should have error
-	{
-		outcome, err := this.SessionArchive(ctx, *sessionOutcome.Token)
-		ass.NoError(err)
-		ass.Equal(outcome.Result, false)
+		// can archive session without issue
+		{
+			outcome, err := this.SessionArchive(ctx)
+			ass.NoError(err)
+			ass.Equal(outcome.Result, true)
+		}
+
+		// archive again -> should have error
+		{
+			outcome, err := this.SessionArchive(ctx)
+			ass.NoError(err)
+			ass.Equal(outcome.Result, false)
+		}
 	}
 }
