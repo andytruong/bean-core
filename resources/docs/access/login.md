@@ -42,6 +42,13 @@ query ($refreshToken: String!, $codeVerifier: String!) {
 }
 ```
 
+4. Use accessToken
+====
+
+```
+curl http://path/to/endpoint -H "Authorization: Bearer ${accessToken}"
+```
+
 3. Start session using one-time login token
 ====
 
@@ -64,14 +71,13 @@ mutation (token: String!) {
 4. Terminate the session
 ====
 
-> TODO: To be implemented.
-
 Related sessions will be also terminated.
 
 ```graphql
 mutation {
-    sessionDelete(token: $accessToken) {
-        errors { code message }
+    sessionArchive(token: $accessToken) {
+        errors  { code fields message }
+        result
     }
 }
 ```

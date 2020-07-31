@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"bean/components/claim"
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
@@ -99,13 +100,18 @@ func (this *AccessBean) SessionCreate(ctx context.Context, in *dto.SessionCreate
 	return outcome, txn.Commit().Error
 }
 
-func (this *AccessBean) SessionArchive(ctx context.Context, token string) (*dto.SessionDeleteOutcome, error) {
+func (this *AccessBean) SessionArchive(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
+	claims := claim.ContextToPayload(ctx)
+	if nil == claims {
+		return nil, util.ErrorAuthRequired
+	}
+
 	tx := this.db.WithContext(ctx).Begin()
 
 	// load session
-	sess, err := this.coreSession.Load(ctx, tx, token)
+	sess, err := this.coreSession.load(ctx, tx, claims.SessionId())
 	if nil != err {
-		return &dto.SessionDeleteOutcome{
+		return &dto.SessionArchiveOutcome{
 			Errors: util.NewErrors(util.ErrorCodeInput, []string{"token"}, err.Error()),
 			Result: false,
 		}, nil
@@ -125,7 +131,7 @@ func (this *AccessBean) SessionArchive(ctx context.Context, token string) (*dto.
 }
 
 func (this AccessBean) Session(ctx context.Context, token string) (*model.Session, error) {
-	return this.coreSession.Load(ctx, this.db, token)
+	return this.coreSession.LoadByToken(ctx, this.db, token)
 }
 
 func (this AccessBean) Sign(claims jwt.Claims) (string, error) {

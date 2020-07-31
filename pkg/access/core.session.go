@@ -75,7 +75,7 @@ func (this *CoreSession) generateOTLT(tx *gorm.DB, in *dto.SessionCreateGenerate
 }
 
 func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
-	oneTimeSession, err := this.Load(tx.Statement.Context, tx, in.Token)
+	oneTimeSession, err := this.LoadByToken(tx.Statement.Context, tx, in.Token)
 	if nil != err {
 		return nil, err
 	}
@@ -159,7 +159,29 @@ func (this CoreSession) create(
 	}, nil
 }
 
-func (this CoreSession) Load(ctx context.Context, db *gorm.DB, token string) (*model.Session, error) {
+func (this CoreSession) load(ctx context.Context, db *gorm.DB, id string) (*model.Session, error) {
+	session := &model.Session{}
+	err := db.
+		WithContext(ctx).
+		First(&session, "id = ?", id).
+		Error
+
+	if err == gorm.ErrRecordNotFound {
+		return nil, errors.New("session not found: " + id)
+	}
+
+	if session.ExpiredAt.Unix() <= time.Now().Unix() {
+		return nil, errors.New("session expired")
+	}
+
+	if !session.IsActive {
+		return nil, errors.New("session archived")
+	}
+
+	return session, nil
+}
+
+func (this CoreSession) LoadByToken(ctx context.Context, db *gorm.DB, token string) (*model.Session, error) {
 	session := &model.Session{}
 	err := db.
 		WithContext(ctx).
@@ -181,14 +203,24 @@ func (this CoreSession) Load(ctx context.Context, db *gorm.DB, token string) (*m
 	return session, nil
 }
 
-func (this CoreSession) Delete(tx *gorm.DB, session *model.Session) (*dto.SessionDeleteOutcome, error) {
+func (this CoreSession) Delete(tx *gorm.DB, session *model.Session) (*dto.SessionArchiveOutcome, error) {
 	session.IsActive = false
 	session.Version = this.bean.id.MustULID()
 	session.UpdatedAt = time.Now()
 	err := tx.Save(&session).Error
 	if nil != err {
 		return nil, err
+	} else {
+		// If session.kind is … also archive parent sessions
+		if session.Kind == claim.KindOTLT {
+
+		}
+
+		// If session.kind is KindCredentials/KindAuthenticated also archive child sessions
+		if session.Kind == claim.KindCredentials || session.Kind == claim.KindAuthenticated {
+			// find & archive all child sessions
+		}
 	}
 
-	return &dto.SessionDeleteOutcome{Errors: nil, Result: true}, nil
+	return &dto.SessionArchiveOutcome{Errors: nil, Result: true}, nil
 }
