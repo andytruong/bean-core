@@ -12,10 +12,10 @@ const (
 	Postgres = "postgres"
 
 	// Table names
-	TableNamespace            = "namespaces"
-	TableNamespaceMemberships = "namespace_memberships"
-	TableUserEmail            = "user_emails"
-	TableUserEmailUnverified  = "user_unverified_emails"
+	TableSpace               = "spaces"
+	TableSpaceMemberships    = "space_memberships"
+	TableUserEmail           = "user_emails"
+	TableUserEmailUnverified = "user_unverified_emails"
 )
 
 func Transaction(ctx context.Context, db *gorm.DB, callback func(tx *gorm.DB) error) error {

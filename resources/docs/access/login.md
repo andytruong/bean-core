@@ -7,11 +7,11 @@ Access › Login
 Using credentials to get refresh token (`outcome.token`) to access system:
 
 ```graphql
-mutation ($namespaceId: ID!, $email: EmailAddress!) {
+mutation ($spaceId: ID!, $email: EmailAddress!) {
     sessionCreate(
         input: {
             credentials: {
-                namespaceId: $namespaceId,
+                spaceId: $spaceId,
                 email: $email
                 hashedPassword: String!
                 codeChallengeMethod: "S256",

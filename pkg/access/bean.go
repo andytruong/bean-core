@@ -16,7 +16,7 @@ import (
 	"bean/components/unique"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
-	"bean/pkg/namespace"
+	"bean/pkg/space"
 	"bean/pkg/user"
 	"bean/pkg/util"
 )
@@ -26,16 +26,16 @@ func NewAccessBean(
 	id *unique.Identifier,
 	logger *zap.Logger,
 	bUser *user.UserBean,
-	bNamespace *namespace.NamespaceBean,
+	bSpace *space.SpaceBean,
 	genetic *Genetic,
 ) *AccessBean {
 	this := &AccessBean{
-		genetic:   genetic.init(),
-		logger:    logger,
-		db:        db,
-		id:        id,
-		user:      bUser,
-		namespace: bNamespace,
+		genetic: genetic.init(),
+		logger:  logger,
+		db:      db,
+		id:      id,
+		user:    bUser,
+		space:   bSpace,
 	}
 
 	this.SessionResolver = ModelResolver{
@@ -59,15 +59,15 @@ type (
 		coreSession     *CoreSession
 
 		// depends on user bean
-		user      *user.UserBean
-		namespace *namespace.NamespaceBean
+		user  *user.UserBean
+		space *space.SpaceBean
 	}
 )
 
 func (this AccessBean) Dependencies() []module.Bean {
 	return []module.Bean{
 		this.user,
-		this.namespace,
+		this.space,
 	}
 }
 

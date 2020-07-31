@@ -10,7 +10,7 @@ import (
 	"bean/components/unique"
 	"bean/pkg/access"
 	"bean/pkg/integration/s3"
-	"bean/pkg/namespace"
+	"bean/pkg/space"
 )
 
 func NewCan(path string) (*Can, error) {
@@ -97,8 +97,8 @@ type (
 	}
 
 	BeansConfig struct {
-		Access      *access.Genetic    `yaml:"access"`
-		Namespace   *namespace.Genetic `yaml:"namespace"`
+		Access      *access.Genetic `yaml:"access"`
+		Space       *space.Genetic  `yaml:"space"`
 		Integration struct {
 			S3 *s3.Genetic `yaml:"s3"`
 		} `yaml:"integration"`

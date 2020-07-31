@@ -1,0 +1,11 @@
+# ---------------------
+# Load Space by ID
+# ---------------------
+extend type Query {
+	space(filters: SpaceFilters!): Space
+}
+
+input SpaceFilters {
+	id: ID
+	domain: Uri
+}

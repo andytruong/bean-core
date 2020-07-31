@@ -8,12 +8,12 @@ import (
 	"bean/pkg/access/model/dto"
 )
 
-func SessionCreateInputFixtureUseCredentials(namespaceId string, email string, hashedPassword string) *dto.SessionCreateInput {
+func SessionCreateInputFixtureUseCredentials(spaceId string, email string, hashedPassword string) *dto.SessionCreateInput {
 	codeVerifier := []byte("0123456789")
 
 	return &dto.SessionCreateInput{
 		UseCredentials: &dto.SessionCreateUseCredentialsInput{
-			NamespaceID:         namespaceId,
+			SpaceID:             spaceId,
 			Email:               scalar.EmailAddress(email),
 			HashedPassword:      hashedPassword,
 			CodeChallengeMethod: "S256",

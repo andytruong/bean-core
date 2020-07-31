@@ -6,7 +6,7 @@ import (
 	"bean/pkg/access"
 	"bean/pkg/infra/gql"
 	"bean/pkg/integration/s3"
-	"bean/pkg/namespace"
+	"bean/pkg/space"
 	"bean/pkg/user"
 )
 
@@ -21,8 +21,8 @@ type (
 		*user.UserBean
 		*user.UserQueryResolver
 		*user.UserMutationResolver
-		*namespace.NamespaceBean
-		*namespace.NamespaceQueryResolver
+		*space.SpaceBean
+		*space.SpaceQueryResolver
 		*access.AccessBean
 		*s3.ApplicationResolver
 	}
@@ -35,13 +35,13 @@ func (this *graph) Application() gql.ApplicationResolver {
 }
 
 func (this *graph) MembershipConnection() gql.MembershipConnectionResolver {
-	bean, _ := this.can.beans.Namespace()
+	bean, _ := this.can.beans.Space()
 
 	return bean.MembershipResolver()
 }
 
 func (this *graph) Membership() gql.MembershipResolver {
-	bean, _ := this.can.beans.Namespace()
+	bean, _ := this.can.beans.Space()
 
 	return bean.MembershipResolver()
 }
@@ -66,8 +66,8 @@ func (this *graph) User() gql.UserResolver {
 	return bean.Resolvers.Object
 }
 
-func (this *graph) Namespace() gql.NamespaceResolver {
-	bean, _ := this.can.beans.Namespace()
+func (this *graph) Space() gql.SpaceResolver {
+	bean, _ := this.can.beans.Space()
 
 	return bean.Resolvers.Object
 }
@@ -85,17 +85,17 @@ func (this *graph) getResolvers() *resolvers {
 
 		bUser, _ := this.can.beans.User()
 		bAccess, _ := this.can.beans.Access()
-		bNamespace, _ := this.can.beans.Namespace()
+		bSpace, _ := this.can.beans.Space()
 		bS3, _ := this.can.beans.S3()
 
 		this.resolvers = &resolvers{
-			UserBean:               bUser,
-			UserQueryResolver:      bUser.Resolvers.Query,
-			UserMutationResolver:   bUser.Resolvers.Mutation,
-			AccessBean:             bAccess,
-			NamespaceBean:          bNamespace,
-			NamespaceQueryResolver: bNamespace.Resolvers.Query,
-			ApplicationResolver:    bS3.CoreApp.Resolver,
+			UserBean:             bUser,
+			UserQueryResolver:    bUser.Resolvers.Query,
+			UserMutationResolver: bUser.Resolvers.Mutation,
+			AccessBean:           bAccess,
+			SpaceBean:            bSpace,
+			SpaceQueryResolver:   bSpace.Resolvers.Query,
+			ApplicationResolver:  bS3.CoreApp.Resolver,
 		}
 	}
 

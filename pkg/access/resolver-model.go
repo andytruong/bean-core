@@ -11,7 +11,7 @@ import (
 
 	"bean/components/claim"
 	"bean/pkg/access/model"
-	namespace_model "bean/pkg/namespace/model"
+	space_model "bean/pkg/space/model"
 	user_model "bean/pkg/user/model"
 )
 
@@ -33,12 +33,12 @@ func (this ModelResolver) Scopes(ctx context.Context, obj *model.Session) ([]*mo
 	return obj.Scopes, nil
 }
 
-func (this ModelResolver) Namespace(ctx context.Context, obj *model.Session) (*namespace_model.Namespace, error) {
-	return this.bean.namespace.Load(ctx, obj.NamespaceId)
+func (this ModelResolver) Space(ctx context.Context, obj *model.Session) (*space_model.Space, error) {
+	return this.bean.space.Load(ctx, obj.SpaceId)
 }
 
 func (this ModelResolver) Jwt(ctx context.Context, session *model.Session, codeVerifier string) (string, error) {
-	roles, err := this.bean.namespace.MembershipResolver().FindRoles(ctx, session.UserId, session.NamespaceId)
+	roles, err := this.bean.space.MembershipResolver().FindRoles(ctx, session.UserId, session.SpaceId)
 	if nil != err {
 		return "", err
 	}
@@ -64,7 +64,7 @@ func (this ModelResolver) Jwt(ctx context.Context, session *model.Session, codeV
 			IssuedAt:  time.Now().Unix(),
 			ExpiresAt: time.Now().Add(this.config.Jwt.Timeout).Unix(),
 			Subject:   session.UserId,
-			Audience:  session.NamespaceId,
+			Audience:  session.SpaceId,
 		},
 	}
 

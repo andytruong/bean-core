@@ -40,9 +40,9 @@ beans:
       key: "${INTEGRATION_S3_KEY:01EBWB516AP6BQD7}"
 
   # ---------------------
-  # Namespace bean
+  # Space bean
   # ---------------------
-  namespace:
+  space:
     manager:
       maxNumberOfManager: 100
 

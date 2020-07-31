@@ -6,7 +6,7 @@ import (
 	"bean/components/scalar"
 )
 
-// Any entity may have its own configuration: system, namespace, user, content, …
+// Any entity may have its own configuration: system, space, user, content, …
 // Each config bucket can be configured for private or public access.
 type ConfigBucket struct {
 	Id          string            `json:"id"`

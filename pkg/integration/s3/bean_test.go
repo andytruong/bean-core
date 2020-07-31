@@ -69,7 +69,7 @@ func Test(t *testing.T) {
 					},
 					{
 						Kind:  model.PolicyKindRateLimit,
-						Value: "1GB/namespace/hour",
+						Value: "1GB/space/hour",
 					},
 				},
 			})
@@ -91,7 +91,7 @@ func Test(t *testing.T) {
 				ass.Equal(policies[2].Kind, model.PolicyKindRateLimit)
 				ass.Equal(policies[0].Value, "jpeg gif png webp")
 				ass.Equal(policies[1].Value, "1MB/user/hour")
-				ass.Equal(policies[2].Value, "1GB/namespace/hour")
+				ass.Equal(policies[2].Value, "1GB/space/hour")
 			})
 
 			t.Run("Update", func(t *testing.T) {
@@ -173,7 +173,7 @@ func Test(t *testing.T) {
 						ass.Equal(policies[2].Kind, model.PolicyKindRateLimit)
 						ass.Equal(policies[0].Value, "jpeg gif png webp")
 						ass.Equal(policies[1].Value, "1MB/user/hour")
-						ass.Equal(policies[2].Value, "1GB/namespace/hour")
+						ass.Equal(policies[2].Value, "1GB/space/hour")
 					}
 
 					oUpdate, err := this.CoreApp.Update(ctx, &dto.S3ApplicationUpdateInput{
@@ -283,7 +283,7 @@ func Test_UploadToken(t *testing.T) {
 			},
 			{
 				Kind:  model.PolicyKindRateLimit,
-				Value: "1GB/namespace/hour",
+				Value: "1GB/space/hour",
 			},
 		},
 	})
