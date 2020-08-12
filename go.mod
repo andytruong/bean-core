@@ -8,22 +8,22 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4
-	github.com/gorilla/websocket v1.4.0 // indirect
-	github.com/lib/pq v1.7.0
+	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/lib/pq v1.8.0
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	github.com/minio/minio-go/v7 v7.0.1
+	github.com/minio/minio-go/v7 v7.0.4
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/oklog/ulid v1.3.1
 	github.com/pkg/errors v0.9.1
 	github.com/speps/go-hashids v2.0.0+incompatible
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/vektah/gqlparser/v2 v2.0.1
 	go.uber.org/zap v1.15.0
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	gopkg.in/yaml.v2 v2.3.0
 	gorm.io/driver/postgres v0.2.6
-	gorm.io/driver/sqlite v1.0.8
-	gorm.io/gorm v0.2.25
+	gorm.io/driver/sqlite v1.0.9
+	gorm.io/gorm v0.2.29
 )
