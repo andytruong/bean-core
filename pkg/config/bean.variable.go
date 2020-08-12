@@ -29,7 +29,7 @@ func (this CoreVariable) access(ctx context.Context, db *gorm.DB, bucketId strin
 
 	claims := claim.ContextToPayload(ctx)
 	isOwner := (nil != claims) && claims.UserId() == bucket.HostId
-	isMember := (nil != claims) && claims.NamespaceId() == bucket.HostId
+	isMember := (nil != claims) && claims.SpaceId() == bucket.HostId
 
 	switch action {
 	case "read":

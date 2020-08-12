@@ -52,6 +52,6 @@ const (
 	// Example: "pdf txt zip gz"
 	PolicyKindFileExtensions PolicyKind = "file_extensions"
 
-	// Example: "1MB/user/hour", "1GB/namespace/hour"
+	// Example: "1MB/user/hour", "1GB/space/hour"
 	PolicyKindRateLimit PolicyKind = "rate_limit"
 )

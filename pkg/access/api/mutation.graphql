@@ -13,7 +13,7 @@ input SessionCreateInput {
 }
 
 input SessionCreateUseCredentialsInput {
-	namespaceId: String!
+	spaceId: String!
 	email: EmailAddress!
 	hashedPassword: String!
 	codeChallengeMethod: String!
@@ -21,7 +21,7 @@ input SessionCreateUseCredentialsInput {
 }
 
 input SessionCreateGenerateOTLT {
-	namespaceId: String!
+	spaceId: String!
 	userId: String!
 }
 

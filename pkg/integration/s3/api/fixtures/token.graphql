@@ -2,7 +2,7 @@ query {
 	s3 {
 		uploadToken(info: {
 			application: "xxxxxxx",
-			namespaceID: "xxxxxxx",
+			spaceID: "xxxxxxx",
 			userId:      "xxxxxxx",
 			fileName:    "demo.txt",
 			timestamp:   12345

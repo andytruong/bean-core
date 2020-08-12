@@ -10,7 +10,7 @@ import (
 	"bean/components/claim"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
-	mNamespace "bean/pkg/namespace/model"
+	mSpace "bean/pkg/space/model"
 	mUser "bean/pkg/user/model"
 	"bean/pkg/util"
 )
@@ -58,20 +58,20 @@ func (this *CoreSession) createUseCredentials(tx *gorm.DB, in *dto.SessionCreate
 		if nil != err {
 			if err == gorm.ErrRecordNotFound {
 				return &dto.SessionCreateOutcome{
-					Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.namespaceId"}, "invalid password"),
+					Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "invalid password"),
 				}, nil
 			}
 		}
 	}
 
-	return this.create(tx, claim.KindCredentials, email.UserId, in.NamespaceID, func(session *model.Session) {
+	return this.create(tx, claim.KindCredentials, email.UserId, in.SpaceID, func(session *model.Session) {
 		session.CodeChallengeMethod = in.CodeChallengeMethod
 		session.CodeChallenge = in.CodeChallenge
 	})
 }
 
 func (this *CoreSession) generateOTLT(tx *gorm.DB, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
-	return this.create(tx, claim.KindOTLT, in.UserID, in.NamespaceID, nil)
+	return this.create(tx, claim.KindOTLT, in.UserID, in.SpaceID, nil)
 }
 
 func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
@@ -84,7 +84,7 @@ func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dt
 		return nil, util.ErrorInvalidArgument
 	}
 
-	out, err := this.create(tx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.NamespaceId, func(session *model.Session) {
+	out, err := this.create(tx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.SpaceId, func(session *model.Session) {
 		session.CodeChallengeMethod = in.CodeChallengeMethod
 		session.CodeChallenge = in.CodeChallenge
 	})
@@ -105,20 +105,20 @@ func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dt
 
 func (this CoreSession) create(
 	tx *gorm.DB,
-	kind claim.Kind, userId string, namespaceId string,
+	kind claim.Kind, userId string, spaceId string,
 	create func(*model.Session),
 ) (*dto.SessionCreateOutcome, error) {
-	membership := &mNamespace.Membership{}
+	membership := &mSpace.Membership{}
 
 	// validate membership
 	{
 		err := tx.
-			First(&membership, "namespace_id = ? AND user_id = ?", namespaceId, userId).
+			First(&membership, "space_id = ? AND user_id = ?", spaceId, userId).
 			Error
 
 		if err == gorm.ErrRecordNotFound {
 			return &dto.SessionCreateOutcome{
-				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.namespaceId"}, "membership not found"),
+				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "membership not found"),
 			}, nil
 		}
 	}
@@ -129,7 +129,7 @@ func (this CoreSession) create(
 		Version:     this.bean.id.MustULID(),
 		Kind:        kind,
 		UserId:      userId,
-		NamespaceId: namespaceId,
+		SpaceId:     spaceId,
 		HashedToken: this.bean.id.Encode(token),
 		Scopes:      nil, // TODO
 		IsActive:    true,
@@ -146,7 +146,7 @@ func (this CoreSession) create(
 		return nil, err
 	} else {
 		// update membership -> last-time-login
-		err := this.bean.namespace.MembershipResolver().UpdateLastLoginTime(tx, membership)
+		err := this.bean.space.MembershipResolver().UpdateLastLoginTime(tx, membership)
 		if nil != err {
 			return nil, err
 		}

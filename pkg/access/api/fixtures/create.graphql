@@ -1,7 +1,7 @@
 mutation {
     sessionCreate(
         input: {
-            namespaceId: "01E8VTBXRCCZJFDJVGDW3Q3GEB",
+            spaceId: "01E8VTBXRCCZJFDJVGDW3Q3GEB",
             email: "john.doe@qa.local",
             hashedPassword: "xxxxxx"
         }

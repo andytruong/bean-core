@@ -17,7 +17,7 @@ type Session struct {
 	ParentId            string     `json:"parentId"`
 	Kind                claim.Kind `json:"kind"`
 	UserId              string     `json:"userId"`
-	NamespaceId         string     `json:"namespaceId"`
+	SpaceId             string     `json:"spaceId"`
 	HashedToken         string     `json:"hashedToken"`
 	Scopes              ScopeList  `json:"scopes" sql:"type:text"`
 	IsActive            bool       `json:"isActive"`
