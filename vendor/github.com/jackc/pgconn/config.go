@@ -497,7 +497,8 @@ func parseDSNSettings(s string) (map[string]string, error) {
 
 		key = strings.Trim(s[:eqIdx], " \t\n\r\v\f")
 		s = strings.TrimLeft(s[eqIdx+1:], " \t\n\r\v\f")
-		if s[0] != '\'' {
+		if len(s) == 0 {
+		} else if s[0] != '\'' {
 			end := 0
 			for ; end < len(s); end++ {
 				if asciiSpace[s[end]] == 1 {
@@ -539,6 +540,10 @@ func parseDSNSettings(s string) (map[string]string, error) {
 			key = k
 		}
 
+		if key == "" {
+			return nil, errors.New("invalid dsn")
+		}
+
 		settings[key] = val
 	}
 
@@ -569,13 +574,6 @@ func parseServiceSettings(servicefilePath, serviceName string) (map[string]strin
 	}
 
 	return settings, nil
-}
-
-type pgTLSArgs struct {
-	sslMode     string
-	sslRootCert string
-	sslCert     string
-	sslKey      string
 }
 
 // configTLS uses libpq's TLS parameters to construct  []*tls.Config. It is
@@ -662,7 +660,7 @@ func configTLS(settings map[string]string) ([]*tls.Config, error) {
 		}
 
 		if !caCertPool.AppendCertsFromPEM(caCert) {
-			return nil, errors.Errorf("unable to add CA to cert pool: %w", err)
+			return nil, errors.New("unable to add CA to cert pool")
 		}
 
 		tlsConfig.RootCAs = caCertPool

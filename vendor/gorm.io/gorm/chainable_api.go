@@ -69,7 +69,7 @@ func (db *DB) Distinct(args ...interface{}) (tx *DB) {
 	if len(args) > 0 {
 		tx = tx.Select(args[0], args[1:]...)
 	}
-	return tx
+	return
 }
 
 // Select specify fields that you want when querying, creating, updating
@@ -91,6 +91,7 @@ func (db *DB) Select(query interface{}, args ...interface{}) (tx *DB) {
 				return
 			}
 		}
+		delete(tx.Statement.Clauses, "SELECT")
 	case string:
 		fields := strings.FieldsFunc(v, utils.IsChar)
 
@@ -112,6 +113,8 @@ func (db *DB) Select(query interface{}, args ...interface{}) (tx *DB) {
 					return
 				}
 			}
+
+			delete(tx.Statement.Clauses, "SELECT")
 		} else {
 			tx.Statement.AddClause(clause.Select{
 				Distinct:   db.Statement.Distinct,

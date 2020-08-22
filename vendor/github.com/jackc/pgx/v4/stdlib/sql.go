@@ -373,6 +373,11 @@ func (c *Conn) Ping(ctx context.Context) error {
 	return c.conn.Ping(ctx)
 }
 
+func (c *Conn) CheckNamedValue(*driver.NamedValue) error {
+	// Underlying pgx supports sql.Scanner and driver.Valuer interfaces natively. So everything can be passed through directly.
+	return nil
+}
+
 type Stmt struct {
 	sd   *pgconn.StatementDescription
 	conn *Conn
@@ -412,15 +417,20 @@ type Rows struct {
 	valueFuncs   []rowValueFunc
 	skipNext     bool
 	skipNextMore bool
+
+	columnNames []string
 }
 
 func (r *Rows) Columns() []string {
-	fieldDescriptions := r.rows.FieldDescriptions()
-	names := make([]string, 0, len(fieldDescriptions))
-	for _, fd := range fieldDescriptions {
-		names = append(names, string(fd.Name))
+	if r.columnNames == nil {
+		fields := r.rows.FieldDescriptions()
+		r.columnNames = make([]string, len(fields))
+		for i, fd := range fields {
+			r.columnNames[i] = string(fd.Name)
+		}
 	}
-	return names
+
+	return r.columnNames
 }
 
 // ColumnTypeDatabaseTypeName returns the database system type name. If the name is unknown the OID is returned.
