@@ -1,3 +1,16 @@
+# 1.6.4 (July 29, 2020)
+
+* Fix deadlock on error after CommandComplete but before ReadyForQuery
+* Fix panic on parsing DSN with trailing '='
+
+# 1.6.3 (July 22, 2020)
+
+* Fix error message after AppendCertsFromPEM failure (vahid-sohrabloo)
+
+# 1.6.2 (July 14, 2020)
+
+* Update pgservicefile library
+
 # 1.6.1 (June 27, 2020)
 
 * Update golang.org/x/crypto to latest

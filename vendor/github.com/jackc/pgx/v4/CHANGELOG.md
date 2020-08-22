@@ -1,3 +1,22 @@
+# 4.8.1 (July 29, 2020)
+
+* Update pgconn to v1.6.4
+    * Fix deadlock on error after CommandComplete but before ReadyForQuery
+    * Fix panic on parsing DSN with trailing '='
+
+# 4.8.0 (July 22, 2020)
+
+* All argument types supported by native pgx should now also work through database/sql
+* Update pgconn to v1.6.3
+* Update pgtype to v1.4.2
+
+# 4.7.2 (July 14, 2020)
+
+* Improve performance of Columns() (zikaeroh)
+* Fix fatal Commit() failure not being considered fatal
+* Update pgconn to v1.6.2
+* Update pgtype to v1.4.1
+
 # 4.7.1 (June 29, 2020)
 
 * Fix stdlib decoding error with certain order and combination of fields
