@@ -21,7 +21,6 @@ func (this *CorePassword) create(tx *gorm.DB, user *model.User, in *dto.UserPass
 	pass := &model.UserPassword{
 		ID:          this.bean.id.MustULID(),
 		UserId:      user.ID,
-		Algorithm:   in.Algorithm,
 		HashedValue: in.HashedValue,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),

@@ -32,7 +32,6 @@ input UserEmailInput {
 
 input UserPasswordInput {
 	hashedValue: String!
-	algorithm: String!
 }
 
 type UserMutationOutcome {

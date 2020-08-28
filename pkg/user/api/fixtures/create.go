@@ -7,7 +7,7 @@ import (
 )
 
 func NewUserCreateInputFixture() *dto.UserCreateInput {
-	passAlg, _ := password.Get("bcrypt")
+	passAlg, _ := password.New()
 	pass, _ := passAlg.Encrypt("xxxxx")
 
 	return &dto.UserCreateInput{
@@ -36,7 +36,6 @@ func NewUserCreateInputFixture() *dto.UserCreateInput {
 			},
 		},
 		Password: &dto.UserPasswordInput{
-			Algorithm:   passAlg.Name(),
 			HashedValue: pass,
 		},
 		AvatarURI: scalar.NilUri("https://foo.bar"),

@@ -87,7 +87,6 @@ func Test_Update(t *testing.T) {
 				Version: oCreate.User.Version,
 				Values: &dto.UserUpdateValuesInput{
 					Password: &dto.UserPasswordInput{
-						Algorithm:   "xxxxxx",
 						HashedValue: this.id.MustULID(),
 					},
 				},

@@ -29,13 +29,12 @@ CREATE TABLE user_passwords
     is_active    boolean                NOT NULL,
     created_at   timestamp              NOT NULL,
     updated_at   timestamp              NOT NULL,
-    algorithm    character varying(8)   NOT NULL,
     hashed_value character varying(255) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
 CREATE INDEX user_pass_fk ON user_passwords (user_id);
-CREATE INDEX user_pass ON user_passwords (algorithm, hashed_value);
+CREATE INDEX user_pass ON user_passwords (hashed_value);
 CREATE INDEX user_pass_status ON user_passwords (is_active);
 
 CREATE TABLE user_emails

@@ -1938,7 +1938,6 @@ input UserEmailInput {
 
 input UserPasswordInput {
 	hashedValue: String!
-	algorithm: String!
 }
 
 type UserMutationOutcome {
@@ -9378,12 +9377,6 @@ func (ec *executionContext) unmarshalInputUserPasswordInput(ctx context.Context,
 		case "hashedValue":
 			var err error
 			it.HashedValue, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "algorithm":
-			var err error
-			it.Algorithm, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
