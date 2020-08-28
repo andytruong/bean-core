@@ -32,7 +32,6 @@ type UserNameInput struct {
 }
 
 type UserPasswordInput struct {
-	Algorithm   string `json:"algorithm"`
 	HashedValue string `json:"hashedValue"`
 }
 
