@@ -1,0 +1,15 @@
+version: "3.0"
+services:
+    backend:
+        image: "andytruong/bean-core:latest"
+    frontend:
+        image: "andytruong/bean-ui:latest"
+    db:
+        image: "postgres:12-alpine"
+    minio:
+        image: "minio/minio:RELEASE.2020-08-27T05-16-20Z-arm64"
+        environment:
+            - MINIO_ACCESS_KEY=bean
+            - MINIO_SECRET_KEY=bean
+    smtp:
+        image: "mailhog/mailhog:v1.0.1"

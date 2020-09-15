@@ -7,54 +7,26 @@ env: "${ENV:dev}"
 # Server configuration
 # ---------------------
 http-server:
-  address: ":${PORT:8484}"
-  readTimeout:  15s
-  writeTimeout: 15s
-  idleTimeout: 15s
-  graphql:
-    introspection: true
-    transports:
-      post: true
-      websocket:
-        keepAlivePingInterval: 15s
-    playround:
-      title: "GraphQL playground"
-      enabled: true
-      path: /
+    address: ":${PORT:8484}"
+    readTimeout: 15s
+    writeTimeout: 15s
+    idleTimeout: 15s
+    graphql:
+        introspection: true
+        transports:
+            post: true
+            websocket:
+                keepAlivePingInterval: 15s
+        playround:
+            title: "GraphQL playground"
+            enabled: true
+            path: /
 
-# ---------------------
-# Database connections
-# ---------------------
-databases:
-  $ref: "resources/config/env.${ENV:dev}/databases.yaml"
+databases: { $ref: "resources/config/env.${ENV:dev}/databases.yaml" }
 
-# ---------------------
-# Beans configuration: Each bean may have its own config
-# ---------------------
 beans:
-  integration:
-    s3:
-      # Key to encrypt/decrypt the application keys.
-      # Length: 16, 24, or 32 bytes -> AES-128, AES-192, AES-256.
-      # Change key will make persisted records not accessible.
-      key: "${INTEGRATION_S3_KEY:01EBWB516AP6BQD7}"
-
-  # ---------------------
-  # Space bean
-  # ---------------------
-  space:
-    manager:
-      maxNumberOfManager: 100
-
-  # ---------------------
-  # Access bean
-  # ---------------------
-  access:
-    timeout: "128h"
-    # Algorithm is `RS512` because we don't need providing private-key for services to verify the claims.
-    # To avoid configuration issues, path to keys should be absolute.
-    jwt:
-      algorithm: "RS512"
-      publicKey: "${JWT_PUBLIC_KEY:resources/keys/id_rsa.pub}"
-      privateKey: "${JWT_PRIVATE_KEY:resources/keys/id_rsa}"
-      timeout: "${JWT_TIMEOUT:5m}"
+    space: { $ref: "resources/config/env.${ENV:dev}/space.yaml" }
+    access: { $ref: "resources/config/env.${ENV:dev}/access.yaml" }
+    integration:
+        s3: { $ref: "resources/config/env.${ENV:dev}/integration.s3.yaml" }
+        mailer: { $ref: "resources/config/env.${ENV:dev}/integration.mailer.yaml" }

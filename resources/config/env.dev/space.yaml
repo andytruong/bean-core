@@ -1,0 +1,6 @@
+# ---------------------
+# Space bean
+# ---------------------
+
+manager:
+    maxNumberOfManager: 100

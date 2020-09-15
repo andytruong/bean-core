@@ -3,19 +3,20 @@ package infra
 import (
 	"sync"
 	"time"
-
+	
 	"go.uber.org/zap"
-
+	
 	"bean/components/conf"
 	"bean/components/unique"
 	"bean/pkg/access"
+	"bean/pkg/integration/mailer"
 	"bean/pkg/integration/s3"
 	"bean/pkg/space"
 )
 
 func NewCan(path string) (*Can, error) {
 	var err error
-
+	
 	this := &Can{
 		mu:    &sync.Mutex{},
 		beans: beans{},
@@ -24,16 +25,16 @@ func NewCan(path string) (*Can, error) {
 			connections: &sync.Map{},
 		},
 	}
-
+	
 	// parse configuration from YAML configuration file & env variables.
 	if err := conf.ParseFile(path, &this); nil != err {
 		return nil, err
 	}
-
+	
 	this.beans.can = this
 	this.graph.can = this
 	this.dbs.config = this.Databases
-
+	
 	// setup logger
 	if "dev" == this.Env {
 		if this.logger, err = zap.NewDevelopment(); nil != err {
@@ -44,7 +45,7 @@ func NewCan(path string) (*Can, error) {
 			return nil, err
 		}
 	}
-
+	
 	return this, nil
 }
 
@@ -59,7 +60,7 @@ type (
 		Databases  map[string]DatabaseConfig `yaml:"databases"`
 		HttpServer HttpServerConfig          `yaml:"http-server"`
 		Beans      BeansConfig               `json:"beans"`
-
+		
 		mu     *sync.Mutex
 		id     *unique.Identifier
 		graph  *graph
@@ -67,12 +68,12 @@ type (
 		beans  beans
 		logger *zap.Logger
 	}
-
+	
 	DatabaseConfig struct {
 		Driver string `yaml:"driver"`
 		Url    string `yaml:"url"`
 	}
-
+	
 	HttpServerConfig struct {
 		Address      string        `yaml:"address"`
 		ReadTimeout  time.Duration `yaml:"readTimeout"`
@@ -89,18 +90,19 @@ type (
 			Playround PlayroundConfig `yaml:"playround"`
 		} `yaml:"graphql"`
 	}
-
+	
 	PlayroundConfig struct {
 		Title   string `yaml:"title"`
 		Enabled bool   `yaml:"enabled"`
 		Path    string `yaml:"path"`
 	}
-
+	
 	BeansConfig struct {
 		Access      *access.Genetic `yaml:"access"`
 		Space       *space.Genetic  `yaml:"space"`
 		Integration struct {
-			S3 *s3.Genetic `yaml:"s3"`
+			S3     *s3.Genetic     `yaml:"s3"`
+			Mailer *mailer.Genetic `yaml:"mailer"`
 		} `yaml:"integration"`
 	}
 )
@@ -115,6 +117,6 @@ func (this *Can) Identifier() *unique.Identifier {
 		this.id = &unique.Identifier{}
 		this.mu.Unlock()
 	}
-
+	
 	return this.id
 }
