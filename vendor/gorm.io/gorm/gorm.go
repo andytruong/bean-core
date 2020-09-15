@@ -32,6 +32,8 @@ type Config struct {
 	DisableAutomaticPing bool
 	// DisableForeignKeyConstraintWhenMigrating
 	DisableForeignKeyConstraintWhenMigrating bool
+	// AllowGlobalUpdate allow global update
+	AllowGlobalUpdate bool
 
 	// ClauseBuilders clause builder
 	ClauseBuilders map[string]clause.ClauseBuilder
@@ -61,6 +63,7 @@ type Session struct {
 	PrepareStmt            bool
 	WithConditions         bool
 	SkipDefaultTransaction bool
+	AllowGlobalUpdate      bool
 	Context                context.Context
 	Logger                 logger.Interface
 	NowFunc                func() time.Time
@@ -154,6 +157,10 @@ func (db *DB) Session(config *Session) *DB {
 		tx.Config.SkipDefaultTransaction = true
 	}
 
+	if config.AllowGlobalUpdate {
+		txConfig.AllowGlobalUpdate = true
+	}
+
 	if config.Context != nil {
 		tx.Statement = tx.Statement.clone()
 		tx.Statement.DB = tx
@@ -162,12 +169,15 @@ func (db *DB) Session(config *Session) *DB {
 
 	if config.PrepareStmt {
 		if v, ok := db.cacheStore.Load("preparedStmt"); ok {
+			tx.Statement = tx.Statement.clone()
 			preparedStmt := v.(*PreparedStmtDB)
 			tx.Statement.ConnPool = &PreparedStmtDB{
 				ConnPool: db.Config.ConnPool,
 				Mux:      preparedStmt.Mux,
 				Stmts:    preparedStmt.Stmts,
 			}
+			txConfig.ConnPool = tx.Statement.ConnPool
+			txConfig.PrepareStmt = true
 		}
 	}
 
@@ -309,6 +319,9 @@ func (db *DB) SetupJoinTable(model interface{}, field string, joinTable interfac
 			if f := joinSchema.LookUpField(ref.ForeignKey.DBName); f != nil {
 				f.DataType = ref.ForeignKey.DataType
 				f.GORMDataType = ref.ForeignKey.GORMDataType
+				if f.Size == 0 {
+					f.Size = ref.ForeignKey.Size
+				}
 				ref.ForeignKey = f
 			} else {
 				return fmt.Errorf("missing field %v for join table", ref.ForeignKey.DBName)

@@ -1,0 +1,26 @@
+Access with PKCE
+====
+
+OAuth 2.0 security BCP
+====
+
+- All clients MUST use PKCE with the authorization flow.
+- Password grant MUST NOT be used.
+- Use Authorization Code instead of implicit flow.
+- Use extract string matching for redirect URIs
+- No access token in query strings
+- Refresh tokens must be sender-constrained or one-time use.
+
+The PKCE flow
+====
+
+1. Your app needs to generate a code_verifier ( a string of 43 to 128 characters)
+    - remember this as part of the session
+    - lost this, lost the session
+2. Use that code_verifier to generate code_challenge
+    - code_challenge = SHA256(code_verifier) // S256
+    - code_challenge = code_verifier // PLAIN, not recommended
+3. Include code_challenge and code_challenge_method in authorization request:
+    - GET /authorize?client_id=…&scope=…&response_type=code&redirect_uri=…&code_challenge=base64($codeChallenge)&code_challenge_method=S256
+4. Include code_verifier in token exchange request.
+    - POST /token -d {"client_id": …, "code": …, "code_verifier": $codeVerifier }

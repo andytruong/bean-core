@@ -50,7 +50,7 @@ func preload(db *gorm.DB, rels []*schema.Relationship, conds []interface{}) {
 
 		joinResults := rel.JoinTable.MakeSlice().Elem()
 		column, values := schema.ToQueryValues(rel.JoinTable.Table, joinForeignKeys, joinForeignValues)
-		tx.Where(clause.IN{Column: column, Values: values}).Find(joinResults.Addr().Interface())
+		db.AddError(tx.Where(clause.IN{Column: column, Values: values}).Find(joinResults.Addr().Interface()).Error)
 
 		// convert join identity map to relation identity map
 		fieldValues := make([]interface{}, len(joinForeignFields))
@@ -93,7 +93,7 @@ func preload(db *gorm.DB, rels []*schema.Relationship, conds []interface{}) {
 	}
 
 	reflectResults := rel.FieldSchema.MakeSlice().Elem()
-	column, values := schema.ToQueryValues(rel.FieldSchema.Table, relForeignKeys, foreignValues)
+	column, values := schema.ToQueryValues(clause.CurrentTable, relForeignKeys, foreignValues)
 
 	for _, cond := range conds {
 		if fc, ok := cond.(func(*gorm.DB) *gorm.DB); ok {
@@ -103,9 +103,29 @@ func preload(db *gorm.DB, rels []*schema.Relationship, conds []interface{}) {
 		}
 	}
 
-	tx.Where(clause.IN{Column: column, Values: values}).Find(reflectResults.Addr().Interface(), inlineConds...)
+	db.AddError(tx.Where(clause.IN{Column: column, Values: values}).Find(reflectResults.Addr().Interface(), inlineConds...).Error)
 
 	fieldValues := make([]interface{}, len(relForeignFields))
+
+	// clean up old values before preloading
+	switch reflectValue.Kind() {
+	case reflect.Struct:
+		switch rel.Type {
+		case schema.HasMany, schema.Many2Many:
+			rel.Field.Set(reflectValue, reflect.MakeSlice(rel.Field.IndirectFieldType, 0, 0).Interface())
+		default:
+			rel.Field.Set(reflectValue, reflect.New(rel.Field.FieldType).Interface())
+		}
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < reflectValue.Len(); i++ {
+			switch rel.Type {
+			case schema.HasMany, schema.Many2Many:
+				rel.Field.Set(reflectValue.Index(i), reflect.MakeSlice(rel.Field.IndirectFieldType, 0, 0).Interface())
+			default:
+				rel.Field.Set(reflectValue.Index(i), reflect.New(rel.Field.FieldType).Interface())
+			}
+		}
+	}
 
 	for i := 0; i < reflectResults.Len(); i++ {
 		elem := reflectResults.Index(i)
