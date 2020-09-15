@@ -93,7 +93,7 @@ func (db *DB) Select(query interface{}, args ...interface{}) (tx *DB) {
 		}
 		delete(tx.Statement.Clauses, "SELECT")
 	case string:
-		fields := strings.FieldsFunc(v, utils.IsChar)
+		fields := strings.FieldsFunc(v, utils.IsValidDBNameChar)
 
 		// normal field names
 		if len(fields) == 1 || (len(fields) == 3 && strings.ToUpper(fields[1]) == "AS") {
@@ -133,7 +133,7 @@ func (db *DB) Omit(columns ...string) (tx *DB) {
 	tx = db.getInstance()
 
 	if len(columns) == 1 && strings.ContainsRune(columns[0], ',') {
-		tx.Statement.Omits = strings.FieldsFunc(columns[0], utils.IsChar)
+		tx.Statement.Omits = strings.FieldsFunc(columns[0], utils.IsValidDBNameChar)
 	} else {
 		tx.Statement.Omits = columns
 	}
@@ -172,10 +172,7 @@ func (db *DB) Or(query interface{}, args ...interface{}) (tx *DB) {
 //     db.Joins("JOIN emails ON emails.user_id = users.id AND emails.email = ?", "jinzhu@example.org").Find(&user)
 func (db *DB) Joins(query string, args ...interface{}) (tx *DB) {
 	tx = db.getInstance()
-	if tx.Statement.Joins == nil {
-		tx.Statement.Joins = map[string][]interface{}{}
-	}
-	tx.Statement.Joins[query] = args
+	tx.Statement.Joins = append(tx.Statement.Joins, join{Name: query, Conds: args})
 	return
 }
 
@@ -183,7 +180,7 @@ func (db *DB) Joins(query string, args ...interface{}) (tx *DB) {
 func (db *DB) Group(name string) (tx *DB) {
 	tx = db.getInstance()
 
-	fields := strings.FieldsFunc(name, utils.IsChar)
+	fields := strings.FieldsFunc(name, utils.IsValidDBNameChar)
 	tx.Statement.AddClause(clause.GroupBy{
 		Columns: []clause.Column{{Name: name, Raw: len(fields) != 1}},
 	})
@@ -201,7 +198,7 @@ func (db *DB) Having(query interface{}, args ...interface{}) (tx *DB) {
 
 // Order specify order when retrieve records from database
 //     db.Order("name DESC")
-//     db.Order(gorm.Expr("name = ? DESC", "first")) // sql expression
+//     db.Order(clause.OrderByColumn{Column: clause.Column{Name: "name"}, Desc: true})
 func (db *DB) Order(value interface{}) (tx *DB) {
 	tx = db.getInstance()
 

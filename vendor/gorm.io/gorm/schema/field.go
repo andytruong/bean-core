@@ -55,6 +55,7 @@ type Field struct {
 	Comment               string
 	Size                  int
 	Precision             int
+	Scale                 int
 	FieldType             reflect.Type
 	IndirectFieldType     reflect.Type
 	StructField           reflect.StructField
@@ -69,6 +70,8 @@ type Field struct {
 }
 
 func (schema *Schema) ParseField(fieldStruct reflect.StructField) *Field {
+	var err error
+
 	field := &Field{
 		Name:              fieldStruct.Name,
 		BindNames:         []string{fieldStruct.Name},
@@ -150,7 +153,6 @@ func (schema *Schema) ParseField(fieldStruct reflect.StructField) *Field {
 	}
 
 	if num, ok := field.TagSettings["SIZE"]; ok {
-		var err error
 		if field.Size, err = strconv.Atoi(num); err != nil {
 			field.Size = -1
 		}
@@ -158,6 +160,10 @@ func (schema *Schema) ParseField(fieldStruct reflect.StructField) *Field {
 
 	if p, ok := field.TagSettings["PRECISION"]; ok {
 		field.Precision, _ = strconv.Atoi(p)
+	}
+
+	if s, ok := field.TagSettings["SCALE"]; ok {
+		field.Scale, _ = strconv.Atoi(s)
 	}
 
 	if val, ok := field.TagSettings["NOT NULL"]; ok && utils.CheckTruth(val) {
@@ -172,33 +178,42 @@ func (schema *Schema) ParseField(fieldStruct reflect.StructField) *Field {
 		field.Comment = val
 	}
 
+	// default value is function or null or blank (primary keys)
+	skipParseDefaultValue := strings.Contains(field.DefaultValue, "(") &&
+		strings.Contains(field.DefaultValue, ")") || strings.ToLower(field.DefaultValue) == "null" || field.DefaultValue == ""
 	switch reflect.Indirect(fieldValue).Kind() {
 	case reflect.Bool:
 		field.DataType = Bool
-		if field.HasDefaultValue && field.DefaultValue != "" {
-			field.DefaultValueInterface, _ = strconv.ParseBool(field.DefaultValue)
+		if field.HasDefaultValue && !skipParseDefaultValue {
+			if field.DefaultValueInterface, err = strconv.ParseBool(field.DefaultValue); err != nil {
+				schema.err = fmt.Errorf("failed to parse %v as default value for bool, got error: %v", field.DefaultValue, err)
+			}
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		field.DataType = Int
-		if field.HasDefaultValue && field.DefaultValue != "" {
-			field.DefaultValueInterface, _ = strconv.ParseInt(field.DefaultValue, 0, 64)
+		if field.HasDefaultValue && !skipParseDefaultValue {
+			if field.DefaultValueInterface, err = strconv.ParseInt(field.DefaultValue, 0, 64); err != nil {
+				schema.err = fmt.Errorf("failed to parse %v as default value for int, got error: %v", field.DefaultValue, err)
+			}
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		field.DataType = Uint
-		if field.HasDefaultValue && field.DefaultValue != "" {
-			field.DefaultValueInterface, _ = strconv.ParseUint(field.DefaultValue, 0, 64)
+		if field.HasDefaultValue && !skipParseDefaultValue {
+			if field.DefaultValueInterface, err = strconv.ParseUint(field.DefaultValue, 0, 64); err != nil {
+				schema.err = fmt.Errorf("failed to parse %v as default value for uint, got error: %v", field.DefaultValue, err)
+			}
 		}
 	case reflect.Float32, reflect.Float64:
 		field.DataType = Float
-		if field.HasDefaultValue && field.DefaultValue != "" {
-			field.DefaultValueInterface, _ = strconv.ParseFloat(field.DefaultValue, 64)
+		if field.HasDefaultValue && !skipParseDefaultValue {
+			if field.DefaultValueInterface, err = strconv.ParseFloat(field.DefaultValue, 64); err != nil {
+				schema.err = fmt.Errorf("failed to parse %v as default value for float, got error: %v", field.DefaultValue, err)
+			}
 		}
 	case reflect.String:
 		field.DataType = String
-		isFunc := strings.Contains(field.DefaultValue, "(") &&
-			strings.Contains(field.DefaultValue, ")")
 
-		if field.HasDefaultValue && !isFunc {
+		if field.HasDefaultValue && !skipParseDefaultValue {
 			field.DefaultValue = strings.Trim(field.DefaultValue, "'")
 			field.DefaultValue = strings.Trim(field.DefaultValue, "\"")
 			field.DefaultValueInterface = field.DefaultValue
@@ -326,23 +341,25 @@ func (schema *Schema) ParseField(fieldStruct reflect.StructField) *Field {
 					ef.StructField.Index = append([]int{-fieldStruct.Index[0] - 1}, ef.StructField.Index...)
 				}
 
-				if prefix, ok := field.TagSettings["EMBEDDEDPREFIX"]; ok {
+				if prefix, ok := field.TagSettings["EMBEDDEDPREFIX"]; ok && ef.DBName != "" {
 					ef.DBName = prefix + ef.DBName
 				}
 
-				if val, ok := ef.TagSettings["PRIMARYKEY"]; ok && utils.CheckTruth(val) {
-					ef.PrimaryKey = true
-				} else if val, ok := ef.TagSettings["PRIMARY_KEY"]; ok && utils.CheckTruth(val) {
-					ef.PrimaryKey = true
-				} else {
-					ef.PrimaryKey = false
+				if ef.PrimaryKey {
+					if val, ok := ef.TagSettings["PRIMARYKEY"]; ok && utils.CheckTruth(val) {
+						ef.PrimaryKey = true
+					} else if val, ok := ef.TagSettings["PRIMARY_KEY"]; ok && utils.CheckTruth(val) {
+						ef.PrimaryKey = true
+					} else {
+						ef.PrimaryKey = false
 
-					if val, ok := ef.TagSettings["AUTOINCREMENT"]; !ok || !utils.CheckTruth(val) {
-						ef.AutoIncrement = false
-					}
+						if val, ok := ef.TagSettings["AUTOINCREMENT"]; !ok || !utils.CheckTruth(val) {
+							ef.AutoIncrement = false
+						}
 
-					if ef.DefaultValue == "" {
-						ef.HasDefaultValue = false
+						if ef.DefaultValue == "" {
+							ef.HasDefaultValue = false
+						}
 					}
 				}
 
@@ -666,7 +683,7 @@ func (field *Field) setupValuerAndSetter() {
 			case []byte:
 				field.ReflectValueOf(value).SetString(string(data))
 			case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-				field.ReflectValueOf(value).SetString(fmt.Sprint(data))
+				field.ReflectValueOf(value).SetString(utils.ToString(data))
 			case float64, float32:
 				field.ReflectValueOf(value).SetString(fmt.Sprintf("%."+strconv.Itoa(field.Precision)+"f", data))
 			default:

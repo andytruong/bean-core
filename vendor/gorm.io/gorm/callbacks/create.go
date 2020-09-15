@@ -1,6 +1,7 @@
 package callbacks
 
 import (
+	"fmt"
 	"reflect"
 
 	"gorm.io/gorm"
@@ -12,14 +13,14 @@ func BeforeCreate(db *gorm.DB) {
 	if db.Error == nil && db.Statement.Schema != nil && (db.Statement.Schema.BeforeSave || db.Statement.Schema.BeforeCreate) {
 		callMethod(db, func(value interface{}, tx *gorm.DB) (called bool) {
 			if db.Statement.Schema.BeforeSave {
-				if i, ok := value.(gorm.BeforeSaveInterface); ok {
+				if i, ok := value.(BeforeSaveInterface); ok {
 					called = true
 					db.AddError(i.BeforeSave(tx))
 				}
 			}
 
 			if db.Statement.Schema.BeforeCreate {
-				if i, ok := value.(gorm.BeforeCreateInterface); ok {
+				if i, ok := value.(BeforeCreateInterface); ok {
 					called = true
 					db.AddError(i.BeforeCreate(tx))
 				}
@@ -203,14 +204,14 @@ func AfterCreate(db *gorm.DB) {
 	if db.Error == nil && db.Statement.Schema != nil && (db.Statement.Schema.AfterSave || db.Statement.Schema.AfterCreate) {
 		callMethod(db, func(value interface{}, tx *gorm.DB) (called bool) {
 			if db.Statement.Schema.AfterSave {
-				if i, ok := value.(gorm.AfterSaveInterface); ok {
+				if i, ok := value.(AfterSaveInterface); ok {
 					called = true
 					db.AddError(i.AfterSave(tx))
 				}
 			}
 
 			if db.Statement.Schema.AfterCreate {
-				if i, ok := value.(gorm.AfterCreateInterface); ok {
+				if i, ok := value.(AfterCreateInterface); ok {
 					called = true
 					db.AddError(i.AfterCreate(tx))
 				}
@@ -225,8 +226,12 @@ func ConvertToCreateValues(stmt *gorm.Statement) (values clause.Values) {
 	switch value := stmt.Dest.(type) {
 	case map[string]interface{}:
 		values = ConvertMapToValuesForCreate(stmt, value)
+	case *map[string]interface{}:
+		values = ConvertMapToValuesForCreate(stmt, *value)
 	case []map[string]interface{}:
 		values = ConvertSliceOfMapToValuesForCreate(stmt, value)
+	case *[]map[string]interface{}:
+		values = ConvertSliceOfMapToValuesForCreate(stmt, *value)
 	default:
 		var (
 			selectColumns, restricted = stmt.SelectAndOmitColumns(true, false)
@@ -248,8 +253,18 @@ func ConvertToCreateValues(stmt *gorm.Statement) (values clause.Values) {
 			stmt.SQL.Grow(stmt.ReflectValue.Len() * 15)
 			values.Values = make([][]interface{}, stmt.ReflectValue.Len())
 			defaultValueFieldsHavingValue := map[*schema.Field][]interface{}{}
+			if stmt.ReflectValue.Len() == 0 {
+				stmt.AddError(gorm.ErrEmptySlice)
+				return
+			}
+
 			for i := 0; i < stmt.ReflectValue.Len(); i++ {
 				rv := reflect.Indirect(stmt.ReflectValue.Index(i))
+				if !rv.IsValid() {
+					stmt.AddError(fmt.Errorf("slice data #%v is invalid: %w", i, gorm.ErrInvalidData))
+					return
+				}
+
 				values.Values[i] = make([]interface{}, len(values.Columns))
 				for idx, column := range values.Columns {
 					field := stmt.Schema.FieldsByDBName[column.Name]
@@ -315,7 +330,7 @@ func ConvertToCreateValues(stmt *gorm.Statement) (values clause.Values) {
 	}
 
 	if stmt.UpdatingColumn {
-		if stmt.Schema != nil {
+		if stmt.Schema != nil && len(values.Columns) > 1 {
 			columns := make([]string, 0, len(values.Columns)-1)
 			for _, column := range values.Columns {
 				if field := stmt.Schema.LookUpField(column.Name); field != nil {

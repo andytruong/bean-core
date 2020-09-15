@@ -37,11 +37,15 @@ func (expr Expr) Build(builder Builder) {
 				} else {
 					switch rv := reflect.ValueOf(expr.Vars[idx]); rv.Kind() {
 					case reflect.Slice, reflect.Array:
-						for i := 0; i < rv.Len(); i++ {
-							if i > 0 {
-								builder.WriteByte(',')
+						if rv.Len() == 0 {
+							builder.AddVar(builder, nil)
+						} else {
+							for i := 0; i < rv.Len(); i++ {
+								if i > 0 {
+									builder.WriteByte(',')
+								}
+								builder.AddVar(builder, rv.Index(i).Interface())
 							}
-							builder.AddVar(builder, rv.Index(i).Interface())
 						}
 					default:
 						builder.AddVar(builder, expr.Vars[idx])
@@ -94,7 +98,7 @@ func (expr NamedExpr) Build(builder Builder) {
 		if v == '@' && !inName {
 			inName = true
 			name = []byte{}
-		} else if v == ' ' || v == ',' || v == ')' || v == '"' || v == '\'' || v == '`' {
+		} else if v == ' ' || v == ',' || v == ')' || v == '"' || v == '\'' || v == '`' || v == '\n' {
 			if inName {
 				if nv, ok := namedMap[string(name)]; ok {
 					builder.AddVar(builder, nv)

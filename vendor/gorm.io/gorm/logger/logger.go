@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -54,20 +55,23 @@ type Interface interface {
 	Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error)
 }
 
-var Default = New(log.New(os.Stdout, "\r\n", log.LstdFlags), Config{
-	SlowThreshold: 100 * time.Millisecond,
-	LogLevel:      Warn,
-	Colorful:      true,
-})
+var (
+	Discard = New(log.New(ioutil.Discard, "", log.LstdFlags), Config{})
+	Default = New(log.New(os.Stdout, "\r\n", log.LstdFlags), Config{
+		SlowThreshold: 100 * time.Millisecond,
+		LogLevel:      Warn,
+		Colorful:      true,
+	})
+)
 
 func New(writer Writer, config Config) Interface {
 	var (
 		infoStr      = "%s\n[info] "
 		warnStr      = "%s\n[warn] "
 		errStr       = "%s\n[error] "
-		traceStr     = "%s\n[%v] [rows:%d] %s"
-		traceWarnStr = "%s\n[%v] [rows:%d] %s"
-		traceErrStr  = "%s %s\n[%v] [rows:%d] %s"
+		traceStr     = "%s\n[%.3fms] [rows:%d] %s"
+		traceWarnStr = "%s\n[%.3fms] [rows:%d] %s"
+		traceErrStr  = "%s %s\n[%.3fms] [rows:%d] %s"
 	)
 
 	if config.Colorful {
