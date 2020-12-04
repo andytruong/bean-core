@@ -33,9 +33,9 @@ CREATE TABLE user_passwords
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
-CREATE INDEX user_pass_fk ON user_password USING hash (user_id);
-CREATE INDEX user_pass ON user_password USING btree (hashed_value);
-CREATE INDEX user_pass_status ON user_password USING hash (is_active);
+CREATE INDEX user_pass_fk ON user_passwords USING hash (user_id);
+CREATE INDEX user_pass ON user_passwords USING btree (hashed_value);
+CREATE INDEX user_pass_status ON user_passwords USING hash (is_active);
 
 CREATE TABLE user_emails
 (

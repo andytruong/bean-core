@@ -15,7 +15,7 @@ CREATE TABLE access_session
     code_challenge_method character varying(16)             NULL,
     code_challenge        character varying(128)            NULL,
     CONSTRAINT session_version UNIQUE (version),
-    FOREIGN KEY (user_id) REFERENCES users (user_id),
-    FOREIGN KEY (space_id) REFERENCES spaces (space_id),
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (space_id) REFERENCES spaces (id),
     FOREIGN KEY (parent_id) REFERENCES access_session
 );
