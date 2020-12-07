@@ -2,14 +2,15 @@ type MailerAccount {
     id: ID!
     version: ID!
     space: Space!
-    isActive: Boolean!
-    isVerified: Boolean!
+    status: MailerAccountStatus!
     createdAt: Time!
     updatedAt: Time!
     deletedAt: Time
     sender: MailerSender!
     encryptedConnectionUrl: String!
 }
+
+enum MailerAccountStatus { INACTIVE UNVERIFIED ACTIVE }
 
 type MailerSender {
     name: String!

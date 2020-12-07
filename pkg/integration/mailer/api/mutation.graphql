@@ -1,0 +1,48 @@
+# manage mailer-accounts
+extend type Mutation {
+    mailer: MailerMutation!
+}
+
+type MailerMutation {
+    account: MailerAccountMutation!
+}
+
+type MailerAccountMutation {
+    create(input: MailerAccountCreateInput!): MailerAccountMutationOutcome!
+    update(input: MailerAccountUpdateInput!): MailerAccountMutationOutcome!
+}
+
+input MailerAccountCreateInput {
+    spaceId: ID!
+    isActive: Boolean!
+    sender: MailerAccountSenderInput!
+    encryptedConnectionUrl: String!
+}
+
+input MailerAccountSenderInput {
+    name: String!
+    email: EmailAddress!
+}
+
+type MailerAccountMutationOutcome {
+    account: MailerAccount
+    errors: [Error!]
+}
+
+input MailerAccountUpdateInput {
+    id: ID!
+    version: ID!
+    values: MailerAccountUpdateValueInput!
+}
+
+input MailerAccountUpdateValueInput {
+    isActive: Boolean
+    sender: MailerAccountUpdateSenderInput
+}
+
+input MailerAccountUpdateSenderInput {
+    name: String
+    email: EmailAddress # can only change when account is not verified.
+}
+
+# manage mailer-templates

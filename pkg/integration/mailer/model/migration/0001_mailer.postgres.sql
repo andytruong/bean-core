@@ -5,8 +5,7 @@ CREATE TABLE mailer_account
     id                   character varying(26)  NOT NULL PRIMARY KEY,
     version              character varying(26)  NOT NULL UNIQUE,
     space_id             character varying(26),
-    is_active            boolean                NOT NULL,
-    is_verified          boolean                NOT NULL,
+    status               boolean                NOT NULL, -- values: inactive (0), unverified (-1), active (1)
     created_at           timestamp              NOT NULL,
     updated_at           timestamp              NOT NULL,
     deleted_at           timestamp,
@@ -15,6 +14,9 @@ CREATE TABLE mailer_account
     encrypted_connection character varying(26)  NOT NULL,
     FOREIGN KEY (space_id) REFERENCES spaces (id)
 );
+
+CREATE UNIQUE INDEX mailer_account ON mailer_account (space_id, sender_email);
+CREATE INDEX mailer_account_status ON mailer_account (status);
 
 -- Instead of sending full email message directly
 -- Each send-out email must have configured template.
@@ -52,7 +54,7 @@ CREATE TABLE mailer_audit
 (
     id              character varying(26) NOT NULL PRIMARY KEY,
     account_id      character varying(26) NOT NULL,
-    session_id      character varying(26) NOT NULL,
+    span_id         character varying(26) NOT NULL,
     template_id     character varying(26) NOT NULL,
     created_at      timestamp             NOT NULL,
     recipient_hash  character varying(32) NOT NULL,
