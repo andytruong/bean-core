@@ -40,7 +40,7 @@ type MailerIntegrationBean struct {
 }
 
 func (this MailerIntegrationBean) Migrate(tx *gorm.DB, driver string) error {
-	panic("implement me")
+	return nil
 }
 
 func (this MailerIntegrationBean) Dependencies() []module.Bean {

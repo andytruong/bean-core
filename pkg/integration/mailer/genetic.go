@@ -1,12 +1,6 @@
 package mailer
 
 type Genetic struct {
-	ConnectionUrl string `yaml:"connectionUrl"`
-	Sender        struct {
-		Name    string `yaml:"name"`
-		Address string `yaml:"address"`
-	} `yaml:"sender"`
-	
 	Reroute struct {
 		Enabled   bool              `yaml:"enabled"`
 		Recipient string            `yaml:"recipient"`
@@ -15,6 +9,7 @@ type Genetic struct {
 	
 	Attachment struct {
 		SizeLimit        uint64   `yaml:"sizeLimit"`
+		SizeLimitEach    uint64   `yaml:"sizeLimit"`
 		AllowContentType []string `yaml:"allowContentType"`
 	}
 }

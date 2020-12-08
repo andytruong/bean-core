@@ -28,5 +28,5 @@ beans:
     space: { $ref: "resources/config/env.${ENV:dev}/space.yaml" }
     access: { $ref: "resources/config/env.${ENV:dev}/access.yaml" }
     integration:
-        s3: { $ref: "resources/config/env.${ENV:dev}/integration.s3.yaml" }
+        s3:     { $ref: "resources/config/env.${ENV:dev}/integration.s3.yaml" }
         mailer: { $ref: "resources/config/env.${ENV:dev}/integration.mailer.yaml" }

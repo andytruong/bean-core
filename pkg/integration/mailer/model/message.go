@@ -22,10 +22,10 @@ func (this Message) Send(dialer *gomail.Dialer) error {
 	m.SetHeader("To", this.Recipient)
 	m.SetHeader("Subject", this.Body.Subject)
 	m.SetBody("text/html", this.Body.HTML)
-	
+
 	for _, path := range this.Body.Attachments {
 		m.Attach(path)
 	}
-	
+
 	return dialer.DialAndSend(m)
 }
