@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -27,7 +27,7 @@ func (this Runner) Run() error {
 					return this.installFile(path)
 				}
 			}
-			
+
 			return nil
 		},
 	)
@@ -36,17 +36,17 @@ func (this Runner) Run() error {
 func (this Runner) installFile(file string) error {
 	migration := NewMigration(this.Bean, file)
 	path := migration.RealPath()
-	
+
 	if !migration.DriverMatch(this.Driver) {
 		this.Logger.Debug(
 			"👉 driver unmatched",
 			zap.String("bean", migration.Bean),
 			zap.String("path", path),
 		)
-		
+
 		return nil
 	}
-	
+
 	if can, err := migration.IsExecuted(this.Tx); nil != err {
 		return err
 	} else if can {
@@ -62,13 +62,13 @@ func (this Runner) installFile(file string) error {
 					zap.String("bean", migration.Bean),
 					zap.String("path", path),
 				)
-				
+
 				return err
 			} else {
 				return migration.Save(this.Tx)
 			}
 		}
 	}
-	
+
 	return nil
 }

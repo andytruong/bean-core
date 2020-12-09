@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	
+
 	"gopkg.in/yaml.v2"
 )
 
@@ -17,30 +17,30 @@ func read(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	configBytes, err = replaceEnvVariables(configBytes)
 	if nil != err {
 		return nil, err
 	}
-	
+
 	var gen interface{}
 	if err = yaml.Unmarshal(configBytes, &gen); err != nil {
 		return nil, err
 	}
-	
+
 	refFound, err := walk(path, 0, gen, gen)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if !refFound {
 		return configBytes, nil
 	}
-	
+
 	if configBytes, err = yaml.Marshal(gen); err != nil {
 		return nil, fmt.Errorf("failed to marshal ref evaluated structure: %v", err)
 	}
-	
+
 	return configBytes, nil
 }
 
@@ -57,7 +57,7 @@ func jsonPointer(path string, object interface{}) (interface{}, error) {
 		v = strings.Replace(v, "~0", "~", -1)
 		hierarchy[i] = v
 	}
-	
+
 	for target := 0; target < len(hierarchy); target++ {
 		pathSeg := hierarchy[target]
 		if mmap, ok := object.(map[string]interface{}); ok {
@@ -83,7 +83,7 @@ func jsonPointer(path string, object interface{}) (interface{}, error) {
 			return nil, fmt.Errorf("failed to resolve JSON pointer: index '%v' field '%v' was not found", target, pathSeg)
 		}
 	}
-	
+
 	return object, nil
 }
 
@@ -109,7 +109,7 @@ func expand(path string, level int, root, v interface{}) (interface{}, error) {
 	if level == refLimit {
 		return nil, ErrExceededRefLimit
 	}
-	
+
 	s, ok := v.(string)
 	if !ok {
 		return nil, fmt.Errorf("config '%v' contained non-string $ref value '%v' (%T)", path, v, v)
@@ -124,29 +124,29 @@ func expand(path string, level int, root, v interface{}) (interface{}, error) {
 	if len(u.Path) == 0 && len(u.Fragment) == 0 {
 		return nil, fmt.Errorf("failed to resolve $ref value '%v' in config '%v': reference URI must contain at least a path or fragment", s, path)
 	}
-	
+
 	var nextObj interface{}
 	if len(u.Path) > 0 {
 		rPath := u.Path
 		if !filepath.IsAbs(rPath) {
 			rPath = filepath.Join(filepath.Dir(path), rPath)
 		}
-		
+
 		configBytes, err := ioutil.ReadFile(rPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read relative $ref path '%v' in config '%v': %v", rPath, path, err)
 		}
-		
+
 		configBytes, err = replaceEnvVariables(configBytes)
 		if nil != err {
 			return nil, err
 		}
-		
+
 		var gen interface{}
 		if err = yaml.Unmarshal(configBytes, &gen); err != nil {
 			return nil, err
 		}
-		
+
 		root = gen
 		nextObj = gen
 		path = rPath
@@ -156,11 +156,11 @@ func expand(path string, level int, root, v interface{}) (interface{}, error) {
 			return nil, fmt.Errorf("failed to resolve $ref fragment '%v' in config '%v': %v", u.Fragment, path, err)
 		}
 	}
-	
+
 	if rVal := get(nextObj); rVal != nil {
 		return expand(path, level+1, root, rVal)
 	}
-	
+
 	if _, err = walk(path, level+1, root, nextObj); err != nil {
 		return nil, err
 	}
@@ -218,6 +218,6 @@ func walk(path string, level int, root, obj interface{}) (refFound bool, err err
 			}
 		}
 	}
-	
+
 	return
 }

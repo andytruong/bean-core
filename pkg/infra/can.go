@@ -3,9 +3,9 @@ package infra
 import (
 	"sync"
 	"time"
-	
+
 	"go.uber.org/zap"
-	
+
 	"bean/components/conf"
 	"bean/components/unique"
 	"bean/pkg/access"
