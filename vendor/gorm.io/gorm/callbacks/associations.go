@@ -2,6 +2,7 @@ package callbacks
 
 import (
 	"reflect"
+	"strings"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -46,7 +47,7 @@ func SaveBeforeAssociations(db *gorm.DB) {
 					fieldType = reflect.PtrTo(fieldType)
 				}
 
-				elems := reflect.MakeSlice(reflect.SliceOf(fieldType), 0, 0)
+				elems := reflect.MakeSlice(reflect.SliceOf(fieldType), 0, 10)
 				for i := 0; i < db.Statement.ReflectValue.Len(); i++ {
 					obj := db.Statement.ReflectValue.Index(i)
 
@@ -66,9 +67,7 @@ func SaveBeforeAssociations(db *gorm.DB) {
 				}
 
 				if elems.Len() > 0 {
-					if db.AddError(db.Session(&gorm.Session{}).Clauses(clause.OnConflict{
-						DoNothing: true,
-					}).Create(elems.Interface()).Error) == nil {
+					if saveAssociations(db, rel, elems.Interface(), selectColumns, restricted, nil) == nil {
 						for i := 0; i < elems.Len(); i++ {
 							setupReferences(objs[i], elems.Index(i))
 						}
@@ -81,9 +80,7 @@ func SaveBeforeAssociations(db *gorm.DB) {
 						rv = rv.Addr()
 					}
 
-					if db.AddError(db.Session(&gorm.Session{}).Clauses(clause.OnConflict{
-						DoNothing: true,
-					}).Create(rv.Interface()).Error) == nil {
+					if saveAssociations(db, rel, rv.Interface(), selectColumns, restricted, nil) == nil {
 						setupReferences(db.Statement.ReflectValue, rv)
 					}
 				}
@@ -113,7 +110,7 @@ func SaveAfterAssociations(db *gorm.DB) {
 					fieldType = reflect.PtrTo(fieldType)
 				}
 
-				elems := reflect.MakeSlice(reflect.SliceOf(fieldType), 0, 0)
+				elems := reflect.MakeSlice(reflect.SliceOf(fieldType), 0, 10)
 
 				for i := 0; i < db.Statement.ReflectValue.Len(); i++ {
 					obj := db.Statement.ReflectValue.Index(i)
@@ -145,10 +142,7 @@ func SaveAfterAssociations(db *gorm.DB) {
 						assignmentColumns = append(assignmentColumns, ref.ForeignKey.DBName)
 					}
 
-					db.AddError(db.Session(&gorm.Session{}).Clauses(clause.OnConflict{
-						Columns:   onConflictColumns(rel.FieldSchema),
-						DoUpdates: clause.AssignmentColumns(assignmentColumns),
-					}).Create(elems.Interface()).Error)
+					saveAssociations(db, rel, elems.Interface(), selectColumns, restricted, assignmentColumns)
 				}
 			case reflect.Struct:
 				if _, zero := rel.Field.ValueOf(db.Statement.ReflectValue); !zero {
@@ -168,10 +162,7 @@ func SaveAfterAssociations(db *gorm.DB) {
 						assignmentColumns = append(assignmentColumns, ref.ForeignKey.DBName)
 					}
 
-					db.AddError(db.Session(&gorm.Session{}).Clauses(clause.OnConflict{
-						Columns:   onConflictColumns(rel.FieldSchema),
-						DoUpdates: clause.AssignmentColumns(assignmentColumns),
-					}).Create(f.Interface()).Error)
+					saveAssociations(db, rel, f.Interface(), selectColumns, restricted, assignmentColumns)
 				}
 			}
 		}
@@ -187,7 +178,7 @@ func SaveAfterAssociations(db *gorm.DB) {
 			if !isPtr {
 				fieldType = reflect.PtrTo(fieldType)
 			}
-			elems := reflect.MakeSlice(reflect.SliceOf(fieldType), 0, 0)
+			elems := reflect.MakeSlice(reflect.SliceOf(fieldType), 0, 10)
 			appendToElems := func(v reflect.Value) {
 				if _, zero := rel.Field.ValueOf(v); !zero {
 					f := reflect.Indirect(rel.Field.ReflectValueOf(v))
@@ -230,10 +221,7 @@ func SaveAfterAssociations(db *gorm.DB) {
 					assignmentColumns = append(assignmentColumns, ref.ForeignKey.DBName)
 				}
 
-				db.AddError(db.Session(&gorm.Session{}).Clauses(clause.OnConflict{
-					Columns:   onConflictColumns(rel.FieldSchema),
-					DoUpdates: clause.AssignmentColumns(assignmentColumns),
-				}).Create(elems.Interface()).Error)
+				saveAssociations(db, rel, elems.Interface(), selectColumns, restricted, assignmentColumns)
 			}
 		}
 
@@ -248,8 +236,8 @@ func SaveAfterAssociations(db *gorm.DB) {
 			if !isPtr {
 				fieldType = reflect.PtrTo(fieldType)
 			}
-			elems := reflect.MakeSlice(reflect.SliceOf(fieldType), 0, 0)
-			joins := reflect.MakeSlice(reflect.SliceOf(reflect.PtrTo(rel.JoinTable.ModelType)), 0, 0)
+			elems := reflect.MakeSlice(reflect.SliceOf(fieldType), 0, 10)
+			joins := reflect.MakeSlice(reflect.SliceOf(reflect.PtrTo(rel.JoinTable.ModelType)), 0, 10)
 			objs := []reflect.Value{}
 
 			appendToJoins := func(obj reflect.Value, elem reflect.Value) {
@@ -298,7 +286,9 @@ func SaveAfterAssociations(db *gorm.DB) {
 			}
 
 			if elems.Len() > 0 {
-				db.AddError(db.Session(&gorm.Session{}).Clauses(clause.OnConflict{DoNothing: true}).Create(elems.Interface()).Error)
+				if v, ok := selectColumns[rel.Name+".*"]; !ok || v {
+					saveAssociations(db, rel, elems.Interface(), selectColumns, restricted, nil)
+				}
 
 				for i := 0; i < elems.Len(); i++ {
 					appendToJoins(objs[i], elems.Index(i))
@@ -306,19 +296,74 @@ func SaveAfterAssociations(db *gorm.DB) {
 			}
 
 			if joins.Len() > 0 {
-				db.AddError(db.Session(&gorm.Session{}).Clauses(clause.OnConflict{DoNothing: true}).Create(joins.Interface()).Error)
+				db.AddError(db.Session(&gorm.Session{NewDB: true}).Clauses(clause.OnConflict{DoNothing: true}).Create(joins.Interface()).Error)
 			}
 		}
 	}
 }
 
-func onConflictColumns(s *schema.Schema) (columns []clause.Column) {
-	if s.PrioritizedPrimaryField != nil {
-		return []clause.Column{{Name: s.PrioritizedPrimaryField.DBName}}
+func onConflictOption(stmt *gorm.Statement, s *schema.Schema, selectColumns map[string]bool, restricted bool, defaultUpdatingColumns []string) clause.OnConflict {
+	if stmt.DB.FullSaveAssociations {
+		defaultUpdatingColumns = make([]string, 0, len(s.DBNames))
+		for _, dbName := range s.DBNames {
+			if v, ok := selectColumns[dbName]; (ok && !v) || (!ok && restricted) {
+				continue
+			}
+
+			if !s.LookUpField(dbName).PrimaryKey {
+				defaultUpdatingColumns = append(defaultUpdatingColumns, dbName)
+			}
+		}
 	}
 
-	for _, dbName := range s.PrimaryFieldDBNames {
-		columns = append(columns, clause.Column{Name: dbName})
+	if len(defaultUpdatingColumns) > 0 {
+		var columns []clause.Column
+		for _, dbName := range s.PrimaryFieldDBNames {
+			columns = append(columns, clause.Column{Name: dbName})
+		}
+
+		return clause.OnConflict{
+			Columns:   columns,
+			DoUpdates: clause.AssignmentColumns(defaultUpdatingColumns),
+		}
 	}
-	return
+
+	return clause.OnConflict{DoNothing: true}
+}
+
+func saveAssociations(db *gorm.DB, rel *schema.Relationship, values interface{}, selectColumns map[string]bool, restricted bool, defaultUpdatingColumns []string) error {
+	var (
+		selects, omits []string
+		onConflict     = onConflictOption(db.Statement, rel.FieldSchema, selectColumns, restricted, defaultUpdatingColumns)
+		refName        = rel.Name + "."
+	)
+
+	for name, ok := range selectColumns {
+		columnName := ""
+		if strings.HasPrefix(name, refName) {
+			columnName = strings.TrimPrefix(name, refName)
+		} else if strings.HasPrefix(name, clause.Associations) {
+			columnName = name
+		}
+
+		if columnName != "" {
+			if ok {
+				selects = append(selects, columnName)
+			} else {
+				omits = append(omits, columnName)
+			}
+		}
+	}
+
+	tx := db.Session(&gorm.Session{NewDB: true}).Clauses(onConflict).Session(&gorm.Session{SkipHooks: db.Statement.SkipHooks})
+
+	if len(selects) > 0 {
+		tx = tx.Select(selects)
+	}
+
+	if len(omits) > 0 {
+		tx = tx.Omit(omits...)
+	}
+
+	return db.AddError(tx.Create(values).Error)
 }

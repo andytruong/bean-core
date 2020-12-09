@@ -18,6 +18,8 @@ type DataType string
 
 type TimeType int64
 
+var TimeReflectType = reflect.TypeOf(time.Time{})
+
 const (
 	UnixSecond      TimeType = 1
 	UnixMillisecond TimeType = 2
@@ -102,7 +104,7 @@ func (schema *Schema) ParseField(fieldStruct reflect.StructField) *Field {
 			var getRealFieldValue func(reflect.Value)
 			getRealFieldValue = func(v reflect.Value) {
 				rv := reflect.Indirect(v)
-				if rv.Kind() == reflect.Struct && !rv.Type().ConvertibleTo(reflect.TypeOf(time.Time{})) {
+				if rv.Kind() == reflect.Struct && !rv.Type().ConvertibleTo(TimeReflectType) {
 					for i := 0; i < rv.Type().NumField(); i++ {
 						newFieldType := rv.Type().Field(i).Type
 						for newFieldType.Kind() == reflect.Ptr {
@@ -168,6 +170,8 @@ func (schema *Schema) ParseField(fieldStruct reflect.StructField) *Field {
 
 	if val, ok := field.TagSettings["NOT NULL"]; ok && utils.CheckTruth(val) {
 		field.NotNull = true
+	} else if val, ok := field.TagSettings["NOTNULL"]; ok && utils.CheckTruth(val) {
+		field.NotNull = true
 	}
 
 	if val, ok := field.TagSettings["UNIQUE"]; ok && utils.CheckTruth(val) {
@@ -221,7 +225,7 @@ func (schema *Schema) ParseField(fieldStruct reflect.StructField) *Field {
 	case reflect.Struct:
 		if _, ok := fieldValue.Interface().(*time.Time); ok {
 			field.DataType = Time
-		} else if fieldValue.Type().ConvertibleTo(reflect.TypeOf(time.Time{})) {
+		} else if fieldValue.Type().ConvertibleTo(TimeReflectType) {
 			field.DataType = Time
 		} else if fieldValue.Type().ConvertibleTo(reflect.TypeOf(&time.Time{})) {
 			field.DataType = Time
@@ -326,7 +330,7 @@ func (schema *Schema) ParseField(fieldStruct reflect.StructField) *Field {
 
 			cacheStore := &sync.Map{}
 			cacheStore.Store(embeddedCacheKey, true)
-			if field.EmbeddedSchema, err = Parse(fieldValue.Interface(), cacheStore, schema.namer); err != nil {
+			if field.EmbeddedSchema, err = getOrParse(fieldValue.Interface(), cacheStore, embeddedNamer{Table: schema.Table, Namer: schema.namer}); err != nil {
 				schema.err = err
 			}
 
@@ -624,6 +628,14 @@ func (field *Field) setupValuerAndSetter() {
 				field.ReflectValueOf(value).SetUint(uint64(data))
 			case []byte:
 				return field.Set(value, string(data))
+			case time.Time:
+				if field.AutoCreateTime == UnixNanosecond || field.AutoUpdateTime == UnixNanosecond {
+					field.ReflectValueOf(value).SetUint(uint64(data.UnixNano()))
+				} else if field.AutoCreateTime == UnixMillisecond || field.AutoUpdateTime == UnixMillisecond {
+					field.ReflectValueOf(value).SetUint(uint64(data.UnixNano() / 1e6))
+				} else {
+					field.ReflectValueOf(value).SetUint(uint64(data.Unix()))
+				}
 			case string:
 				if i, err := strconv.ParseUint(data, 0, 64); err == nil {
 					field.ReflectValueOf(value).SetUint(i)
@@ -750,13 +762,15 @@ func (field *Field) setupValuerAndSetter() {
 				// pointer scanner
 				field.Set = func(value reflect.Value, v interface{}) (err error) {
 					reflectV := reflect.ValueOf(v)
-					if reflectV.Type().AssignableTo(field.FieldType) {
+					if !reflectV.IsValid() {
+						field.ReflectValueOf(value).Set(reflect.New(field.FieldType).Elem())
+					} else if reflectV.Type().AssignableTo(field.FieldType) {
 						field.ReflectValueOf(value).Set(reflectV)
 					} else if reflectV.Kind() == reflect.Ptr {
-						if reflectV.IsNil() {
+						if reflectV.IsNil() || !reflectV.IsValid() {
 							field.ReflectValueOf(value).Set(reflect.New(field.FieldType).Elem())
 						} else {
-							err = field.Set(value, reflectV.Elem().Interface())
+							return field.Set(value, reflectV.Elem().Interface())
 						}
 					} else {
 						fieldValue := field.ReflectValueOf(value)
