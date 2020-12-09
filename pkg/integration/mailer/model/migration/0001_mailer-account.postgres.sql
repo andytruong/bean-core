@@ -18,5 +18,5 @@ CREATE TABLE mailer_account
     FOREIGN KEY (space_id) REFERENCES spaces (id)
 );
 
-CREATE UNIQUE INDEX mailer_account ON mailer_account (space_id, sender_email);
+CREATE UNIQUE INDEX mailer_account_unique_sender ON mailer_account (space_id, sender_email);
 CREATE INDEX mailer_account_status ON mailer_account (status);

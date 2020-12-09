@@ -13,8 +13,7 @@ CREATE TABLE mailer_template
     language   character varying(16),
     body_html  character              NOT NULL,
     body_text  character,
-    FOREIGN KEY (space_id) REFERENCES spaces (id),
-    FOREIGN KEY (version) REFERENCES mailer_template_stream (id)
+    FOREIGN KEY (space_id) REFERENCES spaces (id)
 );
 
 CREATE TABLE mailer_template_stream
@@ -27,3 +26,7 @@ CREATE TABLE mailer_template_stream
     FOREIGN KEY (template_id) REFERENCES mailer_template (id),
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
+
+ALTER TABLE mailer_template
+    ADD FOREIGN KEY (version)
+        REFERENCES mailer_template_stream (id);
