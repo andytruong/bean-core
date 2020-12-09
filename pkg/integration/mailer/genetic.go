@@ -9,7 +9,7 @@ type Genetic struct {
 	
 	Attachment struct {
 		SizeLimit        uint64   `yaml:"sizeLimit"`
-		SizeLimitEach    uint64   `yaml:"sizeLimit"`
+		SizeLimitEach    uint64   `yaml:"sizeLimitEach"`
 		AllowContentType []string `yaml:"allowContentType"`
 	}
 }

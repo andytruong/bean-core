@@ -106,7 +106,7 @@ func (this *beans) Access() (*access.AccessBean, error) {
 
 func (this *beans) Mailer() (*mailer.MailerIntegrationBean, error) {
 	if nil == this.mailer {
-		this.mailer = mailer.NewMailerIntegration(this.can.Beans.Integration.Mailer)
+		this.mailer = mailer.NewMailerIntegration(this.can.Beans.Integration.Mailer, this.can.logger)
 	}
 	
 	return this.mailer, nil
