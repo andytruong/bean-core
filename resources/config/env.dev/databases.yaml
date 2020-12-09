@@ -1,7 +1,7 @@
 master:
-    driver: "${DB_DRIVER:sqlite3}"
-    url: "${DB_MASTER_URL:data/db.sqlite}"
+    driver: "${DB_DRIVER:postgres}"
+    url: "${DB_MASTER_URL:postgres://postgres:and1bean@127.0.0.1/bean-core?sslmode=disable}"
 
 slave:
-    driver: "${DB_SLAVE_URL:sqlite3}"
-    url: "${DB_SLAVE_URL:data/db.sqlite}"
+    driver: "${DB_SLAVE_URL:postgres}"
+    url: "${DB_SLAVE_URL:postgres://postgres:and1bean@127.0.0.1/bean-core?sslmode=disable}"
