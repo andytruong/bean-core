@@ -8,6 +8,14 @@ type MailerAccount {
     deletedAt: Time
     sender: MailerSender!
     encryptedConnectionUrl: String!
+    attachment: MailerAccountAttachment!
+}
+
+# If not provided, use system configuration.
+type MailerAccountAttachment {
+    sizeLimit: Int
+    sizeLimitEach: Int
+    fileTypes: [FileType!]!
 }
 
 enum MailerAccountStatus { INACTIVE UNVERIFIED ACTIVE }

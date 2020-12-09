@@ -1,4 +1,3 @@
-# manage mailer-accounts
 extend type Mutation {
     mailer: MailerMutation!
 }
@@ -7,6 +6,7 @@ type MailerMutation {
     account: MailerAccountMutation!
 }
 
+# mutation -> account: CRUD
 type MailerAccountMutation {
     create(input: MailerAccountCreateInput!): MailerAccountMutationOutcome!
     update(input: MailerAccountUpdateInput!): MailerAccountMutationOutcome!
