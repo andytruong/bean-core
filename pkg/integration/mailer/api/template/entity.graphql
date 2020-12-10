@@ -1,0 +1,27 @@
+type MailerTemplate {
+    id: ID!
+    version: ID!
+    space: Space!
+    isActive: Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+    deletedAt: Time
+    message: MailerTemplateMessage!
+}
+
+type MailerTemplateMessage {
+    title: String!
+    language: Language!
+    bodyHTML: String!
+    bodyText: String
+}
+
+type MailerTemplateEvent {
+    id: ID!
+    template: MailerTemplate!
+    user: User!
+    key: MailerTemplateEventKey
+    payload: String!
+}
+
+enum MailerTemplateEventKey { CREATE UPDATE DELETE }

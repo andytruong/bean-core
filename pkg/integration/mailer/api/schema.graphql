@@ -1,0 +1,25 @@
+extend type Query  {
+    mailer: MailerQuery!
+}
+
+extend type Mutation {
+    mailer: MailerMutation!
+}
+
+type MailerQuery    {}
+type MailerMutation {
+    # send()
+}
+
+type MailerAuditLog {
+    id: ID!
+    account: MailerAccount!
+    spanId: ID!
+    template: MailerTemplate,
+    createdAt: Time!
+    recipientHash: String!
+    contextHash: String!
+    errorCode: Int
+    errorMessage: String
+    warningMessagse: String
+}

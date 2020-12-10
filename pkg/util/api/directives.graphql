@@ -1,7 +1,7 @@
-directive @comment(value: String!) on FIELD_DEFINITION
+directive @comment(value: String, values: [String!]) on OBJECT | INPUT_OBJECT | FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 directive @requireAuth on FIELD_DEFINITION
 
 directive @constraint(
-	maxLength: Int,
-	minLength: Int,
+    maxLength: Int,
+    minLength: Int,
 ) on INPUT_FIELD_DEFINITION

@@ -14,7 +14,7 @@ type Error {
     message: String!
 }
 
-directive @value(string: String) on ENUM_VALUE
+directive @value(string: String, int: Int) on ENUM_VALUE
 
 enum FileType {
     PDF        @value(string: "application/pdf")

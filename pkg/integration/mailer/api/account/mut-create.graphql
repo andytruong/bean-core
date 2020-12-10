@@ -1,0 +1,22 @@
+extend type MailerAccountMutation {
+    create(input: MailerAccountCreateInput!): MailerAccountMutationOutcome!
+}
+
+input MailerAccountCreateInput {
+    spaceId:       ID!
+    isActive:      Boolean!
+    sender:        MailerAccountSenderInput!
+    connectionUrl: String!
+    attachment:    MailerAccountAttachmentInput
+}
+
+input MailerAccountSenderInput {
+    name:  String!
+    email: EmailAddress!
+}
+
+input MailerAccountAttachmentInput {
+    sizeLimit: Int
+    sizeLimitEach: Int
+    fileTypes: [FileType!]!
+}

@@ -1,0 +1,10 @@
+extend type MailerMutation {
+    account: MailerAccountMutation!
+}
+
+type MailerAccountMutation {}
+
+type MailerAccountMutationOutcome {
+    account: MailerAccount
+    errors: [Error!]
+}
