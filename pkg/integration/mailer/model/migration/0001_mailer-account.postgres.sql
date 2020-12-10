@@ -20,3 +20,18 @@ CREATE TABLE mailer_account
 
 CREATE UNIQUE INDEX mailer_account_unique_sender ON mailer_account (space_id, sender_email);
 CREATE INDEX mailer_account_status ON mailer_account (status);
+
+CREATE TABLE mailer_account_stream
+(
+    id         character varying(26) NOT NULL PRIMARY KEY,
+    account_id character varying(26) NOT NULL,
+    user_id    character varying(26) NOT NULL,
+    key        character varying(26) NOT NULL, -- example: version 1
+    payload    text                  NOT NULL,
+    FOREIGN KEY (account_id) REFERENCES mailer_account (id),
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+ALTER TABLE mailer_account
+    ADD FOREIGN KEY (version)
+        REFERENCES mailer_account_stream (id);

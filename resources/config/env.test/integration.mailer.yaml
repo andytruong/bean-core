@@ -1,3 +1,6 @@
+account:
+    maxPerSpace: ${MAILER_ACCOUNT_MAX_PER_SPACE:7}
+
 reroute:
     enabled: ${MAILER_REROUTING:false}
     recipient: "${MAILER_REROUTE_RECIPIENT}"

@@ -1,0 +1,24 @@
+extend type MailerQuery {
+    account: MailerQueryAccount!
+}
+
+type MailerQueryAccount {
+    get(id: ID!): MailerAccount
+    getMultiple(first: Int!, after: String): [MailerAccount!]! @requireAuth
+}
+
+type MailerAccountConnection {
+    pageInfo: MailerAccountPageInfo
+    edges: [MailerAccountEdge!]!
+}
+
+type MailerAccountPageInfo {
+    endCursor: String
+    hasNextPage: Boolean!
+    startCursor: String
+}
+
+type MailerAccountEdge {
+    cursor: String!
+    node: MailerAccount!
+}
