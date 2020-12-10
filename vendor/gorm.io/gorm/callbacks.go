@@ -74,7 +74,6 @@ func (cs *callbacks) Raw() *processor {
 func (p *processor) Execute(db *DB) {
 	curTime := time.Now()
 	stmt := db.Statement
-	db.RowsAffected = 0
 
 	if stmt.Model == nil {
 		stmt.Model = stmt.Dest
@@ -84,7 +83,11 @@ func (p *processor) Execute(db *DB) {
 
 	if stmt.Model != nil {
 		if err := stmt.Parse(stmt.Model); err != nil && (!errors.Is(err, schema.ErrUnsupportedDataType) || (stmt.Table == "" && stmt.SQL.Len() == 0)) {
-			db.AddError(err)
+			if errors.Is(err, schema.ErrUnsupportedDataType) && stmt.Table == "" {
+				db.AddError(fmt.Errorf("%w: Table not set, please set it like: db.Model(&user) or db.Table(\"users\")", err))
+			} else {
+				db.AddError(err)
+			}
 		}
 	}
 

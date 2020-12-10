@@ -63,7 +63,7 @@ CREATE TABLE space_manager_edge
     version           character varying(26) NOT NULL UNIQUE,
     user_member_id    character varying(26) NOT NULL,
     manager_member_id character varying(26) NOT NULL,
-    is_active         BOOLEAN               NOT NULL,
+    is_active         boolean               NOT NULL,
     created_at        timestamp             NOT NULL,
     updated_at        timestamp             NOT NULL,
     FOREIGN KEY (user_member_id) REFERENCES space_memberships (id),

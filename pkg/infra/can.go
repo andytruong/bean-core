@@ -9,6 +9,7 @@ import (
 	"bean/components/conf"
 	"bean/components/unique"
 	"bean/pkg/access"
+	"bean/pkg/integration/mailer"
 	"bean/pkg/integration/s3"
 	"bean/pkg/space"
 )
@@ -100,7 +101,8 @@ type (
 		Access      *access.Genetic `yaml:"access"`
 		Space       *space.Genetic  `yaml:"space"`
 		Integration struct {
-			S3 *s3.Genetic `yaml:"s3"`
+			S3     *s3.Genetic     `yaml:"s3"`
+			Mailer *mailer.Genetic `yaml:"mailer"`
 		} `yaml:"integration"`
 	}
 )

@@ -32,9 +32,11 @@ func read(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if !refFound {
 		return configBytes, nil
 	}
+
 	if configBytes, err = yaml.Marshal(gen); err != nil {
 		return nil, fmt.Errorf("failed to marshal ref evaluated structure: %v", err)
 	}
@@ -81,6 +83,7 @@ func jsonPointer(path string, object interface{}) (interface{}, error) {
 			return nil, fmt.Errorf("failed to resolve JSON pointer: index '%v' field '%v' was not found", target, pathSeg)
 		}
 	}
+
 	return object, nil
 }
 

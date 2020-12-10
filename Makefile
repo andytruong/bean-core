@@ -6,11 +6,11 @@ BUILD_VERSION  ?= $(shell git describe --always --tags)
 MODIFIED        = $(shell git diff-index --quiet HEAD || echo "-mod")
 
 version:
-	@echo Dgraph ${BUILD_VERSION}
-	@echo Build: ${BUILD}
-	@echo Codename: ${BUILD_CODENAME}${MODIFIED}
+	@echo Bean-Core ${BUILD_VERSION}
+	@echo Build:      ${BUILD}
+	@echo Codename:   ${BUILD_CODENAME}${MODIFIED}
 	@echo Build date: ${BUILD_DATE}
-	@echo Branch: ${BUILD_BRANCH}
+	@echo Branch:     ${BUILD_BRANCH}
 	@echo Go version: $(shell go version)
 
 test:

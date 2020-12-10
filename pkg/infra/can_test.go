@@ -8,6 +8,7 @@ import (
 )
 
 func NewMockCan() *Can {
+	_ = os.Setenv("ENV", "test")
 	_ = os.Setenv("DB_MASTER_URL", ":memory:")
 	_ = os.Setenv("DB_SLAVE_URL", ":memory:")
 	ctn, err := NewCan("../../config.yaml")

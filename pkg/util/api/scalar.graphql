@@ -9,7 +9,22 @@ scalar JWT
 scalar Map
 
 type Error {
-	code: ErrorCode
-	fields: [String!]
-	message: String!
+    code: ErrorCode
+    fields: [String!]
+    message: String!
+}
+
+directive @value(string: String) on ENUM_VALUE
+
+enum FileType {
+    PDF        @value(string: "application/pdf")
+    TXT        @value(string: "text/plain")
+    JPEG       @value(string: "image/jpeg")
+    PNG        @value(string: "image/png")
+    MP3        @value(string: "audio/mpeg")
+    MP4        @value(string: "video/mpeg")
+    WEBM_AUDIO @value(string: "video/webm")
+    WEBM_VIDEO @value(string: "video/webm")
+    ZIP        @value(string: "application/zip")
+    GZIP       @value(string: "application/gzip")
 }

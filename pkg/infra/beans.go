@@ -3,6 +3,7 @@ package infra
 import (
 	"bean/components/module"
 	"bean/pkg/access"
+	"bean/pkg/integration/mailer"
 	"bean/pkg/integration/s3"
 	"bean/pkg/space"
 	"bean/pkg/user"
@@ -15,6 +16,7 @@ type (
 		space  *space.SpaceBean
 		access *access.AccessBean
 		s3     *s3.S3IntegrationBean
+		mailer *mailer.MailerIntegrationBean
 	}
 )
 
@@ -22,8 +24,9 @@ func (this *beans) List() []module.Bean {
 	mUser, _ := this.User()
 	mSpace, _ := this.Space()
 	mAccess, _ := this.Access()
+	mMailer, _ := this.Mailer()
 
-	return []module.Bean{mUser, mSpace, mAccess}
+	return []module.Bean{mUser, mSpace, mAccess, mMailer}
 }
 
 func (this *beans) User() (*user.UserBean, error) {
@@ -99,6 +102,14 @@ func (this *beans) Access() (*access.AccessBean, error) {
 	}
 
 	return this.access, nil
+}
+
+func (this *beans) Mailer() (*mailer.MailerIntegrationBean, error) {
+	if nil == this.mailer {
+		this.mailer = mailer.NewMailerIntegration(this.can.Beans.Integration.Mailer, this.can.logger)
+	}
+
+	return this.mailer, nil
 }
 
 func (this *beans) S3() (*s3.S3IntegrationBean, error) {

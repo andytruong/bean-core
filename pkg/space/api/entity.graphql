@@ -1,33 +1,33 @@
 enum SpaceKind { Organisation, Role }
 
 type Space {
-	id: ID!
-	version: ID!
-	kind: SpaceKind!
-	title: String
-	createdAt: Time!
-	updatedAt: Time!
-	isActive: Boolean!
-	domainNames: DomainNames
-	features: SpaceFeatures
-	language: Language!
-	parent: Space
+    id: ID!
+    version: ID!
+    kind: SpaceKind!
+    title: String
+    createdAt: Time!
+    updatedAt: Time!
+    isActive: Boolean!
+    domainNames: DomainNames
+    features: SpaceFeatures
+    language: Language!
+    parent: Space
 }
 
 type DomainNames {
-	primary: DomainName!
-	secondary: [DomainName]
+    primary: DomainName!
+    secondary: [DomainName]
 }
 
 type DomainName {
-	id: ID!
-	value: String!
-	createdAt: Time!
-	updatedAt: Time!
-	isActive: Boolean!
-	isVerified: Boolean!
+    id: ID!
+    value: String!
+    createdAt: Time!
+    updatedAt: Time!
+    isActive: Boolean!
+    isVerified: Boolean!
 }
 
 type SpaceFeatures {
-	register: Boolean!
+    register: Boolean!
 }
