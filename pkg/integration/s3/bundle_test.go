@@ -22,7 +22,7 @@ func bean() *S3IntegrationBundle {
 	db := util.MockDatabase()
 	id := util.MockIdentifier()
 	logger := util.MockLogger()
-	bundle := NewS3Integration(db, id, logger, &Configuration{Key: "01EBWB516AP6BQD7"})
+	bundle := NewS3Integration(db, id, logger, &S3Configuration{Key: "01EBWB516AP6BQD7"})
 	util.MockInstall(bundle, db)
 	
 	return bundle

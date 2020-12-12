@@ -101,7 +101,7 @@ type (
 		Access      *access.AccessConfiguration `yaml:"access"`
 		Space       *space.SpaceConfiguration   `yaml:"space"`
 		Integration struct {
-			S3     *s3.Configuration           `yaml:"s3"`
+			S3     *s3.S3Configuration         `yaml:"s3"`
 			Mailer *mailer.MailerConfiguration `yaml:"mailer"`
 		} `yaml:"integration"`
 	}

@@ -16,7 +16,7 @@ func NewS3Integration(
 	db *gorm.DB,
 	id *unique.Identifier,
 	logger *zap.Logger,
-	conf *Configuration,
+	conf *S3Configuration,
 ) *S3IntegrationBundle {
 	this := &S3IntegrationBundle{
 		db:     db,
@@ -39,7 +39,7 @@ type S3IntegrationBundle struct {
 	db     *gorm.DB
 	id     *unique.Identifier
 	logger *zap.Logger
-	config *Configuration
+	config *S3Configuration
 	
 	AppService        *ApplicationService
 	credentialService *credentialService
