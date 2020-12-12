@@ -1,6 +1,6 @@
 package space
 
-type Genetic struct {
+type SpaceConfiguration struct {
 	Manager ManagerConfig `yaml:"manager"`
 }
 

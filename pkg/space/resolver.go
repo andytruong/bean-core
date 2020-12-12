@@ -8,7 +8,7 @@ import (
 	"bean/pkg/util"
 )
 
-func newResolver(bean *SpaceBean) *Resolvers {
+func newResolver(bean *SpaceBundle) *Resolvers {
 	return &Resolvers{
 		Object:   &SpaceObjectResolver{bean: bean},
 		Query:    &SpaceQueryResolver{bean: bean},
@@ -24,14 +24,14 @@ type (
 	}
 
 	SpaceObjectResolver struct {
-		bean *SpaceBean
+		bean *SpaceBundle
 	}
 
 	SpaceQueryResolver struct {
-		bean *SpaceBean
+		bean *SpaceBundle
 	}
 	SpaceMutationResolver struct {
-		bean *SpaceBean
+		bean *SpaceBundle
 	}
 )
 
@@ -44,15 +44,15 @@ func (this SpaceObjectResolver) Parent(ctx context.Context, obj *model.Space) (*
 }
 
 func (this SpaceObjectResolver) DomainNames(ctx context.Context, space *model.Space) (*model.DomainNames, error) {
-	return this.bean.CoreDomainName.Find(space)
+	return this.bean.DomainNameService.Find(space)
 }
 
 func (this SpaceObjectResolver) Features(ctx context.Context, space *model.Space) (*model.SpaceFeatures, error) {
-	return this.bean.CoreConfig.List(ctx, space)
+	return this.bean.ConfigService.List(ctx, space)
 }
 
 func (this SpaceQueryResolver) Memberships(ctx context.Context, first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {
-	return this.bean.CoreMember.Find(first, after, filters)
+	return this.bean.MemberService.Find(first, after, filters)
 }
 
 func (this SpaceQueryResolver) Membership(ctx context.Context, id string, version *string) (*model.Membership, error) {

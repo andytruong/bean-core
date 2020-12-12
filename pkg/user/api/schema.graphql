@@ -1,0 +1,4 @@
+extend type Mutation {
+    userCreate(input: UserCreateInput): UserMutationOutcome!
+    userUpdate(input: UserUpdateInput!): UserMutationOutcome!
+}

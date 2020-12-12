@@ -11,17 +11,17 @@ import (
 	"bean/pkg/util/connect"
 )
 
-type CoreEmail struct {
-	bean *UserBean
+type EmailService struct {
+	bean *UserBundle
 }
 
-func (this CoreEmail) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserEmailsInput) error {
+func (this EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserEmailsInput) error {
 	if nil == in {
 		return nil
 	}
 
 	if nil != in.Primary {
-		err := this.bean.CoreEmail.Create(tx, user, *in.Primary, true)
+		err := this.bean.EmailService.Create(tx, user, *in.Primary, true)
 		if nil != err {
 			return err
 		}
@@ -29,7 +29,7 @@ func (this CoreEmail) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserEmai
 
 	if nil != in.Secondary {
 		for _, secondaryInput := range in.Secondary {
-			err := this.bean.CoreEmail.Create(tx, user, *secondaryInput, false)
+			err := this.bean.EmailService.Create(tx, user, *secondaryInput, false)
 			if nil != err {
 				return err
 			}
@@ -39,7 +39,7 @@ func (this CoreEmail) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserEmai
 	return nil
 }
 
-func (this CoreEmail) Create(tx *gorm.DB, user *model.User, in dto.UserEmailInput, isPrimary bool) error {
+func (this EmailService) Create(tx *gorm.DB, user *model.User, in dto.UserEmailInput, isPrimary bool) error {
 	table := connect.TableUserEmail
 	if !in.Verified {
 		table = connect.TableUserEmailUnverified
@@ -62,7 +62,7 @@ func (this CoreEmail) Create(tx *gorm.DB, user *model.User, in dto.UserEmailInpu
 
 // TODO: need a better resolver, we not always load secondary emails.
 //       see: https://gqlgen.com/reference/field-collection/
-func (this CoreEmail) List(ctx context.Context, user *model.User) (*model.UserEmails, error) {
+func (this EmailService) List(ctx context.Context, user *model.User) (*model.UserEmails, error) {
 	emails := &model.UserEmails{}
 
 	var rows []*model.UserEmail

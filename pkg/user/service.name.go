@@ -7,11 +7,11 @@ import (
 	"bean/pkg/user/model/dto"
 )
 
-type CoreName struct {
-	bean *UserBean
+type NameService struct {
+	bean *UserBundle
 }
 
-func (this *CoreName) load(db *gorm.DB, userId string) (*model.UserName, error) {
+func (this *NameService) load(db *gorm.DB, userId string) (*model.UserName, error) {
 	name := &model.UserName{}
 	err := db.Where(model.UserName{UserId: userId}).First(&name).Error
 	if nil != err {
@@ -21,7 +21,7 @@ func (this *CoreName) load(db *gorm.DB, userId string) (*model.UserName, error) 
 	return name, nil
 }
 
-func (this *CoreName) create(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
+func (this *NameService) create(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
 	if nil != input.Name {
 		name := model.UserName{
 			ID:            this.bean.id.MustULID(),

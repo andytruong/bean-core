@@ -11,11 +11,11 @@ import (
 	"bean/pkg/util"
 )
 
-type corePolicy struct {
-	bean *S3IntegrationBean
+type policyService struct {
+	bundle *S3IntegrationBundle
 }
 
-func (this *corePolicy) load(tx *gorm.DB, appId string, id string) (*model.Policy, error) {
+func (this *policyService) load(tx *gorm.DB, appId string, id string) (*model.Policy, error) {
 	policy := &model.Policy{}
 	err := tx.
 		Where("application_id = ?", appId).
@@ -28,9 +28,9 @@ func (this *corePolicy) load(tx *gorm.DB, appId string, id string) (*model.Polic
 	return policy, nil
 }
 
-func (this *corePolicy) create(tx *gorm.DB, appId string, kind model.PolicyKind, value string) (*model.Policy, error) {
+func (this *policyService) create(tx *gorm.DB, appId string, kind model.PolicyKind, value string) (*model.Policy, error) {
 	policy := &model.Policy{
-		ID:            this.bean.id.MustULID(),
+		ID:            this.bundle.id.MustULID(),
 		ApplicationId: appId,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
@@ -46,10 +46,10 @@ func (this *corePolicy) create(tx *gorm.DB, appId string, kind model.PolicyKind,
 	return policy, nil
 }
 
-func (this *corePolicy) loadByApplicationId(ctx context.Context, appId string) ([]*model.Policy, error) {
+func (this *policyService) loadByApplicationId(ctx context.Context, appId string) ([]*model.Policy, error) {
 	policies := []*model.Policy{}
 
-	err := this.bean.db.WithContext(ctx).
+	err := this.bundle.db.WithContext(ctx).
 		Where("application_id = ?", appId).
 		Find(&policies).
 		Error
@@ -60,7 +60,7 @@ func (this *corePolicy) loadByApplicationId(ctx context.Context, appId string) (
 	return policies, nil
 }
 
-func (this *corePolicy) onAppCreate(tx *gorm.DB, app *model.Application, in []dto.S3ApplicationPolicyCreateInput) error {
+func (this *policyService) onAppCreate(tx *gorm.DB, app *model.Application, in []dto.S3ApplicationPolicyCreateInput) error {
 	for _, input := range in {
 		_, err := this.create(tx, app.ID, input.Kind, input.Value)
 		if nil != err {
@@ -71,7 +71,7 @@ func (this *corePolicy) onAppCreate(tx *gorm.DB, app *model.Application, in []dt
 	return nil
 }
 
-func (this *corePolicy) onAppUpdate(tx *gorm.DB, app *model.Application, in *dto.S3ApplicationPolicyMutationInput) error {
+func (this *policyService) onAppUpdate(tx *gorm.DB, app *model.Application, in *dto.S3ApplicationPolicyMutationInput) error {
 	if nil == in {
 		return nil
 	}

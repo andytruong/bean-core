@@ -72,12 +72,12 @@ func (this *Can) HttpRouter(router *mux.Router) *mux.Router {
 func (this *Can) beforeServeHTTP(r *http.Request) error {
 	authHeader := r.Header.Get("Authorization")
 	if "" != authHeader {
-		bean, err := this.beans.Access()
+		bundle, err := this.bundles.Access()
 		if nil != err {
 			return errors.Wrap(err, util.ErrorCodeConfig.String())
 		}
 
-		claims, err := bean.SessionResolver.JwtValidation(authHeader)
+		claims, err := bundle.SessionResolver.JwtValidation(authHeader)
 		if err != nil {
 			return err
 		} else if nil != claims {

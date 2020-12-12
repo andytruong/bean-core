@@ -33,7 +33,7 @@ func MockIdentifier() *unique.Identifier {
 	return &unique.Identifier{}
 }
 
-func MockInstall(bean module.Bean, db *gorm.DB) {
+func MockInstall(bean module.Bundle, db *gorm.DB) {
 	tx := db.Begin()
 
 	err := mockInstall(bean, tx)
@@ -44,7 +44,7 @@ func MockInstall(bean module.Bean, db *gorm.DB) {
 	}
 }
 
-func mockInstall(bean module.Bean, tx *gorm.DB) error {
+func mockInstall(bean module.Bundle, tx *gorm.DB) error {
 	if !tx.Migrator().HasTable(migrate.Migration{}) {
 		if err := tx.Migrator().CreateTable(migrate.Migration{}); nil != err {
 			return err

@@ -3,9 +3,9 @@ package infra
 import (
 	"sync"
 	"time"
-
+	
 	"go.uber.org/zap"
-
+	
 	"bean/components/conf"
 	"bean/components/unique"
 	"bean/pkg/access"
@@ -16,25 +16,25 @@ import (
 
 func NewCan(path string) (*Can, error) {
 	var err error
-
+	
 	this := &Can{
-		mu:    &sync.Mutex{},
-		beans: beans{},
-		graph: &graph{mu: &sync.Mutex{}},
+		mu:      &sync.Mutex{},
+		bundles: beans{},
+		graph:   &graph{mu: &sync.Mutex{}},
 		dbs: databases{
 			connections: &sync.Map{},
 		},
 	}
-
+	
 	// parse configuration from YAML configuration file & env variables.
 	if err := conf.ParseFile(path, &this); nil != err {
 		return nil, err
 	}
-
-	this.beans.can = this
+	
+	this.bundles.can = this
 	this.graph.can = this
 	this.dbs.config = this.Databases
-
+	
 	// setup logger
 	if "dev" == this.Env {
 		if this.logger, err = zap.NewDevelopment(); nil != err {
@@ -45,7 +45,7 @@ func NewCan(path string) (*Can, error) {
 			return nil, err
 		}
 	}
-
+	
 	return this, nil
 }
 
@@ -59,21 +59,21 @@ type (
 		Env        string                    `yaml:"env"`
 		Databases  map[string]DatabaseConfig `yaml:"databases"`
 		HttpServer HttpServerConfig          `yaml:"http-server"`
-		Beans      BeansConfig               `json:"beans"`
-
-		mu     *sync.Mutex
-		id     *unique.Identifier
-		graph  *graph
-		dbs    databases
-		beans  beans
-		logger *zap.Logger
+		Bundles    BundlesConfig             `json:"bundles"`
+		
+		mu      *sync.Mutex
+		id      *unique.Identifier
+		graph   *graph
+		dbs     databases
+		bundles beans
+		logger  *zap.Logger
 	}
-
+	
 	DatabaseConfig struct {
 		Driver string `yaml:"driver"`
 		Url    string `yaml:"url"`
 	}
-
+	
 	HttpServerConfig struct {
 		Address      string        `yaml:"address"`
 		ReadTimeout  time.Duration `yaml:"readTimeout"`
@@ -90,19 +90,19 @@ type (
 			Playround PlayroundConfig `yaml:"playround"`
 		} `yaml:"graphql"`
 	}
-
+	
 	PlayroundConfig struct {
 		Title   string `yaml:"title"`
 		Enabled bool   `yaml:"enabled"`
 		Path    string `yaml:"path"`
 	}
-
-	BeansConfig struct {
-		Access      *access.Genetic `yaml:"access"`
-		Space       *space.Genetic  `yaml:"space"`
+	
+	BundlesConfig struct {
+		Access      *access.AccessConfiguration `yaml:"access"`
+		Space       *space.SpaceConfiguration   `yaml:"space"`
 		Integration struct {
-			S3     *s3.Genetic     `yaml:"s3"`
-			Mailer *mailer.Genetic `yaml:"mailer"`
+			S3     *s3.Configuration           `yaml:"s3"`
+			Mailer *mailer.MailerConfiguration `yaml:"mailer"`
 		} `yaml:"integration"`
 	}
 )
@@ -117,6 +117,6 @@ func (this *Can) Identifier() *unique.Identifier {
 		this.id = &unique.Identifier{}
 		this.mu.Unlock()
 	}
-
+	
 	return this.id
 }

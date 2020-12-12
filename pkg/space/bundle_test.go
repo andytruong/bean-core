@@ -23,11 +23,11 @@ import (
 	"bean/pkg/util/connect"
 )
 
-func bean() *SpaceBean {
+func bean() *SpaceBundle {
 	config := &struct {
-		Beans struct {
-			Space *Genetic `yaml:"space"`
-		} `yaml:"beans"`
+		Bundles struct {
+			Space *SpaceConfiguration `yaml:"space"`
+		} `yaml:"bundles"`
 	}{}
 
 	err := conf.ParseFile("../../config.yaml", &config)
@@ -39,13 +39,13 @@ func bean() *SpaceBean {
 	db.Logger.LogMode(log.Silent)
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
-	bUser := user.NewUserBean(db, logger, id)
-	this := NewSpaceBean(db, logger, id, bUser, config.Beans.Space)
+	userBundle := user.NewUserBundle(db, logger, id)
+	this := NewSpaceBundle(db, logger, id, userBundle, config.Bundles.Space)
 
 	return this
 }
 
-func tearDown(bean *SpaceBean) {
+func tearDown(bean *SpaceBundle) {
 	bean.db.Model(model.DomainName{}).Where("id != ?", "").Delete(&model.DomainName{})
 	bean.db.Table(connect.TableUserEmail).Where("id != ?", "").Delete(&mUser.UserEmail{})
 }
@@ -212,7 +212,7 @@ func Test_Membership(t *testing.T) {
 
 	// create user
 	iUser := uFixtures.NewUserCreateInputFixture()
-	oUser, err := this.user.Resolvers.Mutation.UserCreate(context.Background(), iUser)
+	oUser, err := this.userBundle.Resolvers.Mutation.UserCreate(context.Background(), iUser)
 	ass.NoError(err)
 
 	t.Run("Create", func(t *testing.T) {
@@ -303,7 +303,7 @@ func Test_Membership(t *testing.T) {
 
 		// create user
 		iUser := uFixtures.NewUserCreateInputFixture()
-		oUser, err := this.user.Resolvers.Mutation.UserCreate(context.Background(), iUser)
+		oUser, err := this.userBundle.Resolvers.Mutation.UserCreate(context.Background(), iUser)
 		ass.NoError(err)
 
 		t.Run("create membership", func(t *testing.T) {

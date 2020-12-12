@@ -13,9 +13,9 @@ import (
 	"bean/pkg/integration/mailer/model"
 )
 
-func NewMailerIntegration(genetic *Genetic, logger *zap.Logger) *MailerIntegrationBean {
-	this := &MailerIntegrationBean{
-		genetic:  genetic,
+func NewMailerIntegration(genetic *MailerConfiguration, logger *zap.Logger) *MailerIntegrationBundle {
+	this := &MailerIntegrationBundle{
+		config:   genetic,
 		logger:   logger,
 		resolver: &MailerResolver{},
 	}
@@ -23,17 +23,17 @@ func NewMailerIntegration(genetic *Genetic, logger *zap.Logger) *MailerIntegrati
 	return this
 }
 
-type MailerIntegrationBean struct {
-	genetic  *Genetic
+type MailerIntegrationBundle struct {
+	config   *MailerConfiguration
 	logger   *zap.Logger
 	resolver *MailerResolver
 }
 
-func (this MailerIntegrationBean) Resolver() *MailerResolver {
+func (this MailerIntegrationBundle) Resolver() *MailerResolver {
 	return this.resolver
 }
 
-func (this MailerIntegrationBean) Migrate(tx *gorm.DB, driver string) error {
+func (this MailerIntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -50,18 +50,18 @@ func (this MailerIntegrationBean) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this MailerIntegrationBean) Dependencies() []module.Bean {
+func (this MailerIntegrationBundle) Dependencies() []module.Bundle {
 	panic("implement me")
 }
 
-func (this MailerIntegrationBean) Send(message model.Message) error {
+func (this MailerIntegrationBundle) Send(message model.Message) error {
 	if true {
 		return nil
 	}
 
-	if this.genetic.Reroute.Enabled {
+	if this.config.Reroute.Enabled {
 		// TODO: check matching
-		message.Recipient = this.genetic.Reroute.Recipient
+		message.Recipient = this.config.Reroute.Recipient
 	}
 
 	dialer := &gomail.Dialer{} // gomail.NewDialer(host, port, username, password)

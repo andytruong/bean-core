@@ -28,10 +28,10 @@ func Test(t *testing.T) {
 	id := can.Identifier()
 	ass.NotNil(t, id)
 
-	sv, err := can.beans.User()
+	sv, err := can.bundles.User()
 	ass.NoError(err)
 	ass.NotNil(sv)
-	ass.Equal("128h0m0s", can.Beans.Access.SessionTimeout.String())
-	ass.Equal(100, can.Beans.Space.Manager.MaxNumberOfManager)
-	ass.Equal("01EBWB516AP6BQD7", can.Beans.Integration.S3.Key)
+	ass.Equal("128h0m0s", can.Bundles.Access.SessionTimeout.String())
+	ass.Equal(100, can.Bundles.Space.Manager.MaxNumberOfManager)
+	ass.Equal("01EBWB516AP6BQD7", can.Bundles.Integration.S3.Key)
 }

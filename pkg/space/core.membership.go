@@ -14,12 +14,12 @@ import (
 	"bean/pkg/util/connect"
 )
 
-type CoreMember struct {
-	bean     *SpaceBean
+type MemberService struct {
+	bundle   *SpaceBundle
 	Resolver MembershipResolver
 }
 
-func (this CoreMember) Find(first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {
+func (this MemberService) Find(first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {
 	if first > 100 {
 		return nil, errors.New(util.ErrorQueryTooMuch.String())
 	}
@@ -65,8 +65,8 @@ func (this CoreMember) Find(first int, after *string, filters dto.MembershipsFil
 	return con, nil
 }
 
-func (this CoreMember) findUnlimited(afterRaw *string, filters dto.MembershipsFilter) (*gorm.DB, error) {
-	query := this.bean.db.
+func (this MemberService) findUnlimited(afterRaw *string, filters dto.MembershipsFilter) (*gorm.DB, error) {
+	query := this.bundle.db.
 		Where("space_memberships.user_id = ?", filters.UserID).
 		Where("space_memberships.is_active = ?", filters.IsActive).
 		Order("space_memberships.logged_in_at DESC")
@@ -113,7 +113,7 @@ func (this CoreMember) findUnlimited(afterRaw *string, filters dto.MembershipsFi
 	return query, nil
 }
 
-func (this CoreMember) Create(
+func (this MemberService) Create(
 	tx *gorm.DB,
 	in dto.SpaceMembershipCreateInput,
 	space *model.Space,
@@ -136,10 +136,10 @@ func (this CoreMember) Create(
 	}, nil
 }
 
-func (this CoreMember) doCreate(tx *gorm.DB, spaceId string, userId string, isActive bool) (*model.Membership, error) {
+func (this MemberService) doCreate(tx *gorm.DB, spaceId string, userId string, isActive bool) (*model.Membership, error) {
 	membership := &model.Membership{
-		ID:        this.bean.id.MustULID(),
-		Version:   this.bean.id.MustULID(),
+		ID:        this.bundle.id.MustULID(),
+		Version:   this.bundle.id.MustULID(),
 		SpaceID:   spaceId,
 		UserID:    userId,
 		IsActive:  isActive,
@@ -154,8 +154,8 @@ func (this CoreMember) doCreate(tx *gorm.DB, spaceId string, userId string, isAc
 	return membership, nil
 }
 
-func (this CoreMember) createRelationships(tx *gorm.DB, obj *model.Membership, managerMemberIds []string) ([]*util.Error, error) {
-	if len(managerMemberIds) > this.bean.genetic.Manager.MaxNumberOfManager {
+func (this MemberService) createRelationships(tx *gorm.DB, obj *model.Membership, managerMemberIds []string) ([]*util.Error, error) {
+	if len(managerMemberIds) > this.bundle.config.Manager.MaxNumberOfManager {
 		return util.NewErrors(util.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "exceeded limitation"), nil
 	}
 
@@ -188,10 +188,10 @@ func (this CoreMember) createRelationships(tx *gorm.DB, obj *model.Membership, m
 	return nil, nil
 }
 
-func (this CoreMember) createRelationship(tx *gorm.DB, obj *model.Membership, managerMemberId string) error {
+func (this MemberService) createRelationship(tx *gorm.DB, obj *model.Membership, managerMemberId string) error {
 	relationship := model.ManagerRelationship{
-		ID:              this.bean.id.MustULID(),
-		Version:         this.bean.id.MustULID(),
+		ID:              this.bundle.id.MustULID(),
+		Version:         this.bundle.id.MustULID(),
 		UserMemberId:    obj.ID,
 		ManagerMemberId: managerMemberId,
 		IsActive:        true,
@@ -202,8 +202,8 @@ func (this CoreMember) createRelationship(tx *gorm.DB, obj *model.Membership, ma
 	return tx.Save(&relationship).Error
 }
 
-func (this CoreMember) Update(tx *gorm.DB, in dto.SpaceMembershipUpdateInput, obj *model.Membership) (*dto.SpaceMembershipCreateOutcome, error) {
-	obj.Version = this.bean.id.MustULID()
+func (this MemberService) Update(tx *gorm.DB, in dto.SpaceMembershipUpdateInput, obj *model.Membership) (*dto.SpaceMembershipCreateOutcome, error) {
+	obj.Version = this.bundle.id.MustULID()
 	obj.IsActive = in.IsActive
 
 	err := tx.Save(&obj).Error

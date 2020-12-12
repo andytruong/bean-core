@@ -14,16 +14,16 @@ import (
 	"bean/pkg/util/connect"
 )
 
-func newMembershipResolver(bSpace *SpaceBean, bUser *user.UserBean) MembershipResolver {
+func newMembershipResolver(spaceBundle *SpaceBundle, userBundle *user.UserBundle) MembershipResolver {
 	return MembershipResolver{
-		bean: bSpace,
-		user: bUser,
+		bean: spaceBundle,
+		user: userBundle,
 	}
 }
 
 type MembershipResolver struct {
-	bean *SpaceBean
-	user *user.UserBean
+	bean *SpaceBundle
+	user *user.UserBundle
 }
 
 func (this MembershipResolver) Edges(ctx context.Context, obj *model.MembershipConnection) ([]*model.MembershipEdge, error) {

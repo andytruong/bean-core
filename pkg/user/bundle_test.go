@@ -15,14 +15,14 @@ import (
 	"bean/pkg/util/connect"
 )
 
-func tearDown(this *UserBean) {
+func tearDown(this *UserBundle) {
 	this.db.Table(connect.TableUserEmail).Where("1").Delete(&model.UserEmail{})
 }
 
 func Test(t *testing.T) {
 	ass := assert.New(t)
 	db := util.MockDatabase()
-	this := NewUserBean(db, util.MockLogger(), util.MockIdentifier())
+	this := NewUserBundle(db, util.MockLogger(), util.MockIdentifier())
 	util.MockInstall(this, db)
 	iCreate := fixtures.NewUserCreateInputFixture()
 
@@ -59,7 +59,7 @@ func Test(t *testing.T) {
 func Test_Update(t *testing.T) {
 	ass := assert.New(t)
 	db := util.MockDatabase()
-	this := NewUserBean(db, util.MockLogger(), util.MockIdentifier())
+	this := NewUserBundle(db, util.MockLogger(), util.MockIdentifier())
 	util.MockInstall(this, db)
 	iCreate := fixtures.NewUserCreateInputFixture()
 

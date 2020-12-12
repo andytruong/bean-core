@@ -9,11 +9,11 @@ import (
 	"bean/pkg/space/model/dto"
 )
 
-type CoreDomainName struct {
-	bean *SpaceBean
+type DomainNameService struct {
+	bean *SpaceBundle
 }
 
-func (this *CoreDomainName) createMultiple(tx *gorm.DB, space *model.Space, in dto.SpaceCreateInput) error {
+func (this *DomainNameService) createMultiple(tx *gorm.DB, space *model.Space, in dto.SpaceCreateInput) error {
 	if nil != in.Object.DomainNames.Primary {
 		err := this.create(tx, space, in.Object.DomainNames.Primary, true)
 		if nil != err {
@@ -33,7 +33,7 @@ func (this *CoreDomainName) createMultiple(tx *gorm.DB, space *model.Space, in d
 	return nil
 }
 
-func (this *CoreDomainName) create(tx *gorm.DB, space *model.Space, in *dto.DomainNameInput, isPrimary bool) error {
+func (this *DomainNameService) create(tx *gorm.DB, space *model.Space, in *dto.DomainNameInput, isPrimary bool) error {
 	domain := model.DomainName{
 		ID:         this.bean.id.MustULID(),
 		SpaceId:    space.ID,
@@ -48,7 +48,7 @@ func (this *CoreDomainName) create(tx *gorm.DB, space *model.Space, in *dto.Doma
 	return tx.Table("space_domains").Create(&domain).Error
 }
 
-func (this *CoreDomainName) Find(space *model.Space) (*model.DomainNames, error) {
+func (this *DomainNameService) Find(space *model.Space) (*model.DomainNames, error) {
 	out := &model.DomainNames{
 		Primary:   nil,
 		Secondary: nil,

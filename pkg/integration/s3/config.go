@@ -1,5 +1,5 @@
 package s3
 
-type Genetic struct {
+type Configuration struct {
 	Key string `yaml:"key"`
 }

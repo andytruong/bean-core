@@ -24,7 +24,7 @@ http-server:
 
 databases: { $ref: "resources/config/env.${ENV:dev}/databases.yaml" }
 
-beans:
+bundles:
     space: { $ref: "resources/config/env.${ENV:dev}/space.yaml" }
     access: { $ref: "resources/config/env.${ENV:dev}/access.yaml" }
     integration:

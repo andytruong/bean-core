@@ -9,11 +9,11 @@ import (
 	"bean/pkg/user/model/dto"
 )
 
-type CorePassword struct {
-	bean *UserBean
+type PasswordService struct {
+	bean *UserBundle
 }
 
-func (this *CorePassword) create(tx *gorm.DB, user *model.User, in *dto.UserPasswordInput) error {
+func (this *PasswordService) create(tx *gorm.DB, user *model.User, in *dto.UserPasswordInput) error {
 	if nil == in {
 		return nil
 	}

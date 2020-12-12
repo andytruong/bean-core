@@ -17,12 +17,12 @@ import (
 
 type ModelResolver struct {
 	logger *zap.Logger
-	bean   *AccessBean
-	config *Genetic
+	bundle *AccessBundle
+	config *AccessConfiguration
 }
 
 func (this ModelResolver) User(ctx context.Context, obj *model.Session) (*user_model.User, error) {
-	return this.bean.user.Resolvers.Query.User(ctx, obj.UserId)
+	return this.bundle.userBundle.Resolvers.Query.User(ctx, obj.UserId)
 }
 
 func (this ModelResolver) Context(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
@@ -34,11 +34,11 @@ func (this ModelResolver) Scopes(ctx context.Context, obj *model.Session) ([]*mo
 }
 
 func (this ModelResolver) Space(ctx context.Context, obj *model.Session) (*space_model.Space, error) {
-	return this.bean.space.Load(ctx, obj.SpaceId)
+	return this.bundle.spaceBundle.Load(ctx, obj.SpaceId)
 }
 
 func (this ModelResolver) Jwt(ctx context.Context, session *model.Session, codeVerifier string) (string, error) {
-	roles, err := this.bean.space.MembershipResolver().FindRoles(ctx, session.UserId, session.SpaceId)
+	roles, err := this.bundle.spaceBundle.MembershipResolver().FindRoles(ctx, session.UserId, session.SpaceId)
 	if nil != err {
 		return "", err
 	}
@@ -68,7 +68,7 @@ func (this ModelResolver) Jwt(ctx context.Context, session *model.Session, codeV
 		},
 	}
 
-	return this.bean.Sign(claims)
+	return this.bundle.Sign(claims)
 }
 
 func (this ModelResolver) JwtValidation(authHeader string) (*claim.Payload, error) {

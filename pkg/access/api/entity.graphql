@@ -1,13 +1,13 @@
 enum AccessScope { Anonymous Authenticated }
 
 type Session {
-	id: ID!
-	version: ID!
-	user: User
-	space: Space!
-	scopes: [AccessScope]
-	context: SessionContext
-	isActive: Boolean!
+	id:        ID!
+	version:   ID!
+	user:      User
+	space:     Space!
+	scopes:    [AccessScope]
+	context:   SessionContext
+	isActive:  Boolean!
 	createdAt: Time!
 	updatedAt: Time!
 	expiredAt: Time!

@@ -2,7 +2,7 @@ package infra
 
 import (
 	"sync"
-
+	
 	"bean/pkg/access"
 	"bean/pkg/infra/gql"
 	"bean/pkg/integration/mailer"
@@ -17,35 +17,35 @@ type (
 		mu        *sync.Mutex
 		resolvers *resolvers
 	}
-
+	
 	resolvers struct {
-		*user.UserBean
+		*user.UserBundle
 		*user.UserQueryResolver
 		*user.UserMutationResolver
-		*space.SpaceBean
+		*space.SpaceBundle
 		*space.SpaceQueryResolver
-		*access.AccessBean
+		*access.AccessBundle
 		*s3.ApplicationResolver
 		*mailer.MailerResolver
 	}
 )
 
 func (this *graph) Application() gql.ApplicationResolver {
-	bean, _ := this.can.beans.S3()
-
-	return bean.CoreApp.Resolver
+	bundle, _ := this.can.bundles.S3()
+	
+	return bundle.AppService.Resolver
 }
 
 func (this *graph) MembershipConnection() gql.MembershipConnectionResolver {
-	bean, _ := this.can.beans.Space()
-
-	return bean.MembershipResolver()
+	bundle, _ := this.can.bundles.Space()
+	
+	return bundle.MembershipResolver()
 }
 
 func (this *graph) Membership() gql.MembershipResolver {
-	bean, _ := this.can.beans.Space()
-
-	return bean.MembershipResolver()
+	bundle, _ := this.can.bundles.Space()
+	
+	return bundle.MembershipResolver()
 }
 
 func (this *graph) Mutation() gql.MutationResolver {
@@ -57,52 +57,52 @@ func (this *graph) Query() gql.QueryResolver {
 }
 
 func (this *graph) Session() gql.SessionResolver {
-	bean, _ := this.can.beans.Access()
-
-	return bean.SessionResolver
+	bundle, _ := this.can.bundles.Access()
+	
+	return bundle.SessionResolver
 }
 
 func (this *graph) User() gql.UserResolver {
-	bean, _ := this.can.beans.User()
-
-	return bean.Resolvers.Object
+	bundle, _ := this.can.bundles.User()
+	
+	return bundle.Resolvers.Object
 }
 
 func (this *graph) Space() gql.SpaceResolver {
-	bean, _ := this.can.beans.Space()
-
-	return bean.Resolvers.Object
+	bundle, _ := this.can.bundles.Space()
+	
+	return bundle.Resolvers.Object
 }
 
 func (this *graph) UserEmail() gql.UserEmailResolver {
-	bean, _ := this.can.beans.User()
-
-	return bean.Resolvers.Object
+	bundle, _ := this.can.bundles.User()
+	
+	return bundle.Resolvers.Object
 }
 
 func (this *graph) getResolvers() *resolvers {
 	if nil == this.resolvers {
 		this.mu.Lock()
 		defer this.mu.Unlock()
-
-		bUser, _ := this.can.beans.User()
-		bAccess, _ := this.can.beans.Access()
-		bSpace, _ := this.can.beans.Space()
-		bS3, _ := this.can.beans.S3()
-		bMailer, _ := this.can.beans.Mailer()
-		bMailer.Resolver()
-
+		
+		userBundle, _ := this.can.bundles.User()
+		accessBundle, _ := this.can.bundles.Access()
+		spaceBundle, _ := this.can.bundles.Space()
+		s3Bundle, _ := this.can.bundles.S3()
+		mailerBundle, _ := this.can.bundles.Mailer()
+		mailerBundle.Resolver()
+		
 		this.resolvers = &resolvers{
-			UserBean:             bUser,
-			UserQueryResolver:    bUser.Resolvers.Query,
-			UserMutationResolver: bUser.Resolvers.Mutation,
-			AccessBean:           bAccess,
-			SpaceBean:            bSpace,
-			SpaceQueryResolver:   bSpace.Resolvers.Query,
-			ApplicationResolver:  bS3.CoreApp.Resolver,
-			MailerResolver:       bMailer.Resolver(),
+			UserBundle:           userBundle,
+			UserQueryResolver:    userBundle.Resolvers.Query,
+			UserMutationResolver: userBundle.Resolvers.Mutation,
+			AccessBundle:         accessBundle,
+			SpaceBundle:          spaceBundle,
+			SpaceQueryResolver:   spaceBundle.Resolvers.Query,
+			ApplicationResolver:  s3Bundle.AppService.Resolver,
+			MailerResolver:       mailerBundle.Resolver(),
 		}
 	}
-
+	
 	return this.resolvers
 }

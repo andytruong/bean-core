@@ -13,16 +13,16 @@ import (
 	"bean/pkg/util/connect"
 )
 
-type CoreApplication struct {
-	bean     *S3IntegrationBean
+type ApplicationService struct {
+	bundle   *S3IntegrationBundle
 	Resolver *ApplicationResolver
 }
 
-func (this *CoreApplication) Load(ctx context.Context, id string) (*model.Application, error) {
+func (this *ApplicationService) Load(ctx context.Context, id string) (*model.Application, error) {
 	app := &model.Application{}
 
 	// TODO: don't allow to load pending deleted S3 applications.
-	err := this.bean.db.
+	err := this.bundle.db.
 		WithContext(ctx).
 		Where("id = ?", id).
 		First(&app).
@@ -34,16 +34,16 @@ func (this *CoreApplication) Load(ctx context.Context, id string) (*model.Applic
 	return app, nil
 }
 
-func (this *CoreApplication) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
+func (this *ApplicationService) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
 	var app *model.Application
 
 	err := connect.Transaction(
 		ctx,
-		this.bean.db,
+		this.bundle.db,
 		func(tx *gorm.DB) error {
 			app = &model.Application{
-				ID:        this.bean.id.MustULID(),
-				Version:   this.bean.id.MustULID(),
+				ID:        this.bundle.id.MustULID(),
+				Version:   this.bundle.id.MustULID(),
 				IsActive:  in.IsActive,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
@@ -53,9 +53,9 @@ func (this *CoreApplication) Create(ctx context.Context, in *dto.S3ApplicationCr
 			err := tx.Create(&app).Error
 			if nil != err {
 				return err
-			} else if err := this.bean.coreCredentials.onAppCreate(tx, app, in.Credentials); nil != err {
+			} else if err := this.bundle.credentialService.onAppCreate(tx, app, in.Credentials); nil != err {
 				return err
-			} else if err = this.bean.corePolicy.onAppCreate(tx, app, in.Policies); nil != err {
+			} else if err = this.bundle.policyService.onAppCreate(tx, app, in.Policies); nil != err {
 				return err
 			}
 
@@ -70,7 +70,7 @@ func (this *CoreApplication) Create(ctx context.Context, in *dto.S3ApplicationCr
 	return &dto.S3ApplicationMutationOutcome{App: app, Errors: nil}, nil
 }
 
-func (this *CoreApplication) Update(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
+func (this *ApplicationService) Update(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
 	app, err := this.Load(ctx, in.Id)
 
 	if nil != err {
@@ -87,7 +87,7 @@ func (this *CoreApplication) Update(ctx context.Context, in *dto.S3ApplicationUp
 		}
 	}
 
-	if deletedAt, ok := ctx.Value("bean.integration-s3.delete").(time.Time); ok {
+	if deletedAt, ok := ctx.Value("bundle.integration-s3.delete").(time.Time); ok {
 		app.DeletedAt = &deletedAt
 		changed = true
 	}
@@ -98,23 +98,23 @@ func (this *CoreApplication) Update(ctx context.Context, in *dto.S3ApplicationUp
 		}
 	}
 
-	app.Version = this.bean.id.MustULID()
+	app.Version = this.bundle.id.MustULID()
 	app.UpdatedAt = time.Now()
 	err = connect.Transaction(
 		ctx,
-		this.bean.db,
+		this.bundle.db,
 		func(tx *gorm.DB) error {
 			err := tx.Save(&app).Error
 			if nil != err {
 				return err
 			}
 
-			err = this.bean.coreCredentials.onAppUpdate(tx, app, in.Credentials)
+			err = this.bundle.credentialService.onAppUpdate(tx, app, in.Credentials)
 			if nil != err {
 				return err
 			}
 
-			err = this.bean.corePolicy.onAppUpdate(tx, app, in.Policies)
+			err = this.bundle.policyService.onAppUpdate(tx, app, in.Policies)
 			if nil != err {
 				return err
 			}
@@ -126,8 +126,8 @@ func (this *CoreApplication) Update(ctx context.Context, in *dto.S3ApplicationUp
 	return &dto.S3ApplicationMutationOutcome{App: app, Errors: nil}, err
 }
 
-func (this *CoreApplication) Delete(ctx context.Context, in dto.S3ApplicationDeleteInput) (*dto.S3ApplicationMutationOutcome, error) {
-	ctx = context.WithValue(ctx, "bean.integration-s3.delete", time.Now())
+func (this *ApplicationService) Delete(ctx context.Context, in dto.S3ApplicationDeleteInput) (*dto.S3ApplicationMutationOutcome, error) {
+	ctx = context.WithValue(ctx, "bundle.integration-s3.delete", time.Now())
 
 	return this.Update(ctx, &dto.S3ApplicationUpdateInput{
 		Id:       in.Id,

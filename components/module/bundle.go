@@ -4,7 +4,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type Bean interface {
+type Bundle interface {
 	Migrate(tx *gorm.DB, driver string) error
-	Dependencies() []Bean
+	Dependencies() []Bundle
 }

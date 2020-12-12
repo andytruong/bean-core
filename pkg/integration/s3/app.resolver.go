@@ -3,9 +3,9 @@ package s3
 import (
 	"context"
 	"time"
-
+	
 	"github.com/minio/minio-go/v7"
-
+	
 	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/pkg/integration/s3/model"
@@ -14,23 +14,23 @@ import (
 )
 
 type ApplicationResolver struct {
-	bean *S3IntegrationBean
+	bundle *S3IntegrationBundle
 }
 
 func (this *ApplicationResolver) S3ApplicationCreate(ctx context.Context, input *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
-	return this.bean.CoreApp.Create(ctx, input)
+	return this.bundle.AppService.Create(ctx, input)
 }
 
 func (this *ApplicationResolver) S3ApplicationUpdate(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
-	return this.bean.CoreApp.Update(ctx, in)
+	return this.bundle.AppService.Update(ctx, in)
 }
 
 func (this *ApplicationResolver) Polices(ctx context.Context, obj *model.Application) ([]*model.Policy, error) {
-	return this.bean.corePolicy.loadByApplicationId(ctx, obj.ID)
+	return this.bundle.policyService.loadByApplicationId(ctx, obj.ID)
 }
 
 func (this *ApplicationResolver) Credentials(ctx context.Context, obj *model.Application) (*model.Credentials, error) {
-	return this.bean.coreCredentials.loadByApplicationId(ctx, obj.ID)
+	return this.bundle.credentialService.loadByApplicationId(ctx, obj.ID)
 }
 
 func (this *ApplicationResolver) S3UploadToken(ctx context.Context, in dto.S3UploadTokenInput) (map[string]interface{}, error) {
@@ -39,20 +39,20 @@ func (this *ApplicationResolver) S3UploadToken(ctx context.Context, in dto.S3Upl
 	if !ok {
 		return nil, util.ErrorAuthRequired
 	}
-
+	
 	// load application
-	app, err := this.bean.CoreApp.Load(ctx, in.ApplicationId)
+	app, err := this.bundle.AppService.Load(ctx, in.ApplicationId)
 	if nil != err {
 		return nil, err
 	} else {
-		cred, err := this.bean.coreCredentials.loadByApplicationId(ctx, in.ApplicationId)
+		cred, err := this.bundle.credentialService.loadByApplicationId(ctx, in.ApplicationId)
 		if nil != err {
 			return nil, err
-		} else if client, err := this.bean.coreCredentials.client(cred); nil != err {
+		} else if client, err := this.bundle.credentialService.client(cred); nil != err {
 			return nil, err
 		} else {
 			policy := minio.NewPostPolicy()
-
+			
 			err := scalar.NoError(
 				policy.SetBucket(cred.Bucket),
 				policy.SetKey(string(in.FilePath)),
@@ -63,22 +63,22 @@ func (this *ApplicationResolver) S3UploadToken(ctx context.Context, in dto.S3Upl
 				policy.SetUserMetadata("nid", claims.SpaceId()),
 				policy.SetContentLengthRange(1, 10*1024*1024), // TODO: generate per application's policy
 			)
-
+			
 			if nil != err {
 				return nil, err
 			} else if _, formData, err := client.PresignedPostPolicy(ctx, policy); nil != err {
 				return nil, err
 			} else {
 				response := map[string]interface{}{}
-
+				
 				for k, v := range formData {
 					response[k] = v
 				}
-
+				
 				return response, nil
 			}
 		}
 	}
-
+	
 	return nil, nil
 }

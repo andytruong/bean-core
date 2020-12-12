@@ -40,7 +40,7 @@ func (this Runner) installFile(file string) error {
 	if !migration.DriverMatch(this.Driver) {
 		this.Logger.Debug(
 			"👉 driver unmatched",
-			zap.String("bean", migration.Bean),
+			zap.String("bean", migration.Bundle),
 			zap.String("path", path),
 		)
 
@@ -59,7 +59,7 @@ func (this Runner) installFile(file string) error {
 			if err := this.Tx.Exec(string(content)).Error; nil != err {
 				this.Logger.Info(
 					"⚡️ executed migration",
-					zap.String("bean", migration.Bean),
+					zap.String("bean", migration.Bundle),
 					zap.String("path", path),
 				)
 

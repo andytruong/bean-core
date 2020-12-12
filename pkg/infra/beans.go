@@ -12,24 +12,24 @@ import (
 type (
 	beans struct {
 		can    *Can
-		user   *user.UserBean
-		space  *space.SpaceBean
-		access *access.AccessBean
-		s3     *s3.S3IntegrationBean
-		mailer *mailer.MailerIntegrationBean
+		user   *user.UserBundle
+		space  *space.SpaceBundle
+		access *access.AccessBundle
+		s3     *s3.S3IntegrationBundle
+		mailer *mailer.MailerIntegrationBundle
 	}
 )
 
-func (this *beans) List() []module.Bean {
+func (this *beans) List() []module.Bundle {
 	mUser, _ := this.User()
 	mSpace, _ := this.Space()
 	mAccess, _ := this.Access()
 	mMailer, _ := this.Mailer()
 
-	return []module.Bean{mUser, mSpace, mAccess, mMailer}
+	return []module.Bundle{mUser, mSpace, mAccess, mMailer}
 }
 
-func (this *beans) User() (*user.UserBean, error) {
+func (this *beans) User() (*user.UserBundle, error) {
 	var err error
 
 	if nil == this.user {
@@ -38,7 +38,7 @@ func (this *beans) User() (*user.UserBean, error) {
 			return nil, err
 		}
 
-		this.user = user.NewUserBean(
+		this.user = user.NewUserBundle(
 			db,
 			this.can.logger,
 			this.can.Identifier(),
@@ -48,7 +48,7 @@ func (this *beans) User() (*user.UserBean, error) {
 	return this.user, err
 }
 
-func (this *beans) Space() (*space.SpaceBean, error) {
+func (this *beans) Space() (*space.SpaceBundle, error) {
 	var err error
 
 	if nil == this.space {
@@ -62,19 +62,19 @@ func (this *beans) Space() (*space.SpaceBean, error) {
 			return nil, err
 		}
 
-		this.space = space.NewSpaceBean(
+		this.space = space.NewSpaceBundle(
 			db,
 			this.can.logger,
 			this.can.Identifier(),
 			mUser,
-			this.can.Beans.Space,
+			this.can.Bundles.Space,
 		)
 	}
 
 	return this.space, err
 }
 
-func (this *beans) Access() (*access.AccessBean, error) {
+func (this *beans) Access() (*access.AccessBundle, error) {
 	if nil == this.access {
 		db, err := this.can.dbs.master()
 		if nil != err {
@@ -91,35 +91,35 @@ func (this *beans) Access() (*access.AccessBean, error) {
 			return nil, err
 		}
 
-		this.access = access.NewAccessBean(
+		this.access = access.NewAccessBundle(
 			db,
 			this.can.Identifier(),
 			this.can.logger,
 			mUser,
 			mSpace,
-			this.can.Beans.Access,
+			this.can.Bundles.Access,
 		)
 	}
 
 	return this.access, nil
 }
 
-func (this *beans) Mailer() (*mailer.MailerIntegrationBean, error) {
+func (this *beans) Mailer() (*mailer.MailerIntegrationBundle, error) {
 	if nil == this.mailer {
-		this.mailer = mailer.NewMailerIntegration(this.can.Beans.Integration.Mailer, this.can.logger)
+		this.mailer = mailer.NewMailerIntegration(this.can.Bundles.Integration.Mailer, this.can.logger)
 	}
 
 	return this.mailer, nil
 }
 
-func (this *beans) S3() (*s3.S3IntegrationBean, error) {
+func (this *beans) S3() (*s3.S3IntegrationBundle, error) {
 	if nil == this.s3 {
 		db, err := this.can.dbs.master()
 		if nil != err {
 			return nil, err
 		}
 
-		this.s3 = s3.NewS3Integration(db, this.can.Identifier(), this.can.logger, this.can.Beans.Integration.S3)
+		this.s3 = s3.NewS3Integration(db, this.can.Identifier(), this.can.logger, this.can.Bundles.Integration.S3)
 	}
 
 	return this.s3, nil

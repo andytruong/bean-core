@@ -15,11 +15,11 @@ import (
 	"bean/pkg/util"
 )
 
-type CoreSession struct {
-	bean *AccessBean
+type SessionService struct {
+	bundle *AccessBundle
 }
 
-func (this *CoreSession) Create(tx *gorm.DB, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+func (this *SessionService) Create(tx *gorm.DB, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 	if nil != in.UseCredentials {
 		return this.createUseCredentials(tx, in.UseCredentials)
 	}
@@ -35,13 +35,13 @@ func (this *CoreSession) Create(tx *gorm.DB, in *dto.SessionCreateInput) (*dto.S
 	return nil, nil
 }
 
-func (this *CoreSession) createUseCredentials(tx *gorm.DB, in *dto.SessionCreateUseCredentialsInput) (*dto.SessionCreateOutcome, error) {
+func (this *SessionService) createUseCredentials(tx *gorm.DB, in *dto.SessionCreateUseCredentialsInput) (*dto.SessionCreateOutcome, error) {
 	// load email object, so we have userID
 	email := mUser.UserEmail{}
 	{
 		err := tx.First(&email, "value = ?", in.Email).Error
 		if nil != err {
-			return nil, errors.New("user not found")
+			return nil, errors.New("userBundle not found")
 		}
 
 		if !email.IsActive {
@@ -70,11 +70,11 @@ func (this *CoreSession) createUseCredentials(tx *gorm.DB, in *dto.SessionCreate
 	})
 }
 
-func (this *CoreSession) generateOTLT(tx *gorm.DB, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
+func (this *SessionService) generateOTLT(tx *gorm.DB, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
 	return this.create(tx, claim.KindOTLT, in.UserID, in.SpaceID, nil)
 }
 
-func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
+func (this *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
 	oneTimeSession, err := this.LoadByToken(tx.Statement.Context, tx, in.Token)
 	if nil != err {
 		return nil, err
@@ -103,7 +103,7 @@ func (this *CoreSession) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dt
 	return out, err
 }
 
-func (this CoreSession) create(
+func (this SessionService) create(
 	tx *gorm.DB,
 	kind claim.Kind, userId string, spaceId string,
 	create func(*model.Session),
@@ -123,19 +123,19 @@ func (this CoreSession) create(
 		}
 	}
 
-	token := this.bean.id.MustULID()
+	token := this.bundle.id.MustULID()
 	session := &model.Session{
-		ID:          this.bean.id.MustULID(),
-		Version:     this.bean.id.MustULID(),
+		ID:          this.bundle.id.MustULID(),
+		Version:     this.bundle.id.MustULID(),
 		Kind:        kind,
 		UserId:      userId,
 		SpaceId:     spaceId,
-		HashedToken: this.bean.id.Encode(token),
+		HashedToken: this.bundle.id.Encode(token),
 		Scopes:      nil, // TODO
 		IsActive:    true,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
-		ExpiredAt:   time.Now().Add(this.bean.genetic.SessionTimeout),
+		ExpiredAt:   time.Now().Add(this.bundle.config.SessionTimeout),
 	}
 
 	if nil != create {
@@ -146,7 +146,7 @@ func (this CoreSession) create(
 		return nil, err
 	} else {
 		// update membership -> last-time-login
-		err := this.bean.space.MembershipResolver().UpdateLastLoginTime(tx, membership)
+		err := this.bundle.spaceBundle.MembershipResolver().UpdateLastLoginTime(tx, membership)
 		if nil != err {
 			return nil, err
 		}
@@ -159,7 +159,7 @@ func (this CoreSession) create(
 	}, nil
 }
 
-func (this CoreSession) load(ctx context.Context, db *gorm.DB, id string) (*model.Session, error) {
+func (this SessionService) load(ctx context.Context, db *gorm.DB, id string) (*model.Session, error) {
 	session := &model.Session{}
 	err := db.
 		WithContext(ctx).
@@ -181,15 +181,15 @@ func (this CoreSession) load(ctx context.Context, db *gorm.DB, id string) (*mode
 	return session, nil
 }
 
-func (this CoreSession) LoadByToken(ctx context.Context, db *gorm.DB, token string) (*model.Session, error) {
+func (this SessionService) LoadByToken(ctx context.Context, db *gorm.DB, token string) (*model.Session, error) {
 	session := &model.Session{}
 	err := db.
 		WithContext(ctx).
-		First(&session, "hashed_token = ?", this.bean.id.Encode(token)).
+		First(&session, "hashed_token = ?", this.bundle.id.Encode(token)).
 		Error
 
 	if err == gorm.ErrRecordNotFound {
-		return nil, errors.New("session not found: " + this.bean.id.Encode(token))
+		return nil, errors.New("session not found: " + this.bundle.id.Encode(token))
 	}
 
 	if session.ExpiredAt.Unix() <= time.Now().Unix() {
@@ -203,9 +203,9 @@ func (this CoreSession) LoadByToken(ctx context.Context, db *gorm.DB, token stri
 	return session, nil
 }
 
-func (this CoreSession) Delete(tx *gorm.DB, session *model.Session) (*dto.SessionArchiveOutcome, error) {
+func (this SessionService) Delete(tx *gorm.DB, session *model.Session) (*dto.SessionArchiveOutcome, error) {
 	session.IsActive = false
-	session.Version = this.bean.id.MustULID()
+	session.Version = this.bundle.id.MustULID()
 	session.UpdatedAt = time.Now()
 	err := tx.Save(&session).Error
 	if nil != err {
