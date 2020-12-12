@@ -3,15 +3,15 @@ package infra
 // THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.
 
 import (
-	model3 "bean/pkg/access/model"
-	dto1 "bean/pkg/access/model/dto"
+	"bean/pkg/access/model"
+	"bean/pkg/access/model/dto"
 	"bean/pkg/infra/gql"
-	"bean/pkg/integration/mailer/model/dto"
-	"bean/pkg/integration/s3/model"
+	dto1 "bean/pkg/integration/mailer/model/dto"
+	model1 "bean/pkg/integration/s3/model"
 	dto4 "bean/pkg/integration/s3/model/dto"
-	model1 "bean/pkg/space/model"
+	model2 "bean/pkg/space/model"
 	dto2 "bean/pkg/space/model/dto"
-	model2 "bean/pkg/user/model"
+	model3 "bean/pkg/user/model"
 	dto3 "bean/pkg/user/model/dto"
 	"context"
 )
@@ -22,6 +22,14 @@ type Resolver struct {
 	container *Container
 }
 
+func (r *Resolver) AccessMutation() gql.AccessMutationResolver { return &accessMutationResolver{r} }
+func (r *Resolver) AccessQuery() gql.AccessQueryResolver       { return &accessQueryResolver{r} }
+func (r *Resolver) AccessSessionMutation() gql.AccessSessionMutationResolver {
+	return &accessSessionMutationResolver{r}
+}
+func (r *Resolver) AccessSessionQuery() gql.AccessSessionQueryResolver {
+	return &accessSessionQueryResolver{r}
+}
 func (r *Resolver) Application() gql.ApplicationResolver { return &applicationResolver{r} }
 func (r *Resolver) MailerAccountMutation() gql.MailerAccountMutationResolver {
 	return &mailerAccountMutationResolver{r}
@@ -44,6 +52,10 @@ func (r *Resolver) User() gql.UserResolver           { return &userResolver{r} }
 func (r *Resolver) UserEmail() gql.UserEmailResolver { return &userEmailResolver{r} }
 
 // Resolvers
+type accessMutationResolver struct{ *Resolver }
+type accessQueryResolver struct{ *Resolver }
+type accessSessionMutationResolver struct{ *Resolver }
+type accessSessionQueryResolver struct{ *Resolver }
 type applicationResolver struct{ *Resolver }
 type mailerAccountMutationResolver struct{ *Resolver }
 type mailerQueryAccountResolver struct{ *Resolver }
@@ -57,108 +69,136 @@ type spaceResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
 type userEmailResolver struct{ *Resolver }
 
-func (r *applicationResolver) Polices(ctx context.Context, obj *model.Application) ([]*model.Policy, error) {
-	bundle, _ := r.container.bundles.S3()
-	resolvers := bundle.GraphqlResolver()
-	objectResolver := resolvers["Application"].(map[string]interface{})
-	callback := objectResolver["Polices"].(func(ctx context.Context, obj *model.Application) ([]*model.Policy, error))
-
-	return callback(ctx, obj)
+func (r *accessMutationResolver) Session(ctx context.Context, obj *dto.AccessMutation) (*dto.AccessSessionMutation, error) {
+	panic("no implementation found in resolvers[AccessMutation][Session]")
 }
-func (r *applicationResolver) Credentials(ctx context.Context, obj *model.Application) (*model.Credentials, error) {
-	bundle, _ := r.container.bundles.S3()
-	resolvers := bundle.GraphqlResolver()
-	objectResolver := resolvers["Application"].(map[string]interface{})
-	callback := objectResolver["Credentials"].(func(ctx context.Context, obj *model.Application) (*model.Credentials, error))
-
-	return callback(ctx, obj)
+func (r *accessQueryResolver) Session(ctx context.Context, obj *dto.AccessQuery) (*dto.AccessSessionQuery, error) {
+	panic("no implementation found in resolvers[AccessQuery][Session]")
 }
-func (r *mailerAccountMutationResolver) Create(ctx context.Context, obj *dto.MailerAccountMutation, input dto.MailerAccountCreateInput) (*dto.MailerAccountMutationOutcome, error) {
-	bundle, _ := r.container.bundles.Mailer()
+func (r *accessSessionMutationResolver) Create(ctx context.Context, obj *dto.AccessSessionMutation, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+	bundle, _ := r.container.bundles.Access()
 	resolvers := bundle.GraphqlResolver()
-	objectResolver := resolvers["MailerAccountMutation"].(map[string]interface{})
-	callback := objectResolver["Create"].(func(ctx context.Context, obj *dto.MailerAccountMutation, input dto.MailerAccountCreateInput) (*dto.MailerAccountMutationOutcome, error))
+	objectResolver := resolvers["AccessSessionMutation"].(map[string]interface{})
+	callback := objectResolver["Create"].(func(ctx context.Context, obj *dto.AccessSessionMutation, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error))
 
 	return callback(ctx, obj, input)
 }
-func (r *mailerAccountMutationResolver) Update(ctx context.Context, obj *dto.MailerAccountMutation, input dto.MailerAccountUpdateInput) (*dto.MailerAccountMutationOutcome, error) {
+func (r *accessSessionMutationResolver) Archive(ctx context.Context, obj *dto.AccessSessionMutation) (*dto.SessionArchiveOutcome, error) {
+	bundle, _ := r.container.bundles.Access()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["AccessSessionMutation"].(map[string]interface{})
+	callback := objectResolver["Archive"].(func(ctx context.Context, obj *dto.AccessSessionMutation) (*dto.SessionArchiveOutcome, error))
+
+	return callback(ctx, obj)
+}
+func (r *accessSessionQueryResolver) Load(ctx context.Context, obj *dto.AccessSessionQuery, token string) (*model.Session, error) {
+	bundle, _ := r.container.bundles.Access()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["AccessSessionQuery"].(map[string]interface{})
+	callback := objectResolver["Load"].(func(ctx context.Context, obj *dto.AccessSessionQuery, token string) (*model.Session, error))
+
+	return callback(ctx, obj, token)
+}
+func (r *applicationResolver) Polices(ctx context.Context, obj *model1.Application) ([]*model1.Policy, error) {
+	bundle, _ := r.container.bundles.S3()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Application"].(map[string]interface{})
+	callback := objectResolver["Polices"].(func(ctx context.Context, obj *model1.Application) ([]*model1.Policy, error))
+
+	return callback(ctx, obj)
+}
+func (r *applicationResolver) Credentials(ctx context.Context, obj *model1.Application) (*model1.Credentials, error) {
+	bundle, _ := r.container.bundles.S3()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Application"].(map[string]interface{})
+	callback := objectResolver["Credentials"].(func(ctx context.Context, obj *model1.Application) (*model1.Credentials, error))
+
+	return callback(ctx, obj)
+}
+func (r *mailerAccountMutationResolver) Create(ctx context.Context, obj *dto1.MailerAccountMutation, input dto1.MailerAccountCreateInput) (*dto1.MailerAccountMutationOutcome, error) {
 	bundle, _ := r.container.bundles.Mailer()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["MailerAccountMutation"].(map[string]interface{})
-	callback := objectResolver["Update"].(func(ctx context.Context, obj *dto.MailerAccountMutation, input dto.MailerAccountUpdateInput) (*dto.MailerAccountMutationOutcome, error))
+	callback := objectResolver["Create"].(func(ctx context.Context, obj *dto1.MailerAccountMutation, input dto1.MailerAccountCreateInput) (*dto1.MailerAccountMutationOutcome, error))
 
 	return callback(ctx, obj, input)
 }
-func (r *mailerAccountMutationResolver) Verify(ctx context.Context, obj *dto.MailerAccountMutation, id string, version string) (*dto.MailerAccountMutationOutcome, error) {
+func (r *mailerAccountMutationResolver) Update(ctx context.Context, obj *dto1.MailerAccountMutation, input dto1.MailerAccountUpdateInput) (*dto1.MailerAccountMutationOutcome, error) {
 	bundle, _ := r.container.bundles.Mailer()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["MailerAccountMutation"].(map[string]interface{})
-	callback := objectResolver["Verify"].(func(ctx context.Context, obj *dto.MailerAccountMutation, id string, version string) (*dto.MailerAccountMutationOutcome, error))
+	callback := objectResolver["Update"].(func(ctx context.Context, obj *dto1.MailerAccountMutation, input dto1.MailerAccountUpdateInput) (*dto1.MailerAccountMutationOutcome, error))
+
+	return callback(ctx, obj, input)
+}
+func (r *mailerAccountMutationResolver) Verify(ctx context.Context, obj *dto1.MailerAccountMutation, id string, version string) (*dto1.MailerAccountMutationOutcome, error) {
+	bundle, _ := r.container.bundles.Mailer()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["MailerAccountMutation"].(map[string]interface{})
+	callback := objectResolver["Verify"].(func(ctx context.Context, obj *dto1.MailerAccountMutation, id string, version string) (*dto1.MailerAccountMutationOutcome, error))
 
 	return callback(ctx, obj, id, version)
 }
-func (r *mailerQueryAccountResolver) Get(ctx context.Context, obj *dto.MailerQueryAccount, id string) (*dto.MailerAccount, error) {
+func (r *mailerQueryAccountResolver) Get(ctx context.Context, obj *dto1.MailerQueryAccount, id string) (*dto1.MailerAccount, error) {
 	panic("no implementation found in resolvers[MailerQueryAccount][Get]")
 }
-func (r *mailerQueryAccountResolver) GetMultiple(ctx context.Context, obj *dto.MailerQueryAccount, first int, after *string) ([]*dto.MailerAccount, error) {
+func (r *mailerQueryAccountResolver) GetMultiple(ctx context.Context, obj *dto1.MailerQueryAccount, first int, after *string) ([]*dto1.MailerAccount, error) {
 	panic("no implementation found in resolvers[MailerQueryAccount][GetMultiple]")
 }
-func (r *mailerTemplateMutationResolver) Create(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error) {
+func (r *mailerTemplateMutationResolver) Create(ctx context.Context, obj *dto1.MailerTemplateMutation) (*bool, error) {
 	panic("no implementation found in resolvers[MailerTemplateMutation][Create]")
 }
-func (r *mailerTemplateMutationResolver) Update(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error) {
+func (r *mailerTemplateMutationResolver) Update(ctx context.Context, obj *dto1.MailerTemplateMutation) (*bool, error) {
 	panic("no implementation found in resolvers[MailerTemplateMutation][Update]")
 }
-func (r *mailerTemplateMutationResolver) Delete(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error) {
+func (r *mailerTemplateMutationResolver) Delete(ctx context.Context, obj *dto1.MailerTemplateMutation) (*bool, error) {
 	panic("no implementation found in resolvers[MailerTemplateMutation][Delete]")
 }
-func (r *membershipResolver) Space(ctx context.Context, obj *model1.Membership) (*model1.Space, error) {
+func (r *membershipResolver) Space(ctx context.Context, obj *model2.Membership) (*model2.Space, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Membership"].(map[string]interface{})
-	callback := objectResolver["Space"].(func(ctx context.Context, obj *model1.Membership) (*model1.Space, error))
+	callback := objectResolver["Space"].(func(ctx context.Context, obj *model2.Membership) (*model2.Space, error))
 
 	return callback(ctx, obj)
 }
-func (r *membershipResolver) User(ctx context.Context, obj *model1.Membership) (*model2.User, error) {
+func (r *membershipResolver) User(ctx context.Context, obj *model2.Membership) (*model3.User, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Membership"].(map[string]interface{})
-	callback := objectResolver["User"].(func(ctx context.Context, obj *model1.Membership) (*model2.User, error))
+	callback := objectResolver["User"].(func(ctx context.Context, obj *model2.Membership) (*model3.User, error))
 
 	return callback(ctx, obj)
 }
-func (r *membershipResolver) Roles(ctx context.Context, obj *model1.Membership) ([]*model1.Space, error) {
+func (r *membershipResolver) Roles(ctx context.Context, obj *model2.Membership) ([]*model2.Space, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Membership"].(map[string]interface{})
-	callback := objectResolver["Roles"].(func(ctx context.Context, obj *model1.Membership) ([]*model1.Space, error))
+	callback := objectResolver["Roles"].(func(ctx context.Context, obj *model2.Membership) ([]*model2.Space, error))
 
 	return callback(ctx, obj)
 }
-func (r *membershipConnectionResolver) Edges(ctx context.Context, obj *model1.MembershipConnection) ([]*model1.MembershipEdge, error) {
+func (r *membershipConnectionResolver) Edges(ctx context.Context, obj *model2.MembershipConnection) ([]*model2.MembershipEdge, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["MembershipConnection"].(map[string]interface{})
-	callback := objectResolver["Edges"].(func(ctx context.Context, obj *model1.MembershipConnection) ([]*model1.MembershipEdge, error))
+	callback := objectResolver["Edges"].(func(ctx context.Context, obj *model2.MembershipConnection) ([]*model2.MembershipEdge, error))
 
 	return callback(ctx, obj)
 }
-func (r *mutationResolver) SessionCreate(ctx context.Context, input *dto1.SessionCreateInput) (*dto1.SessionCreateOutcome, error) {
+func (r *mutationResolver) AccessMutation(ctx context.Context) (*dto.AccessMutation, error) {
 	bundle, _ := r.container.bundles.Access()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Mutation"].(map[string]interface{})
-	callback := objectResolver["SessionCreate"].(func(ctx context.Context, input *dto1.SessionCreateInput) (*dto1.SessionCreateOutcome, error))
-
-	return callback(ctx, input)
-}
-func (r *mutationResolver) SessionArchive(ctx context.Context) (*dto1.SessionArchiveOutcome, error) {
-	bundle, _ := r.container.bundles.Access()
-	resolvers := bundle.GraphqlResolver()
-	objectResolver := resolvers["Mutation"].(map[string]interface{})
-	callback := objectResolver["SessionArchive"].(func(ctx context.Context) (*dto1.SessionArchiveOutcome, error))
+	callback := objectResolver["AccessMutation"].(func(ctx context.Context) (*dto.AccessMutation, error))
 
 	return callback(ctx)
+}
+func (r *mutationResolver) SessionCreate(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+	panic("no implementation found in resolvers[Mutation][SessionCreate]")
+}
+func (r *mutationResolver) SessionArchive(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
+	panic("no implementation found in resolvers[Mutation][SessionArchive]")
 }
 func (r *mutationResolver) SpaceCreate(ctx context.Context, input dto2.SpaceCreateInput) (*dto2.SpaceCreateOutcome, error) {
 	bundle, _ := r.container.bundles.Space()
@@ -232,132 +272,140 @@ func (r *mutationResolver) S3UploadToken(ctx context.Context, input dto4.S3Uploa
 
 	return callback(ctx, input)
 }
-func (r *mutationResolver) MailerMutation(ctx context.Context) (*dto.MailerMutation, error) {
+func (r *mutationResolver) MailerMutation(ctx context.Context) (*dto1.MailerMutation, error) {
 	bundle, _ := r.container.bundles.Mailer()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Mutation"].(map[string]interface{})
-	callback := objectResolver["MailerMutation"].(func(ctx context.Context) (*dto.MailerMutation, error))
+	callback := objectResolver["MailerMutation"].(func(ctx context.Context) (*dto1.MailerMutation, error))
 
 	return callback(ctx)
 }
-func (r *queryResolver) Session(ctx context.Context, token string) (*model3.Session, error) {
+func (r *queryResolver) AccessQuery(ctx context.Context) (*dto.AccessQuery, error) {
+	bundle, _ := r.container.bundles.Access()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Query"].(map[string]interface{})
+	callback := objectResolver["AccessQuery"].(func(ctx context.Context) (*dto.AccessQuery, error))
+
+	return callback(ctx)
+}
+func (r *queryResolver) Session(ctx context.Context, token string) (*model.Session, error) {
 	panic("no implementation found in resolvers[Query][Session]")
 }
-func (r *queryResolver) Space(ctx context.Context, filters dto2.SpaceFilters) (*model1.Space, error) {
+func (r *queryResolver) Space(ctx context.Context, filters dto2.SpaceFilters) (*model2.Space, error) {
 	panic("no implementation found in resolvers[Query][Space]")
 }
-func (r *queryResolver) Membership(ctx context.Context, id string, version *string) (*model1.Membership, error) {
+func (r *queryResolver) Membership(ctx context.Context, id string, version *string) (*model2.Membership, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Query"].(map[string]interface{})
-	callback := objectResolver["Membership"].(func(ctx context.Context, id string, version *string) (*model1.Membership, error))
+	callback := objectResolver["Membership"].(func(ctx context.Context, id string, version *string) (*model2.Membership, error))
 
 	return callback(ctx, id, version)
 }
-func (r *queryResolver) Memberships(ctx context.Context, first int, after *string, filters dto2.MembershipsFilter) (*model1.MembershipConnection, error) {
+func (r *queryResolver) Memberships(ctx context.Context, first int, after *string, filters dto2.MembershipsFilter) (*model2.MembershipConnection, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Query"].(map[string]interface{})
-	callback := objectResolver["Memberships"].(func(ctx context.Context, first int, after *string, filters dto2.MembershipsFilter) (*model1.MembershipConnection, error))
+	callback := objectResolver["Memberships"].(func(ctx context.Context, first int, after *string, filters dto2.MembershipsFilter) (*model2.MembershipConnection, error))
 
 	return callback(ctx, first, after, filters)
 }
-func (r *queryResolver) User(ctx context.Context, id string) (*model2.User, error) {
+func (r *queryResolver) User(ctx context.Context, id string) (*model3.User, error) {
 	bundle, _ := r.container.bundles.User()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Query"].(map[string]interface{})
-	callback := objectResolver["User"].(func(ctx context.Context, id string) (*model2.User, error))
+	callback := objectResolver["User"].(func(ctx context.Context, id string) (*model3.User, error))
 
 	return callback(ctx, id)
 }
-func (r *queryResolver) MailerQuery(ctx context.Context) (*dto.MailerQuery, error) {
+func (r *queryResolver) MailerQuery(ctx context.Context) (*dto1.MailerQuery, error) {
 	bundle, _ := r.container.bundles.Mailer()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Query"].(map[string]interface{})
-	callback := objectResolver["MailerQuery"].(func(ctx context.Context) (*dto.MailerQuery, error))
+	callback := objectResolver["MailerQuery"].(func(ctx context.Context) (*dto1.MailerQuery, error))
 
 	return callback(ctx)
 }
-func (r *sessionResolver) User(ctx context.Context, obj *model3.Session) (*model2.User, error) {
+func (r *sessionResolver) User(ctx context.Context, obj *model.Session) (*model3.User, error) {
 	bundle, _ := r.container.bundles.Access()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Session"].(map[string]interface{})
-	callback := objectResolver["User"].(func(ctx context.Context, obj *model3.Session) (*model2.User, error))
+	callback := objectResolver["User"].(func(ctx context.Context, obj *model.Session) (*model3.User, error))
 
 	return callback(ctx, obj)
 }
-func (r *sessionResolver) Space(ctx context.Context, obj *model3.Session) (*model1.Space, error) {
+func (r *sessionResolver) Space(ctx context.Context, obj *model.Session) (*model2.Space, error) {
 	bundle, _ := r.container.bundles.Access()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Session"].(map[string]interface{})
-	callback := objectResolver["Space"].(func(ctx context.Context, obj *model3.Session) (*model1.Space, error))
+	callback := objectResolver["Space"].(func(ctx context.Context, obj *model.Session) (*model2.Space, error))
 
 	return callback(ctx, obj)
 }
-func (r *sessionResolver) Scopes(ctx context.Context, obj *model3.Session) ([]*model3.AccessScope, error) {
+func (r *sessionResolver) Scopes(ctx context.Context, obj *model.Session) ([]*model.AccessScope, error) {
 	bundle, _ := r.container.bundles.Access()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Session"].(map[string]interface{})
-	callback := objectResolver["Scopes"].(func(ctx context.Context, obj *model3.Session) ([]*model3.AccessScope, error))
+	callback := objectResolver["Scopes"].(func(ctx context.Context, obj *model.Session) ([]*model.AccessScope, error))
 
 	return callback(ctx, obj)
 }
-func (r *sessionResolver) Context(ctx context.Context, obj *model3.Session) (*model3.SessionContext, error) {
+func (r *sessionResolver) Context(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
 	bundle, _ := r.container.bundles.Access()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Session"].(map[string]interface{})
-	callback := objectResolver["Context"].(func(ctx context.Context, obj *model3.Session) (*model3.SessionContext, error))
+	callback := objectResolver["Context"].(func(ctx context.Context, obj *model.Session) (*model.SessionContext, error))
 
 	return callback(ctx, obj)
 }
-func (r *sessionResolver) Jwt(ctx context.Context, obj *model3.Session, codeVerifier string) (string, error) {
+func (r *sessionResolver) Jwt(ctx context.Context, obj *model.Session, codeVerifier string) (string, error) {
 	bundle, _ := r.container.bundles.Access()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Session"].(map[string]interface{})
-	callback := objectResolver["Jwt"].(func(ctx context.Context, obj *model3.Session, codeVerifier string) (string, error))
+	callback := objectResolver["Jwt"].(func(ctx context.Context, obj *model.Session, codeVerifier string) (string, error))
 
 	return callback(ctx, obj, codeVerifier)
 }
-func (r *spaceResolver) DomainNames(ctx context.Context, obj *model1.Space) (*model1.DomainNames, error) {
+func (r *spaceResolver) DomainNames(ctx context.Context, obj *model2.Space) (*model2.DomainNames, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Space"].(map[string]interface{})
-	callback := objectResolver["DomainNames"].(func(ctx context.Context, obj *model1.Space) (*model1.DomainNames, error))
+	callback := objectResolver["DomainNames"].(func(ctx context.Context, obj *model2.Space) (*model2.DomainNames, error))
 
 	return callback(ctx, obj)
 }
-func (r *spaceResolver) Features(ctx context.Context, obj *model1.Space) (*model1.SpaceFeatures, error) {
+func (r *spaceResolver) Features(ctx context.Context, obj *model2.Space) (*model2.SpaceFeatures, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Space"].(map[string]interface{})
-	callback := objectResolver["Features"].(func(ctx context.Context, obj *model1.Space) (*model1.SpaceFeatures, error))
+	callback := objectResolver["Features"].(func(ctx context.Context, obj *model2.Space) (*model2.SpaceFeatures, error))
 
 	return callback(ctx, obj)
 }
-func (r *spaceResolver) Parent(ctx context.Context, obj *model1.Space) (*model1.Space, error) {
+func (r *spaceResolver) Parent(ctx context.Context, obj *model2.Space) (*model2.Space, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Space"].(map[string]interface{})
-	callback := objectResolver["Parent"].(func(ctx context.Context, obj *model1.Space) (*model1.Space, error))
+	callback := objectResolver["Parent"].(func(ctx context.Context, obj *model2.Space) (*model2.Space, error))
 
 	return callback(ctx, obj)
 }
-func (r *userResolver) Name(ctx context.Context, obj *model2.User) (*model2.UserName, error) {
+func (r *userResolver) Name(ctx context.Context, obj *model3.User) (*model3.UserName, error) {
 	bundle, _ := r.container.bundles.User()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["User"].(map[string]interface{})
-	callback := objectResolver["Name"].(func(ctx context.Context, obj *model2.User) (*model2.UserName, error))
+	callback := objectResolver["Name"].(func(ctx context.Context, obj *model3.User) (*model3.UserName, error))
 
 	return callback(ctx, obj)
 }
-func (r *userResolver) Emails(ctx context.Context, obj *model2.User) (*model2.UserEmails, error) {
+func (r *userResolver) Emails(ctx context.Context, obj *model3.User) (*model3.UserEmails, error) {
 	bundle, _ := r.container.bundles.User()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["User"].(map[string]interface{})
-	callback := objectResolver["Emails"].(func(ctx context.Context, obj *model2.User) (*model2.UserEmails, error))
+	callback := objectResolver["Emails"].(func(ctx context.Context, obj *model3.User) (*model3.UserEmails, error))
 
 	return callback(ctx, obj)
 }
-func (r *userEmailResolver) Verified(ctx context.Context, obj *model2.UserEmail) (bool, error) {
+func (r *userEmailResolver) Verified(ctx context.Context, obj *model3.UserEmail) (bool, error) {
 	panic("no implementation found in resolvers[UserEmail][Verified]")
 }

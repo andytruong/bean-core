@@ -1,0 +1,31 @@
+extend type Query {
+    accessQuery: AccessQuery!
+
+    # TODO: Remove this
+    session(token: ID!): Session
+}
+
+extend type Mutation {
+    accessMutation: AccessMutation!
+
+    # TODO: Remove this
+    sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
+    sessionArchive: SessionArchiveOutcome! @requireAuth
+}
+
+type AccessQuery {
+    session: AccessSessionQuery!
+}
+
+type AccessSessionQuery {
+    load(token: ID!): Session
+}
+
+type AccessMutation {
+    session: AccessSessionMutation!
+}
+
+type AccessSessionMutation {
+    create(input: SessionCreateInput): SessionCreateOutcome!
+    archive: SessionArchiveOutcome! @requireAuth
+}

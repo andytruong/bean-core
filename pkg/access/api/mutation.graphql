@@ -1,4 +1,0 @@
-extend type Mutation {
-    sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
-    sessionArchive: SessionArchiveOutcome! @requireAuth
-}

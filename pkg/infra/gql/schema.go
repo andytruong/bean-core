@@ -4,15 +4,15 @@ package gql
 
 import (
 	"bean/components/scalar"
-	model3 "bean/pkg/access/model"
-	dto2 "bean/pkg/access/model/dto"
+	"bean/pkg/access/model"
+	"bean/pkg/access/model/dto"
 	model4 "bean/pkg/config/model"
-	"bean/pkg/integration/mailer/model/dto"
-	"bean/pkg/integration/s3/model"
-	dto1 "bean/pkg/integration/s3/model/dto"
-	model1 "bean/pkg/space/model"
+	dto1 "bean/pkg/integration/mailer/model/dto"
+	model1 "bean/pkg/integration/s3/model"
+	dto2 "bean/pkg/integration/s3/model/dto"
+	model2 "bean/pkg/space/model"
 	dto3 "bean/pkg/space/model/dto"
-	model2 "bean/pkg/user/model"
+	model3 "bean/pkg/user/model"
 	dto4 "bean/pkg/user/model/dto"
 	"bean/pkg/util"
 	"bean/pkg/util/api"
@@ -49,6 +49,10 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	AccessMutation() AccessMutationResolver
+	AccessQuery() AccessQueryResolver
+	AccessSessionMutation() AccessSessionMutationResolver
+	AccessSessionQuery() AccessSessionQueryResolver
 	Application() ApplicationResolver
 	MailerAccountMutation() MailerAccountMutationResolver
 	MailerQueryAccount() MailerQueryAccountResolver
@@ -71,6 +75,23 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	AccessMutation struct {
+		Session func(childComplexity int) int
+	}
+
+	AccessQuery struct {
+		Session func(childComplexity int) int
+	}
+
+	AccessSessionMutation struct {
+		Archive func(childComplexity int) int
+		Create  func(childComplexity int, input *dto.SessionCreateInput) int
+	}
+
+	AccessSessionQuery struct {
+		Load func(childComplexity int, token string) int
+	}
+
 	Application struct {
 		CreatedAt   func(childComplexity int) int
 		Credentials func(childComplexity int) int
@@ -165,8 +186,8 @@ type ComplexityRoot struct {
 	}
 
 	MailerAccountMutation struct {
-		Create func(childComplexity int, input dto.MailerAccountCreateInput) int
-		Update func(childComplexity int, input dto.MailerAccountUpdateInput) int
+		Create func(childComplexity int, input dto1.MailerAccountCreateInput) int
+		Update func(childComplexity int, input dto1.MailerAccountUpdateInput) int
 		Verify func(childComplexity int, id string, version string) int
 	}
 
@@ -274,12 +295,13 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		AccessMutation        func(childComplexity int) int
 		MailerMutation        func(childComplexity int) int
-		S3ApplicationCreate   func(childComplexity int, input *dto1.S3ApplicationCreateInput) int
-		S3ApplicationUpdate   func(childComplexity int, input *dto1.S3ApplicationUpdateInput) int
-		S3UploadToken         func(childComplexity int, input dto1.S3UploadTokenInput) int
+		S3ApplicationCreate   func(childComplexity int, input *dto2.S3ApplicationCreateInput) int
+		S3ApplicationUpdate   func(childComplexity int, input *dto2.S3ApplicationUpdateInput) int
+		S3UploadToken         func(childComplexity int, input dto2.S3UploadTokenInput) int
 		SessionArchive        func(childComplexity int) int
-		SessionCreate         func(childComplexity int, input *dto2.SessionCreateInput) int
+		SessionCreate         func(childComplexity int, input *dto.SessionCreateInput) int
 		SpaceCreate           func(childComplexity int, input dto3.SpaceCreateInput) int
 		SpaceMembershipCreate func(childComplexity int, input dto3.SpaceMembershipCreateInput) int
 		SpaceMembershipUpdate func(childComplexity int, input dto3.SpaceMembershipUpdateInput) int
@@ -297,6 +319,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		AccessQuery func(childComplexity int) int
 		MailerQuery func(childComplexity int) int
 		Membership  func(childComplexity int, id string, version *string) int
 		Memberships func(childComplexity int, first int, after *string, filters dto3.MembershipsFilter) int
@@ -413,75 +436,90 @@ type ComplexityRoot struct {
 	}
 }
 
+type AccessMutationResolver interface {
+	Session(ctx context.Context, obj *dto.AccessMutation) (*dto.AccessSessionMutation, error)
+}
+type AccessQueryResolver interface {
+	Session(ctx context.Context, obj *dto.AccessQuery) (*dto.AccessSessionQuery, error)
+}
+type AccessSessionMutationResolver interface {
+	Create(ctx context.Context, obj *dto.AccessSessionMutation, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error)
+	Archive(ctx context.Context, obj *dto.AccessSessionMutation) (*dto.SessionArchiveOutcome, error)
+}
+type AccessSessionQueryResolver interface {
+	Load(ctx context.Context, obj *dto.AccessSessionQuery, token string) (*model.Session, error)
+}
 type ApplicationResolver interface {
-	Polices(ctx context.Context, obj *model.Application) ([]*model.Policy, error)
-	Credentials(ctx context.Context, obj *model.Application) (*model.Credentials, error)
+	Polices(ctx context.Context, obj *model1.Application) ([]*model1.Policy, error)
+	Credentials(ctx context.Context, obj *model1.Application) (*model1.Credentials, error)
 }
 type MailerAccountMutationResolver interface {
-	Create(ctx context.Context, obj *dto.MailerAccountMutation, input dto.MailerAccountCreateInput) (*dto.MailerAccountMutationOutcome, error)
-	Update(ctx context.Context, obj *dto.MailerAccountMutation, input dto.MailerAccountUpdateInput) (*dto.MailerAccountMutationOutcome, error)
-	Verify(ctx context.Context, obj *dto.MailerAccountMutation, id string, version string) (*dto.MailerAccountMutationOutcome, error)
+	Create(ctx context.Context, obj *dto1.MailerAccountMutation, input dto1.MailerAccountCreateInput) (*dto1.MailerAccountMutationOutcome, error)
+	Update(ctx context.Context, obj *dto1.MailerAccountMutation, input dto1.MailerAccountUpdateInput) (*dto1.MailerAccountMutationOutcome, error)
+	Verify(ctx context.Context, obj *dto1.MailerAccountMutation, id string, version string) (*dto1.MailerAccountMutationOutcome, error)
 }
 type MailerQueryAccountResolver interface {
-	Get(ctx context.Context, obj *dto.MailerQueryAccount, id string) (*dto.MailerAccount, error)
-	GetMultiple(ctx context.Context, obj *dto.MailerQueryAccount, first int, after *string) ([]*dto.MailerAccount, error)
+	Get(ctx context.Context, obj *dto1.MailerQueryAccount, id string) (*dto1.MailerAccount, error)
+	GetMultiple(ctx context.Context, obj *dto1.MailerQueryAccount, first int, after *string) ([]*dto1.MailerAccount, error)
 }
 type MailerTemplateMutationResolver interface {
-	Create(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error)
-	Update(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error)
-	Delete(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error)
+	Create(ctx context.Context, obj *dto1.MailerTemplateMutation) (*bool, error)
+	Update(ctx context.Context, obj *dto1.MailerTemplateMutation) (*bool, error)
+	Delete(ctx context.Context, obj *dto1.MailerTemplateMutation) (*bool, error)
 }
 type MembershipResolver interface {
-	Space(ctx context.Context, obj *model1.Membership) (*model1.Space, error)
-	User(ctx context.Context, obj *model1.Membership) (*model2.User, error)
+	Space(ctx context.Context, obj *model2.Membership) (*model2.Space, error)
+	User(ctx context.Context, obj *model2.Membership) (*model3.User, error)
 
-	Roles(ctx context.Context, obj *model1.Membership) ([]*model1.Space, error)
+	Roles(ctx context.Context, obj *model2.Membership) ([]*model2.Space, error)
 }
 type MembershipConnectionResolver interface {
-	Edges(ctx context.Context, obj *model1.MembershipConnection) ([]*model1.MembershipEdge, error)
+	Edges(ctx context.Context, obj *model2.MembershipConnection) ([]*model2.MembershipEdge, error)
 }
 type MutationResolver interface {
-	SessionCreate(ctx context.Context, input *dto2.SessionCreateInput) (*dto2.SessionCreateOutcome, error)
-	SessionArchive(ctx context.Context) (*dto2.SessionArchiveOutcome, error)
+	AccessMutation(ctx context.Context) (*dto.AccessMutation, error)
+	SessionCreate(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error)
+	SessionArchive(ctx context.Context) (*dto.SessionArchiveOutcome, error)
 	SpaceCreate(ctx context.Context, input dto3.SpaceCreateInput) (*dto3.SpaceCreateOutcome, error)
 	SpaceUpdate(ctx context.Context, input dto3.SpaceUpdateInput) (*dto3.SpaceCreateOutcome, error)
 	SpaceMembershipCreate(ctx context.Context, input dto3.SpaceMembershipCreateInput) (*dto3.SpaceMembershipCreateOutcome, error)
 	SpaceMembershipUpdate(ctx context.Context, input dto3.SpaceMembershipUpdateInput) (*dto3.SpaceMembershipCreateOutcome, error)
 	UserCreate(ctx context.Context, input *dto4.UserCreateInput) (*dto4.UserMutationOutcome, error)
 	UserUpdate(ctx context.Context, input dto4.UserUpdateInput) (*dto4.UserMutationOutcome, error)
-	S3ApplicationCreate(ctx context.Context, input *dto1.S3ApplicationCreateInput) (*dto1.S3ApplicationMutationOutcome, error)
-	S3ApplicationUpdate(ctx context.Context, input *dto1.S3ApplicationUpdateInput) (*dto1.S3ApplicationMutationOutcome, error)
-	S3UploadToken(ctx context.Context, input dto1.S3UploadTokenInput) (map[string]interface{}, error)
-	MailerMutation(ctx context.Context) (*dto.MailerMutation, error)
+	S3ApplicationCreate(ctx context.Context, input *dto2.S3ApplicationCreateInput) (*dto2.S3ApplicationMutationOutcome, error)
+	S3ApplicationUpdate(ctx context.Context, input *dto2.S3ApplicationUpdateInput) (*dto2.S3ApplicationMutationOutcome, error)
+	S3UploadToken(ctx context.Context, input dto2.S3UploadTokenInput) (map[string]interface{}, error)
+	MailerMutation(ctx context.Context) (*dto1.MailerMutation, error)
 }
 type QueryResolver interface {
-	Session(ctx context.Context, token string) (*model3.Session, error)
-	Space(ctx context.Context, filters dto3.SpaceFilters) (*model1.Space, error)
-	Membership(ctx context.Context, id string, version *string) (*model1.Membership, error)
-	Memberships(ctx context.Context, first int, after *string, filters dto3.MembershipsFilter) (*model1.MembershipConnection, error)
-	User(ctx context.Context, id string) (*model2.User, error)
-	MailerQuery(ctx context.Context) (*dto.MailerQuery, error)
+	AccessQuery(ctx context.Context) (*dto.AccessQuery, error)
+	Session(ctx context.Context, token string) (*model.Session, error)
+	Space(ctx context.Context, filters dto3.SpaceFilters) (*model2.Space, error)
+	Membership(ctx context.Context, id string, version *string) (*model2.Membership, error)
+	Memberships(ctx context.Context, first int, after *string, filters dto3.MembershipsFilter) (*model2.MembershipConnection, error)
+	User(ctx context.Context, id string) (*model3.User, error)
+	MailerQuery(ctx context.Context) (*dto1.MailerQuery, error)
 }
 type SessionResolver interface {
-	User(ctx context.Context, obj *model3.Session) (*model2.User, error)
-	Space(ctx context.Context, obj *model3.Session) (*model1.Space, error)
-	Scopes(ctx context.Context, obj *model3.Session) ([]*model3.AccessScope, error)
-	Context(ctx context.Context, obj *model3.Session) (*model3.SessionContext, error)
+	User(ctx context.Context, obj *model.Session) (*model3.User, error)
+	Space(ctx context.Context, obj *model.Session) (*model2.Space, error)
+	Scopes(ctx context.Context, obj *model.Session) ([]*model.AccessScope, error)
+	Context(ctx context.Context, obj *model.Session) (*model.SessionContext, error)
 
-	Jwt(ctx context.Context, obj *model3.Session, codeVerifier string) (string, error)
+	Jwt(ctx context.Context, obj *model.Session, codeVerifier string) (string, error)
 }
 type SpaceResolver interface {
-	DomainNames(ctx context.Context, obj *model1.Space) (*model1.DomainNames, error)
-	Features(ctx context.Context, obj *model1.Space) (*model1.SpaceFeatures, error)
+	DomainNames(ctx context.Context, obj *model2.Space) (*model2.DomainNames, error)
+	Features(ctx context.Context, obj *model2.Space) (*model2.SpaceFeatures, error)
 
-	Parent(ctx context.Context, obj *model1.Space) (*model1.Space, error)
+	Parent(ctx context.Context, obj *model2.Space) (*model2.Space, error)
 }
 type UserResolver interface {
-	Name(ctx context.Context, obj *model2.User) (*model2.UserName, error)
-	Emails(ctx context.Context, obj *model2.User) (*model2.UserEmails, error)
+	Name(ctx context.Context, obj *model3.User) (*model3.UserName, error)
+	Emails(ctx context.Context, obj *model3.User) (*model3.UserEmails, error)
 }
 type UserEmailResolver interface {
-	Verified(ctx context.Context, obj *model2.UserEmail) (bool, error)
+	Verified(ctx context.Context, obj *model3.UserEmail) (bool, error)
 }
 
 type executableSchema struct {
@@ -498,6 +536,51 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "AccessMutation.session":
+		if e.complexity.AccessMutation.Session == nil {
+			break
+		}
+
+		return e.complexity.AccessMutation.Session(childComplexity), true
+
+	case "AccessQuery.session":
+		if e.complexity.AccessQuery.Session == nil {
+			break
+		}
+
+		return e.complexity.AccessQuery.Session(childComplexity), true
+
+	case "AccessSessionMutation.archive":
+		if e.complexity.AccessSessionMutation.Archive == nil {
+			break
+		}
+
+		return e.complexity.AccessSessionMutation.Archive(childComplexity), true
+
+	case "AccessSessionMutation.create":
+		if e.complexity.AccessSessionMutation.Create == nil {
+			break
+		}
+
+		args, err := ec.field_AccessSessionMutation_create_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.AccessSessionMutation.Create(childComplexity, args["input"].(*dto.SessionCreateInput)), true
+
+	case "AccessSessionQuery.load":
+		if e.complexity.AccessSessionQuery.Load == nil {
+			break
+		}
+
+		args, err := ec.field_AccessSessionQuery_load_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.AccessSessionQuery.Load(childComplexity, args["token"].(string)), true
 
 	case "Application.createdAt":
 		if e.complexity.Application.CreatedAt == nil {
@@ -929,7 +1012,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.MailerAccountMutation.Create(childComplexity, args["input"].(dto.MailerAccountCreateInput)), true
+		return e.complexity.MailerAccountMutation.Create(childComplexity, args["input"].(dto1.MailerAccountCreateInput)), true
 
 	case "MailerAccountMutation.update":
 		if e.complexity.MailerAccountMutation.Update == nil {
@@ -941,7 +1024,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.MailerAccountMutation.Update(childComplexity, args["input"].(dto.MailerAccountUpdateInput)), true
+		return e.complexity.MailerAccountMutation.Update(childComplexity, args["input"].(dto1.MailerAccountUpdateInput)), true
 
 	case "MailerAccountMutation.verify":
 		if e.complexity.MailerAccountMutation.Verify == nil {
@@ -1371,6 +1454,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MembershipInfo.StartCursor(childComplexity), true
 
+	case "Mutation.accessMutation":
+		if e.complexity.Mutation.AccessMutation == nil {
+			break
+		}
+
+		return e.complexity.Mutation.AccessMutation(childComplexity), true
+
 	case "Mutation.mailerMutation":
 		if e.complexity.Mutation.MailerMutation == nil {
 			break
@@ -1388,7 +1478,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.S3ApplicationCreate(childComplexity, args["input"].(*dto1.S3ApplicationCreateInput)), true
+		return e.complexity.Mutation.S3ApplicationCreate(childComplexity, args["input"].(*dto2.S3ApplicationCreateInput)), true
 
 	case "Mutation.S3ApplicationUpdate":
 		if e.complexity.Mutation.S3ApplicationUpdate == nil {
@@ -1400,7 +1490,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.S3ApplicationUpdate(childComplexity, args["input"].(*dto1.S3ApplicationUpdateInput)), true
+		return e.complexity.Mutation.S3ApplicationUpdate(childComplexity, args["input"].(*dto2.S3ApplicationUpdateInput)), true
 
 	case "Mutation.S3UploadToken":
 		if e.complexity.Mutation.S3UploadToken == nil {
@@ -1412,7 +1502,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.S3UploadToken(childComplexity, args["input"].(dto1.S3UploadTokenInput)), true
+		return e.complexity.Mutation.S3UploadToken(childComplexity, args["input"].(dto2.S3UploadTokenInput)), true
 
 	case "Mutation.sessionArchive":
 		if e.complexity.Mutation.SessionArchive == nil {
@@ -1431,7 +1521,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SessionCreate(childComplexity, args["input"].(*dto2.SessionCreateInput)), true
+		return e.complexity.Mutation.SessionCreate(childComplexity, args["input"].(*dto.SessionCreateInput)), true
 
 	case "Mutation.spaceCreate":
 		if e.complexity.Mutation.SpaceCreate == nil {
@@ -1539,6 +1629,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Policy.Value(childComplexity), true
+
+	case "Query.accessQuery":
+		if e.complexity.Query.AccessQuery == nil {
+			break
+		}
+
+		return e.complexity.Query.AccessQuery(childComplexity), true
 
 	case "Query.mailerQuery":
 		if e.complexity.Query.MailerQuery == nil {
@@ -2275,22 +2372,45 @@ type SessionCreateOutcome {
     token: String
 }
 `, BuiltIn: false},
-	{Name: "pkg/access/api/mutation.graphql", Input: `extend type Mutation {
-    sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
-    sessionArchive: SessionArchiveOutcome! @requireAuth
-}
-`, BuiltIn: false},
-	{Name: "pkg/access/api/query.graphql", Input: `extend type Query {
-    session(token: ID!): Session
-}
-
-input ValidationInput {
+	{Name: "pkg/access/api/query.graphql", Input: `input ValidationInput {
     hashedToken: String!
 }
 
 type ValidationOutcome {
     status: Boolean!
     errors: [Error!]
+}
+`, BuiltIn: false},
+	{Name: "pkg/access/api/schema.graphql", Input: `extend type Query {
+    accessQuery: AccessQuery!
+
+    # TODO: Remove this
+    session(token: ID!): Session
+}
+
+extend type Mutation {
+    accessMutation: AccessMutation!
+
+    # TODO: Remove this
+    sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
+    sessionArchive: SessionArchiveOutcome! @requireAuth
+}
+
+type AccessQuery {
+    session: AccessSessionQuery!
+}
+
+type AccessSessionQuery {
+    load(token: ID!): Session
+}
+
+type AccessMutation {
+    session: AccessSessionMutation!
+}
+
+type AccessSessionMutation {
+    create(input: SessionCreateInput): SessionCreateOutcome!
+    archive: SessionArchiveOutcome! @requireAuth
 }
 `, BuiltIn: false},
 	{Name: "pkg/space/api/entity.graphql", Input: `enum SpaceKind { Organisation, Role }
@@ -2892,10 +3012,40 @@ func (ec *executionContext) dir_value_args(ctx context.Context, rawArgs map[stri
 	return args, nil
 }
 
+func (ec *executionContext) field_AccessSessionMutation_create_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *dto.SessionCreateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_AccessSessionQuery_load_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["token"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("token"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["token"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_MailerAccountMutation_create_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 dto.MailerAccountCreateInput
+	var arg0 dto1.MailerAccountCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNMailerAccountCreateInput2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountCreateInput(ctx, tmp)
@@ -2910,7 +3060,7 @@ func (ec *executionContext) field_MailerAccountMutation_create_args(ctx context.
 func (ec *executionContext) field_MailerAccountMutation_update_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 dto.MailerAccountUpdateInput
+	var arg0 dto1.MailerAccountUpdateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNMailerAccountUpdateInput2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountUpdateInput(ctx, tmp)
@@ -2988,7 +3138,7 @@ func (ec *executionContext) field_MailerQueryAccount_get_args(ctx context.Contex
 func (ec *executionContext) field_Mutation_S3ApplicationCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto1.S3ApplicationCreateInput
+	var arg0 *dto2.S3ApplicationCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOS3ApplicationCreateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCreateInput(ctx, tmp)
@@ -3003,7 +3153,7 @@ func (ec *executionContext) field_Mutation_S3ApplicationCreate_args(ctx context.
 func (ec *executionContext) field_Mutation_S3ApplicationUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto1.S3ApplicationUpdateInput
+	var arg0 *dto2.S3ApplicationUpdateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOS3ApplicationUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationUpdateInput(ctx, tmp)
@@ -3018,7 +3168,7 @@ func (ec *executionContext) field_Mutation_S3ApplicationUpdate_args(ctx context.
 func (ec *executionContext) field_Mutation_S3UploadToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 dto1.S3UploadTokenInput
+	var arg0 dto2.S3UploadTokenInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNS3UploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadTokenInput(ctx, tmp)
@@ -3033,7 +3183,7 @@ func (ec *executionContext) field_Mutation_S3UploadToken_args(ctx context.Contex
 func (ec *executionContext) field_Mutation_sessionCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto2.SessionCreateInput
+	var arg0 *dto.SessionCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx, tmp)
@@ -3305,7 +3455,213 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Application_id(ctx context.Context, field graphql.CollectedField, obj *model.Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _AccessMutation_session(ctx context.Context, field graphql.CollectedField, obj *dto.AccessMutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccessMutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AccessMutation().Session(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto.AccessSessionMutation)
+	fc.Result = res
+	return ec.marshalNAccessSessionMutation2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessSessionMutation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccessQuery_session(ctx context.Context, field graphql.CollectedField, obj *dto.AccessQuery) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccessQuery",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AccessQuery().Session(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto.AccessSessionQuery)
+	fc.Result = res
+	return ec.marshalNAccessSessionQuery2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessSessionQuery(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccessSessionMutation_create(ctx context.Context, field graphql.CollectedField, obj *dto.AccessSessionMutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccessSessionMutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_AccessSessionMutation_create_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AccessSessionMutation().Create(rctx, obj, args["input"].(*dto.SessionCreateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto.SessionCreateOutcome)
+	fc.Result = res
+	return ec.marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccessSessionMutation_archive(ctx context.Context, field graphql.CollectedField, obj *dto.AccessSessionMutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccessSessionMutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.AccessSessionMutation().Archive(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.RequireAuth == nil {
+				return nil, errors.New("directive requireAuth is not implemented")
+			}
+			return ec.directives.RequireAuth(ctx, obj, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*dto.SessionArchiveOutcome); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *bean/pkg/access/model/dto.SessionArchiveOutcome`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto.SessionArchiveOutcome)
+	fc.Result = res
+	return ec.marshalNSessionArchiveOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionArchiveOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccessSessionQuery_load(ctx context.Context, field graphql.CollectedField, obj *dto.AccessSessionQuery) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccessSessionQuery",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_AccessSessionQuery_load_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AccessSessionQuery().Load(rctx, obj, args["token"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Session)
+	fc.Result = res
+	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_id(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3340,7 +3696,7 @@ func (ec *executionContext) _Application_id(ctx context.Context, field graphql.C
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_version(ctx context.Context, field graphql.CollectedField, obj *model.Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_version(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3375,7 +3731,7 @@ func (ec *executionContext) _Application_version(ctx context.Context, field grap
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_isActive(ctx context.Context, field graphql.CollectedField, obj *model.Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_isActive(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3410,7 +3766,7 @@ func (ec *executionContext) _Application_isActive(ctx context.Context, field gra
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_createdAt(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3445,7 +3801,7 @@ func (ec *executionContext) _Application_createdAt(ctx context.Context, field gr
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3480,7 +3836,7 @@ func (ec *executionContext) _Application_updatedAt(ctx context.Context, field gr
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3515,7 +3871,7 @@ func (ec *executionContext) _Application_deletedAt(ctx context.Context, field gr
 	return ec.marshalNTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_polices(ctx context.Context, field graphql.CollectedField, obj *model.Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_polices(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3542,12 +3898,12 @@ func (ec *executionContext) _Application_polices(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Policy)
+	res := resTmp.([]*model1.Policy)
 	fc.Result = res
 	return ec.marshalOPolicy2ᚕᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_credentials(ctx context.Context, field graphql.CollectedField, obj *model.Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_credentials(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3577,7 +3933,7 @@ func (ec *executionContext) _Application_credentials(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Credentials)
+	res := resTmp.(*model1.Credentials)
 	fc.Result = res
 	return ec.marshalNCredentials2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐCredentials(ctx, field.Selections, res)
 }
@@ -4241,7 +4597,7 @@ func (ec *executionContext) _ConfigVariable_isLocked(ctx context.Context, field 
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Credentials_id(ctx context.Context, field graphql.CollectedField, obj *model.Credentials) (ret graphql.Marshaler) {
+func (ec *executionContext) _Credentials_id(ctx context.Context, field graphql.CollectedField, obj *model1.Credentials) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4276,7 +4632,7 @@ func (ec *executionContext) _Credentials_id(ctx context.Context, field graphql.C
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Credentials_endpoint(ctx context.Context, field graphql.CollectedField, obj *model.Credentials) (ret graphql.Marshaler) {
+func (ec *executionContext) _Credentials_endpoint(ctx context.Context, field graphql.CollectedField, obj *model1.Credentials) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4311,7 +4667,7 @@ func (ec *executionContext) _Credentials_endpoint(ctx context.Context, field gra
 	return ec.marshalNUri2beanᚋcomponentsᚋscalarᚐUri(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Credentials_bucket(ctx context.Context, field graphql.CollectedField, obj *model.Credentials) (ret graphql.Marshaler) {
+func (ec *executionContext) _Credentials_bucket(ctx context.Context, field graphql.CollectedField, obj *model1.Credentials) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4346,7 +4702,7 @@ func (ec *executionContext) _Credentials_bucket(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Credentials_isSecure(ctx context.Context, field graphql.CollectedField, obj *model.Credentials) (ret graphql.Marshaler) {
+func (ec *executionContext) _Credentials_isSecure(ctx context.Context, field graphql.CollectedField, obj *model1.Credentials) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4381,7 +4737,7 @@ func (ec *executionContext) _Credentials_isSecure(ctx context.Context, field gra
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Credentials_accesskey(ctx context.Context, field graphql.CollectedField, obj *model.Credentials) (ret graphql.Marshaler) {
+func (ec *executionContext) _Credentials_accesskey(ctx context.Context, field graphql.CollectedField, obj *model1.Credentials) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4440,7 +4796,7 @@ func (ec *executionContext) _Credentials_accesskey(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainName_id(ctx context.Context, field graphql.CollectedField, obj *model1.DomainName) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainName_id(ctx context.Context, field graphql.CollectedField, obj *model2.DomainName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4475,7 +4831,7 @@ func (ec *executionContext) _DomainName_id(ctx context.Context, field graphql.Co
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainName_value(ctx context.Context, field graphql.CollectedField, obj *model1.DomainName) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainName_value(ctx context.Context, field graphql.CollectedField, obj *model2.DomainName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4510,7 +4866,7 @@ func (ec *executionContext) _DomainName_value(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainName_createdAt(ctx context.Context, field graphql.CollectedField, obj *model1.DomainName) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainName_createdAt(ctx context.Context, field graphql.CollectedField, obj *model2.DomainName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4545,7 +4901,7 @@ func (ec *executionContext) _DomainName_createdAt(ctx context.Context, field gra
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainName_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model1.DomainName) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainName_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model2.DomainName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4580,7 +4936,7 @@ func (ec *executionContext) _DomainName_updatedAt(ctx context.Context, field gra
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainName_isActive(ctx context.Context, field graphql.CollectedField, obj *model1.DomainName) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainName_isActive(ctx context.Context, field graphql.CollectedField, obj *model2.DomainName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4615,7 +4971,7 @@ func (ec *executionContext) _DomainName_isActive(ctx context.Context, field grap
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainName_isVerified(ctx context.Context, field graphql.CollectedField, obj *model1.DomainName) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainName_isVerified(ctx context.Context, field graphql.CollectedField, obj *model2.DomainName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4650,7 +5006,7 @@ func (ec *executionContext) _DomainName_isVerified(ctx context.Context, field gr
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainNames_primary(ctx context.Context, field graphql.CollectedField, obj *model1.DomainNames) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainNames_primary(ctx context.Context, field graphql.CollectedField, obj *model2.DomainNames) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4680,12 +5036,12 @@ func (ec *executionContext) _DomainNames_primary(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model1.DomainName)
+	res := resTmp.(*model2.DomainName)
 	fc.Result = res
 	return ec.marshalNDomainName2ᚖbeanᚋpkgᚋspaceᚋmodelᚐDomainName(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DomainNames_secondary(ctx context.Context, field graphql.CollectedField, obj *model1.DomainNames) (ret graphql.Marshaler) {
+func (ec *executionContext) _DomainNames_secondary(ctx context.Context, field graphql.CollectedField, obj *model2.DomainNames) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4712,7 +5068,7 @@ func (ec *executionContext) _DomainNames_secondary(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model1.DomainName)
+	res := resTmp.([]*model2.DomainName)
 	fc.Result = res
 	return ec.marshalODomainName2ᚕᚖbeanᚋpkgᚋspaceᚋmodelᚐDomainName(ctx, field.Selections, res)
 }
@@ -4816,7 +5172,7 @@ func (ec *executionContext) _Error_message(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccount_id(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccount) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccount_id(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccount) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4851,7 +5207,7 @@ func (ec *executionContext) _MailerAccount_id(ctx context.Context, field graphql
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccount_version(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccount) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccount_version(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccount) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4886,7 +5242,7 @@ func (ec *executionContext) _MailerAccount_version(ctx context.Context, field gr
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccount_space(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccount) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccount_space(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccount) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4916,12 +5272,12 @@ func (ec *executionContext) _MailerAccount_space(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model1.Space)
+	res := resTmp.(*model2.Space)
 	fc.Result = res
 	return ec.marshalNSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccount_status(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccount) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccount_status(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccount) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4951,12 +5307,12 @@ func (ec *executionContext) _MailerAccount_status(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(dto.MailerAccountStatus)
+	res := resTmp.(dto1.MailerAccountStatus)
 	fc.Result = res
 	return ec.marshalNMailerAccountStatus2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccount_createdAt(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccount) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccount_createdAt(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccount) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4991,7 +5347,7 @@ func (ec *executionContext) _MailerAccount_createdAt(ctx context.Context, field 
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccount_updatedAt(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccount) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccount_updatedAt(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccount) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5026,7 +5382,7 @@ func (ec *executionContext) _MailerAccount_updatedAt(ctx context.Context, field 
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccount_deletedAt(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccount) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccount_deletedAt(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccount) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5058,7 +5414,7 @@ func (ec *executionContext) _MailerAccount_deletedAt(ctx context.Context, field 
 	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccount_sender(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccount) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccount_sender(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccount) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5088,12 +5444,12 @@ func (ec *executionContext) _MailerAccount_sender(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerSender)
+	res := resTmp.(*dto1.MailerSender)
 	fc.Result = res
 	return ec.marshalNMailerSender2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerSender(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccount_connectionUrl(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccount) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccount_connectionUrl(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccount) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5152,7 +5508,7 @@ func (ec *executionContext) _MailerAccount_connectionUrl(ctx context.Context, fi
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccount_attachment(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccount) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccount_attachment(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccount) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5182,12 +5538,12 @@ func (ec *executionContext) _MailerAccount_attachment(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerAccountAttachment)
+	res := resTmp.(*dto1.MailerAccountAttachment)
 	fc.Result = res
 	return ec.marshalNMailerAccountAttachment2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountAttachment(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountAttachment_sizeLimit(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountAttachment) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountAttachment_sizeLimit(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountAttachment) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5243,7 +5599,7 @@ func (ec *executionContext) _MailerAccountAttachment_sizeLimit(ctx context.Conte
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountAttachment_sizeLimitEach(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountAttachment) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountAttachment_sizeLimitEach(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountAttachment) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5299,7 +5655,7 @@ func (ec *executionContext) _MailerAccountAttachment_sizeLimitEach(ctx context.C
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountAttachment_fileTypes(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountAttachment) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountAttachment_fileTypes(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountAttachment) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5334,7 +5690,7 @@ func (ec *executionContext) _MailerAccountAttachment_fileTypes(ctx context.Conte
 	return ec.marshalNFileType2ᚕbeanᚋpkgᚋutilᚋapiᚐFileTypeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5361,12 +5717,12 @@ func (ec *executionContext) _MailerAccountConnection_pageInfo(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerAccountPageInfo)
+	res := resTmp.(*dto1.MailerAccountPageInfo)
 	fc.Result = res
 	return ec.marshalOMailerAccountPageInfo2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountConnection_edges(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountConnection_edges(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5396,12 +5752,12 @@ func (ec *executionContext) _MailerAccountConnection_edges(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*dto.MailerAccountEdge)
+	res := resTmp.([]*dto1.MailerAccountEdge)
 	fc.Result = res
 	return ec.marshalNMailerAccountEdge2ᚕᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountEdgeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountEdge) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5436,7 +5792,7 @@ func (ec *executionContext) _MailerAccountEdge_cursor(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountEdge_node(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountEdge_node(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountEdge) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5466,12 +5822,12 @@ func (ec *executionContext) _MailerAccountEdge_node(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerAccount)
+	res := resTmp.(*dto1.MailerAccount)
 	fc.Result = res
 	return ec.marshalNMailerAccount2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccount(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountMutation_create(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountMutation) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountMutation_create(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountMutation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5496,7 +5852,7 @@ func (ec *executionContext) _MailerAccountMutation_create(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MailerAccountMutation().Create(rctx, obj, args["input"].(dto.MailerAccountCreateInput))
+		return ec.resolvers.MailerAccountMutation().Create(rctx, obj, args["input"].(dto1.MailerAccountCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5508,12 +5864,12 @@ func (ec *executionContext) _MailerAccountMutation_create(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerAccountMutationOutcome)
+	res := resTmp.(*dto1.MailerAccountMutationOutcome)
 	fc.Result = res
 	return ec.marshalNMailerAccountMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutationOutcome(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountMutation_update(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountMutation) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountMutation_update(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountMutation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5538,7 +5894,7 @@ func (ec *executionContext) _MailerAccountMutation_update(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MailerAccountMutation().Update(rctx, obj, args["input"].(dto.MailerAccountUpdateInput))
+		return ec.resolvers.MailerAccountMutation().Update(rctx, obj, args["input"].(dto1.MailerAccountUpdateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5550,12 +5906,12 @@ func (ec *executionContext) _MailerAccountMutation_update(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerAccountMutationOutcome)
+	res := resTmp.(*dto1.MailerAccountMutationOutcome)
 	fc.Result = res
 	return ec.marshalNMailerAccountMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutationOutcome(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountMutation_verify(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountMutation) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountMutation_verify(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountMutation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5592,12 +5948,12 @@ func (ec *executionContext) _MailerAccountMutation_verify(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerAccountMutationOutcome)
+	res := resTmp.(*dto1.MailerAccountMutationOutcome)
 	fc.Result = res
 	return ec.marshalNMailerAccountMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutationOutcome(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountMutationOutcome_account(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountMutationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountMutationOutcome_account(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountMutationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5624,12 +5980,12 @@ func (ec *executionContext) _MailerAccountMutationOutcome_account(ctx context.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerAccount)
+	res := resTmp.(*dto1.MailerAccount)
 	fc.Result = res
 	return ec.marshalOMailerAccount2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccount(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountMutationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountMutationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountMutationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountMutationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5661,7 +6017,7 @@ func (ec *executionContext) _MailerAccountMutationOutcome_errors(ctx context.Con
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountPageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountPageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountPageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountPageInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5693,7 +6049,7 @@ func (ec *executionContext) _MailerAccountPageInfo_endCursor(ctx context.Context
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountPageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountPageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountPageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountPageInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5728,7 +6084,7 @@ func (ec *executionContext) _MailerAccountPageInfo_hasNextPage(ctx context.Conte
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAccountPageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAccountPageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAccountPageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAccountPageInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5760,7 +6116,7 @@ func (ec *executionContext) _MailerAccountPageInfo_startCursor(ctx context.Conte
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAuditLog_id(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAuditLog) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAuditLog_id(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAuditLog) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5795,7 +6151,7 @@ func (ec *executionContext) _MailerAuditLog_id(ctx context.Context, field graphq
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAuditLog_account(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAuditLog) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAuditLog_account(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAuditLog) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5825,12 +6181,12 @@ func (ec *executionContext) _MailerAuditLog_account(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerAccount)
+	res := resTmp.(*dto1.MailerAccount)
 	fc.Result = res
 	return ec.marshalNMailerAccount2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccount(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAuditLog_spanId(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAuditLog) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAuditLog_spanId(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAuditLog) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5865,7 +6221,7 @@ func (ec *executionContext) _MailerAuditLog_spanId(ctx context.Context, field gr
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAuditLog_template(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAuditLog) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAuditLog_template(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAuditLog) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5892,12 +6248,12 @@ func (ec *executionContext) _MailerAuditLog_template(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerTemplate)
+	res := resTmp.(*dto1.MailerTemplate)
 	fc.Result = res
 	return ec.marshalOMailerTemplate2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplate(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAuditLog_createdAt(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAuditLog) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAuditLog_createdAt(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAuditLog) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5932,7 +6288,7 @@ func (ec *executionContext) _MailerAuditLog_createdAt(ctx context.Context, field
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAuditLog_recipientHash(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAuditLog) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAuditLog_recipientHash(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAuditLog) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5967,7 +6323,7 @@ func (ec *executionContext) _MailerAuditLog_recipientHash(ctx context.Context, f
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAuditLog_contextHash(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAuditLog) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAuditLog_contextHash(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAuditLog) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6002,7 +6358,7 @@ func (ec *executionContext) _MailerAuditLog_contextHash(ctx context.Context, fie
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAuditLog_errorCode(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAuditLog) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAuditLog_errorCode(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAuditLog) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6034,7 +6390,7 @@ func (ec *executionContext) _MailerAuditLog_errorCode(ctx context.Context, field
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAuditLog_errorMessage(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAuditLog) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAuditLog_errorMessage(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAuditLog) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6066,7 +6422,7 @@ func (ec *executionContext) _MailerAuditLog_errorMessage(ctx context.Context, fi
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerAuditLog_warningMessagse(ctx context.Context, field graphql.CollectedField, obj *dto.MailerAuditLog) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerAuditLog_warningMessagse(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerAuditLog) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6098,7 +6454,7 @@ func (ec *executionContext) _MailerAuditLog_warningMessagse(ctx context.Context,
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerMutation_account(ctx context.Context, field graphql.CollectedField, obj *dto.MailerMutation) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerMutation_account(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerMutation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6128,12 +6484,12 @@ func (ec *executionContext) _MailerMutation_account(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerAccountMutation)
+	res := resTmp.(*dto1.MailerAccountMutation)
 	fc.Result = res
 	return ec.marshalNMailerAccountMutation2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerMutation_template(ctx context.Context, field graphql.CollectedField, obj *dto.MailerMutation) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerMutation_template(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerMutation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6163,12 +6519,12 @@ func (ec *executionContext) _MailerMutation_template(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerTemplateMutation)
+	res := resTmp.(*dto1.MailerTemplateMutation)
 	fc.Result = res
 	return ec.marshalNMailerTemplateMutation2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplateMutation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerQuery_account(ctx context.Context, field graphql.CollectedField, obj *dto.MailerQuery) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerQuery_account(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerQuery) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6198,12 +6554,12 @@ func (ec *executionContext) _MailerQuery_account(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerQueryAccount)
+	res := resTmp.(*dto1.MailerQueryAccount)
 	fc.Result = res
 	return ec.marshalNMailerQueryAccount2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerQueryAccount(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerQueryAccount_get(ctx context.Context, field graphql.CollectedField, obj *dto.MailerQueryAccount) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerQueryAccount_get(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerQueryAccount) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6237,12 +6593,12 @@ func (ec *executionContext) _MailerQueryAccount_get(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerAccount)
+	res := resTmp.(*dto1.MailerAccount)
 	fc.Result = res
 	return ec.marshalOMailerAccount2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccount(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerQueryAccount_getMultiple(ctx context.Context, field graphql.CollectedField, obj *dto.MailerQueryAccount) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerQueryAccount_getMultiple(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerQueryAccount) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6284,7 +6640,7 @@ func (ec *executionContext) _MailerQueryAccount_getMultiple(ctx context.Context,
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.([]*dto.MailerAccount); ok {
+		if data, ok := tmp.([]*dto1.MailerAccount); ok {
 			return data, nil
 		}
 		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*bean/pkg/integration/mailer/model/dto.MailerAccount`, tmp)
@@ -6299,12 +6655,12 @@ func (ec *executionContext) _MailerQueryAccount_getMultiple(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*dto.MailerAccount)
+	res := resTmp.([]*dto1.MailerAccount)
 	fc.Result = res
 	return ec.marshalNMailerAccount2ᚕᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerSender_name(ctx context.Context, field graphql.CollectedField, obj *dto.MailerSender) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerSender_name(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerSender) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6339,7 +6695,7 @@ func (ec *executionContext) _MailerSender_name(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerSender_email(ctx context.Context, field graphql.CollectedField, obj *dto.MailerSender) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerSender_email(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerSender) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6398,7 +6754,7 @@ func (ec *executionContext) _MailerSender_email(ctx context.Context, field graph
 	return ec.marshalNEmailAddress2beanᚋcomponentsᚋscalarᚐEmailAddress(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplate_id(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplate) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplate_id(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6433,7 +6789,7 @@ func (ec *executionContext) _MailerTemplate_id(ctx context.Context, field graphq
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplate_version(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplate) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplate_version(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6468,7 +6824,7 @@ func (ec *executionContext) _MailerTemplate_version(ctx context.Context, field g
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplate_space(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplate) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplate_space(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6498,12 +6854,12 @@ func (ec *executionContext) _MailerTemplate_space(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model1.Space)
+	res := resTmp.(*model2.Space)
 	fc.Result = res
 	return ec.marshalNSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplate_isActive(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplate) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplate_isActive(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6538,7 +6894,7 @@ func (ec *executionContext) _MailerTemplate_isActive(ctx context.Context, field 
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplate_createdAt(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplate) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplate_createdAt(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6573,7 +6929,7 @@ func (ec *executionContext) _MailerTemplate_createdAt(ctx context.Context, field
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplate_updatedAt(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplate) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplate_updatedAt(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6608,7 +6964,7 @@ func (ec *executionContext) _MailerTemplate_updatedAt(ctx context.Context, field
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplate_deletedAt(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplate) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplate_deletedAt(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6640,7 +6996,7 @@ func (ec *executionContext) _MailerTemplate_deletedAt(ctx context.Context, field
 	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplate_message(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplate) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplate_message(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6670,12 +7026,12 @@ func (ec *executionContext) _MailerTemplate_message(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerTemplateMessage)
+	res := resTmp.(*dto1.MailerTemplateMessage)
 	fc.Result = res
 	return ec.marshalNMailerTemplateMessage2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplateMessage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplateEvent_id(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplateEvent) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplateEvent_id(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplateEvent) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6710,7 +7066,7 @@ func (ec *executionContext) _MailerTemplateEvent_id(ctx context.Context, field g
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplateEvent_template(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplateEvent) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplateEvent_template(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplateEvent) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6740,12 +7096,12 @@ func (ec *executionContext) _MailerTemplateEvent_template(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerTemplate)
+	res := resTmp.(*dto1.MailerTemplate)
 	fc.Result = res
 	return ec.marshalNMailerTemplate2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplate(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplateEvent_user(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplateEvent) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplateEvent_user(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplateEvent) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6775,12 +7131,12 @@ func (ec *executionContext) _MailerTemplateEvent_user(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model2.User)
+	res := resTmp.(*model3.User)
 	fc.Result = res
 	return ec.marshalNUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplateEvent_key(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplateEvent) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplateEvent_key(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplateEvent) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6807,12 +7163,12 @@ func (ec *executionContext) _MailerTemplateEvent_key(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerTemplateEventKey)
+	res := resTmp.(*dto1.MailerTemplateEventKey)
 	fc.Result = res
 	return ec.marshalOMailerTemplateEventKey2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplateEventKey(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplateEvent_payload(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplateEvent) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplateEvent_payload(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplateEvent) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6847,7 +7203,7 @@ func (ec *executionContext) _MailerTemplateEvent_payload(ctx context.Context, fi
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplateMessage_title(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplateMessage) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplateMessage_title(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplateMessage) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6882,7 +7238,7 @@ func (ec *executionContext) _MailerTemplateMessage_title(ctx context.Context, fi
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplateMessage_language(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplateMessage) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplateMessage_language(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplateMessage) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6917,7 +7273,7 @@ func (ec *executionContext) _MailerTemplateMessage_language(ctx context.Context,
 	return ec.marshalNLanguage2beanᚋpkgᚋutilᚋapiᚐLanguage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplateMessage_bodyHTML(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplateMessage) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplateMessage_bodyHTML(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplateMessage) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6952,7 +7308,7 @@ func (ec *executionContext) _MailerTemplateMessage_bodyHTML(ctx context.Context,
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplateMessage_bodyText(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplateMessage) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplateMessage_bodyText(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplateMessage) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6984,7 +7340,7 @@ func (ec *executionContext) _MailerTemplateMessage_bodyText(ctx context.Context,
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplateMutation_create(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplateMutation) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplateMutation_create(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplateMutation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7016,7 +7372,7 @@ func (ec *executionContext) _MailerTemplateMutation_create(ctx context.Context, 
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplateMutation_update(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplateMutation) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplateMutation_update(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplateMutation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7048,7 +7404,7 @@ func (ec *executionContext) _MailerTemplateMutation_update(ctx context.Context, 
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MailerTemplateMutation_delete(ctx context.Context, field graphql.CollectedField, obj *dto.MailerTemplateMutation) (ret graphql.Marshaler) {
+func (ec *executionContext) _MailerTemplateMutation_delete(ctx context.Context, field graphql.CollectedField, obj *dto1.MailerTemplateMutation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7080,7 +7436,7 @@ func (ec *executionContext) _MailerTemplateMutation_delete(ctx context.Context, 
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_id(ctx context.Context, field graphql.CollectedField, obj *model1.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_id(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7115,7 +7471,7 @@ func (ec *executionContext) _Membership_id(ctx context.Context, field graphql.Co
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_version(ctx context.Context, field graphql.CollectedField, obj *model1.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_version(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7150,7 +7506,7 @@ func (ec *executionContext) _Membership_version(ctx context.Context, field graph
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_space(ctx context.Context, field graphql.CollectedField, obj *model1.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_space(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7180,12 +7536,12 @@ func (ec *executionContext) _Membership_space(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model1.Space)
+	res := resTmp.(*model2.Space)
 	fc.Result = res
 	return ec.marshalNSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_user(ctx context.Context, field graphql.CollectedField, obj *model1.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_user(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7215,12 +7571,12 @@ func (ec *executionContext) _Membership_user(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model2.User)
+	res := resTmp.(*model3.User)
 	fc.Result = res
 	return ec.marshalNUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_isActive(ctx context.Context, field graphql.CollectedField, obj *model1.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_isActive(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7255,7 +7611,7 @@ func (ec *executionContext) _Membership_isActive(ctx context.Context, field grap
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_createdAt(ctx context.Context, field graphql.CollectedField, obj *model1.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_createdAt(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7290,7 +7646,7 @@ func (ec *executionContext) _Membership_createdAt(ctx context.Context, field gra
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model1.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7325,7 +7681,7 @@ func (ec *executionContext) _Membership_updatedAt(ctx context.Context, field gra
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Membership_roles(ctx context.Context, field graphql.CollectedField, obj *model1.Membership) (ret graphql.Marshaler) {
+func (ec *executionContext) _Membership_roles(ctx context.Context, field graphql.CollectedField, obj *model2.Membership) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7355,12 +7711,12 @@ func (ec *executionContext) _Membership_roles(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model1.Space)
+	res := resTmp.([]*model2.Space)
 	fc.Result = res
 	return ec.marshalNSpace2ᚕᚖbeanᚋpkgᚋspaceᚋmodelᚐSpaceᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MembershipConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model1.MembershipConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _MembershipConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model2.MembershipConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7390,12 +7746,12 @@ func (ec *executionContext) _MembershipConnection_edges(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model1.MembershipEdge)
+	res := resTmp.([]*model2.MembershipEdge)
 	fc.Result = res
 	return ec.marshalNMembershipEdge2ᚕᚖbeanᚋpkgᚋspaceᚋmodelᚐMembershipEdgeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MembershipConnection_nodes(ctx context.Context, field graphql.CollectedField, obj *model1.MembershipConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _MembershipConnection_nodes(ctx context.Context, field graphql.CollectedField, obj *model2.MembershipConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7425,12 +7781,12 @@ func (ec *executionContext) _MembershipConnection_nodes(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]model1.Membership)
+	res := resTmp.([]model2.Membership)
 	fc.Result = res
 	return ec.marshalNMembership2ᚕbeanᚋpkgᚋspaceᚋmodelᚐMembershipᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MembershipConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model1.MembershipConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _MembershipConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model2.MembershipConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7460,12 +7816,12 @@ func (ec *executionContext) _MembershipConnection_pageInfo(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model1.MembershipInfo)
+	res := resTmp.(model2.MembershipInfo)
 	fc.Result = res
 	return ec.marshalNMembershipInfo2beanᚋpkgᚋspaceᚋmodelᚐMembershipInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MembershipEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model1.MembershipEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _MembershipEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model2.MembershipEdge) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7500,7 +7856,7 @@ func (ec *executionContext) _MembershipEdge_cursor(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MembershipEdge_node(ctx context.Context, field graphql.CollectedField, obj *model1.MembershipEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _MembershipEdge_node(ctx context.Context, field graphql.CollectedField, obj *model2.MembershipEdge) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7530,12 +7886,12 @@ func (ec *executionContext) _MembershipEdge_node(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model1.Membership)
+	res := resTmp.(model2.Membership)
 	fc.Result = res
 	return ec.marshalNMembership2beanᚋpkgᚋspaceᚋmodelᚐMembership(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MembershipInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *model1.MembershipInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _MembershipInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *model2.MembershipInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7567,7 +7923,7 @@ func (ec *executionContext) _MembershipInfo_endCursor(ctx context.Context, field
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MembershipInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *model1.MembershipInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _MembershipInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *model2.MembershipInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7602,7 +7958,7 @@ func (ec *executionContext) _MembershipInfo_hasNextPage(ctx context.Context, fie
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MembershipInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *model1.MembershipInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _MembershipInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *model2.MembershipInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7634,6 +7990,41 @@ func (ec *executionContext) _MembershipInfo_startCursor(ctx context.Context, fie
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_accessMutation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AccessMutation(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto.AccessMutation)
+	fc.Result = res
+	return ec.marshalNAccessMutation2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessMutation(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7659,7 +8050,7 @@ func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SessionCreate(rctx, args["input"].(*dto2.SessionCreateInput))
+		return ec.resolvers.Mutation().SessionCreate(rctx, args["input"].(*dto.SessionCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7671,7 +8062,7 @@ func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto2.SessionCreateOutcome)
+	res := resTmp.(*dto.SessionCreateOutcome)
 	fc.Result = res
 	return ec.marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx, field.Selections, res)
 }
@@ -7711,7 +8102,7 @@ func (ec *executionContext) _Mutation_sessionArchive(ctx context.Context, field 
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*dto2.SessionArchiveOutcome); ok {
+		if data, ok := tmp.(*dto.SessionArchiveOutcome); ok {
 			return data, nil
 		}
 		return nil, fmt.Errorf(`unexpected type %T from directive, should be *bean/pkg/access/model/dto.SessionArchiveOutcome`, tmp)
@@ -7726,7 +8117,7 @@ func (ec *executionContext) _Mutation_sessionArchive(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto2.SessionArchiveOutcome)
+	res := resTmp.(*dto.SessionArchiveOutcome)
 	fc.Result = res
 	return ec.marshalNSessionArchiveOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionArchiveOutcome(ctx, field.Selections, res)
 }
@@ -8008,7 +8399,7 @@ func (ec *executionContext) _Mutation_S3ApplicationCreate(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().S3ApplicationCreate(rctx, args["input"].(*dto1.S3ApplicationCreateInput))
+		return ec.resolvers.Mutation().S3ApplicationCreate(rctx, args["input"].(*dto2.S3ApplicationCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8020,7 +8411,7 @@ func (ec *executionContext) _Mutation_S3ApplicationCreate(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto1.S3ApplicationMutationOutcome)
+	res := resTmp.(*dto2.S3ApplicationMutationOutcome)
 	fc.Result = res
 	return ec.marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx, field.Selections, res)
 }
@@ -8050,7 +8441,7 @@ func (ec *executionContext) _Mutation_S3ApplicationUpdate(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().S3ApplicationUpdate(rctx, args["input"].(*dto1.S3ApplicationUpdateInput))
+		return ec.resolvers.Mutation().S3ApplicationUpdate(rctx, args["input"].(*dto2.S3ApplicationUpdateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8062,7 +8453,7 @@ func (ec *executionContext) _Mutation_S3ApplicationUpdate(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto1.S3ApplicationMutationOutcome)
+	res := resTmp.(*dto2.S3ApplicationMutationOutcome)
 	fc.Result = res
 	return ec.marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx, field.Selections, res)
 }
@@ -8093,7 +8484,7 @@ func (ec *executionContext) _Mutation_S3UploadToken(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().S3UploadToken(rctx, args["input"].(dto1.S3UploadTokenInput))
+			return ec.resolvers.Mutation().S3UploadToken(rctx, args["input"].(dto2.S3UploadTokenInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.RequireAuth == nil {
@@ -8159,12 +8550,12 @@ func (ec *executionContext) _Mutation_mailerMutation(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerMutation)
+	res := resTmp.(*dto1.MailerMutation)
 	fc.Result = res
 	return ec.marshalNMailerMutation2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerMutation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Policy_id(ctx context.Context, field graphql.CollectedField, obj *model.Policy) (ret graphql.Marshaler) {
+func (ec *executionContext) _Policy_id(ctx context.Context, field graphql.CollectedField, obj *model1.Policy) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8199,7 +8590,7 @@ func (ec *executionContext) _Policy_id(ctx context.Context, field graphql.Collec
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Policy_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Policy) (ret graphql.Marshaler) {
+func (ec *executionContext) _Policy_createdAt(ctx context.Context, field graphql.CollectedField, obj *model1.Policy) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8234,7 +8625,7 @@ func (ec *executionContext) _Policy_createdAt(ctx context.Context, field graphql
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Policy_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Policy) (ret graphql.Marshaler) {
+func (ec *executionContext) _Policy_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model1.Policy) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8269,7 +8660,7 @@ func (ec *executionContext) _Policy_updatedAt(ctx context.Context, field graphql
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Policy_kind(ctx context.Context, field graphql.CollectedField, obj *model.Policy) (ret graphql.Marshaler) {
+func (ec *executionContext) _Policy_kind(ctx context.Context, field graphql.CollectedField, obj *model1.Policy) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8299,12 +8690,12 @@ func (ec *executionContext) _Policy_kind(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.PolicyKind)
+	res := resTmp.(model1.PolicyKind)
 	fc.Result = res
 	return ec.marshalNPolicyKind2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyKind(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Policy_value(ctx context.Context, field graphql.CollectedField, obj *model.Policy) (ret graphql.Marshaler) {
+func (ec *executionContext) _Policy_value(ctx context.Context, field graphql.CollectedField, obj *model1.Policy) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8337,6 +8728,41 @@ func (ec *executionContext) _Policy_value(ctx context.Context, field graphql.Col
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_accessQuery(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AccessQuery(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto.AccessQuery)
+	fc.Result = res
+	return ec.marshalNAccessQuery2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessQuery(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_session(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8373,7 +8799,7 @@ func (ec *executionContext) _Query_session(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model3.Session)
+	res := resTmp.(*model.Session)
 	fc.Result = res
 	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
 }
@@ -8412,7 +8838,7 @@ func (ec *executionContext) _Query_space(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model1.Space)
+	res := resTmp.(*model2.Space)
 	fc.Result = res
 	return ec.marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
 }
@@ -8451,7 +8877,7 @@ func (ec *executionContext) _Query_membership(ctx context.Context, field graphql
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model1.Membership)
+	res := resTmp.(*model2.Membership)
 	fc.Result = res
 	return ec.marshalOMembership2ᚖbeanᚋpkgᚋspaceᚋmodelᚐMembership(ctx, field.Selections, res)
 }
@@ -8493,7 +8919,7 @@ func (ec *executionContext) _Query_memberships(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model1.MembershipConnection)
+	res := resTmp.(*model2.MembershipConnection)
 	fc.Result = res
 	return ec.marshalNMembershipConnection2ᚖbeanᚋpkgᚋspaceᚋmodelᚐMembershipConnection(ctx, field.Selections, res)
 }
@@ -8532,7 +8958,7 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model2.User)
+	res := resTmp.(*model3.User)
 	fc.Result = res
 	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
@@ -8567,7 +8993,7 @@ func (ec *executionContext) _Query_mailerQuery(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.MailerQuery)
+	res := resTmp.(*dto1.MailerQuery)
 	fc.Result = res
 	return ec.marshalNMailerQuery2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerQuery(ctx, field.Selections, res)
 }
@@ -8643,7 +9069,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _S3ApplicationMutationOutcome_app(ctx context.Context, field graphql.CollectedField, obj *dto1.S3ApplicationMutationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _S3ApplicationMutationOutcome_app(ctx context.Context, field graphql.CollectedField, obj *dto2.S3ApplicationMutationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8670,12 +9096,12 @@ func (ec *executionContext) _S3ApplicationMutationOutcome_app(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Application)
+	res := resTmp.(*model1.Application)
 	fc.Result = res
 	return ec.marshalOApplication2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐApplication(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _S3ApplicationMutationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto1.S3ApplicationMutationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _S3ApplicationMutationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto2.S3ApplicationMutationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8707,7 +9133,7 @@ func (ec *executionContext) _S3ApplicationMutationOutcome_errors(ctx context.Con
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_id(ctx context.Context, field graphql.CollectedField, obj *model3.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_id(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8742,7 +9168,7 @@ func (ec *executionContext) _Session_id(ctx context.Context, field graphql.Colle
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_version(ctx context.Context, field graphql.CollectedField, obj *model3.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_version(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8777,7 +9203,7 @@ func (ec *executionContext) _Session_version(ctx context.Context, field graphql.
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_user(ctx context.Context, field graphql.CollectedField, obj *model3.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_user(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8804,12 +9230,12 @@ func (ec *executionContext) _Session_user(ctx context.Context, field graphql.Col
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model2.User)
+	res := resTmp.(*model3.User)
 	fc.Result = res
 	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_space(ctx context.Context, field graphql.CollectedField, obj *model3.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_space(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8839,12 +9265,12 @@ func (ec *executionContext) _Session_space(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model1.Space)
+	res := resTmp.(*model2.Space)
 	fc.Result = res
 	return ec.marshalNSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_scopes(ctx context.Context, field graphql.CollectedField, obj *model3.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_scopes(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8871,12 +9297,12 @@ func (ec *executionContext) _Session_scopes(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model3.AccessScope)
+	res := resTmp.([]*model.AccessScope)
 	fc.Result = res
 	return ec.marshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_context(ctx context.Context, field graphql.CollectedField, obj *model3.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_context(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8903,12 +9329,12 @@ func (ec *executionContext) _Session_context(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model3.SessionContext)
+	res := resTmp.(*model.SessionContext)
 	fc.Result = res
 	return ec.marshalOSessionContext2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSessionContext(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_isActive(ctx context.Context, field graphql.CollectedField, obj *model3.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_isActive(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8943,7 +9369,7 @@ func (ec *executionContext) _Session_isActive(ctx context.Context, field graphql
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_createdAt(ctx context.Context, field graphql.CollectedField, obj *model3.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8978,7 +9404,7 @@ func (ec *executionContext) _Session_createdAt(ctx context.Context, field graphq
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model3.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9013,7 +9439,7 @@ func (ec *executionContext) _Session_updatedAt(ctx context.Context, field graphq
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_expiredAt(ctx context.Context, field graphql.CollectedField, obj *model3.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_expiredAt(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9048,7 +9474,7 @@ func (ec *executionContext) _Session_expiredAt(ctx context.Context, field graphq
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Session_jwt(ctx context.Context, field graphql.CollectedField, obj *model3.Session) (ret graphql.Marshaler) {
+func (ec *executionContext) _Session_jwt(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9090,7 +9516,7 @@ func (ec *executionContext) _Session_jwt(ctx context.Context, field graphql.Coll
 	return ec.marshalNJWT2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionArchiveOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto2.SessionArchiveOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionArchiveOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.SessionArchiveOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9122,7 +9548,7 @@ func (ec *executionContext) _SessionArchiveOutcome_errors(ctx context.Context, f
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionArchiveOutcome_result(ctx context.Context, field graphql.CollectedField, obj *dto2.SessionArchiveOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionArchiveOutcome_result(ctx context.Context, field graphql.CollectedField, obj *dto.SessionArchiveOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9157,7 +9583,7 @@ func (ec *executionContext) _SessionArchiveOutcome_result(ctx context.Context, f
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionContext_ipAddress(ctx context.Context, field graphql.CollectedField, obj *model3.SessionContext) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionContext_ipAddress(ctx context.Context, field graphql.CollectedField, obj *model.SessionContext) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9189,7 +9615,7 @@ func (ec *executionContext) _SessionContext_ipAddress(ctx context.Context, field
 	return ec.marshalOIP2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionContext_country(ctx context.Context, field graphql.CollectedField, obj *model3.SessionContext) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionContext_country(ctx context.Context, field graphql.CollectedField, obj *model.SessionContext) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9221,7 +9647,7 @@ func (ec *executionContext) _SessionContext_country(ctx context.Context, field g
 	return ec.marshalOCountryCode2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionContext_deviceType(ctx context.Context, field graphql.CollectedField, obj *model3.SessionContext) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionContext_deviceType(ctx context.Context, field graphql.CollectedField, obj *model.SessionContext) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9248,12 +9674,12 @@ func (ec *executionContext) _SessionContext_deviceType(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model3.DeviceType)
+	res := resTmp.(*model.DeviceType)
 	fc.Result = res
 	return ec.marshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionContext_deviceName(ctx context.Context, field graphql.CollectedField, obj *model3.SessionContext) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionContext_deviceName(ctx context.Context, field graphql.CollectedField, obj *model.SessionContext) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9285,7 +9711,7 @@ func (ec *executionContext) _SessionContext_deviceName(ctx context.Context, fiel
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto2.SessionCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.SessionCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9317,7 +9743,7 @@ func (ec *executionContext) _SessionCreateOutcome_errors(ctx context.Context, fi
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto2.SessionCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto.SessionCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9344,12 +9770,12 @@ func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, f
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model3.Session)
+	res := resTmp.(*model.Session)
 	fc.Result = res
 	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionCreateOutcome_token(ctx context.Context, field graphql.CollectedField, obj *dto2.SessionCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionCreateOutcome_token(ctx context.Context, field graphql.CollectedField, obj *dto.SessionCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9381,7 +9807,7 @@ func (ec *executionContext) _SessionCreateOutcome_token(ctx context.Context, fie
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Space_id(ctx context.Context, field graphql.CollectedField, obj *model1.Space) (ret graphql.Marshaler) {
+func (ec *executionContext) _Space_id(ctx context.Context, field graphql.CollectedField, obj *model2.Space) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9416,7 +9842,7 @@ func (ec *executionContext) _Space_id(ctx context.Context, field graphql.Collect
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Space_version(ctx context.Context, field graphql.CollectedField, obj *model1.Space) (ret graphql.Marshaler) {
+func (ec *executionContext) _Space_version(ctx context.Context, field graphql.CollectedField, obj *model2.Space) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9451,7 +9877,7 @@ func (ec *executionContext) _Space_version(ctx context.Context, field graphql.Co
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Space_kind(ctx context.Context, field graphql.CollectedField, obj *model1.Space) (ret graphql.Marshaler) {
+func (ec *executionContext) _Space_kind(ctx context.Context, field graphql.CollectedField, obj *model2.Space) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9481,12 +9907,12 @@ func (ec *executionContext) _Space_kind(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model1.SpaceKind)
+	res := resTmp.(model2.SpaceKind)
 	fc.Result = res
 	return ec.marshalNSpaceKind2beanᚋpkgᚋspaceᚋmodelᚐSpaceKind(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Space_title(ctx context.Context, field graphql.CollectedField, obj *model1.Space) (ret graphql.Marshaler) {
+func (ec *executionContext) _Space_title(ctx context.Context, field graphql.CollectedField, obj *model2.Space) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9518,7 +9944,7 @@ func (ec *executionContext) _Space_title(ctx context.Context, field graphql.Coll
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Space_createdAt(ctx context.Context, field graphql.CollectedField, obj *model1.Space) (ret graphql.Marshaler) {
+func (ec *executionContext) _Space_createdAt(ctx context.Context, field graphql.CollectedField, obj *model2.Space) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9553,7 +9979,7 @@ func (ec *executionContext) _Space_createdAt(ctx context.Context, field graphql.
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Space_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model1.Space) (ret graphql.Marshaler) {
+func (ec *executionContext) _Space_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model2.Space) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9588,7 +10014,7 @@ func (ec *executionContext) _Space_updatedAt(ctx context.Context, field graphql.
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Space_isActive(ctx context.Context, field graphql.CollectedField, obj *model1.Space) (ret graphql.Marshaler) {
+func (ec *executionContext) _Space_isActive(ctx context.Context, field graphql.CollectedField, obj *model2.Space) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9623,7 +10049,7 @@ func (ec *executionContext) _Space_isActive(ctx context.Context, field graphql.C
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Space_domainNames(ctx context.Context, field graphql.CollectedField, obj *model1.Space) (ret graphql.Marshaler) {
+func (ec *executionContext) _Space_domainNames(ctx context.Context, field graphql.CollectedField, obj *model2.Space) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9650,12 +10076,12 @@ func (ec *executionContext) _Space_domainNames(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model1.DomainNames)
+	res := resTmp.(*model2.DomainNames)
 	fc.Result = res
 	return ec.marshalODomainNames2ᚖbeanᚋpkgᚋspaceᚋmodelᚐDomainNames(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Space_features(ctx context.Context, field graphql.CollectedField, obj *model1.Space) (ret graphql.Marshaler) {
+func (ec *executionContext) _Space_features(ctx context.Context, field graphql.CollectedField, obj *model2.Space) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9682,12 +10108,12 @@ func (ec *executionContext) _Space_features(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model1.SpaceFeatures)
+	res := resTmp.(*model2.SpaceFeatures)
 	fc.Result = res
 	return ec.marshalOSpaceFeatures2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpaceFeatures(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Space_language(ctx context.Context, field graphql.CollectedField, obj *model1.Space) (ret graphql.Marshaler) {
+func (ec *executionContext) _Space_language(ctx context.Context, field graphql.CollectedField, obj *model2.Space) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9722,7 +10148,7 @@ func (ec *executionContext) _Space_language(ctx context.Context, field graphql.C
 	return ec.marshalNLanguage2beanᚋpkgᚋutilᚋapiᚐLanguage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Space_parent(ctx context.Context, field graphql.CollectedField, obj *model1.Space) (ret graphql.Marshaler) {
+func (ec *executionContext) _Space_parent(ctx context.Context, field graphql.CollectedField, obj *model2.Space) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9749,7 +10175,7 @@ func (ec *executionContext) _Space_parent(ctx context.Context, field graphql.Col
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model1.Space)
+	res := resTmp.(*model2.Space)
 	fc.Result = res
 	return ec.marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
 }
@@ -9813,12 +10239,12 @@ func (ec *executionContext) _SpaceCreateOutcome_space(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model1.Space)
+	res := resTmp.(*model2.Space)
 	fc.Result = res
 	return ec.marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SpaceFeatures_register(ctx context.Context, field graphql.CollectedField, obj *model1.SpaceFeatures) (ret graphql.Marshaler) {
+func (ec *executionContext) _SpaceFeatures_register(ctx context.Context, field graphql.CollectedField, obj *model2.SpaceFeatures) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9912,12 +10338,12 @@ func (ec *executionContext) _SpaceMembershipCreateOutcome_membership(ctx context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model1.Membership)
+	res := resTmp.(*model2.Membership)
 	fc.Result = res
 	return ec.marshalOMembership2ᚖbeanᚋpkgᚋspaceᚋmodelᚐMembership(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model2.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model3.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9952,7 +10378,7 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_version(ctx context.Context, field graphql.CollectedField, obj *model2.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_version(ctx context.Context, field graphql.CollectedField, obj *model3.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9987,7 +10413,7 @@ func (ec *executionContext) _User_version(ctx context.Context, field graphql.Col
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *model2.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *model3.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10017,12 +10443,12 @@ func (ec *executionContext) _User_name(ctx context.Context, field graphql.Collec
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model2.UserName)
+	res := resTmp.(*model3.UserName)
 	fc.Result = res
 	return ec.marshalNUserName2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserName(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_emails(ctx context.Context, field graphql.CollectedField, obj *model2.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_emails(ctx context.Context, field graphql.CollectedField, obj *model3.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10049,12 +10475,12 @@ func (ec *executionContext) _User_emails(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model2.UserEmails)
+	res := resTmp.(*model3.UserEmails)
 	fc.Result = res
 	return ec.marshalOUserEmails2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmails(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_avatarUri(ctx context.Context, field graphql.CollectedField, obj *model2.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_avatarUri(ctx context.Context, field graphql.CollectedField, obj *model3.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10086,7 +10512,7 @@ func (ec *executionContext) _User_avatarUri(ctx context.Context, field graphql.C
 	return ec.marshalOUri2ᚖbeanᚋcomponentsᚋscalarᚐUri(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_isActive(ctx context.Context, field graphql.CollectedField, obj *model2.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_isActive(ctx context.Context, field graphql.CollectedField, obj *model3.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10121,7 +10547,7 @@ func (ec *executionContext) _User_isActive(ctx context.Context, field graphql.Co
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.CollectedField, obj *model2.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.CollectedField, obj *model3.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10156,7 +10582,7 @@ func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.C
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model2.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model3.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10191,7 +10617,7 @@ func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.C
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_language(ctx context.Context, field graphql.CollectedField, obj *model2.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_language(ctx context.Context, field graphql.CollectedField, obj *model3.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10226,7 +10652,7 @@ func (ec *executionContext) _User_language(ctx context.Context, field graphql.Co
 	return ec.marshalNLanguage2beanᚋpkgᚋutilᚋapiᚐLanguage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmail_id(ctx context.Context, field graphql.CollectedField, obj *model2.UserEmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmail_id(ctx context.Context, field graphql.CollectedField, obj *model3.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10261,7 +10687,7 @@ func (ec *executionContext) _UserEmail_id(ctx context.Context, field graphql.Col
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmail_verified(ctx context.Context, field graphql.CollectedField, obj *model2.UserEmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmail_verified(ctx context.Context, field graphql.CollectedField, obj *model3.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10296,7 +10722,7 @@ func (ec *executionContext) _UserEmail_verified(ctx context.Context, field graph
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmail_value(ctx context.Context, field graphql.CollectedField, obj *model2.UserEmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmail_value(ctx context.Context, field graphql.CollectedField, obj *model3.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10331,7 +10757,7 @@ func (ec *executionContext) _UserEmail_value(ctx context.Context, field graphql.
 	return ec.marshalNEmailAddress2beanᚋcomponentsᚋscalarᚐEmailAddress(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmail_createdAt(ctx context.Context, field graphql.CollectedField, obj *model2.UserEmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmail_createdAt(ctx context.Context, field graphql.CollectedField, obj *model3.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10366,7 +10792,7 @@ func (ec *executionContext) _UserEmail_createdAt(ctx context.Context, field grap
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmail_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model2.UserEmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmail_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model3.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10401,7 +10827,7 @@ func (ec *executionContext) _UserEmail_updatedAt(ctx context.Context, field grap
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmail_isActive(ctx context.Context, field graphql.CollectedField, obj *model2.UserEmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmail_isActive(ctx context.Context, field graphql.CollectedField, obj *model3.UserEmail) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10436,7 +10862,7 @@ func (ec *executionContext) _UserEmail_isActive(ctx context.Context, field graph
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmails_primary(ctx context.Context, field graphql.CollectedField, obj *model2.UserEmails) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmails_primary(ctx context.Context, field graphql.CollectedField, obj *model3.UserEmails) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10463,12 +10889,12 @@ func (ec *executionContext) _UserEmails_primary(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model2.UserEmail)
+	res := resTmp.(*model3.UserEmail)
 	fc.Result = res
 	return ec.marshalOUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserEmails_secondary(ctx context.Context, field graphql.CollectedField, obj *model2.UserEmails) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEmails_secondary(ctx context.Context, field graphql.CollectedField, obj *model3.UserEmails) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10495,7 +10921,7 @@ func (ec *executionContext) _UserEmails_secondary(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model2.UserEmail)
+	res := resTmp.([]*model3.UserEmail)
 	fc.Result = res
 	return ec.marshalOUserEmail2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx, field.Selections, res)
 }
@@ -10527,7 +10953,7 @@ func (ec *executionContext) _UserMutationOutcome_user(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model2.User)
+	res := resTmp.(*model3.User)
 	fc.Result = res
 	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
@@ -10564,7 +10990,7 @@ func (ec *executionContext) _UserMutationOutcome_errors(ctx context.Context, fie
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserName_firstName(ctx context.Context, field graphql.CollectedField, obj *model2.UserName) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserName_firstName(ctx context.Context, field graphql.CollectedField, obj *model3.UserName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10596,7 +11022,7 @@ func (ec *executionContext) _UserName_firstName(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserName_lastName(ctx context.Context, field graphql.CollectedField, obj *model2.UserName) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserName_lastName(ctx context.Context, field graphql.CollectedField, obj *model3.UserName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10628,7 +11054,7 @@ func (ec *executionContext) _UserName_lastName(ctx context.Context, field graphq
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserName_preferredName(ctx context.Context, field graphql.CollectedField, obj *model2.UserName) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserName_preferredName(ctx context.Context, field graphql.CollectedField, obj *model3.UserName) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10660,7 +11086,7 @@ func (ec *executionContext) _UserName_preferredName(ctx context.Context, field g
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ValidationOutcome_status(ctx context.Context, field graphql.CollectedField, obj *dto2.ValidationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _ValidationOutcome_status(ctx context.Context, field graphql.CollectedField, obj *dto.ValidationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10695,7 +11121,7 @@ func (ec *executionContext) _ValidationOutcome_status(ctx context.Context, field
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ValidationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto2.ValidationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _ValidationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.ValidationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -11878,8 +12304,8 @@ func (ec *executionContext) unmarshalInputDomainNamesInput(ctx context.Context, 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMailerAccountAttachmentInput(ctx context.Context, obj interface{}) (dto.MailerAccountAttachmentInput, error) {
-	var it dto.MailerAccountAttachmentInput
+func (ec *executionContext) unmarshalInputMailerAccountAttachmentInput(ctx context.Context, obj interface{}) (dto1.MailerAccountAttachmentInput, error) {
+	var it dto1.MailerAccountAttachmentInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -11914,8 +12340,8 @@ func (ec *executionContext) unmarshalInputMailerAccountAttachmentInput(ctx conte
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMailerAccountCreateInput(ctx context.Context, obj interface{}) (dto.MailerAccountCreateInput, error) {
-	var it dto.MailerAccountCreateInput
+func (ec *executionContext) unmarshalInputMailerAccountCreateInput(ctx context.Context, obj interface{}) (dto1.MailerAccountCreateInput, error) {
+	var it dto1.MailerAccountCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -11966,8 +12392,8 @@ func (ec *executionContext) unmarshalInputMailerAccountCreateInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMailerAccountSenderInput(ctx context.Context, obj interface{}) (dto.MailerAccountSenderInput, error) {
-	var it dto.MailerAccountSenderInput
+func (ec *executionContext) unmarshalInputMailerAccountSenderInput(ctx context.Context, obj interface{}) (dto1.MailerAccountSenderInput, error) {
+	var it dto1.MailerAccountSenderInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -11994,8 +12420,8 @@ func (ec *executionContext) unmarshalInputMailerAccountSenderInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMailerAccountUpdateAttachmentInput(ctx context.Context, obj interface{}) (dto.MailerAccountUpdateAttachmentInput, error) {
-	var it dto.MailerAccountUpdateAttachmentInput
+func (ec *executionContext) unmarshalInputMailerAccountUpdateAttachmentInput(ctx context.Context, obj interface{}) (dto1.MailerAccountUpdateAttachmentInput, error) {
+	var it dto1.MailerAccountUpdateAttachmentInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12030,8 +12456,8 @@ func (ec *executionContext) unmarshalInputMailerAccountUpdateAttachmentInput(ctx
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMailerAccountUpdateInput(ctx context.Context, obj interface{}) (dto.MailerAccountUpdateInput, error) {
-	var it dto.MailerAccountUpdateInput
+func (ec *executionContext) unmarshalInputMailerAccountUpdateInput(ctx context.Context, obj interface{}) (dto1.MailerAccountUpdateInput, error) {
+	var it dto1.MailerAccountUpdateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12066,8 +12492,8 @@ func (ec *executionContext) unmarshalInputMailerAccountUpdateInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMailerAccountUpdateSenderInput(ctx context.Context, obj interface{}) (dto.MailerAccountUpdateSenderInput, error) {
-	var it dto.MailerAccountUpdateSenderInput
+func (ec *executionContext) unmarshalInputMailerAccountUpdateSenderInput(ctx context.Context, obj interface{}) (dto1.MailerAccountUpdateSenderInput, error) {
+	var it dto1.MailerAccountUpdateSenderInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12140,8 +12566,8 @@ func (ec *executionContext) unmarshalInputMailerAccountUpdateSenderInput(ctx con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMailerAccountUpdateValueInput(ctx context.Context, obj interface{}) (dto.MailerAccountUpdateValueInput, error) {
-	var it dto.MailerAccountUpdateValueInput
+func (ec *executionContext) unmarshalInputMailerAccountUpdateValueInput(ctx context.Context, obj interface{}) (dto1.MailerAccountUpdateValueInput, error) {
+	var it dto1.MailerAccountUpdateValueInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12168,7 +12594,7 @@ func (ec *executionContext) unmarshalInputMailerAccountUpdateValueInput(ctx cont
 			if err != nil {
 				return it, graphql.ErrorOnPath(ctx, err)
 			}
-			if data, ok := tmp.(*dto.MailerAccountStatus); ok {
+			if data, ok := tmp.(*dto1.MailerAccountStatus); ok {
 				it.Status = data
 			} else if tmp == nil {
 				it.Status = nil
@@ -12298,8 +12724,8 @@ func (ec *executionContext) unmarshalInputMembershipsFilterSpace(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationCreateInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationCreateInput, error) {
-	var it dto1.S3ApplicationCreateInput
+func (ec *executionContext) unmarshalInputS3ApplicationCreateInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationCreateInput, error) {
+	var it dto2.S3ApplicationCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12334,8 +12760,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationCreateInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationCredentialsCreateInput, error) {
-	var it dto1.S3ApplicationCredentialsCreateInput
+func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationCredentialsCreateInput, error) {
+	var it dto2.S3ApplicationCredentialsCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12386,8 +12812,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ct
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationCredentialsUpdateInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationCredentialsUpdateInput, error) {
-	var it dto1.S3ApplicationCredentialsUpdateInput
+func (ec *executionContext) unmarshalInputS3ApplicationCredentialsUpdateInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationCredentialsUpdateInput, error) {
+	var it dto2.S3ApplicationCredentialsUpdateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12438,8 +12864,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationCredentialsUpdateInput(ct
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationPolicyCreateInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationPolicyCreateInput, error) {
-	var it dto1.S3ApplicationPolicyCreateInput
+func (ec *executionContext) unmarshalInputS3ApplicationPolicyCreateInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationPolicyCreateInput, error) {
+	var it dto2.S3ApplicationPolicyCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12466,8 +12892,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationPolicyCreateInput(ctx con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationPolicyDeleteInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationPolicyDeleteInput, error) {
-	var it dto1.S3ApplicationPolicyDeleteInput
+func (ec *executionContext) unmarshalInputS3ApplicationPolicyDeleteInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationPolicyDeleteInput, error) {
+	var it dto2.S3ApplicationPolicyDeleteInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12486,8 +12912,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationPolicyDeleteInput(ctx con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationPolicyMutationInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationPolicyMutationInput, error) {
-	var it dto1.S3ApplicationPolicyMutationInput
+func (ec *executionContext) unmarshalInputS3ApplicationPolicyMutationInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationPolicyMutationInput, error) {
+	var it dto2.S3ApplicationPolicyMutationInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12522,8 +12948,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationPolicyMutationInput(ctx c
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationPolicyUpdateInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationPolicyUpdateInput, error) {
-	var it dto1.S3ApplicationPolicyUpdateInput
+func (ec *executionContext) unmarshalInputS3ApplicationPolicyUpdateInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationPolicyUpdateInput, error) {
+	var it dto2.S3ApplicationPolicyUpdateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12550,8 +12976,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationPolicyUpdateInput(ctx con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationUpdateInput(ctx context.Context, obj interface{}) (dto1.S3ApplicationUpdateInput, error) {
-	var it dto1.S3ApplicationUpdateInput
+func (ec *executionContext) unmarshalInputS3ApplicationUpdateInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationUpdateInput, error) {
+	var it dto2.S3ApplicationUpdateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12602,8 +13028,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationUpdateInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3UploadTokenInput(ctx context.Context, obj interface{}) (dto1.S3UploadTokenInput, error) {
-	var it dto1.S3UploadTokenInput
+func (ec *executionContext) unmarshalInputS3UploadTokenInput(ctx context.Context, obj interface{}) (dto2.S3UploadTokenInput, error) {
+	var it dto2.S3UploadTokenInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12662,8 +13088,8 @@ func (ec *executionContext) unmarshalInputS3UploadTokenInput(ctx context.Context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSessionCreateContextInput(ctx context.Context, obj interface{}) (dto2.SessionCreateContextInput, error) {
-	var it dto2.SessionCreateContextInput
+func (ec *executionContext) unmarshalInputSessionCreateContextInput(ctx context.Context, obj interface{}) (dto.SessionCreateContextInput, error) {
+	var it dto.SessionCreateContextInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12706,8 +13132,8 @@ func (ec *executionContext) unmarshalInputSessionCreateContextInput(ctx context.
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSessionCreateGenerateOTLT(ctx context.Context, obj interface{}) (dto2.SessionCreateGenerateOTLT, error) {
-	var it dto2.SessionCreateGenerateOTLT
+func (ec *executionContext) unmarshalInputSessionCreateGenerateOTLT(ctx context.Context, obj interface{}) (dto.SessionCreateGenerateOTLT, error) {
+	var it dto.SessionCreateGenerateOTLT
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12734,8 +13160,8 @@ func (ec *executionContext) unmarshalInputSessionCreateGenerateOTLT(ctx context.
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSessionCreateInput(ctx context.Context, obj interface{}) (dto2.SessionCreateInput, error) {
-	var it dto2.SessionCreateInput
+func (ec *executionContext) unmarshalInputSessionCreateInput(ctx context.Context, obj interface{}) (dto.SessionCreateInput, error) {
+	var it dto.SessionCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12778,8 +13204,8 @@ func (ec *executionContext) unmarshalInputSessionCreateInput(ctx context.Context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSessionCreateUseCredentialsInput(ctx context.Context, obj interface{}) (dto2.SessionCreateUseCredentialsInput, error) {
-	var it dto2.SessionCreateUseCredentialsInput
+func (ec *executionContext) unmarshalInputSessionCreateUseCredentialsInput(ctx context.Context, obj interface{}) (dto.SessionCreateUseCredentialsInput, error) {
+	var it dto.SessionCreateUseCredentialsInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12830,8 +13256,8 @@ func (ec *executionContext) unmarshalInputSessionCreateUseCredentialsInput(ctx c
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSessionCreateUseOTLT(ctx context.Context, obj interface{}) (dto2.SessionCreateUseOTLT, error) {
-	var it dto2.SessionCreateUseOTLT
+func (ec *executionContext) unmarshalInputSessionCreateUseOTLT(ctx context.Context, obj interface{}) (dto.SessionCreateUseOTLT, error) {
+	var it dto.SessionCreateUseOTLT
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13386,8 +13812,8 @@ func (ec *executionContext) unmarshalInputUserUpdateValuesInput(ctx context.Cont
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputValidationInput(ctx context.Context, obj interface{}) (dto2.ValidationInput, error) {
-	var it dto2.ValidationInput
+func (ec *executionContext) unmarshalInputValidationInput(ctx context.Context, obj interface{}) (dto.ValidationInput, error) {
+	var it dto.ValidationInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13414,9 +13840,164 @@ func (ec *executionContext) unmarshalInputValidationInput(ctx context.Context, o
 
 // region    **************************** object.gotpl ****************************
 
+var accessMutationImplementors = []string{"AccessMutation"}
+
+func (ec *executionContext) _AccessMutation(ctx context.Context, sel ast.SelectionSet, obj *dto.AccessMutation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accessMutationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccessMutation")
+		case "session":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AccessMutation_session(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var accessQueryImplementors = []string{"AccessQuery"}
+
+func (ec *executionContext) _AccessQuery(ctx context.Context, sel ast.SelectionSet, obj *dto.AccessQuery) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accessQueryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccessQuery")
+		case "session":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AccessQuery_session(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var accessSessionMutationImplementors = []string{"AccessSessionMutation"}
+
+func (ec *executionContext) _AccessSessionMutation(ctx context.Context, sel ast.SelectionSet, obj *dto.AccessSessionMutation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accessSessionMutationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccessSessionMutation")
+		case "create":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AccessSessionMutation_create(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "archive":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AccessSessionMutation_archive(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var accessSessionQueryImplementors = []string{"AccessSessionQuery"}
+
+func (ec *executionContext) _AccessSessionQuery(ctx context.Context, sel ast.SelectionSet, obj *dto.AccessSessionQuery) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accessSessionQueryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccessSessionQuery")
+		case "load":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AccessSessionQuery_load(ctx, field, obj)
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var applicationImplementors = []string{"Application"}
 
-func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionSet, obj *model.Application) graphql.Marshaler {
+func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionSet, obj *model1.Application) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, applicationImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -13626,7 +14207,7 @@ func (ec *executionContext) _ConfigVariable(ctx context.Context, sel ast.Selecti
 
 var credentialsImplementors = []string{"Credentials"}
 
-func (ec *executionContext) _Credentials(ctx context.Context, sel ast.SelectionSet, obj *model.Credentials) graphql.Marshaler {
+func (ec *executionContext) _Credentials(ctx context.Context, sel ast.SelectionSet, obj *model1.Credentials) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, credentialsImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -13673,7 +14254,7 @@ func (ec *executionContext) _Credentials(ctx context.Context, sel ast.SelectionS
 
 var domainNameImplementors = []string{"DomainName"}
 
-func (ec *executionContext) _DomainName(ctx context.Context, sel ast.SelectionSet, obj *model1.DomainName) graphql.Marshaler {
+func (ec *executionContext) _DomainName(ctx context.Context, sel ast.SelectionSet, obj *model2.DomainName) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, domainNameImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -13725,7 +14306,7 @@ func (ec *executionContext) _DomainName(ctx context.Context, sel ast.SelectionSe
 
 var domainNamesImplementors = []string{"DomainNames"}
 
-func (ec *executionContext) _DomainNames(ctx context.Context, sel ast.SelectionSet, obj *model1.DomainNames) graphql.Marshaler {
+func (ec *executionContext) _DomainNames(ctx context.Context, sel ast.SelectionSet, obj *model2.DomainNames) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, domainNamesImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -13785,7 +14366,7 @@ func (ec *executionContext) _Error(ctx context.Context, sel ast.SelectionSet, ob
 
 var mailerAccountImplementors = []string{"MailerAccount"}
 
-func (ec *executionContext) _MailerAccount(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerAccount) graphql.Marshaler {
+func (ec *executionContext) _MailerAccount(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerAccount) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerAccountImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -13854,7 +14435,7 @@ func (ec *executionContext) _MailerAccount(ctx context.Context, sel ast.Selectio
 
 var mailerAccountAttachmentImplementors = []string{"MailerAccountAttachment"}
 
-func (ec *executionContext) _MailerAccountAttachment(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerAccountAttachment) graphql.Marshaler {
+func (ec *executionContext) _MailerAccountAttachment(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerAccountAttachment) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerAccountAttachmentImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -13885,7 +14466,7 @@ func (ec *executionContext) _MailerAccountAttachment(ctx context.Context, sel as
 
 var mailerAccountConnectionImplementors = []string{"MailerAccountConnection"}
 
-func (ec *executionContext) _MailerAccountConnection(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerAccountConnection) graphql.Marshaler {
+func (ec *executionContext) _MailerAccountConnection(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerAccountConnection) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerAccountConnectionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -13914,7 +14495,7 @@ func (ec *executionContext) _MailerAccountConnection(ctx context.Context, sel as
 
 var mailerAccountEdgeImplementors = []string{"MailerAccountEdge"}
 
-func (ec *executionContext) _MailerAccountEdge(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerAccountEdge) graphql.Marshaler {
+func (ec *executionContext) _MailerAccountEdge(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerAccountEdge) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerAccountEdgeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -13946,7 +14527,7 @@ func (ec *executionContext) _MailerAccountEdge(ctx context.Context, sel ast.Sele
 
 var mailerAccountMutationImplementors = []string{"MailerAccountMutation"}
 
-func (ec *executionContext) _MailerAccountMutation(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerAccountMutation) graphql.Marshaler {
+func (ec *executionContext) _MailerAccountMutation(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerAccountMutation) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerAccountMutationImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14010,7 +14591,7 @@ func (ec *executionContext) _MailerAccountMutation(ctx context.Context, sel ast.
 
 var mailerAccountMutationOutcomeImplementors = []string{"MailerAccountMutationOutcome"}
 
-func (ec *executionContext) _MailerAccountMutationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerAccountMutationOutcome) graphql.Marshaler {
+func (ec *executionContext) _MailerAccountMutationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerAccountMutationOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerAccountMutationOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14036,7 +14617,7 @@ func (ec *executionContext) _MailerAccountMutationOutcome(ctx context.Context, s
 
 var mailerAccountPageInfoImplementors = []string{"MailerAccountPageInfo"}
 
-func (ec *executionContext) _MailerAccountPageInfo(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerAccountPageInfo) graphql.Marshaler {
+func (ec *executionContext) _MailerAccountPageInfo(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerAccountPageInfo) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerAccountPageInfoImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14067,7 +14648,7 @@ func (ec *executionContext) _MailerAccountPageInfo(ctx context.Context, sel ast.
 
 var mailerAuditLogImplementors = []string{"MailerAuditLog"}
 
-func (ec *executionContext) _MailerAuditLog(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerAuditLog) graphql.Marshaler {
+func (ec *executionContext) _MailerAuditLog(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerAuditLog) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerAuditLogImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14127,7 +14708,7 @@ func (ec *executionContext) _MailerAuditLog(ctx context.Context, sel ast.Selecti
 
 var mailerMutationImplementors = []string{"MailerMutation"}
 
-func (ec *executionContext) _MailerMutation(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerMutation) graphql.Marshaler {
+func (ec *executionContext) _MailerMutation(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerMutation) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerMutationImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14159,7 +14740,7 @@ func (ec *executionContext) _MailerMutation(ctx context.Context, sel ast.Selecti
 
 var mailerQueryImplementors = []string{"MailerQuery"}
 
-func (ec *executionContext) _MailerQuery(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerQuery) graphql.Marshaler {
+func (ec *executionContext) _MailerQuery(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerQuery) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerQueryImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14186,7 +14767,7 @@ func (ec *executionContext) _MailerQuery(ctx context.Context, sel ast.SelectionS
 
 var mailerQueryAccountImplementors = []string{"MailerQueryAccount"}
 
-func (ec *executionContext) _MailerQueryAccount(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerQueryAccount) graphql.Marshaler {
+func (ec *executionContext) _MailerQueryAccount(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerQueryAccount) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerQueryAccountImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14233,7 +14814,7 @@ func (ec *executionContext) _MailerQueryAccount(ctx context.Context, sel ast.Sel
 
 var mailerSenderImplementors = []string{"MailerSender"}
 
-func (ec *executionContext) _MailerSender(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerSender) graphql.Marshaler {
+func (ec *executionContext) _MailerSender(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerSender) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerSenderImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14265,7 +14846,7 @@ func (ec *executionContext) _MailerSender(ctx context.Context, sel ast.Selection
 
 var mailerTemplateImplementors = []string{"MailerTemplate"}
 
-func (ec *executionContext) _MailerTemplate(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerTemplate) graphql.Marshaler {
+func (ec *executionContext) _MailerTemplate(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerTemplate) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerTemplateImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14324,7 +14905,7 @@ func (ec *executionContext) _MailerTemplate(ctx context.Context, sel ast.Selecti
 
 var mailerTemplateEventImplementors = []string{"MailerTemplateEvent"}
 
-func (ec *executionContext) _MailerTemplateEvent(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerTemplateEvent) graphql.Marshaler {
+func (ec *executionContext) _MailerTemplateEvent(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerTemplateEvent) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerTemplateEventImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14368,7 +14949,7 @@ func (ec *executionContext) _MailerTemplateEvent(ctx context.Context, sel ast.Se
 
 var mailerTemplateMessageImplementors = []string{"MailerTemplateMessage"}
 
-func (ec *executionContext) _MailerTemplateMessage(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerTemplateMessage) graphql.Marshaler {
+func (ec *executionContext) _MailerTemplateMessage(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerTemplateMessage) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerTemplateMessageImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14407,7 +14988,7 @@ func (ec *executionContext) _MailerTemplateMessage(ctx context.Context, sel ast.
 
 var mailerTemplateMutationImplementors = []string{"MailerTemplateMutation"}
 
-func (ec *executionContext) _MailerTemplateMutation(ctx context.Context, sel ast.SelectionSet, obj *dto.MailerTemplateMutation) graphql.Marshaler {
+func (ec *executionContext) _MailerTemplateMutation(ctx context.Context, sel ast.SelectionSet, obj *dto1.MailerTemplateMutation) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mailerTemplateMutationImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14462,7 +15043,7 @@ func (ec *executionContext) _MailerTemplateMutation(ctx context.Context, sel ast
 
 var membershipImplementors = []string{"Membership"}
 
-func (ec *executionContext) _Membership(ctx context.Context, sel ast.SelectionSet, obj *model1.Membership) graphql.Marshaler {
+func (ec *executionContext) _Membership(ctx context.Context, sel ast.SelectionSet, obj *model2.Membership) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, membershipImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14551,7 +15132,7 @@ func (ec *executionContext) _Membership(ctx context.Context, sel ast.SelectionSe
 
 var membershipConnectionImplementors = []string{"MembershipConnection"}
 
-func (ec *executionContext) _MembershipConnection(ctx context.Context, sel ast.SelectionSet, obj *model1.MembershipConnection) graphql.Marshaler {
+func (ec *executionContext) _MembershipConnection(ctx context.Context, sel ast.SelectionSet, obj *model2.MembershipConnection) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, membershipConnectionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14597,7 +15178,7 @@ func (ec *executionContext) _MembershipConnection(ctx context.Context, sel ast.S
 
 var membershipEdgeImplementors = []string{"MembershipEdge"}
 
-func (ec *executionContext) _MembershipEdge(ctx context.Context, sel ast.SelectionSet, obj *model1.MembershipEdge) graphql.Marshaler {
+func (ec *executionContext) _MembershipEdge(ctx context.Context, sel ast.SelectionSet, obj *model2.MembershipEdge) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, membershipEdgeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14629,7 +15210,7 @@ func (ec *executionContext) _MembershipEdge(ctx context.Context, sel ast.Selecti
 
 var membershipInfoImplementors = []string{"MembershipInfo"}
 
-func (ec *executionContext) _MembershipInfo(ctx context.Context, sel ast.SelectionSet, obj *model1.MembershipInfo) graphql.Marshaler {
+func (ec *executionContext) _MembershipInfo(ctx context.Context, sel ast.SelectionSet, obj *model2.MembershipInfo) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, membershipInfoImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14673,6 +15254,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "accessMutation":
+			out.Values[i] = ec._Mutation_accessMutation(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "sessionCreate":
 			out.Values[i] = ec._Mutation_sessionCreate(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -14746,7 +15332,7 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 var policyImplementors = []string{"Policy"}
 
-func (ec *executionContext) _Policy(ctx context.Context, sel ast.SelectionSet, obj *model.Policy) graphql.Marshaler {
+func (ec *executionContext) _Policy(ctx context.Context, sel ast.SelectionSet, obj *model1.Policy) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, policyImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14806,6 +15392,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "accessQuery":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_accessQuery(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "session":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -14895,7 +15495,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 
 var s3ApplicationMutationOutcomeImplementors = []string{"S3ApplicationMutationOutcome"}
 
-func (ec *executionContext) _S3ApplicationMutationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto1.S3ApplicationMutationOutcome) graphql.Marshaler {
+func (ec *executionContext) _S3ApplicationMutationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto2.S3ApplicationMutationOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, s3ApplicationMutationOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14921,7 +15521,7 @@ func (ec *executionContext) _S3ApplicationMutationOutcome(ctx context.Context, s
 
 var sessionImplementors = []string{"Session"}
 
-func (ec *executionContext) _Session(ctx context.Context, sel ast.SelectionSet, obj *model3.Session) graphql.Marshaler {
+func (ec *executionContext) _Session(ctx context.Context, sel ast.SelectionSet, obj *model.Session) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, sessionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15034,7 +15634,7 @@ func (ec *executionContext) _Session(ctx context.Context, sel ast.SelectionSet, 
 
 var sessionArchiveOutcomeImplementors = []string{"SessionArchiveOutcome"}
 
-func (ec *executionContext) _SessionArchiveOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto2.SessionArchiveOutcome) graphql.Marshaler {
+func (ec *executionContext) _SessionArchiveOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.SessionArchiveOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, sessionArchiveOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15063,7 +15663,7 @@ func (ec *executionContext) _SessionArchiveOutcome(ctx context.Context, sel ast.
 
 var sessionContextImplementors = []string{"SessionContext"}
 
-func (ec *executionContext) _SessionContext(ctx context.Context, sel ast.SelectionSet, obj *model3.SessionContext) graphql.Marshaler {
+func (ec *executionContext) _SessionContext(ctx context.Context, sel ast.SelectionSet, obj *model.SessionContext) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, sessionContextImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15093,7 +15693,7 @@ func (ec *executionContext) _SessionContext(ctx context.Context, sel ast.Selecti
 
 var sessionCreateOutcomeImplementors = []string{"SessionCreateOutcome"}
 
-func (ec *executionContext) _SessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto2.SessionCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) _SessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.SessionCreateOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, sessionCreateOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15121,7 +15721,7 @@ func (ec *executionContext) _SessionCreateOutcome(ctx context.Context, sel ast.S
 
 var spaceImplementors = []string{"Space"}
 
-func (ec *executionContext) _Space(ctx context.Context, sel ast.SelectionSet, obj *model1.Space) graphql.Marshaler {
+func (ec *executionContext) _Space(ctx context.Context, sel ast.SelectionSet, obj *model2.Space) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, spaceImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15239,7 +15839,7 @@ func (ec *executionContext) _SpaceCreateOutcome(ctx context.Context, sel ast.Sel
 
 var spaceFeaturesImplementors = []string{"SpaceFeatures"}
 
-func (ec *executionContext) _SpaceFeatures(ctx context.Context, sel ast.SelectionSet, obj *model1.SpaceFeatures) graphql.Marshaler {
+func (ec *executionContext) _SpaceFeatures(ctx context.Context, sel ast.SelectionSet, obj *model2.SpaceFeatures) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, spaceFeaturesImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15292,7 +15892,7 @@ func (ec *executionContext) _SpaceMembershipCreateOutcome(ctx context.Context, s
 
 var userImplementors = []string{"User"}
 
-func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model2.User) graphql.Marshaler {
+func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model3.User) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15371,7 +15971,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 
 var userEmailImplementors = []string{"UserEmail"}
 
-func (ec *executionContext) _UserEmail(ctx context.Context, sel ast.SelectionSet, obj *model2.UserEmail) graphql.Marshaler {
+func (ec *executionContext) _UserEmail(ctx context.Context, sel ast.SelectionSet, obj *model3.UserEmail) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userEmailImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15432,7 +16032,7 @@ func (ec *executionContext) _UserEmail(ctx context.Context, sel ast.SelectionSet
 
 var userEmailsImplementors = []string{"UserEmails"}
 
-func (ec *executionContext) _UserEmails(ctx context.Context, sel ast.SelectionSet, obj *model2.UserEmails) graphql.Marshaler {
+func (ec *executionContext) _UserEmails(ctx context.Context, sel ast.SelectionSet, obj *model3.UserEmails) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userEmailsImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15484,7 +16084,7 @@ func (ec *executionContext) _UserMutationOutcome(ctx context.Context, sel ast.Se
 
 var userNameImplementors = []string{"UserName"}
 
-func (ec *executionContext) _UserName(ctx context.Context, sel ast.SelectionSet, obj *model2.UserName) graphql.Marshaler {
+func (ec *executionContext) _UserName(ctx context.Context, sel ast.SelectionSet, obj *model3.UserName) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userNameImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15512,7 +16112,7 @@ func (ec *executionContext) _UserName(ctx context.Context, sel ast.SelectionSet,
 
 var validationOutcomeImplementors = []string{"ValidationOutcome"}
 
-func (ec *executionContext) _ValidationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto2.ValidationOutcome) graphql.Marshaler {
+func (ec *executionContext) _ValidationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.ValidationOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, validationOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15794,6 +16394,62 @@ func (ec *executionContext) marshalNAccessMode2beanᚋcomponentsᚋscalarᚐAcce
 	return v
 }
 
+func (ec *executionContext) marshalNAccessMutation2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessMutation(ctx context.Context, sel ast.SelectionSet, v dto.AccessMutation) graphql.Marshaler {
+	return ec._AccessMutation(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAccessMutation2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessMutation(ctx context.Context, sel ast.SelectionSet, v *dto.AccessMutation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AccessMutation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAccessQuery2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessQuery(ctx context.Context, sel ast.SelectionSet, v dto.AccessQuery) graphql.Marshaler {
+	return ec._AccessQuery(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAccessQuery2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessQuery(ctx context.Context, sel ast.SelectionSet, v *dto.AccessQuery) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AccessQuery(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAccessSessionMutation2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessSessionMutation(ctx context.Context, sel ast.SelectionSet, v dto.AccessSessionMutation) graphql.Marshaler {
+	return ec._AccessSessionMutation(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAccessSessionMutation2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessSessionMutation(ctx context.Context, sel ast.SelectionSet, v *dto.AccessSessionMutation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AccessSessionMutation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAccessSessionQuery2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessSessionQuery(ctx context.Context, sel ast.SelectionSet, v dto.AccessSessionQuery) graphql.Marshaler {
+	return ec._AccessSessionQuery(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAccessSessionQuery2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessSessionQuery(ctx context.Context, sel ast.SelectionSet, v *dto.AccessSessionQuery) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AccessSessionQuery(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -15825,11 +16481,11 @@ func (ec *executionContext) marshalNContentType2beanᚋcomponentsᚋscalarᚐCon
 	return res
 }
 
-func (ec *executionContext) marshalNCredentials2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐCredentials(ctx context.Context, sel ast.SelectionSet, v model.Credentials) graphql.Marshaler {
+func (ec *executionContext) marshalNCredentials2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐCredentials(ctx context.Context, sel ast.SelectionSet, v model1.Credentials) graphql.Marshaler {
 	return ec._Credentials(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCredentials2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐCredentials(ctx context.Context, sel ast.SelectionSet, v *model.Credentials) graphql.Marshaler {
+func (ec *executionContext) marshalNCredentials2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐCredentials(ctx context.Context, sel ast.SelectionSet, v *model1.Credentials) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -15839,7 +16495,7 @@ func (ec *executionContext) marshalNCredentials2ᚖbeanᚋpkgᚋintegrationᚋs3
 	return ec._Credentials(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNDomainName2ᚖbeanᚋpkgᚋspaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v *model1.DomainName) graphql.Marshaler {
+func (ec *executionContext) marshalNDomainName2ᚖbeanᚋpkgᚋspaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v *model2.DomainName) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16031,7 +16687,7 @@ func (ec *executionContext) marshalNLanguage2beanᚋpkgᚋutilᚋapiᚐLanguage(
 	return v
 }
 
-func (ec *executionContext) marshalNMailerAccount2ᚕᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountᚄ(ctx context.Context, sel ast.SelectionSet, v []*dto.MailerAccount) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerAccount2ᚕᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountᚄ(ctx context.Context, sel ast.SelectionSet, v []*dto1.MailerAccount) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -16068,7 +16724,7 @@ func (ec *executionContext) marshalNMailerAccount2ᚕᚖbeanᚋpkgᚋintegration
 	return ret
 }
 
-func (ec *executionContext) marshalNMailerAccount2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccount(ctx context.Context, sel ast.SelectionSet, v *dto.MailerAccount) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerAccount2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccount(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerAccount) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16078,7 +16734,7 @@ func (ec *executionContext) marshalNMailerAccount2ᚖbeanᚋpkgᚋintegrationᚋ
 	return ec._MailerAccount(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMailerAccountAttachment2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountAttachment(ctx context.Context, sel ast.SelectionSet, v *dto.MailerAccountAttachment) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerAccountAttachment2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountAttachment(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerAccountAttachment) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16088,12 +16744,12 @@ func (ec *executionContext) marshalNMailerAccountAttachment2ᚖbeanᚋpkgᚋinte
 	return ec._MailerAccountAttachment(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNMailerAccountCreateInput2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountCreateInput(ctx context.Context, v interface{}) (dto.MailerAccountCreateInput, error) {
+func (ec *executionContext) unmarshalNMailerAccountCreateInput2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountCreateInput(ctx context.Context, v interface{}) (dto1.MailerAccountCreateInput, error) {
 	res, err := ec.unmarshalInputMailerAccountCreateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNMailerAccountEdge2ᚕᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*dto.MailerAccountEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerAccountEdge2ᚕᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*dto1.MailerAccountEdge) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -16130,7 +16786,7 @@ func (ec *executionContext) marshalNMailerAccountEdge2ᚕᚖbeanᚋpkgᚋintegra
 	return ret
 }
 
-func (ec *executionContext) marshalNMailerAccountEdge2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountEdge(ctx context.Context, sel ast.SelectionSet, v *dto.MailerAccountEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerAccountEdge2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountEdge(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerAccountEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16140,7 +16796,7 @@ func (ec *executionContext) marshalNMailerAccountEdge2ᚖbeanᚋpkgᚋintegratio
 	return ec._MailerAccountEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMailerAccountMutation2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutation(ctx context.Context, sel ast.SelectionSet, v *dto.MailerAccountMutation) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerAccountMutation2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutation(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerAccountMutation) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16150,11 +16806,11 @@ func (ec *executionContext) marshalNMailerAccountMutation2ᚖbeanᚋpkgᚋintegr
 	return ec._MailerAccountMutation(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMailerAccountMutationOutcome2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto.MailerAccountMutationOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerAccountMutationOutcome2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.MailerAccountMutationOutcome) graphql.Marshaler {
 	return ec._MailerAccountMutationOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMailerAccountMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.MailerAccountMutationOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerAccountMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerAccountMutationOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16164,36 +16820,36 @@ func (ec *executionContext) marshalNMailerAccountMutationOutcome2ᚖbeanᚋpkg�
 	return ec._MailerAccountMutationOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNMailerAccountSenderInput2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountSenderInput(ctx context.Context, v interface{}) (*dto.MailerAccountSenderInput, error) {
+func (ec *executionContext) unmarshalNMailerAccountSenderInput2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountSenderInput(ctx context.Context, v interface{}) (*dto1.MailerAccountSenderInput, error) {
 	res, err := ec.unmarshalInputMailerAccountSenderInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNMailerAccountStatus2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountStatus(ctx context.Context, v interface{}) (dto.MailerAccountStatus, error) {
-	var res dto.MailerAccountStatus
+func (ec *executionContext) unmarshalNMailerAccountStatus2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountStatus(ctx context.Context, v interface{}) (dto1.MailerAccountStatus, error) {
+	var res dto1.MailerAccountStatus
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNMailerAccountStatus2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountStatus(ctx context.Context, sel ast.SelectionSet, v dto.MailerAccountStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerAccountStatus2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountStatus(ctx context.Context, sel ast.SelectionSet, v dto1.MailerAccountStatus) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNMailerAccountUpdateInput2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountUpdateInput(ctx context.Context, v interface{}) (dto.MailerAccountUpdateInput, error) {
+func (ec *executionContext) unmarshalNMailerAccountUpdateInput2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountUpdateInput(ctx context.Context, v interface{}) (dto1.MailerAccountUpdateInput, error) {
 	res, err := ec.unmarshalInputMailerAccountUpdateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNMailerAccountUpdateValueInput2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountUpdateValueInput(ctx context.Context, v interface{}) (*dto.MailerAccountUpdateValueInput, error) {
+func (ec *executionContext) unmarshalNMailerAccountUpdateValueInput2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountUpdateValueInput(ctx context.Context, v interface{}) (*dto1.MailerAccountUpdateValueInput, error) {
 	res, err := ec.unmarshalInputMailerAccountUpdateValueInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNMailerMutation2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerMutation(ctx context.Context, sel ast.SelectionSet, v dto.MailerMutation) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerMutation2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerMutation(ctx context.Context, sel ast.SelectionSet, v dto1.MailerMutation) graphql.Marshaler {
 	return ec._MailerMutation(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMailerMutation2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerMutation(ctx context.Context, sel ast.SelectionSet, v *dto.MailerMutation) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerMutation2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerMutation(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerMutation) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16203,11 +16859,11 @@ func (ec *executionContext) marshalNMailerMutation2ᚖbeanᚋpkgᚋintegration�
 	return ec._MailerMutation(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMailerQuery2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerQuery(ctx context.Context, sel ast.SelectionSet, v dto.MailerQuery) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerQuery2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerQuery(ctx context.Context, sel ast.SelectionSet, v dto1.MailerQuery) graphql.Marshaler {
 	return ec._MailerQuery(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMailerQuery2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerQuery(ctx context.Context, sel ast.SelectionSet, v *dto.MailerQuery) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerQuery2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerQuery(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerQuery) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16217,7 +16873,7 @@ func (ec *executionContext) marshalNMailerQuery2ᚖbeanᚋpkgᚋintegrationᚋma
 	return ec._MailerQuery(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMailerQueryAccount2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerQueryAccount(ctx context.Context, sel ast.SelectionSet, v *dto.MailerQueryAccount) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerQueryAccount2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerQueryAccount(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerQueryAccount) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16227,7 +16883,7 @@ func (ec *executionContext) marshalNMailerQueryAccount2ᚖbeanᚋpkgᚋintegrati
 	return ec._MailerQueryAccount(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMailerSender2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerSender(ctx context.Context, sel ast.SelectionSet, v *dto.MailerSender) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerSender2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerSender(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerSender) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16237,7 +16893,7 @@ func (ec *executionContext) marshalNMailerSender2ᚖbeanᚋpkgᚋintegrationᚋm
 	return ec._MailerSender(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMailerTemplate2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplate(ctx context.Context, sel ast.SelectionSet, v *dto.MailerTemplate) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerTemplate2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplate(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerTemplate) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16247,7 +16903,7 @@ func (ec *executionContext) marshalNMailerTemplate2ᚖbeanᚋpkgᚋintegration�
 	return ec._MailerTemplate(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMailerTemplateMessage2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplateMessage(ctx context.Context, sel ast.SelectionSet, v *dto.MailerTemplateMessage) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerTemplateMessage2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplateMessage(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerTemplateMessage) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16257,7 +16913,7 @@ func (ec *executionContext) marshalNMailerTemplateMessage2ᚖbeanᚋpkgᚋintegr
 	return ec._MailerTemplateMessage(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMailerTemplateMutation2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplateMutation(ctx context.Context, sel ast.SelectionSet, v *dto.MailerTemplateMutation) graphql.Marshaler {
+func (ec *executionContext) marshalNMailerTemplateMutation2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplateMutation(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerTemplateMutation) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16288,11 +16944,11 @@ func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) marshalNMembership2beanᚋpkgᚋspaceᚋmodelᚐMembership(ctx context.Context, sel ast.SelectionSet, v model1.Membership) graphql.Marshaler {
+func (ec *executionContext) marshalNMembership2beanᚋpkgᚋspaceᚋmodelᚐMembership(ctx context.Context, sel ast.SelectionSet, v model2.Membership) graphql.Marshaler {
 	return ec._Membership(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMembership2ᚕbeanᚋpkgᚋspaceᚋmodelᚐMembershipᚄ(ctx context.Context, sel ast.SelectionSet, v []model1.Membership) graphql.Marshaler {
+func (ec *executionContext) marshalNMembership2ᚕbeanᚋpkgᚋspaceᚋmodelᚐMembershipᚄ(ctx context.Context, sel ast.SelectionSet, v []model2.Membership) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -16329,11 +16985,11 @@ func (ec *executionContext) marshalNMembership2ᚕbeanᚋpkgᚋspaceᚋmodelᚐM
 	return ret
 }
 
-func (ec *executionContext) marshalNMembershipConnection2beanᚋpkgᚋspaceᚋmodelᚐMembershipConnection(ctx context.Context, sel ast.SelectionSet, v model1.MembershipConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNMembershipConnection2beanᚋpkgᚋspaceᚋmodelᚐMembershipConnection(ctx context.Context, sel ast.SelectionSet, v model2.MembershipConnection) graphql.Marshaler {
 	return ec._MembershipConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMembershipConnection2ᚖbeanᚋpkgᚋspaceᚋmodelᚐMembershipConnection(ctx context.Context, sel ast.SelectionSet, v *model1.MembershipConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNMembershipConnection2ᚖbeanᚋpkgᚋspaceᚋmodelᚐMembershipConnection(ctx context.Context, sel ast.SelectionSet, v *model2.MembershipConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16343,7 +16999,7 @@ func (ec *executionContext) marshalNMembershipConnection2ᚖbeanᚋpkgᚋspace�
 	return ec._MembershipConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMembershipEdge2ᚕᚖbeanᚋpkgᚋspaceᚋmodelᚐMembershipEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model1.MembershipEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNMembershipEdge2ᚕᚖbeanᚋpkgᚋspaceᚋmodelᚐMembershipEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model2.MembershipEdge) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -16380,7 +17036,7 @@ func (ec *executionContext) marshalNMembershipEdge2ᚕᚖbeanᚋpkgᚋspaceᚋmo
 	return ret
 }
 
-func (ec *executionContext) marshalNMembershipEdge2ᚖbeanᚋpkgᚋspaceᚋmodelᚐMembershipEdge(ctx context.Context, sel ast.SelectionSet, v *model1.MembershipEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNMembershipEdge2ᚖbeanᚋpkgᚋspaceᚋmodelᚐMembershipEdge(ctx context.Context, sel ast.SelectionSet, v *model2.MembershipEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16390,7 +17046,7 @@ func (ec *executionContext) marshalNMembershipEdge2ᚖbeanᚋpkgᚋspaceᚋmodel
 	return ec._MembershipEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMembershipInfo2beanᚋpkgᚋspaceᚋmodelᚐMembershipInfo(ctx context.Context, sel ast.SelectionSet, v model1.MembershipInfo) graphql.Marshaler {
+func (ec *executionContext) marshalNMembershipInfo2beanᚋpkgᚋspaceᚋmodelᚐMembershipInfo(ctx context.Context, sel ast.SelectionSet, v model2.MembershipInfo) graphql.Marshaler {
 	return ec._MembershipInfo(ctx, sel, &v)
 }
 
@@ -16399,7 +17055,7 @@ func (ec *executionContext) unmarshalNMembershipsFilter2beanᚋpkgᚋspaceᚋmod
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPolicy2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicy(ctx context.Context, sel ast.SelectionSet, v *model.Policy) graphql.Marshaler {
+func (ec *executionContext) marshalNPolicy2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicy(ctx context.Context, sel ast.SelectionSet, v *model1.Policy) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16409,13 +17065,13 @@ func (ec *executionContext) marshalNPolicy2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmo
 	return ec._Policy(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNPolicyKind2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyKind(ctx context.Context, v interface{}) (model.PolicyKind, error) {
+func (ec *executionContext) unmarshalNPolicyKind2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyKind(ctx context.Context, v interface{}) (model1.PolicyKind, error) {
 	tmp, err := graphql.UnmarshalString(v)
-	res := model.PolicyKind(tmp)
+	res := model1.PolicyKind(tmp)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPolicyKind2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyKind(ctx context.Context, sel ast.SelectionSet, v model.PolicyKind) graphql.Marshaler {
+func (ec *executionContext) marshalNPolicyKind2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyKind(ctx context.Context, sel ast.SelectionSet, v model1.PolicyKind) graphql.Marshaler {
 	res := graphql.MarshalString(string(v))
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -16425,16 +17081,16 @@ func (ec *executionContext) marshalNPolicyKind2beanᚋpkgᚋintegrationᚋs3ᚋm
 	return res
 }
 
-func (ec *executionContext) unmarshalNS3ApplicationCredentialsCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsCreateInput(ctx context.Context, v interface{}) (dto1.S3ApplicationCredentialsCreateInput, error) {
+func (ec *executionContext) unmarshalNS3ApplicationCredentialsCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsCreateInput(ctx context.Context, v interface{}) (dto2.S3ApplicationCredentialsCreateInput, error) {
 	res, err := ec.unmarshalInputS3ApplicationCredentialsCreateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNS3ApplicationMutationOutcome2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto1.S3ApplicationMutationOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNS3ApplicationMutationOutcome2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto2.S3ApplicationMutationOutcome) graphql.Marshaler {
 	return ec._S3ApplicationMutationOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto1.S3ApplicationMutationOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto2.S3ApplicationMutationOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16444,12 +17100,12 @@ func (ec *executionContext) marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkg�
 	return ec._S3ApplicationMutationOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInput(ctx context.Context, v interface{}) (dto1.S3ApplicationPolicyCreateInput, error) {
+func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInput(ctx context.Context, v interface{}) (dto2.S3ApplicationPolicyCreateInput, error) {
 	res, err := ec.unmarshalInputS3ApplicationPolicyCreateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInputᚄ(ctx context.Context, v interface{}) ([]dto1.S3ApplicationPolicyCreateInput, error) {
+func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInputᚄ(ctx context.Context, v interface{}) ([]dto2.S3ApplicationPolicyCreateInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -16459,7 +17115,7 @@ func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2ᚕbeanᚋp
 		}
 	}
 	var err error
-	res := make([]dto1.S3ApplicationPolicyCreateInput, len(vSlice))
+	res := make([]dto2.S3ApplicationPolicyCreateInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNS3ApplicationPolicyCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInput(ctx, vSlice[i])
@@ -16470,26 +17126,26 @@ func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2ᚕbeanᚋp
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalNS3ApplicationPolicyDeleteInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInput(ctx context.Context, v interface{}) (dto1.S3ApplicationPolicyDeleteInput, error) {
+func (ec *executionContext) unmarshalNS3ApplicationPolicyDeleteInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInput(ctx context.Context, v interface{}) (dto2.S3ApplicationPolicyDeleteInput, error) {
 	res, err := ec.unmarshalInputS3ApplicationPolicyDeleteInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNS3ApplicationPolicyUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInput(ctx context.Context, v interface{}) (dto1.S3ApplicationPolicyUpdateInput, error) {
+func (ec *executionContext) unmarshalNS3ApplicationPolicyUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInput(ctx context.Context, v interface{}) (dto2.S3ApplicationPolicyUpdateInput, error) {
 	res, err := ec.unmarshalInputS3ApplicationPolicyUpdateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNS3UploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadTokenInput(ctx context.Context, v interface{}) (dto1.S3UploadTokenInput, error) {
+func (ec *executionContext) unmarshalNS3UploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadTokenInput(ctx context.Context, v interface{}) (dto2.S3UploadTokenInput, error) {
 	res, err := ec.unmarshalInputS3UploadTokenInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNSessionArchiveOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionArchiveOutcome(ctx context.Context, sel ast.SelectionSet, v dto2.SessionArchiveOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNSessionArchiveOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionArchiveOutcome(ctx context.Context, sel ast.SelectionSet, v dto.SessionArchiveOutcome) graphql.Marshaler {
 	return ec._SessionArchiveOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNSessionArchiveOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionArchiveOutcome(ctx context.Context, sel ast.SelectionSet, v *dto2.SessionArchiveOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNSessionArchiveOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionArchiveOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.SessionArchiveOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16499,11 +17155,11 @@ func (ec *executionContext) marshalNSessionArchiveOutcome2ᚖbeanᚋpkgᚋaccess
 	return ec._SessionArchiveOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNSessionCreateOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto2.SessionCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNSessionCreateOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto.SessionCreateOutcome) graphql.Marshaler {
 	return ec._SessionCreateOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto2.SessionCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.SessionCreateOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16513,11 +17169,11 @@ func (ec *executionContext) marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccess�
 	return ec._SessionCreateOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNSpace2beanᚋpkgᚋspaceᚋmodelᚐSpace(ctx context.Context, sel ast.SelectionSet, v model1.Space) graphql.Marshaler {
+func (ec *executionContext) marshalNSpace2beanᚋpkgᚋspaceᚋmodelᚐSpace(ctx context.Context, sel ast.SelectionSet, v model2.Space) graphql.Marshaler {
 	return ec._Space(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNSpace2ᚕᚖbeanᚋpkgᚋspaceᚋmodelᚐSpaceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model1.Space) graphql.Marshaler {
+func (ec *executionContext) marshalNSpace2ᚕᚖbeanᚋpkgᚋspaceᚋmodelᚐSpaceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model2.Space) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -16554,7 +17210,7 @@ func (ec *executionContext) marshalNSpace2ᚕᚖbeanᚋpkgᚋspaceᚋmodelᚐSpa
 	return ret
 }
 
-func (ec *executionContext) marshalNSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx context.Context, sel ast.SelectionSet, v *model1.Space) graphql.Marshaler {
+func (ec *executionContext) marshalNSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx context.Context, sel ast.SelectionSet, v *model2.Space) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16598,13 +17254,13 @@ func (ec *executionContext) unmarshalNSpaceFilters2beanᚋpkgᚋspaceᚋmodelᚋ
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNSpaceKind2beanᚋpkgᚋspaceᚋmodelᚐSpaceKind(ctx context.Context, v interface{}) (model1.SpaceKind, error) {
-	var res model1.SpaceKind
+func (ec *executionContext) unmarshalNSpaceKind2beanᚋpkgᚋspaceᚋmodelᚐSpaceKind(ctx context.Context, v interface{}) (model2.SpaceKind, error) {
+	var res model2.SpaceKind
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNSpaceKind2beanᚋpkgᚋspaceᚋmodelᚐSpaceKind(ctx context.Context, sel ast.SelectionSet, v model1.SpaceKind) graphql.Marshaler {
+func (ec *executionContext) marshalNSpaceKind2beanᚋpkgᚋspaceᚋmodelᚐSpaceKind(ctx context.Context, sel ast.SelectionSet, v model2.SpaceKind) graphql.Marshaler {
 	return v
 }
 
@@ -16698,11 +17354,11 @@ func (ec *executionContext) marshalNUri2beanᚋcomponentsᚋscalarᚐUri(ctx con
 	return v
 }
 
-func (ec *executionContext) marshalNUser2beanᚋpkgᚋuserᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model2.User) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2beanᚋpkgᚋuserᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model3.User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model2.User) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model3.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16731,11 +17387,11 @@ func (ec *executionContext) marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋm
 	return ec._UserMutationOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNUserName2beanᚋpkgᚋuserᚋmodelᚐUserName(ctx context.Context, sel ast.SelectionSet, v model2.UserName) graphql.Marshaler {
+func (ec *executionContext) marshalNUserName2beanᚋpkgᚋuserᚋmodelᚐUserName(ctx context.Context, sel ast.SelectionSet, v model3.UserName) graphql.Marshaler {
 	return ec._UserName(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNUserName2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserName(ctx context.Context, sel ast.SelectionSet, v *model2.UserName) graphql.Marshaler {
+func (ec *executionContext) marshalNUserName2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserName(ctx context.Context, sel ast.SelectionSet, v *model3.UserName) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -16989,7 +17645,7 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) unmarshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, v interface{}) ([]*model3.AccessScope, error) {
+func (ec *executionContext) unmarshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, v interface{}) ([]*model.AccessScope, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17002,7 +17658,7 @@ func (ec *executionContext) unmarshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmo
 		}
 	}
 	var err error
-	res := make([]*model3.AccessScope, len(vSlice))
+	res := make([]*model.AccessScope, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalOAccessScope2ᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx, vSlice[i])
@@ -17013,7 +17669,7 @@ func (ec *executionContext) unmarshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmo
 	return res, nil
 }
 
-func (ec *executionContext) marshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, sel ast.SelectionSet, v []*model3.AccessScope) graphql.Marshaler {
+func (ec *executionContext) marshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, sel ast.SelectionSet, v []*model.AccessScope) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -17053,23 +17709,23 @@ func (ec *executionContext) marshalOAccessScope2ᚕᚖbeanᚋpkgᚋaccessᚋmode
 	return ret
 }
 
-func (ec *executionContext) unmarshalOAccessScope2ᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, v interface{}) (*model3.AccessScope, error) {
+func (ec *executionContext) unmarshalOAccessScope2ᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, v interface{}) (*model.AccessScope, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(model3.AccessScope)
+	var res = new(model.AccessScope)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOAccessScope2ᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, sel ast.SelectionSet, v *model3.AccessScope) graphql.Marshaler {
+func (ec *executionContext) marshalOAccessScope2ᚖbeanᚋpkgᚋaccessᚋmodelᚐAccessScope(ctx context.Context, sel ast.SelectionSet, v *model.AccessScope) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalOApplication2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐApplication(ctx context.Context, sel ast.SelectionSet, v *model.Application) graphql.Marshaler {
+func (ec *executionContext) marshalOApplication2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐApplication(ctx context.Context, sel ast.SelectionSet, v *model1.Application) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -17115,23 +17771,23 @@ func (ec *executionContext) marshalOCountryCode2ᚖstring(ctx context.Context, s
 	return graphql.MarshalString(*v)
 }
 
-func (ec *executionContext) unmarshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx context.Context, v interface{}) (*model3.DeviceType, error) {
+func (ec *executionContext) unmarshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx context.Context, v interface{}) (*model.DeviceType, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(model3.DeviceType)
+	var res = new(model.DeviceType)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx context.Context, sel ast.SelectionSet, v *model3.DeviceType) graphql.Marshaler {
+func (ec *executionContext) marshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx context.Context, sel ast.SelectionSet, v *model.DeviceType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalODomainName2ᚕᚖbeanᚋpkgᚋspaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v []*model1.DomainName) graphql.Marshaler {
+func (ec *executionContext) marshalODomainName2ᚕᚖbeanᚋpkgᚋspaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v []*model2.DomainName) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -17171,7 +17827,7 @@ func (ec *executionContext) marshalODomainName2ᚕᚖbeanᚋpkgᚋspaceᚋmodel�
 	return ret
 }
 
-func (ec *executionContext) marshalODomainName2ᚖbeanᚋpkgᚋspaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v *model1.DomainName) graphql.Marshaler {
+func (ec *executionContext) marshalODomainName2ᚖbeanᚋpkgᚋspaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v *model2.DomainName) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -17210,7 +17866,7 @@ func (ec *executionContext) unmarshalODomainNameInput2ᚖbeanᚋpkgᚋspaceᚋmo
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalODomainNames2ᚖbeanᚋpkgᚋspaceᚋmodelᚐDomainNames(ctx context.Context, sel ast.SelectionSet, v *model1.DomainNames) graphql.Marshaler {
+func (ec *executionContext) marshalODomainNames2ᚖbeanᚋpkgᚋspaceᚋmodelᚐDomainNames(ctx context.Context, sel ast.SelectionSet, v *model2.DomainNames) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -17462,14 +18118,14 @@ func (ec *executionContext) marshalOLanguage2ᚖbeanᚋpkgᚋutilᚋapiᚐLangua
 	return v
 }
 
-func (ec *executionContext) marshalOMailerAccount2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccount(ctx context.Context, sel ast.SelectionSet, v *dto.MailerAccount) graphql.Marshaler {
+func (ec *executionContext) marshalOMailerAccount2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccount(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerAccount) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._MailerAccount(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOMailerAccountAttachmentInput2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountAttachmentInput(ctx context.Context, v interface{}) (*dto.MailerAccountAttachmentInput, error) {
+func (ec *executionContext) unmarshalOMailerAccountAttachmentInput2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountAttachmentInput(ctx context.Context, v interface{}) (*dto1.MailerAccountAttachmentInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17477,30 +18133,30 @@ func (ec *executionContext) unmarshalOMailerAccountAttachmentInput2ᚖbeanᚋpkg
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOMailerAccountPageInfo2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountPageInfo(ctx context.Context, sel ast.SelectionSet, v *dto.MailerAccountPageInfo) graphql.Marshaler {
+func (ec *executionContext) marshalOMailerAccountPageInfo2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountPageInfo(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerAccountPageInfo) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._MailerAccountPageInfo(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOMailerAccountStatus2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountStatus(ctx context.Context, v interface{}) (*dto.MailerAccountStatus, error) {
+func (ec *executionContext) unmarshalOMailerAccountStatus2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountStatus(ctx context.Context, v interface{}) (*dto1.MailerAccountStatus, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(dto.MailerAccountStatus)
+	var res = new(dto1.MailerAccountStatus)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOMailerAccountStatus2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountStatus(ctx context.Context, sel ast.SelectionSet, v *dto.MailerAccountStatus) graphql.Marshaler {
+func (ec *executionContext) marshalOMailerAccountStatus2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountStatus(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerAccountStatus) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) unmarshalOMailerAccountUpdateSenderInput2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountUpdateSenderInput(ctx context.Context, v interface{}) (*dto.MailerAccountUpdateSenderInput, error) {
+func (ec *executionContext) unmarshalOMailerAccountUpdateSenderInput2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountUpdateSenderInput(ctx context.Context, v interface{}) (*dto1.MailerAccountUpdateSenderInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17508,30 +18164,30 @@ func (ec *executionContext) unmarshalOMailerAccountUpdateSenderInput2ᚖbeanᚋp
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOMailerTemplate2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplate(ctx context.Context, sel ast.SelectionSet, v *dto.MailerTemplate) graphql.Marshaler {
+func (ec *executionContext) marshalOMailerTemplate2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplate(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerTemplate) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._MailerTemplate(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOMailerTemplateEventKey2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplateEventKey(ctx context.Context, v interface{}) (*dto.MailerTemplateEventKey, error) {
+func (ec *executionContext) unmarshalOMailerTemplateEventKey2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplateEventKey(ctx context.Context, v interface{}) (*dto1.MailerTemplateEventKey, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(dto.MailerTemplateEventKey)
+	var res = new(dto1.MailerTemplateEventKey)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOMailerTemplateEventKey2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplateEventKey(ctx context.Context, sel ast.SelectionSet, v *dto.MailerTemplateEventKey) graphql.Marshaler {
+func (ec *executionContext) marshalOMailerTemplateEventKey2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerTemplateEventKey(ctx context.Context, sel ast.SelectionSet, v *dto1.MailerTemplateEventKey) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalOMembership2ᚖbeanᚋpkgᚋspaceᚋmodelᚐMembership(ctx context.Context, sel ast.SelectionSet, v *model1.Membership) graphql.Marshaler {
+func (ec *executionContext) marshalOMembership2ᚖbeanᚋpkgᚋspaceᚋmodelᚐMembership(ctx context.Context, sel ast.SelectionSet, v *model2.Membership) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -17546,7 +18202,7 @@ func (ec *executionContext) unmarshalOMembershipsFilterSpace2ᚖbeanᚋpkgᚋspa
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOPolicy2ᚕᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Policy) graphql.Marshaler {
+func (ec *executionContext) marshalOPolicy2ᚕᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyᚄ(ctx context.Context, sel ast.SelectionSet, v []*model1.Policy) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -17586,7 +18242,7 @@ func (ec *executionContext) marshalOPolicy2ᚕᚖbeanᚋpkgᚋintegrationᚋs3�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationCreateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCreateInput(ctx context.Context, v interface{}) (*dto1.S3ApplicationCreateInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationCreateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCreateInput(ctx context.Context, v interface{}) (*dto2.S3ApplicationCreateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17594,7 +18250,7 @@ func (ec *executionContext) unmarshalOS3ApplicationCreateInput2ᚖbeanᚋpkgᚋi
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationCredentialsUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsUpdateInput(ctx context.Context, v interface{}) (*dto1.S3ApplicationCredentialsUpdateInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationCredentialsUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsUpdateInput(ctx context.Context, v interface{}) (*dto2.S3ApplicationCredentialsUpdateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17602,7 +18258,7 @@ func (ec *executionContext) unmarshalOS3ApplicationCredentialsUpdateInput2ᚖbea
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationPolicyCreateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInputᚄ(ctx context.Context, v interface{}) ([]dto1.S3ApplicationPolicyCreateInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationPolicyCreateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInputᚄ(ctx context.Context, v interface{}) ([]dto2.S3ApplicationPolicyCreateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17615,7 +18271,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyCreateInput2ᚕbeanᚋp
 		}
 	}
 	var err error
-	res := make([]dto1.S3ApplicationPolicyCreateInput, len(vSlice))
+	res := make([]dto2.S3ApplicationPolicyCreateInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNS3ApplicationPolicyCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInput(ctx, vSlice[i])
@@ -17626,7 +18282,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyCreateInput2ᚕbeanᚋp
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationPolicyDeleteInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInputᚄ(ctx context.Context, v interface{}) ([]dto1.S3ApplicationPolicyDeleteInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationPolicyDeleteInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInputᚄ(ctx context.Context, v interface{}) ([]dto2.S3ApplicationPolicyDeleteInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17639,7 +18295,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyDeleteInput2ᚕbeanᚋp
 		}
 	}
 	var err error
-	res := make([]dto1.S3ApplicationPolicyDeleteInput, len(vSlice))
+	res := make([]dto2.S3ApplicationPolicyDeleteInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNS3ApplicationPolicyDeleteInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInput(ctx, vSlice[i])
@@ -17650,7 +18306,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyDeleteInput2ᚕbeanᚋp
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationPolicyMutationInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyMutationInput(ctx context.Context, v interface{}) (*dto1.S3ApplicationPolicyMutationInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationPolicyMutationInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyMutationInput(ctx context.Context, v interface{}) (*dto2.S3ApplicationPolicyMutationInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17658,7 +18314,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyMutationInput2ᚖbean�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationPolicyUpdateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInputᚄ(ctx context.Context, v interface{}) ([]dto1.S3ApplicationPolicyUpdateInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationPolicyUpdateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInputᚄ(ctx context.Context, v interface{}) ([]dto2.S3ApplicationPolicyUpdateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17671,7 +18327,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyUpdateInput2ᚕbeanᚋp
 		}
 	}
 	var err error
-	res := make([]dto1.S3ApplicationPolicyUpdateInput, len(vSlice))
+	res := make([]dto2.S3ApplicationPolicyUpdateInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNS3ApplicationPolicyUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInput(ctx, vSlice[i])
@@ -17682,7 +18338,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyUpdateInput2ᚕbeanᚋp
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationUpdateInput(ctx context.Context, v interface{}) (*dto1.S3ApplicationUpdateInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationUpdateInput(ctx context.Context, v interface{}) (*dto2.S3ApplicationUpdateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17690,21 +18346,21 @@ func (ec *executionContext) unmarshalOS3ApplicationUpdateInput2ᚖbeanᚋpkgᚋi
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx context.Context, sel ast.SelectionSet, v *model3.Session) graphql.Marshaler {
+func (ec *executionContext) marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx context.Context, sel ast.SelectionSet, v *model.Session) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Session(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOSessionContext2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSessionContext(ctx context.Context, sel ast.SelectionSet, v *model3.SessionContext) graphql.Marshaler {
+func (ec *executionContext) marshalOSessionContext2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSessionContext(ctx context.Context, sel ast.SelectionSet, v *model.SessionContext) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._SessionContext(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOSessionCreateContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateContextInput(ctx context.Context, v interface{}) (*dto2.SessionCreateContextInput, error) {
+func (ec *executionContext) unmarshalOSessionCreateContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateContextInput(ctx context.Context, v interface{}) (*dto.SessionCreateContextInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17712,7 +18368,7 @@ func (ec *executionContext) unmarshalOSessionCreateContextInput2ᚖbeanᚋpkgᚋ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOSessionCreateGenerateOTLT2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateGenerateOTLT(ctx context.Context, v interface{}) (*dto2.SessionCreateGenerateOTLT, error) {
+func (ec *executionContext) unmarshalOSessionCreateGenerateOTLT2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateGenerateOTLT(ctx context.Context, v interface{}) (*dto.SessionCreateGenerateOTLT, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17720,7 +18376,7 @@ func (ec *executionContext) unmarshalOSessionCreateGenerateOTLT2ᚖbeanᚋpkgᚋ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx context.Context, v interface{}) (*dto2.SessionCreateInput, error) {
+func (ec *executionContext) unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx context.Context, v interface{}) (*dto.SessionCreateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17728,7 +18384,7 @@ func (ec *executionContext) unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccess�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOSessionCreateUseCredentialsInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseCredentialsInput(ctx context.Context, v interface{}) (*dto2.SessionCreateUseCredentialsInput, error) {
+func (ec *executionContext) unmarshalOSessionCreateUseCredentialsInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseCredentialsInput(ctx context.Context, v interface{}) (*dto.SessionCreateUseCredentialsInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17736,7 +18392,7 @@ func (ec *executionContext) unmarshalOSessionCreateUseCredentialsInput2ᚖbean�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOSessionCreateUseOTLT2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOTLT(ctx context.Context, v interface{}) (*dto2.SessionCreateUseOTLT, error) {
+func (ec *executionContext) unmarshalOSessionCreateUseOTLT2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOTLT(ctx context.Context, v interface{}) (*dto.SessionCreateUseOTLT, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17744,14 +18400,14 @@ func (ec *executionContext) unmarshalOSessionCreateUseOTLT2ᚖbeanᚋpkgᚋacces
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx context.Context, sel ast.SelectionSet, v *model1.Space) graphql.Marshaler {
+func (ec *executionContext) marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx context.Context, sel ast.SelectionSet, v *model2.Space) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Space(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOSpaceFeatures2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpaceFeatures(ctx context.Context, sel ast.SelectionSet, v *model1.SpaceFeatures) graphql.Marshaler {
+func (ec *executionContext) marshalOSpaceFeatures2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpaceFeatures(ctx context.Context, sel ast.SelectionSet, v *model2.SpaceFeatures) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -17865,7 +18521,7 @@ func (ec *executionContext) marshalOUri2ᚖbeanᚋcomponentsᚋscalarᚐUri(ctx 
 	return v
 }
 
-func (ec *executionContext) marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model2.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model3.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -17880,7 +18536,7 @@ func (ec *executionContext) unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋmod
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOUserEmail2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v []*model2.UserEmail) graphql.Marshaler {
+func (ec *executionContext) marshalOUserEmail2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v []*model3.UserEmail) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -17920,7 +18576,7 @@ func (ec *executionContext) marshalOUserEmail2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐ
 	return ret
 }
 
-func (ec *executionContext) marshalOUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v *model2.UserEmail) graphql.Marshaler {
+func (ec *executionContext) marshalOUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx context.Context, sel ast.SelectionSet, v *model3.UserEmail) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -17959,7 +18615,7 @@ func (ec *executionContext) unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmode
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOUserEmails2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmails(ctx context.Context, sel ast.SelectionSet, v *model2.UserEmails) graphql.Marshaler {
+func (ec *executionContext) marshalOUserEmails2ᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmails(ctx context.Context, sel ast.SelectionSet, v *model3.UserEmails) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

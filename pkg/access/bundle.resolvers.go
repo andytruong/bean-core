@@ -14,14 +14,38 @@ import (
 	user_model "bean/pkg/user/model"
 )
 
-func (this AccessBundle) newResolves() map[string]interface{} {
+func (this *AccessBundle) newResolves() map[string]interface{} {
 	return map[string]interface{}{
-		"Query": map[string]interface{}{},
+		"Query": map[string]interface{}{
+			"AccessQuery": func(ctx context.Context) (*dto.AccessQuery, error) {
+				return &dto.AccessQuery{}, nil
+			},
+		},
 		"Mutation": map[string]interface{}{
-			"SessionCreate": func(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+			"AccessMutation": func(ctx context.Context) (*dto.AccessMutation, error) {
+				return &dto.AccessMutation{}, nil
+			},
+		},
+		"AccessQuery": map[string]interface{}{
+			"AccessSessionQuery": func(ctx context.Context) (*dto.AccessSessionQuery, error) {
+				return &dto.AccessSessionQuery{}, nil
+			},
+		},
+		"AccessSessionQuery": map[string]interface{}{
+			"Load": func(ctx context.Context, id string) (*model.Session, error) {
+				return this.sessionService.load(ctx, this.db, id)
+			},
+		},
+		"AccessMutation": map[string]interface{}{
+			"AccessSessionMutation": func(ctx context.Context) (*dto.AccessSessionMutation, error) {
+				return &dto.AccessSessionMutation{}, nil
+			},
+		},
+		"AccessSessionMutation": map[string]interface{}{
+			"Create": func(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 				return this.SessionCreate(ctx, input)
 			},
-			"SessionArchive": func(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
+			"Archive": func(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
 				return this.SessionArchive(ctx)
 			},
 		},
