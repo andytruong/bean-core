@@ -1,14 +1,17 @@
 extend type Query  {
-    mailer: MailerQuery!
+    mailerQuery: MailerQuery!
 }
 
 extend type Mutation {
-    mailer: MailerMutation!
+    mailerMutation: MailerMutation!
 }
 
-type MailerQuery    {}
+type MailerQuery    {
+    account: MailerQueryAccount!
+}
+
 type MailerMutation {
-    # send()
+    account: MailerAccountMutation!
 }
 
 type MailerAuditLog {

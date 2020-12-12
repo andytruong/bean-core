@@ -1,7 +1,3 @@
-extend type MailerAccountMutation {
-    create(input: MailerAccountCreateInput!): MailerAccountMutationOutcome!
-}
-
 input MailerAccountCreateInput {
     spaceId:       ID!
     isActive:      Boolean!

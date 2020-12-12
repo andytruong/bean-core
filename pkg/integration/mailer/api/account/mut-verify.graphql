@@ -1,3 +1,0 @@
-extend type MailerAccountMutation {
-    verify(id: ID!, version: ID!): MailerAccountMutationOutcome!
-}

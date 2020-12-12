@@ -4,7 +4,7 @@ type Genetic struct {
 	Account struct {
 		MaxPerSpace uint `yaml:"maxNumber"`
 	} `yaml:"account"`
-	
+
 	Reroute struct {
 		Enabled   bool              `yaml:"enabled"`
 		Recipient string            `yaml:"recipient"`

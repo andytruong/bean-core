@@ -15,16 +15,22 @@ import (
 
 func NewMailerIntegration(genetic *Genetic, logger *zap.Logger) *MailerIntegrationBean {
 	this := &MailerIntegrationBean{
-		genetic: genetic,
-		logger:  logger,
+		genetic:  genetic,
+		logger:   logger,
+		resolver: &MailerResolver{},
 	}
 
 	return this
 }
 
 type MailerIntegrationBean struct {
-	genetic *Genetic
-	logger  *zap.Logger
+	genetic  *Genetic
+	logger   *zap.Logger
+	resolver *MailerResolver
+}
+
+func (this MailerIntegrationBean) Resolver() *MailerResolver {
+	return this.resolver
 }
 
 func (this MailerIntegrationBean) Migrate(tx *gorm.DB, driver string) error {

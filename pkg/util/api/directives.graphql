@@ -4,4 +4,4 @@ directive @requireAuth on FIELD_DEFINITION
 directive @constraint(
     maxLength: Int,
     minLength: Int,
-) on INPUT_FIELD_DEFINITION
+) on INPUT_FIELD_DEFINITION | INPUT_OBJECT | FIELD_DEFINITION

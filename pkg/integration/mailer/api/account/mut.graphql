@@ -1,8 +1,8 @@
-extend type MailerMutation {
-    account: MailerAccountMutation!
+type MailerAccountMutation {
+    create(input: MailerAccountCreateInput!): MailerAccountMutationOutcome!
+    update(input: MailerAccountUpdateInput!): MailerAccountMutationOutcome!
+    verify(id: ID!, version: ID!): MailerAccountMutationOutcome!
 }
-
-type MailerAccountMutation {}
 
 type MailerAccountMutationOutcome {
     account: MailerAccount

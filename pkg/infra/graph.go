@@ -5,6 +5,7 @@ import (
 
 	"bean/pkg/access"
 	"bean/pkg/infra/gql"
+	"bean/pkg/integration/mailer"
 	"bean/pkg/integration/s3"
 	"bean/pkg/space"
 	"bean/pkg/user"
@@ -25,6 +26,7 @@ type (
 		*space.SpaceQueryResolver
 		*access.AccessBean
 		*s3.ApplicationResolver
+		*mailer.MailerResolver
 	}
 )
 
@@ -87,6 +89,8 @@ func (this *graph) getResolvers() *resolvers {
 		bAccess, _ := this.can.beans.Access()
 		bSpace, _ := this.can.beans.Space()
 		bS3, _ := this.can.beans.S3()
+		bMailer, _ := this.can.beans.Mailer()
+		bMailer.Resolver()
 
 		this.resolvers = &resolvers{
 			UserBean:             bUser,
@@ -96,6 +100,7 @@ func (this *graph) getResolvers() *resolvers {
 			SpaceBean:            bSpace,
 			SpaceQueryResolver:   bSpace.Resolvers.Query,
 			ApplicationResolver:  bS3.CoreApp.Resolver,
+			MailerResolver:       bMailer.Resolver(),
 		}
 	}
 

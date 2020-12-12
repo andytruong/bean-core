@@ -20,6 +20,7 @@ server:
 	CONFIG=config.yaml go run -mod=vendor cmd/main.go http-server
 
 gql:
+	@git checkout pkg/infra/gql/schema.go
 	@gqlgen generate
 	@rm pkg/infra/__tmp__resolvers.go
 
@@ -27,11 +28,11 @@ migrate:
 	CONFIG=config.yaml go run -mod=vendor cmd/main.go migrate
 
 clean:
-	go mod vendor
-	go fmt ./...
-	go mod tidy
-	git fetch --prune origin
-	rm -rf ./pkg/infra/gql/__tmp__*
+	@go mod vendor
+	@go fmt ./...
+	@go mod tidy
+	@git fetch --prune origin
+	@rm -rf ./pkg/infra/gql/__tmp__*
 
 
 
