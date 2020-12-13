@@ -1,6 +1,3 @@
-# ---------------------
-# SessionLoad // Validation
-# ---------------------
 extend type Query {
     session(token: ID!): Session
 }

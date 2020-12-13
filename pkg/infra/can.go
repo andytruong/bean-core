@@ -20,7 +20,7 @@ func NewCan(path string) (*Can, error) {
 	this := &Can{
 		mu:      &sync.Mutex{},
 		bundles: beans{},
-		graph:   &graph{mu: &sync.Mutex{}},
+		graph:   &graph{mutex: &sync.Mutex{}},
 		dbs: databases{
 			connections: &sync.Map{},
 		},
