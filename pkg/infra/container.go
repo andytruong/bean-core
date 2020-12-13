@@ -3,9 +3,9 @@ package infra
 import (
 	"sync"
 	"time"
-
+	
 	"go.uber.org/zap"
-
+	
 	"bean/components/conf"
 	"bean/components/module"
 	"bean/components/unique"
@@ -18,7 +18,7 @@ import (
 
 func NewContainer(path string) (*Container, error) {
 	var err error
-
+	
 	this := &Container{
 		mutex:   &sync.Mutex{},
 		bundles: bundles{},
@@ -26,15 +26,15 @@ func NewContainer(path string) (*Container, error) {
 			connections: &sync.Map{},
 		},
 	}
-
+	
 	// parse configuration from YAML configuration file & env variables.
 	if err := conf.ParseFile(path, &this); nil != err {
 		return nil, err
 	}
-
+	
 	this.bundles.container = this
 	this.dbs.config = this.Databases
-
+	
 	// setup logger
 	if "dev" == this.Env {
 		if this.logger, err = zap.NewDevelopment(); nil != err {
@@ -45,7 +45,7 @@ func NewContainer(path string) (*Container, error) {
 			return nil, err
 		}
 	}
-
+	
 	return this, nil
 }
 
@@ -60,19 +60,19 @@ type (
 		Databases  map[string]DatabaseConfig `yaml:"databases"`
 		HttpServer HttpServerConfig          `yaml:"http-server"`
 		Bundles    BundlesConfig             `json:"bundles"`
-
+		
 		mutex   *sync.Mutex
 		id      *unique.Identifier
 		dbs     databases
 		bundles bundles
 		logger  *zap.Logger
 	}
-
+	
 	DatabaseConfig struct {
 		Driver string `yaml:"driver"`
 		Url    string `yaml:"url"`
 	}
-
+	
 	HttpServerConfig struct {
 		Address      string        `yaml:"address"`
 		ReadTimeout  time.Duration `yaml:"readTimeout"`
@@ -89,13 +89,13 @@ type (
 			Playround PlayroundConfig `yaml:"playround"`
 		} `yaml:"graphql"`
 	}
-
+	
 	PlayroundConfig struct {
 		Title   string `yaml:"title"`
 		Enabled bool   `yaml:"enabled"`
 		Path    string `yaml:"path"`
 	}
-
+	
 	BundlesConfig struct {
 		Access      *access.AccessConfiguration `yaml:"access"`
 		Space       *space.SpaceConfiguration   `yaml:"space"`
@@ -116,7 +116,7 @@ func (this *Container) Identifier() *unique.Identifier {
 		this.id = &unique.Identifier{}
 		this.mutex.Unlock()
 	}
-
+	
 	return this.id
 }
 
@@ -126,7 +126,7 @@ func (this *Container) BundleList() []module.Bundle {
 
 func (this *Container) Bundle(i int) module.Bundle {
 	bundles := this.BundleList()
-
+	
 	return bundles[i]
 }
 
@@ -135,19 +135,19 @@ func (this *Container) BundlePath(bundle module.Bundle) string {
 	switch bundle.(type) {
 	case *user.UserBundle:
 		return "User"
-
+	
 	case *space.SpaceBundle:
 		return "Space"
-
+	
 	case *access.AccessBundle:
 		return "Access"
-
+	
 	case *s3.S3IntegrationBundle:
 		return "S3"
-
+	
 	case *mailer.MailerIntegrationBundle:
 		return "Mailer"
 	}
-
+	
 	panic("unknown bundle")
 }
