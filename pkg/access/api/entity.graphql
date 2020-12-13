@@ -1,30 +1,30 @@
 enum AccessScope { Anonymous Authenticated }
 
 type Session {
-	id:        ID!
-	version:   ID!
-	user:      User
-	space:     Space!
-	scopes:    [AccessScope]
-	context:   SessionContext
-	isActive:  Boolean!
-	createdAt: Time!
-	updatedAt: Time!
-	expiredAt: Time!
-	jwt(codeVerifier: String!): JWT!
+    id:        ID!
+    version:   ID!
+    user:      User
+    space:     Space!
+    scopes:    [AccessScope]
+    context:   SessionContext
+    isActive:  Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+    expiredAt: Time!
+    jwt(codeVerifier: String!): JWT!
 }
 
 type SessionContext {
-	ipAddress: IP
-	country: CountryCode
-	deviceType: DeviceType
-	deviceName: String
+    ipAddress: IP
+    country: CountryCode
+    deviceType: DeviceType
+    deviceName: String
 }
 
 enum DeviceType {
-	Desktop
-	Laptop
-	SmartPhone
-	Tablet
-	TV
+    Desktop
+    Laptop
+    SmartPhone
+    Tablet
+    TV
 }

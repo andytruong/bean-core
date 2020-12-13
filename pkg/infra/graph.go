@@ -14,7 +14,7 @@ import (
 type (
 	graph struct {
 		can       *Can
-		mu        *sync.Mutex
+		mutex     *sync.Mutex
 		resolvers *resolvers
 	}
 	
@@ -82,8 +82,8 @@ func (this *graph) UserEmail() gql.UserEmailResolver {
 
 func (this *graph) getResolvers() *resolvers {
 	if nil == this.resolvers {
-		this.mu.Lock()
-		defer this.mu.Unlock()
+		this.mutex.Lock()
+		defer this.mutex.Unlock()
 		
 		userBundle, _ := this.can.bundles.User()
 		accessBundle, _ := this.can.bundles.Access()
