@@ -8,7 +8,7 @@ import (
 type Bundle interface {
 	Migrate(tx *gorm.DB, driver string) error
 	Dependencies() []Bundle
-	GetGraphqlResolver() GraphqlResolver
+	GraphqlResolver() map[string]interface{}
 }
 
 type GraphqlResolver interface {
@@ -18,6 +18,10 @@ type GraphqlResolver interface {
 type AbstractBundle struct {
 }
 
-func (this AbstractBundle) GetGraphqlResolver() GraphqlResolver {
+func (this AbstractBundle) Dependencies() []Bundle {
+	return nil
+}
+
+func (this AbstractBundle) GraphqlResolver() map[string]interface{} {
 	return nil
 }

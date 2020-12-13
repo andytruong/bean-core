@@ -25,6 +25,8 @@ func NewConfigBundle(id *unique.Identifier, logger *zap.Logger) *ConfigBundle {
 }
 
 type ConfigBundle struct {
+	module.AbstractBundle
+	
 	id              *unique.Identifier
 	logger          *zap.Logger
 	BucketService   *BucketService

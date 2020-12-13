@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	
 	"github.com/99designs/gqlgen/api"
@@ -17,9 +18,6 @@ import (
 )
 
 func main() {
-	os.Setenv("ENV", "test") // WIP
-	os.Setenv("CONFIG", "config.yaml") // WIP
-	
 	path := os.Getenv("CONFIG")
 	if "" == path {
 		err := errors.Wrap(util.ErrorConfig, "missing env CONFIG")
@@ -98,28 +96,39 @@ func (this MyPlugin) resolverBody(o *codegen.Object, f *codegen.Field) string {
 	implementation := `panic("no implementation")`
 	
 	for _, bundle := range this.container.BundleList() {
-		if resolver := bundle.GetGraphqlResolver(); nil != resolver {
-			if resolver.Aware(o, f) {
-				arguments := []string{"ctx"}
+		resolvers := bundle.GraphqlResolver()
+		if nil == resolvers {
+			continue
+		}
+		
+		if objResolver, ok := resolvers[o.Name]; ok {
+			if fieldResolvers, ok := objResolver.(map[string]interface{})[f.GoFieldName]; ok {
+				fieldResolverType := reflect.TypeOf(objResolver)
+				callbackType := reflect.TypeOf(fieldResolvers)
+				arguments := []string{"ctx", "obj"}
 				for _, arg := range f.Args {
 					arguments = append(arguments, arg.VarName)
 				}
 				
 				implementation = fmt.Sprintf(
-					`
-	// bundle := r.container.HowToGetBundle()
-	// return bundle.GraphqlResolver.MethodName(%s)
-	panic("wip")
-`,
+					strings.Join(
+						[]string{
+							"    bundle, _ := r.container.bundles.%s()",
+							"    resolvers := bundle.GraphqlResolver()",
+							"    objectResolver := resolvers[\"%s\"].(%s)",
+							"    callback := objectResolver[\"%s\"].(%s)",
+							"",
+							"    return callback(%s)",
+						},
+						"\n",
+					),
+					this.container.BundlePath(bundle),
+					o.Name,
+					fieldResolverType,
+					f.GoFieldName,
+					callbackType,
 					strings.Join(arguments, ", "),
 				)
-				
-				// func (r *{{lcFirst $resolver.Object.Name}}{{ucFirst $.ResolverType}}) {{$resolver.Field.GoFieldName}}{{ $resolver.Field.ShortResolverDeclaration }} {
-				// 		o.Name,
-				//		f.GoFieldName,
-				//		f.Object.Reference().String(),
-				//		f.Args,
-				//		f.TypeReference.GO,
 			}
 		}
 	}

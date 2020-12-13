@@ -13,6 +13,7 @@ import (
 	"bean/pkg/integration/mailer"
 	"bean/pkg/integration/s3"
 	"bean/pkg/space"
+	"bean/pkg/user"
 )
 
 func NewContainer(path string) (*Container, error) {
@@ -130,4 +131,26 @@ func (this *Container) Bundle(i int) module.Bundle {
 	bundles := this.BundleList()
 	
 	return bundles[i]
+}
+
+// TODO: Generate this code
+func (this *Container) BundlePath(bundle module.Bundle) string {
+	switch bundle.(type) {
+	case *user.UserBundle:
+		return "User"
+	
+	case *space.SpaceBundle:
+		return "Space"
+	
+	case *access.AccessBundle:
+		return "Access"
+	
+	case *s3.S3IntegrationBundle:
+		return "S3"
+	
+	case *mailer.MailerIntegrationBundle:
+		return "Mailer"
+	}
+	
+	panic("unknown bundle")
 }

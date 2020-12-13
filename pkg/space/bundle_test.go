@@ -23,7 +23,7 @@ import (
 	"bean/pkg/util/connect"
 )
 
-func bean() *SpaceBundle {
+func bundle() *SpaceBundle {
 	config := &struct {
 		Bundles struct {
 			Space *SpaceConfiguration `yaml:"space"`
@@ -45,14 +45,14 @@ func bean() *SpaceBundle {
 	return this
 }
 
-func tearDown(bean *SpaceBundle) {
-	bean.db.Model(model.DomainName{}).Where("id != ?", "").Delete(&model.DomainName{})
-	bean.db.Table(connect.TableUserEmail).Where("id != ?", "").Delete(&mUser.UserEmail{})
+func tearDown(bundle *SpaceBundle) {
+	bundle.db.Model(model.DomainName{}).Where("id != ?", "").Delete(&model.DomainName{})
+	bundle.db.Table(connect.TableUserEmail).Where("id != ?", "").Delete(&mUser.UserEmail{})
 }
 
 func Test_Space(t *testing.T) {
 	ass := assert.New(t)
-	this := bean()
+	this := bundle()
 	util.MockInstall(this, this.db)
 	iCreate := fixtures.SpaceCreateInputFixture(false)
 
@@ -200,7 +200,7 @@ func Test_Space(t *testing.T) {
 
 func Test_Membership(t *testing.T) {
 	ass := assert.New(t)
-	this := bean()
+	this := bundle()
 	util.MockInstall(this, this.db)
 
 	// setup data for query

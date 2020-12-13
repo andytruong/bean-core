@@ -2186,32 +2186,32 @@ type ConfigVariable {
 	{Name: "pkg/access/api/entity.graphql", Input: `enum AccessScope { Anonymous Authenticated }
 
 type Session {
-	id: ID!
-	version: ID!
-	user: User
-	space: Space!
-	scopes: [AccessScope]
-	context: SessionContext
-	isActive: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
-	expiredAt: Time!
-	jwt(codeVerifier: String!): JWT!
+    id:        ID!
+    version:   ID!
+    user:      User
+    space:     Space!
+    scopes:    [AccessScope]
+    context:   SessionContext
+    isActive:  Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+    expiredAt: Time!
+    jwt(codeVerifier: String!): JWT!
 }
 
 type SessionContext {
-	ipAddress: IP
-	country: CountryCode
-	deviceType: DeviceType
-	deviceName: String
+    ipAddress: IP
+    country: CountryCode
+    deviceType: DeviceType
+    deviceName: String
 }
 
 enum DeviceType {
-	Desktop
-	Laptop
-	SmartPhone
-	Tablet
-	TV
+    Desktop
+    Laptop
+    SmartPhone
+    Tablet
+    TV
 }
 `, BuiltIn: false},
 	{Name: "pkg/access/api/mutation.graphql", Input: `# ---------------------
@@ -2272,10 +2272,7 @@ type SessionArchiveOutcome {
 	result: Boolean!
 }
 `, BuiltIn: false},
-	{Name: "pkg/access/api/query.graphql", Input: `# ---------------------
-# SessionLoad // Validation
-# ---------------------
-extend type Query {
+	{Name: "pkg/access/api/query.graphql", Input: `extend type Query {
     session(token: ID!): Session
 }
 
@@ -2477,127 +2474,120 @@ input SpaceFilters {
 }
 `, BuiltIn: false},
 	{Name: "pkg/user/api/entity.graphql", Input: `type User {
-	id: ID!
-	version: ID!
-	name: UserName!
-	emails: UserEmails
-	avatarUri: Uri
-	isActive: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
-	language: Language!
+    id:        ID!
+    version:   ID!
+    name:      UserName!
+    emails:    UserEmails
+    avatarUri: Uri
+    isActive:  Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+    language:  Language!
 }
 
 type UserName {
-	firstName: String
-	lastName: String
-	preferredName: String
+    firstName:     String
+    lastName:      String
+    preferredName: String
 }
 
 type UserEmails {
-	primary: UserEmail
-	secondary: [UserEmail]
+    primary:   UserEmail
+    secondary: [UserEmail]
 }
 
 type UserEmail {
-	id: ID!
-	verified: Boolean!
-	value: EmailAddress!
-	createdAt: Time!
-	updatedAt: Time!
-	isActive: Boolean!
+    id:        ID!
+    verified:  Boolean!
+    value:     EmailAddress!
+    createdAt: Time!
+    updatedAt: Time!
+    isActive:  Boolean!
 }
 `, BuiltIn: false},
-	{Name: "pkg/user/api/mutation.graphql", Input: `# ---------------------
-# User -> Create
-# ---------------------
-extend type Mutation {
-	userCreate(input: UserCreateInput): UserMutationOutcome
-}
-
-input UserCreateInput {
-	name: UserNameInput!
-	emails: UserEmailsInput
-	password: UserPasswordInput!
-	avatarUri: Uri
-	isActive: Boolean!
+	{Name: "pkg/user/api/mut-create.graphql", Input: `input UserCreateInput {
+    name: UserNameInput!
+    emails: UserEmailsInput
+    password: UserPasswordInput!
+    avatarUri: Uri
+    isActive: Boolean!
 }
 
 input UserNameInput {
-	firstName: String
-	lastName: String
-	preferredName: String
+    firstName: String
+    lastName: String
+    preferredName: String
 }
 
 input UserEmailsInput {
-	primary: UserEmailInput!
-	secondary: [UserEmailInput]
+    primary: UserEmailInput!
+    secondary: [UserEmailInput]
 }
 
 input UserEmailInput {
-	verified: Boolean!
-	value: EmailAddress!
-	isActive: Boolean!
+    verified: Boolean!
+    value: EmailAddress!
+    isActive: Boolean!
 }
 
 input UserPasswordInput {
-	hashedValue: String!
+    hashedValue: String!
 }
 
 type UserMutationOutcome {
-	user: User
-	errors: [Error!]
+    user: User
+    errors: [Error!]
 }
-
-
-# ---------------------
-# User -> Update
-# ---------------------
-extend type Mutation {
-	userUpdate(input: UserUpdateInput!): UserMutationOutcome
-}
-
-input UserUpdateInput {
-	id: ID!
-	version: ID!
-	values: UserUpdateValuesInput
+`, BuiltIn: false},
+	{Name: "pkg/user/api/mut-update.graphql", Input: `input UserUpdateInput {
+    id: ID!
+    version: ID!
+    values: UserUpdateValuesInput
 }
 
 input UserUpdateValuesInput {
-	password: UserPasswordInput!
+    password: UserPasswordInput!
 }
 `, BuiltIn: false},
 	{Name: "pkg/user/api/query.graphql", Input: `extend type Query {
 	user(id: ID!): User
 }
 `, BuiltIn: false},
+	{Name: "pkg/user/api/schema.graphql", Input: `extend type Mutation {
+    userCreate(input: UserCreateInput): UserMutationOutcome!
+    userUpdate(input: UserUpdateInput!): UserMutationOutcome!
+}
+`, BuiltIn: false},
 	{Name: "pkg/integration/s3/api/entity.graphql", Input: `type Application {
-	id: ID!
-	version: ID!
-	isActive: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
-	deletedAt: Time!
-	polices: [Policy!]
-	credentials: Credentials!
+    id: ID!
+    version: ID!
+    isActive: Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+    deletedAt: Time!
+    polices: [Policy!]
+    credentials: Credentials!
 }
 
-enum PolicyKind  {FileExtensions, RateLimit}
+enum PolicyKind  {
+    FileExtensions,
+    RateLimit
+}
 
 type Policy {
-	id: ID!
-	createdAt: Time!
-	updatedAt: Time!
-	kind: PolicyKind!
-	value: String!
+    id: ID!
+    createdAt: Time!
+    updatedAt: Time!
+    kind: PolicyKind!
+    value: String!
 }
 
 type Credentials {
-	id: ID!
-	endpoint: Uri!
-	bucket: String!
-	isSecure: Boolean!
-	accesskey: String! @comment(value: "no secret key")
+    id: ID!
+    endpoint: Uri!
+    bucket: String!
+    isSecure: Boolean!
+    accesskey: String! @comment(value: "no secret key")
 }
 `, BuiltIn: false},
 	{Name: "pkg/integration/s3/api/mutation.graphql", Input: `# ---------------------
@@ -7978,11 +7968,14 @@ func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*dto4.UserMutationOutcome)
 	fc.Result = res
-	return ec.marshalOUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
+	return ec.marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_userUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8017,11 +8010,14 @@ func (ec *executionContext) _Mutation_userUpdate(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*dto4.UserMutationOutcome)
 	fc.Result = res
-	return ec.marshalOUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
+	return ec.marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_S3ApplicationCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -14674,8 +14670,14 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "userCreate":
 			out.Values[i] = ec._Mutation_userCreate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "userUpdate":
 			out.Values[i] = ec._Mutation_userUpdate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "S3ApplicationCreate":
 			out.Values[i] = ec._Mutation_S3ApplicationCreate(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -16676,6 +16678,20 @@ func (ec *executionContext) unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmode
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNUserMutationOutcome2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto4.UserMutationOutcome) graphql.Marshaler {
+	return ec._UserMutationOutcome(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto4.UserMutationOutcome) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._UserMutationOutcome(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNUserName2beanᚋpkgᚋuserᚋmodelᚐUserName(ctx context.Context, sel ast.SelectionSet, v model2.UserName) graphql.Marshaler {
 	return ec._UserName(ctx, sel, &v)
 }
@@ -17917,13 +17933,6 @@ func (ec *executionContext) unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋmod
 	}
 	res, err := ec.unmarshalInputUserEmailsInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto4.UserMutationOutcome) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._UserMutationOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOUserUpdateValuesInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateValuesInput(ctx context.Context, v interface{}) (*dto4.UserUpdateValuesInput, error) {

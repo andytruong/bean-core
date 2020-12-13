@@ -36,6 +36,8 @@ func NewS3Integration(
 }
 
 type S3IntegrationBundle struct {
+	module.AbstractBundle
+	
 	db     *gorm.DB
 	id     *unique.Identifier
 	logger *zap.Logger
@@ -63,6 +65,8 @@ func (this S3IntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this S3IntegrationBundle) Dependencies() []module.Bundle {
-	return nil
+func (this S3IntegrationBundle) GraphqlResolver() map[string]interface{} {
+	// TODO: Singleton
+	
+	return newGraphqlResolver()
 }
