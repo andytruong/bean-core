@@ -2,7 +2,7 @@ package model
 
 import (
 	"time"
-	
+
 	"bean/components/scalar"
 )
 
@@ -51,7 +51,7 @@ type PolicyKind string
 const (
 	// Example: "pdf txt zip gz"
 	PolicyKindFileExtensions PolicyKind = "file_extensions"
-	
+
 	// Example: "1MB/user/hour", "1GB/space/hour"
 	PolicyKindRateLimit PolicyKind = "rate_limit"
 )
