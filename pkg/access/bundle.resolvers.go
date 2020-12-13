@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"time"
-	
+
 	"github.com/dgrijalva/jwt-go"
-	
+
 	"bean/components/claim"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
@@ -58,7 +58,7 @@ func (this *AccessBundle) newResolves() map[string]interface{} {
 
 					return out, err
 				}
-				
+
 				return &dto.SessionArchiveOutcome{
 					Errors: util.NewErrors(util.ErrorCodeInput, []string{"token"}, "session not found"),
 					Result: false,

@@ -10,13 +10,28 @@ import (
 func newResolvers(this *S3IntegrationBundle) map[string]interface{} {
 	return map[string]interface{}{
 		"Mutation": map[string]interface{}{
-			"S3ApplicationCreate": func(ctx context.Context, input *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
+			"S3Mutation": func(ctx context.Context) (*dto.S3Mutation, error) {
+				return &dto.S3Mutation{}, nil
+			},
+		},
+		"S3Mutation": map[string]interface{}{
+			"Application": func(ctx context.Context) (*dto.S3ApplicationMutation, error) {
+				return &dto.S3ApplicationMutation{}, nil
+			},
+			"Upload": func(ctx context.Context) (*dto.S3UploadMutation, error) {
+				return &dto.S3UploadMutation{}, nil
+			},
+		},
+		"S3ApplicationMutation": map[string]interface{}{
+			"Create": func(ctx context.Context, input *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
 				return this.AppService.Create(ctx, input)
 			},
-			"S3ApplicationUpdate": func(ctx context.Context, input *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
+			"Update": func(ctx context.Context, input *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
 				return this.AppService.Update(ctx, input)
 			},
-			"S3UploadToken": func(ctx context.Context, input dto.S3UploadTokenInput) (map[string]interface{}, error) {
+		},
+		"S3UploadMutation": map[string]interface{}{
+			"Token": func(ctx context.Context, input dto.S3UploadTokenInput) (map[string]interface{}, error) {
 				return this.AppService.S3UploadToken(ctx, input)
 			},
 		},
