@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func NewMockCan() *Can {
+func NewMockCan() *Container {
 	_ = os.Setenv("ENV", "test")
 	_ = os.Setenv("DB_MASTER_URL", ":memory:")
 	_ = os.Setenv("DB_SLAVE_URL", ":memory:")
-	ctn, err := NewCan("../../config.yaml")
+	ctn, err := NewContainer("../../config.yaml")
 
 	if nil != err {
 		panic(err)

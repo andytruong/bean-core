@@ -16,7 +16,7 @@ import (
 	"bean/pkg/infra"
 )
 
-func KeyGenCommand(_ *infra.Can) *cli.Command {
+func KeyGenCommand(_ *infra.Container) *cli.Command {
 	return &cli.Command{
 		Name: "gen-key",
 		Flags: []cli.Flag{

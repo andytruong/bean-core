@@ -46,6 +46,8 @@ func NewSpaceBundle(
 }
 
 type SpaceBundle struct {
+	module.AbstractBundle
+	
 	config       *SpaceConfiguration
 	logger       *zap.Logger
 	db           *gorm.DB

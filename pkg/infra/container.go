@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	
 	"bean/components/conf"
+	"bean/components/module"
 	"bean/components/unique"
 	"bean/pkg/access"
 	"bean/pkg/integration/mailer"
@@ -14,12 +15,12 @@ import (
 	"bean/pkg/space"
 )
 
-func NewCan(path string) (*Can, error) {
+func NewContainer(path string) (*Container, error) {
 	var err error
 	
-	this := &Can{
-		mu:      &sync.Mutex{},
-		bundles: beans{},
+	this := &Container{
+		mutex:   &sync.Mutex{},
+		bundles: bundles{},
 		graph:   &graph{mutex: &sync.Mutex{}},
 		dbs: databases{
 			connections: &sync.Map{},
@@ -31,8 +32,8 @@ func NewCan(path string) (*Can, error) {
 		return nil, err
 	}
 	
-	this.bundles.can = this
-	this.graph.can = this
+	this.bundles.container = this
+	this.graph.container = this
 	this.dbs.config = this.Databases
 	
 	// setup logger
@@ -54,18 +55,18 @@ type (
 	// 	- Logger
 	//  - Database connections
 	//  - HTTP server (GraphQL query interface)
-	Can struct {
+	Container struct {
 		Version    string                    `yaml:"version"`
 		Env        string                    `yaml:"env"`
 		Databases  map[string]DatabaseConfig `yaml:"databases"`
 		HttpServer HttpServerConfig          `yaml:"http-server"`
 		Bundles    BundlesConfig             `json:"bundles"`
 		
-		mu      *sync.Mutex
+		mutex   *sync.Mutex
 		id      *unique.Identifier
 		graph   *graph
 		dbs     databases
-		bundles beans
+		bundles bundles
 		logger  *zap.Logger
 	}
 	
@@ -107,16 +108,26 @@ type (
 	}
 )
 
-func (this *Can) Logger() *zap.Logger {
+func (this *Container) Logger() *zap.Logger {
 	return this.logger
 }
 
-func (this *Can) Identifier() *unique.Identifier {
+func (this *Container) Identifier() *unique.Identifier {
 	if this.id == nil {
-		this.mu.Lock()
+		this.mutex.Lock()
 		this.id = &unique.Identifier{}
-		this.mu.Unlock()
+		this.mutex.Unlock()
 	}
 	
 	return this.id
+}
+
+func (this *Container) BundleList() []module.Bundle {
+	return this.bundles.List()
+}
+
+func (this *Container) Bundle(i int) module.Bundle {
+	bundles := this.BundleList()
+	
+	return bundles[i]
 }

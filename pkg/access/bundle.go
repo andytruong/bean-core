@@ -51,6 +51,8 @@ func NewAccessBundle(
 
 type (
 	AccessBundle struct {
+		module.AbstractBundle
+		
 		config          *AccessConfiguration
 		logger          *zap.Logger
 		db              *gorm.DB

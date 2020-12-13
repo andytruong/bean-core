@@ -20,7 +20,7 @@ import (
 	"bean/pkg/util"
 )
 
-func (this *Can) HttpRouter(router *mux.Router) *mux.Router {
+func (this *Container) HttpRouter(router *mux.Router) *mux.Router {
 	cnf := gql.Config{
 		Resolvers: this.graph,
 		Directives: gql.DirectiveRoot{
@@ -69,7 +69,7 @@ func (this *Can) HttpRouter(router *mux.Router) *mux.Router {
 	return router
 }
 
-func (this *Can) beforeServeHTTP(r *http.Request) error {
+func (this *Container) beforeServeHTTP(r *http.Request) error {
 	authHeader := r.Header.Get("Authorization")
 	if "" != authHeader {
 		bundle, err := this.bundles.Access()
@@ -89,7 +89,7 @@ func (this *Can) beforeServeHTTP(r *http.Request) error {
 	return nil
 }
 
-func (this *Can) respond403(w http.ResponseWriter, err error) {
+func (this *Container) respond403(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusForbidden)
 	errList := gqlerror.List{{Message: err.Error()}}
 	body := graphql.Response{Errors: errList}

@@ -35,6 +35,8 @@ func NewUserBundle(db *gorm.DB, logger *zap.Logger, id *unique.Identifier) *User
 }
 
 type UserBundle struct {
+	module.AbstractBundle
+	
 	logger                   *zap.Logger
 	db                       *gorm.DB
 	id                       *unique.Identifier

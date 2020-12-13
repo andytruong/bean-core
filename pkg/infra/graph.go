@@ -13,7 +13,7 @@ import (
 
 type (
 	graph struct {
-		can       *Can
+		container *Container
 		mutex     *sync.Mutex
 		resolvers *resolvers
 	}
@@ -31,19 +31,19 @@ type (
 )
 
 func (this *graph) Application() gql.ApplicationResolver {
-	bundle, _ := this.can.bundles.S3()
+	bundle, _ := this.container.bundles.S3()
 	
 	return bundle.AppService.Resolver
 }
 
 func (this *graph) MembershipConnection() gql.MembershipConnectionResolver {
-	bundle, _ := this.can.bundles.Space()
+	bundle, _ := this.container.bundles.Space()
 	
 	return bundle.MembershipResolver()
 }
 
 func (this *graph) Membership() gql.MembershipResolver {
-	bundle, _ := this.can.bundles.Space()
+	bundle, _ := this.container.bundles.Space()
 	
 	return bundle.MembershipResolver()
 }
@@ -57,25 +57,25 @@ func (this *graph) Query() gql.QueryResolver {
 }
 
 func (this *graph) Session() gql.SessionResolver {
-	bundle, _ := this.can.bundles.Access()
+	bundle, _ := this.container.bundles.Access()
 	
 	return bundle.SessionResolver
 }
 
 func (this *graph) User() gql.UserResolver {
-	bundle, _ := this.can.bundles.User()
+	bundle, _ := this.container.bundles.User()
 	
 	return bundle.Resolvers.Object
 }
 
 func (this *graph) Space() gql.SpaceResolver {
-	bundle, _ := this.can.bundles.Space()
+	bundle, _ := this.container.bundles.Space()
 	
 	return bundle.Resolvers.Object
 }
 
 func (this *graph) UserEmail() gql.UserEmailResolver {
-	bundle, _ := this.can.bundles.User()
+	bundle, _ := this.container.bundles.User()
 	
 	return bundle.Resolvers.Object
 }
@@ -85,11 +85,11 @@ func (this *graph) getResolvers() *resolvers {
 		this.mutex.Lock()
 		defer this.mutex.Unlock()
 		
-		userBundle, _ := this.can.bundles.User()
-		accessBundle, _ := this.can.bundles.Access()
-		spaceBundle, _ := this.can.bundles.Space()
-		s3Bundle, _ := this.can.bundles.S3()
-		mailerBundle, _ := this.can.bundles.Mailer()
+		userBundle, _ := this.container.bundles.User()
+		accessBundle, _ := this.container.bundles.Access()
+		spaceBundle, _ := this.container.bundles.Space()
+		s3Bundle, _ := this.container.bundles.S3()
+		mailerBundle, _ := this.container.bundles.Mailer()
 		mailerBundle.Resolver()
 		
 		this.resolvers = &resolvers{

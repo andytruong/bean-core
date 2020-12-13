@@ -10,7 +10,7 @@ import (
 	"bean/pkg/infra"
 )
 
-func HttpServerCommand(can *infra.Can) *cli.Command {
+func HttpServerCommand(can *infra.Container) *cli.Command {
 	router := mux.NewRouter()
 
 	return &cli.Command{

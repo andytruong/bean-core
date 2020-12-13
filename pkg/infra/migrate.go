@@ -2,12 +2,12 @@ package infra
 
 import (
 	"context"
-
+	
 	"bean/components/module/migrate"
 	"bean/pkg/util/connect"
 )
 
-func (this *Can) Migrate(ctx context.Context) error {
+func (this *Container) Migrate(ctx context.Context) error {
 	if db, err := this.dbs.master(); nil != err {
 		return err
 	} else if con, err := db.DB(); nil != err {
@@ -16,7 +16,7 @@ func (this *Can) Migrate(ctx context.Context) error {
 		// start transaction
 		driver := connect.Driver(con)
 		tx := db.WithContext(ctx).Begin()
-
+		
 		// create migration table if not existing
 		if !tx.Migrator().HasTable(migrate.Migration{}) {
 			if err := tx.Migrator().CreateTable(migrate.Migration{}); nil != err {
@@ -24,15 +24,15 @@ func (this *Can) Migrate(ctx context.Context) error {
 				return err
 			}
 		}
-
+		
 		// loop through bundles
-		for _, bundle := range this.bundles.List() {
+		for _, bundle := range this.BundleList() {
 			if err := bundle.Migrate(tx, driver); nil != err {
 				tx.Rollback()
 				return err
 			}
 		}
-
+		
 		return tx.Commit().Error
 	}
 }
