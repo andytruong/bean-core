@@ -1,16 +1,9 @@
 extend type Query {
     accessQuery: AccessQuery!
-
-    # TODO: Remove this
-    session(token: ID!): Session
 }
 
 extend type Mutation {
     accessMutation: AccessMutation!
-
-    # TODO: Remove this
-    sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
-    sessionArchive: SessionArchiveOutcome! @requireAuth
 }
 
 type AccessQuery {

@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 	"time"
-
+	
 	"github.com/dgrijalva/jwt-go"
-
+	
 	"bean/components/claim"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	space_model "bean/pkg/space/model"
 	user_model "bean/pkg/user/model"
+	"bean/pkg/util"
 )
 
 func (this *AccessBundle) newResolves() map[string]interface{} {
@@ -42,11 +43,26 @@ func (this *AccessBundle) newResolves() map[string]interface{} {
 			},
 		},
 		"AccessSessionMutation": map[string]interface{}{
-			"Create": func(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
-				return this.SessionCreate(ctx, input)
+			"Create": func(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+				return this.sessionService.Create(this.db, in)
 			},
 			"Archive": func(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
-				return this.SessionArchive(ctx)
+				claims := claim.ContextToPayload(ctx)
+				if nil == claims {
+					return nil, util.ErrorAuthRequired
+				}
+
+				sess, _ := this.sessionService.load(ctx, this.db.WithContext(ctx), claims.SessionId())
+				if sess != nil {
+					out, err := this.sessionService.Delete(this.db.WithContext(ctx), sess)
+
+					return out, err
+				}
+				
+				return &dto.SessionArchiveOutcome{
+					Errors: util.NewErrors(util.ErrorCodeInput, []string{"token"}, "session not found"),
+					Result: false,
+				}, nil
 			},
 		},
 		"Session": map[string]interface{}{

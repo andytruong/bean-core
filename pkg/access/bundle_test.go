@@ -75,14 +75,14 @@ func Test_Create(t *testing.T) {
 		t.Run("email inactive", func(t *testing.T) {
 			in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 			in.UseCredentials.Email = iUser.Emails.Secondary[1].Value
-			_, err := this.SessionCreate(ctx, in)
+			_, err := this.sessionService.Create(this.db.WithContext(ctx), in)
 			ass.Equal(err.Error(), "userBundle not found")
 		})
 
 		t.Run("password unmatched", func(t *testing.T) {
 			in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 			in.UseCredentials.HashedPassword = "invalid-password"
-			outcome, err := this.SessionCreate(ctx, in)
+			outcome, err := this.sessionService.Create(this.db.WithContext(ctx), in)
 
 			ass.NoError(err)
 			ass.Equal(util.ErrorCodeInput, *outcome.Errors[0].Code)
@@ -92,7 +92,7 @@ func Test_Create(t *testing.T) {
 
 		t.Run("ok", func(t *testing.T) {
 			in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-			out, err := this.SessionCreate(ctx, in)
+			out, err := this.sessionService.Create(this.db.WithContext(ctx), in)
 			ass.NoError(err)
 			ass.Equal(oUser.User.ID, out.Session.UserId)
 			ass.Equal(oSpace.Space.ID, out.Session.SpaceId)
@@ -134,7 +134,7 @@ func Test_Create(t *testing.T) {
 
 	t.Run("OTLT - one time login token", func(t *testing.T) {
 		t.Run("generate", func(t *testing.T) {
-			oGenerate, err := this.SessionCreate(ctx, &dto.SessionCreateInput{
+			oGenerate, err := this.sessionService.Create(this.db.WithContext(ctx), &dto.SessionCreateInput{
 				GenerateOTLT: &dto.SessionCreateGenerateOTLT{
 					SpaceID: oSpace.Space.ID,
 					UserID:  oUser.User.ID,
@@ -145,7 +145,7 @@ func Test_Create(t *testing.T) {
 			ass.Equal(claim.KindOTLT, oGenerate.Session.Kind)
 
 			{
-				out, err := this.SessionCreate(ctx, &dto.SessionCreateInput{
+				out, err := this.sessionService.Create(this.db.WithContext(ctx), &dto.SessionCreateInput{
 					UseOTLT: &dto.SessionCreateUseOTLT{Token: *oGenerate.Token},
 				})
 
@@ -179,9 +179,9 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 	// base input
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
-	outcome, err := this.SessionCreate(ctx, in)
+	out, err := this.sessionService.Create(this.db.WithContext(ctx), in)
 	ass.Error(err)
-	ass.Nil(outcome)
+	ass.Nil(out)
 	ass.Contains(err.Error(), "userBundle not found")
 }
 
@@ -201,11 +201,11 @@ func Test_Query(t *testing.T) {
 	oSpace, _ := this.spaceBundle.Service.Create(this.db.WithContext(ctx), iSpace)
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
-	outcome, err := this.SessionCreate(ctx, in)
+	out, err := this.sessionService.Create(this.db.WithContext(ctx), in)
 	ass.NoError(err)
 
 	// can load session without issue
-	session, err := this.Session(ctx, *outcome.Token)
+	session, err := this.Session(ctx, *out.Token)
 	ass.NoError(err)
 	ass.Equal(session.SpaceId, oSpace.Space.ID)
 	ass.Equal(session.UserId, oUser.User.ID)
@@ -218,7 +218,7 @@ func Test_Query(t *testing.T) {
 		ass.NoError(err)
 
 		// load again -> error: session expired
-		_, err = this.Session(ctx, *outcome.Token)
+		_, err = this.Session(ctx, *out.Token)
 		ass.Error(err)
 		ass.Equal(err.Error(), "session expired")
 	})
@@ -243,10 +243,12 @@ func Test_Archive(t *testing.T) {
 	oSpace, _ := this.spaceBundle.Service.Create(this.db.WithContext(ctx), iSpace)
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
-	sessionOutcome, err := this.SessionCreate(ctx, in)
+	sessionOutcome, err := this.sessionService.Create(this.db.WithContext(ctx), in)
 	ass.NoError(err)
 
 	{
+		resolver := this.resolvers["AccessSessionMutation"].(map[string]interface{})["Archive"].(func(context.Context) (*dto.SessionArchiveOutcome, error))
+
 		ctx = context.WithValue(context.Background(), claim.ContextKey, &claim.Payload{
 			StandardClaims: jwt.StandardClaims{Id: sessionOutcome.Session.ID, Subject: oUser.User.ID},
 			Kind:           claim.KindAuthenticated,
@@ -254,16 +256,16 @@ func Test_Archive(t *testing.T) {
 
 		// can archive session without issue
 		{
-			outcome, err := this.SessionArchive(ctx)
+			out, err := resolver(ctx)
 			ass.NoError(err)
-			ass.Equal(outcome.Result, true)
+			ass.Equal(out.Result, true)
 		}
 
 		// archive again -> should have error
 		{
-			outcome, err := this.SessionArchive(ctx)
+			out, err := resolver(ctx)
 			ass.NoError(err)
-			ass.Equal(outcome.Result, false)
+			ass.Equal(out.Result, false)
 		}
 	}
 }
