@@ -25,10 +25,12 @@ func (this *ApplicationResolver) S3ApplicationUpdate(ctx context.Context, in *dt
 	return this.bundle.AppService.Update(ctx, in)
 }
 
+// TODO: Remove this
 func (this *ApplicationResolver) Polices(ctx context.Context, obj *model.Application) ([]*model.Policy, error) {
 	return this.bundle.policyService.loadByApplicationId(ctx, obj.ID)
 }
 
+// TODO: Remove this
 func (this *ApplicationResolver) Credentials(ctx context.Context, obj *model.Application) (*model.Credentials, error) {
 	return this.bundle.credentialService.loadByApplicationId(ctx, obj.ID)
 }

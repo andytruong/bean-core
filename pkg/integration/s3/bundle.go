@@ -65,8 +65,7 @@ func (this S3IntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this S3IntegrationBundle) GraphqlResolver() map[string]interface{} {
+func (this *S3IntegrationBundle) GraphqlResolver() map[string]interface{} {
 	// TODO: Singleton
-	
-	return newGraphqlResolver()
+	return newGraphqlResolver(this)
 }

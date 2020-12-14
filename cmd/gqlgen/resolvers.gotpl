@@ -31,6 +31,6 @@
 
 {{ range $resolver := .Resolvers -}}
     func (r *{{lcFirst $resolver.Object.Name}}{{ucFirst $.ResolverType}}) {{$resolver.Field.GoFieldName}}{{ $resolver.Field.ShortResolverDeclaration }} {
-    {{ $resolver.Implementation }}
+    {{ resolverBody $resolver.Implementation $resolver.Field.ShortResolverDeclaration }}
     }
 {{ end }}

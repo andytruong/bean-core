@@ -49,50 +49,53 @@ func (this MyPlugin) Name() string {
 }
 
 func (this MyPlugin) GenerateCode(data *codegen.Data) error {
-	file := File{}
+	build := &ResolverBuild{
+		File:         &File{},
+		PackageName:  data.Config.Resolver.Package,
+		ResolverType: data.Config.Resolver.Type,
+		HasRoot:      true,
+	}
 	
 	for _, o := range data.Objects {
 		if o.HasResolvers() {
-			file.Objects = append(file.Objects, o)
+			build.File.Objects = append(build.File.Objects, o)
 		}
 		for _, f := range o.Fields {
 			if !f.IsResolver {
 				continue
 			}
 			
-			file.Resolvers = append(file.Resolvers, this.newResolver(o, f))
+			build.File.Resolvers = append(build.File.Resolvers, this.newResolver(data, o, f))
 		}
-	}
-	
-	resolverBuild := &ResolverBuild{
-		File:         &file,
-		PackageName:  data.Config.Resolver.Package,
-		ResolverType: data.Config.Resolver.Type,
-		HasRoot:      true,
 	}
 	
 	options := templates.Options{
 		Filename:    "pkg/infra/graphql-resolvers.go",
 		PackageName: "infra",
 		FileNotice:  `// THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.`,
-		Data:        resolverBuild,
+		Data:        build,
 		Packages:    data.Config.Packages,
+		Funcs: map[string]interface{}{
+			"resolverBody": func(input string, correctType string) string {
+				return strings.Replace(input, "%tempType%", "func "+correctType, 1)
+			},
+		},
 	}
 	
 	return templates.Render(options)
 }
 
-func (this MyPlugin) newResolver(o *codegen.Object, f *codegen.Field) *Resolver {
+func (this MyPlugin) newResolver(data *codegen.Data, o *codegen.Object, f *codegen.Field) *Resolver {
 	resolver := &Resolver{
 		Object:         o,
 		Field:          f,
-		Implementation: this.resolverBody(o, f),
+		Implementation: this.resolverBody(data, o, f),
 	}
 	
 	return resolver
 }
 
-func (this MyPlugin) resolverBody(o *codegen.Object, f *codegen.Field) string {
+func (this MyPlugin) resolverBody(data *codegen.Data, o *codegen.Object, f *codegen.Field) string {
 	implementation := `panic("no implementation")`
 	
 	for _, bundle := range this.container.BundleList() {
@@ -102,10 +105,14 @@ func (this MyPlugin) resolverBody(o *codegen.Object, f *codegen.Field) string {
 		}
 		
 		if objResolver, ok := resolvers[o.Name]; ok {
-			if fieldResolvers, ok := objResolver.(map[string]interface{})[f.GoFieldName]; ok {
+			if _, ok := objResolver.(map[string]interface{})[f.GoFieldName]; ok {
 				fieldResolverType := reflect.TypeOf(objResolver)
-				callbackType := reflect.TypeOf(fieldResolvers)
-				arguments := []string{"ctx", "obj"}
+				arguments := []string{"ctx"}
+				
+				if !f.Object.Root {
+					arguments = append(arguments, "obj")
+				}
+				
 				for _, arg := range f.Args {
 					arguments = append(arguments, arg.VarName)
 				}
@@ -113,6 +120,7 @@ func (this MyPlugin) resolverBody(o *codegen.Object, f *codegen.Field) string {
 				implementation = fmt.Sprintf(
 					strings.Join(
 						[]string{
+							// TODO: Handle @requireAuth()
 							"    bundle, _ := r.container.bundles.%s()",
 							"    resolvers := bundle.GraphqlResolver()",
 							"    objectResolver := resolvers[\"%s\"].(%s)",
@@ -126,7 +134,7 @@ func (this MyPlugin) resolverBody(o *codegen.Object, f *codegen.Field) string {
 					o.Name,
 					fieldResolverType,
 					f.GoFieldName,
-					callbackType,
+					"%tempType%",
 					strings.Join(arguments, ", "),
 				)
 			}
