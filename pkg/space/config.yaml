@@ -1,0 +1,2 @@
+manager:
+    maxNumberOfManager: ${SPACE_MAX_MANAGERS:100}

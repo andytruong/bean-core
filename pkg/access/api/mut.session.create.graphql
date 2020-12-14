@@ -1,0 +1,38 @@
+input SessionCreateInput {
+    useCredentials:  SessionCreateUseCredentialsInput
+    generateOTLT: SessionCreateGenerateOTLT
+    useOTLT: SessionCreateUseOTLT
+    context: SessionCreateContextInput
+}
+
+input SessionCreateUseCredentialsInput {
+    spaceId: String!
+    email: EmailAddress!
+    hashedPassword: String!
+    codeChallengeMethod: String!
+    codeChallenge: String!
+}
+
+input SessionCreateGenerateOTLT {
+    spaceId: String!
+    userId: String!
+}
+
+input SessionCreateUseOTLT {
+    token: String!
+    codeChallengeMethod: String!
+    codeChallenge: String!
+}
+
+input SessionCreateContextInput {
+    ipAddress: IP
+    country: CountryCode
+    deviceType: DeviceType
+    deviceName: String
+}
+
+type SessionCreateOutcome {
+    errors: [Error!]
+    session: Session
+    token: String
+}

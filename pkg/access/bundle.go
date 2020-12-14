@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	
-	"bean/components/claim"
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
@@ -45,6 +44,7 @@ func NewAccessBundle(
 	}
 	
 	this.sessionService = &SessionService{bundle: this}
+	this.resolvers = this.newResolves()
 	
 	return this
 }
@@ -63,6 +63,7 @@ type (
 		// depends on userBundle bundle
 		userBundle  *user.UserBundle
 		spaceBundle *space.SpaceBundle
+		resolvers   map[string]interface{}
 	}
 )
 
@@ -90,48 +91,6 @@ func (this AccessBundle) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this *AccessBundle) SessionCreate(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
-	txn := this.db.WithContext(ctx).Begin()
-	outcome, err := this.sessionService.Create(txn, in)
-	if nil != err {
-		txn.Rollback()
-		
-		return nil, err
-	}
-	
-	return outcome, txn.Commit().Error
-}
-
-func (this *AccessBundle) SessionArchive(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
-	claims := claim.ContextToPayload(ctx)
-	if nil == claims {
-		return nil, util.ErrorAuthRequired
-	}
-	
-	tx := this.db.WithContext(ctx).Begin()
-	
-	// load session
-	sess, err := this.sessionService.load(ctx, tx, claims.SessionId())
-	if nil != err {
-		return &dto.SessionArchiveOutcome{
-			Errors: util.NewErrors(util.ErrorCodeInput, []string{"token"}, err.Error()),
-			Result: false,
-		}, nil
-	}
-	
-	// delete it
-	{
-		out, err := this.sessionService.Delete(tx, sess)
-		if nil != err {
-			tx.Rollback()
-			
-			return nil, err
-		}
-		
-		return out, tx.Commit().Error
-	}
-}
-
 func (this AccessBundle) Session(ctx context.Context, token string) (*model.Session, error) {
 	return this.sessionService.LoadByToken(ctx, this.db, token)
 }
@@ -145,4 +104,22 @@ func (this AccessBundle) Sign(claims jwt.Claims) (string, error) {
 	return jwt.
 		NewWithClaims(this.config.signMethod(), claims).
 		SignedString(key)
+}
+
+func (this AccessBundle) GraphqlResolver() map[string]interface{} {
+	return this.resolvers
+}
+
+func (this AccessBundle) newResolves() map[string]interface{} {
+	return map[string]interface{}{
+		"Query": map[string]interface{}{},
+		"Mutation": map[string]interface{}{
+			"SessionCreate": func(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+				return this.SessionCreate(ctx, input)
+			},
+			"SessionArchive": func(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
+				return this.SessionArchive(ctx)
+			},
+		},
+	}
 }

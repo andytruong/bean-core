@@ -1,6 +1,7 @@
 package s3
 
 import (
+	"context"
 	"path"
 	"runtime"
 	
@@ -10,6 +11,8 @@ import (
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
+	"bean/pkg/integration/s3/model"
+	"bean/pkg/integration/s3/model/dto"
 )
 
 func NewS3Integration(
@@ -31,6 +34,7 @@ func NewS3Integration(
 	}
 	this.credentialService = &credentialService{bundle: this}
 	this.policyService = &policyService{bundle: this}
+	this.resolvers = this.newResolver()
 	
 	return this
 }
@@ -46,6 +50,7 @@ type S3IntegrationBundle struct {
 	AppService        *ApplicationService
 	credentialService *credentialService
 	policyService     *policyService
+	resolvers         map[string]interface{}
 }
 
 func (this S3IntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
@@ -66,6 +71,29 @@ func (this S3IntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
 }
 
 func (this *S3IntegrationBundle) GraphqlResolver() map[string]interface{} {
-	// TODO: Singleton
-	return newGraphqlResolver(this)
+	return this.resolvers
+}
+
+func (this *S3IntegrationBundle) newResolver() map[string]interface{} {
+	return map[string]interface{}{
+		"Mutation": map[string]interface{}{
+			"S3ApplicationCreate": func(ctx context.Context, input *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
+				return this.AppService.Create(ctx, input)
+			},
+			"S3ApplicationUpdate": func(ctx context.Context, input *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
+				return this.AppService.Update(ctx, input)
+			},
+			"S3UploadToken": func(ctx context.Context, input dto.S3UploadTokenInput) (map[string]interface{}, error) {
+				return this.AppService.Resolver.S3UploadToken(ctx, input)
+			},
+		},
+		"Application": map[string]interface{}{
+			"Polices": func(ctx context.Context, obj *model.Application) ([]*model.Policy, error) {
+				return this.policyService.loadByApplicationId(ctx, obj.ID)
+			},
+			"Credentials": func(ctx context.Context, obj *model.Application) (*model.Credentials, error) {
+				return this.credentialService.loadByApplicationId(ctx, obj.ID)
+			},
+		},
+	}
 }

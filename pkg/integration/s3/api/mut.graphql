@@ -1,0 +1,5 @@
+extend type Mutation  {
+    S3ApplicationCreate(input: S3ApplicationCreateInput): S3ApplicationMutationOutcome!
+    S3ApplicationUpdate(input: S3ApplicationUpdateInput): S3ApplicationMutationOutcome!
+    S3UploadToken(input: S3UploadTokenInput!): Map! @requireAuth
+}

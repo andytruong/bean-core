@@ -18,7 +18,8 @@ import (
 )
 
 func main() {
-	path := os.Getenv("CONFIG")
+	_ = os.Setenv("ENV", "test")
+	path := "config.yaml"
 	if "" == path {
 		err := errors.Wrap(util.ErrorConfig, "missing env CONFIG")
 		panic(err)

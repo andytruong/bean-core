@@ -2214,62 +2214,53 @@ enum DeviceType {
     TV
 }
 `, BuiltIn: false},
-	{Name: "pkg/access/api/mutation.graphql", Input: `# ---------------------
-# SessionCreate // Login
-# ---------------------
-extend type Mutation {
-	sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
+	{Name: "pkg/access/api/mut.session.archive.graphql", Input: `type SessionArchiveOutcome {
+    errors: [Error!]
+    result: Boolean!
 }
-
-input SessionCreateInput {
-	useCredentials:  SessionCreateUseCredentialsInput
-	generateOTLT: SessionCreateGenerateOTLT
-	useOTLT: SessionCreateUseOTLT
-	context: SessionCreateContextInput
+`, BuiltIn: false},
+	{Name: "pkg/access/api/mut.session.create.graphql", Input: `input SessionCreateInput {
+    useCredentials:  SessionCreateUseCredentialsInput
+    generateOTLT: SessionCreateGenerateOTLT
+    useOTLT: SessionCreateUseOTLT
+    context: SessionCreateContextInput
 }
 
 input SessionCreateUseCredentialsInput {
-	spaceId: String!
-	email: EmailAddress!
-	hashedPassword: String!
-	codeChallengeMethod: String!
-	codeChallenge: String!
+    spaceId: String!
+    email: EmailAddress!
+    hashedPassword: String!
+    codeChallengeMethod: String!
+    codeChallenge: String!
 }
 
 input SessionCreateGenerateOTLT {
-	spaceId: String!
-	userId: String!
+    spaceId: String!
+    userId: String!
 }
 
 input SessionCreateUseOTLT {
-	token: String!
-	codeChallengeMethod: String!
-	codeChallenge: String!
+    token: String!
+    codeChallengeMethod: String!
+    codeChallenge: String!
 }
 
 input SessionCreateContextInput {
-	ipAddress: IP
-	country: CountryCode
-	deviceType: DeviceType
-	deviceName: String
+    ipAddress: IP
+    country: CountryCode
+    deviceType: DeviceType
+    deviceName: String
 }
 
 type SessionCreateOutcome {
-	errors: [Error!]
-	session: Session
-	token: String
+    errors: [Error!]
+    session: Session
+    token: String
 }
-
-# ---------------------
-# SessionDelete // Logout
-# ---------------------
-extend type Mutation {
-	sessionArchive: SessionArchiveOutcome! @requireAuth
-}
-
-type SessionArchiveOutcome {
-	errors: [Error!]
-	result: Boolean!
+`, BuiltIn: false},
+	{Name: "pkg/access/api/mutation.graphql", Input: `extend type Mutation {
+    sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
+    sessionArchive: SessionArchiveOutcome! @requireAuth
 }
 `, BuiltIn: false},
 	{Name: "pkg/access/api/query.graphql", Input: `extend type Query {
@@ -2590,86 +2581,71 @@ type Credentials {
     accesskey: String! @comment(value: "no secret key")
 }
 `, BuiltIn: false},
-	{Name: "pkg/integration/s3/api/mutation.graphql", Input: `# ---------------------
-# Application: Create
-# ---------------------
-extend type Mutation  {
-	S3ApplicationCreate(input: S3ApplicationCreateInput): S3ApplicationMutationOutcome!
-}
-
-input S3ApplicationCreateInput {
-	isActive: Boolean!
-	credentials: S3ApplicationCredentialsCreateInput!
-	policies: [S3ApplicationPolicyCreateInput!]!
+	{Name: "pkg/integration/s3/api/mut-create.graphql", Input: `input S3ApplicationCreateInput {
+    isActive: Boolean!
+    credentials: S3ApplicationCredentialsCreateInput!
+    policies: [S3ApplicationPolicyCreateInput!]!
 }
 
 input S3ApplicationCredentialsCreateInput {
-	endpoint: Uri!
-	bucket: String!
-	isSecure: Boolean!
-	accessKey: String!
-	secretKey: String!
+    endpoint: Uri!
+    bucket: String!
+    isSecure: Boolean!
+    accessKey: String!
+    secretKey: String!
 }
 
 input S3ApplicationPolicyCreateInput {
-	kind: PolicyKind!
-	value: String!
+    kind: PolicyKind!
+    value: String!
 }
 
 type S3ApplicationMutationOutcome {
-	app: Application
-	errors: [Error!]
+    app: Application
+    errors: [Error!]
 }
-
-# ---------------------
-# Application: Update
-# ---------------------
-extend type Mutation  {
-	S3ApplicationUpdate(input: S3ApplicationUpdateInput): S3ApplicationMutationOutcome!
-}
-
-input S3ApplicationUpdateInput {
-	id: ID!
-	version: ID!
-	isActive: Boolean
-	credentials: S3ApplicationCredentialsUpdateInput
-	policies: S3ApplicationPolicyMutationInput
+`, BuiltIn: false},
+	{Name: "pkg/integration/s3/api/mut-update.graphql", Input: `input S3ApplicationUpdateInput {
+    id: ID!
+    version: ID!
+    isActive: Boolean
+    credentials: S3ApplicationCredentialsUpdateInput
+    policies: S3ApplicationPolicyMutationInput
 }
 
 input S3ApplicationCredentialsUpdateInput {
-	endpoint: Uri
-	bucket: String
-	isSecure: Boolean
-	accessKey: String
-	secretKey: String
+    endpoint: Uri
+    bucket: String
+    isSecure: Boolean
+    accessKey: String
+    secretKey: String
 }
 
 input S3ApplicationPolicyMutationInput {
-	create: [S3ApplicationPolicyCreateInput!]
-	update: [S3ApplicationPolicyUpdateInput!]
-	delete: [S3ApplicationPolicyDeleteInput!]
+    create: [S3ApplicationPolicyCreateInput!]
+    update: [S3ApplicationPolicyUpdateInput!]
+    delete: [S3ApplicationPolicyDeleteInput!]
 }
 
 input S3ApplicationPolicyUpdateInput {
-	id: ID!
-	value: String!
+    id: ID!
+    value: String!
 }
 
 input S3ApplicationPolicyDeleteInput {
-	id: ID!
+    id: ID!
 }
 `, BuiltIn: false},
-	{Name: "pkg/integration/s3/api/upload.graphql", Input: `# ---------------------
-# Upload token
-# ---------------------
-extend type Mutation  {
-    S3UploadToken(input: S3UploadTokenInput!): Map! @requireAuth
-}
-
-input S3UploadTokenInput {
+	{Name: "pkg/integration/s3/api/mut-upload.graphql", Input: `input S3UploadTokenInput {
     applicationId: ID!
     filePath:      Uri! @constraint(minLength: 7, maxLength: 128)
     contentType:   ContentType!
+}
+`, BuiltIn: false},
+	{Name: "pkg/integration/s3/api/mut.graphql", Input: `extend type Mutation  {
+    S3ApplicationCreate(input: S3ApplicationCreateInput): S3ApplicationMutationOutcome!
+    S3ApplicationUpdate(input: S3ApplicationUpdateInput): S3ApplicationMutationOutcome!
+    S3UploadToken(input: S3UploadTokenInput!): Map! @requireAuth
 }
 `, BuiltIn: false},
 	{Name: "pkg/integration/mailer/api/account/entity.graphql", Input: `type MailerAccount {

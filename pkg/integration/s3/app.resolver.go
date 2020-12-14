@@ -17,10 +17,12 @@ type ApplicationResolver struct {
 	bundle *S3IntegrationBundle
 }
 
+// TODO: Remove this
 func (this *ApplicationResolver) S3ApplicationCreate(ctx context.Context, input *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
 	return this.bundle.AppService.Create(ctx, input)
 }
 
+// TODO: Remove this
 func (this *ApplicationResolver) S3ApplicationUpdate(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
 	return this.bundle.AppService.Update(ctx, in)
 }
