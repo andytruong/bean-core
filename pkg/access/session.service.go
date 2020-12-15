@@ -146,7 +146,7 @@ func (this SessionService) create(
 		return nil, err
 	} else {
 		// update membership -> last-time-login
-		err := this.bundle.spaceBundle.MembershipResolver().UpdateLastLoginTime(tx, membership)
+		err := this.bundle.spaceBundle.MemberService.UpdateLastLoginTime(tx, membership)
 		if nil != err {
 			return nil, err
 		}
@@ -223,4 +223,48 @@ func (this SessionService) Delete(tx *gorm.DB, session *model.Session) (*dto.Ses
 	}
 
 	return &dto.SessionArchiveOutcome{Errors: nil, Result: true}, nil
+}
+
+// TODO: Remove this resolver
+func (this *AccessBundle) SessionCreate(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+	txn := this.db.WithContext(ctx).Begin()
+	outcome, err := this.sessionService.Create(txn, in)
+	if nil != err {
+		txn.Rollback()
+
+		return nil, err
+	}
+
+	return outcome, txn.Commit().Error
+}
+
+// TODO: Remove this resolver
+func (this *AccessBundle) SessionArchive(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
+	claims := claim.ContextToPayload(ctx)
+	if nil == claims {
+		return nil, util.ErrorAuthRequired
+	}
+
+	tx := this.db.WithContext(ctx).Begin()
+
+	// load session
+	sess, err := this.sessionService.load(ctx, tx, claims.SessionId())
+	if nil != err {
+		return &dto.SessionArchiveOutcome{
+			Errors: util.NewErrors(util.ErrorCodeInput, []string{"token"}, err.Error()),
+			Result: false,
+		}, nil
+	}
+
+	// delete it
+	{
+		out, err := this.sessionService.Delete(tx, sess)
+		if nil != err {
+			tx.Rollback()
+
+			return nil, err
+		}
+
+		return out, tx.Commit().Error
+	}
 }

@@ -58,10 +58,6 @@ type MailerAccountEdge struct {
 }
 
 type MailerAccountMutation struct {
-	Version string                        `json:"version"`
-	Create  *MailerAccountMutationOutcome `json:"create"`
-	Update  *MailerAccountMutationOutcome `json:"update"`
-	Verify  *MailerAccountMutationOutcome `json:"verify"`
 }
 
 type MailerAccountMutationOutcome struct {

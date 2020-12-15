@@ -3,10 +3,10 @@ package s3
 import (
 	"path"
 	"runtime"
-	
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	
+
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
@@ -16,7 +16,7 @@ func NewS3Integration(
 	db *gorm.DB,
 	id *unique.Identifier,
 	logger *zap.Logger,
-	conf *Configuration,
+	conf *S3Configuration,
 ) *S3IntegrationBundle {
 	this := &S3IntegrationBundle{
 		db:     db,
@@ -24,26 +24,27 @@ func NewS3Integration(
 		logger: logger,
 		config: conf,
 	}
-	
-	this.AppService = &ApplicationService{
-		bundle:   this,
-		Resolver: &ApplicationResolver{bundle: this},
-	}
+
+	this.AppService = &ApplicationService{bundle: this}
 	this.credentialService = &credentialService{bundle: this}
 	this.policyService = &policyService{bundle: this}
-	
+	this.resolvers = newResolvers(this)
+
 	return this
 }
 
 type S3IntegrationBundle struct {
+	module.AbstractBundle
+
 	db     *gorm.DB
 	id     *unique.Identifier
 	logger *zap.Logger
-	config *Configuration
-	
+	config *S3Configuration
+
 	AppService        *ApplicationService
 	credentialService *credentialService
 	policyService     *policyService
+	resolvers         map[string]interface{}
 }
 
 func (this S3IntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
@@ -51,7 +52,7 @@ func (this S3IntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
 	if !ok {
 		return nil
 	}
-	
+
 	runner := migrate.Runner{
 		Tx:     tx,
 		Logger: this.logger,
@@ -59,10 +60,10 @@ func (this S3IntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
 		Bean:   "integration.s3",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
-	
+
 	return runner.Run()
 }
 
-func (this S3IntegrationBundle) Dependencies() []module.Bundle {
-	return nil
+func (this *S3IntegrationBundle) GraphqlResolver() map[string]interface{} {
+	return this.resolvers
 }

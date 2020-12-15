@@ -1,0 +1,32 @@
+input SpaceCreateInput {
+    object: SpaceCreateInputObject!
+}
+
+input SpaceCreateInputObject {
+    kind: SpaceKind!
+    title: String
+    language: Language!
+    isActive: Boolean!
+    domainNames: DomainNamesInput
+    features: SpaceFeaturesInput!
+}
+
+input SpaceFeaturesInput {
+    register: Boolean!
+}
+
+input DomainNamesInput {
+    primary: DomainNameInput!
+    secondary: [DomainNameInput]
+}
+
+input DomainNameInput {
+    verified: Boolean
+    value: String
+    isActive: Boolean
+}
+
+type SpaceCreateOutcome {
+    errors: [Error!]
+    space: Space
+}

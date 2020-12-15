@@ -35,7 +35,4 @@ type MailerTemplateMessage struct {
 }
 
 type MailerTemplateMutation struct {
-	Create *bool `json:"create"`
-	Update *bool `json:"update"`
-	Delete *bool `json:"delete"`
 }

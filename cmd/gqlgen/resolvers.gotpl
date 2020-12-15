@@ -1,0 +1,36 @@
+{{ reserveImport "context"  }}
+{{ reserveImport "fmt"  }}
+{{ reserveImport "io"  }}
+{{ reserveImport "strconv"  }}
+{{ reserveImport "time"  }}
+{{ reserveImport "sync"  }}
+{{ reserveImport "errors"  }}
+{{ reserveImport "bytes"  }}
+
+{{ reserveImport "github.com/vektah/gqlparser/v2" }}
+{{ reserveImport "github.com/vektah/gqlparser/v2/ast" }}
+{{ reserveImport "github.com/99designs/gqlgen/graphql" }}
+{{ reserveImport "github.com/99designs/gqlgen/graphql/introspection" }}
+
+{{ .Imports }}
+
+// Root resolver
+{{ if .HasRoot }}
+    type {{.ResolverType}} struct {
+        container *Container
+    }
+{{ end }}
+{{ range $object := .Objects -}}
+    func (r *{{$.ResolverType}}) {{$object.Name}}() {{ $object.ResolverInterface | ref }} { return &{{lcFirst $object.Name}}{{ucFirst $.ResolverType}}{r} }
+{{ end }}
+
+// Resolvers
+{{ range $object := .Objects -}}
+    type {{lcFirst $object.Name}}{{ucFirst $.ResolverType}} struct { *{{$.ResolverType}} }
+{{ end }}
+
+{{ range $resolver := .Resolvers -}}
+    func (r *{{lcFirst $resolver.Object.Name}}{{ucFirst $.ResolverType}}) {{$resolver.Field.GoFieldName}}{{ $resolver.Field.ShortResolverDeclaration }} {
+    {{ resolverBody $resolver.Implementation $resolver.Field.ShortResolverDeclaration }}
+    }
+{{ end }}

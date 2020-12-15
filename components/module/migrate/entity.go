@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
-	
+
 	"gorm.io/gorm"
 )
 
@@ -15,10 +15,10 @@ func NewMigration(bundleName string, name string) Migration {
 		Name:      name,
 		CreatedAt: time.Now(),
 	}
-	
+
 	this.Name = strings.TrimPrefix(this.Name, RootDirectory())
 	this.Name = strings.TrimPrefix(this.Name, "/")
-	
+
 	return this
 }
 
@@ -38,17 +38,17 @@ func (this Migration) DriverMatch(driver string) bool {
 
 func (this *Migration) IsExecuted(tx *gorm.DB) (bool, error) {
 	var count int64
-	
+
 	err := tx.
 		Model(&Migration{}).
 		Where(&Migration{Bundle: this.Bundle, Name: this.Name}).
 		Count(&count).
 		Error
-	
+
 	if nil != err {
 		return false, err
 	}
-	
+
 	return count == 0, nil
 }
 
@@ -62,6 +62,6 @@ func RootDirectory() string {
 	dir = path.Dir(dir)
 	dir = path.Dir(dir)
 	dir = path.Dir(dir)
-	
+
 	return dir
 }

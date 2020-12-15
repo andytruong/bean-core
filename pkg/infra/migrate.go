@@ -7,7 +7,7 @@ import (
 	"bean/pkg/util/connect"
 )
 
-func (this *Can) Migrate(ctx context.Context) error {
+func (this *Container) Migrate(ctx context.Context) error {
 	if db, err := this.dbs.master(); nil != err {
 		return err
 	} else if con, err := db.DB(); nil != err {
@@ -26,7 +26,7 @@ func (this *Can) Migrate(ctx context.Context) error {
 		}
 
 		// loop through bundles
-		for _, bundle := range this.bundles.List() {
+		for _, bundle := range this.BundleList() {
 			if err := bundle.Migrate(tx, driver); nil != err {
 				tx.Rollback()
 				return err

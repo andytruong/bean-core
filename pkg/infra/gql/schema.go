@@ -50,6 +50,9 @@ type Config struct {
 
 type ResolverRoot interface {
 	Application() ApplicationResolver
+	MailerAccountMutation() MailerAccountMutationResolver
+	MailerQueryAccount() MailerQueryAccountResolver
+	MailerTemplateMutation() MailerTemplateMutationResolver
 	Membership() MembershipResolver
 	MembershipConnection() MembershipConnectionResolver
 	Mutation() MutationResolver
@@ -414,6 +417,20 @@ type ApplicationResolver interface {
 	Polices(ctx context.Context, obj *model.Application) ([]*model.Policy, error)
 	Credentials(ctx context.Context, obj *model.Application) (*model.Credentials, error)
 }
+type MailerAccountMutationResolver interface {
+	Create(ctx context.Context, obj *dto.MailerAccountMutation, input dto.MailerAccountCreateInput) (*dto.MailerAccountMutationOutcome, error)
+	Update(ctx context.Context, obj *dto.MailerAccountMutation, input dto.MailerAccountUpdateInput) (*dto.MailerAccountMutationOutcome, error)
+	Verify(ctx context.Context, obj *dto.MailerAccountMutation, id string, version string) (*dto.MailerAccountMutationOutcome, error)
+}
+type MailerQueryAccountResolver interface {
+	Get(ctx context.Context, obj *dto.MailerQueryAccount, id string) (*dto.MailerAccount, error)
+	GetMultiple(ctx context.Context, obj *dto.MailerQueryAccount, first int, after *string) ([]*dto.MailerAccount, error)
+}
+type MailerTemplateMutationResolver interface {
+	Create(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error)
+	Update(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error)
+	Delete(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error)
+}
 type MembershipResolver interface {
 	Space(ctx context.Context, obj *model1.Membership) (*model1.Space, error)
 	User(ctx context.Context, obj *model1.Membership) (*model2.User, error)
@@ -426,10 +443,10 @@ type MembershipConnectionResolver interface {
 type MutationResolver interface {
 	SessionCreate(ctx context.Context, input *dto2.SessionCreateInput) (*dto2.SessionCreateOutcome, error)
 	SessionArchive(ctx context.Context) (*dto2.SessionArchiveOutcome, error)
-	SpaceMembershipCreate(ctx context.Context, input dto3.SpaceMembershipCreateInput) (*dto3.SpaceMembershipCreateOutcome, error)
-	SpaceMembershipUpdate(ctx context.Context, input dto3.SpaceMembershipUpdateInput) (*dto3.SpaceMembershipCreateOutcome, error)
 	SpaceCreate(ctx context.Context, input dto3.SpaceCreateInput) (*dto3.SpaceCreateOutcome, error)
 	SpaceUpdate(ctx context.Context, input dto3.SpaceUpdateInput) (*dto3.SpaceCreateOutcome, error)
+	SpaceMembershipCreate(ctx context.Context, input dto3.SpaceMembershipCreateInput) (*dto3.SpaceMembershipCreateOutcome, error)
+	SpaceMembershipUpdate(ctx context.Context, input dto3.SpaceMembershipUpdateInput) (*dto3.SpaceMembershipCreateOutcome, error)
 	UserCreate(ctx context.Context, input *dto4.UserCreateInput) (*dto4.UserMutationOutcome, error)
 	UserUpdate(ctx context.Context, input dto4.UserUpdateInput) (*dto4.UserMutationOutcome, error)
 	S3ApplicationCreate(ctx context.Context, input *dto1.S3ApplicationCreateInput) (*dto1.S3ApplicationMutationOutcome, error)
@@ -439,9 +456,9 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Session(ctx context.Context, token string) (*model3.Session, error)
+	Space(ctx context.Context, filters dto3.SpaceFilters) (*model1.Space, error)
 	Membership(ctx context.Context, id string, version *string) (*model1.Membership, error)
 	Memberships(ctx context.Context, first int, after *string, filters dto3.MembershipsFilter) (*model1.MembershipConnection, error)
-	Space(ctx context.Context, filters dto3.SpaceFilters) (*model1.Space, error)
 	User(ctx context.Context, id string) (*model2.User, error)
 	MailerQuery(ctx context.Context) (*dto.MailerQuery, error)
 }
@@ -2159,123 +2176,111 @@ enum FileType {
 }
 `, BuiltIn: false},
 	{Name: "pkg/config/api/entity.graphql", Input: `type ConfigBucket {
-	id: ID!
-	version: ID!
-	slug: ID!
-	title: String!
-	description: String
-	hostId: ID!
-	access: AccessMode!
-	isPublished: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
+    id: ID!
+    version: ID!
+    slug: ID!
+    title: String!
+    description: String
+    hostId: ID!
+    access: AccessMode!
+    isPublished: Boolean!
+    createdAt: Time!
+    updatedAt: Time!
 }
 
 type ConfigVariable {
-	id: ID!
-	version: ID!
-	bucketId: ID!
-	name: String!
-	description: String
-	value: String!
-	createdAt: Time!
-	updatedAt: Time!
-	isLocked: Boolean!
+    id: ID!
+    version: ID!
+    bucketId: ID!
+    name: String!
+    description: String
+    value: String!
+    createdAt: Time!
+    updatedAt: Time!
+    isLocked: Boolean!
 }
 `, BuiltIn: false},
 	{Name: "pkg/access/api/entity.graphql", Input: `enum AccessScope { Anonymous Authenticated }
 
 type Session {
-	id: ID!
-	version: ID!
-	user: User
-	space: Space!
-	scopes: [AccessScope]
-	context: SessionContext
-	isActive: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
-	expiredAt: Time!
-	jwt(codeVerifier: String!): JWT!
+    id:        ID!
+    version:   ID!
+    user:      User
+    space:     Space!
+    scopes:    [AccessScope]
+    context:   SessionContext
+    isActive:  Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+    expiredAt: Time!
+    jwt(codeVerifier: String!): JWT!
 }
 
 type SessionContext {
-	ipAddress: IP
-	country: CountryCode
-	deviceType: DeviceType
-	deviceName: String
+    ipAddress: IP
+    country: CountryCode
+    deviceType: DeviceType
+    deviceName: String
 }
 
 enum DeviceType {
-	Desktop
-	Laptop
-	SmartPhone
-	Tablet
-	TV
+    Desktop
+    Laptop
+    SmartPhone
+    Tablet
+    TV
 }
 `, BuiltIn: false},
-	{Name: "pkg/access/api/mutation.graphql", Input: `# ---------------------
-# SessionCreate // Login
-# ---------------------
-extend type Mutation {
-	sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
+	{Name: "pkg/access/api/mut.session.archive.graphql", Input: `type SessionArchiveOutcome {
+    errors: [Error!]
+    result: Boolean!
 }
-
-input SessionCreateInput {
-	useCredentials:  SessionCreateUseCredentialsInput
-	generateOTLT: SessionCreateGenerateOTLT
-	useOTLT: SessionCreateUseOTLT
-	context: SessionCreateContextInput
+`, BuiltIn: false},
+	{Name: "pkg/access/api/mut.session.create.graphql", Input: `input SessionCreateInput {
+    useCredentials:  SessionCreateUseCredentialsInput
+    generateOTLT: SessionCreateGenerateOTLT
+    useOTLT: SessionCreateUseOTLT
+    context: SessionCreateContextInput
 }
 
 input SessionCreateUseCredentialsInput {
-	spaceId: String!
-	email: EmailAddress!
-	hashedPassword: String!
-	codeChallengeMethod: String!
-	codeChallenge: String!
+    spaceId: String!
+    email: EmailAddress!
+    hashedPassword: String!
+    codeChallengeMethod: String!
+    codeChallenge: String!
 }
 
 input SessionCreateGenerateOTLT {
-	spaceId: String!
-	userId: String!
+    spaceId: String!
+    userId: String!
 }
 
 input SessionCreateUseOTLT {
-	token: String!
-	codeChallengeMethod: String!
-	codeChallenge: String!
+    token: String!
+    codeChallengeMethod: String!
+    codeChallenge: String!
 }
 
 input SessionCreateContextInput {
-	ipAddress: IP
-	country: CountryCode
-	deviceType: DeviceType
-	deviceName: String
+    ipAddress: IP
+    country: CountryCode
+    deviceType: DeviceType
+    deviceName: String
 }
 
 type SessionCreateOutcome {
-	errors: [Error!]
-	session: Session
-	token: String
-}
-
-# ---------------------
-# SessionDelete // Logout
-# ---------------------
-extend type Mutation {
-	sessionArchive: SessionArchiveOutcome! @requireAuth
-}
-
-type SessionArchiveOutcome {
-	errors: [Error!]
-	result: Boolean!
+    errors: [Error!]
+    session: Session
+    token: String
 }
 `, BuiltIn: false},
-	{Name: "pkg/access/api/query.graphql", Input: `# ---------------------
-# SessionLoad // Validation
-# ---------------------
-extend type Query {
+	{Name: "pkg/access/api/mutation.graphql", Input: `extend type Mutation {
+    sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
+    sessionArchive: SessionArchiveOutcome! @requireAuth
+}
+`, BuiltIn: false},
+	{Name: "pkg/access/api/query.graphql", Input: `extend type Query {
     session(token: ID!): Session
 }
 
@@ -2332,354 +2337,302 @@ type SpaceFeatures {
 	updatedAt: Time!
 	roles: [Space!]!
 }
-
-# ---------------------
-# Membership -> Create
-# ---------------------
-extend type Mutation {
-	spaceMembershipCreate(input: SpaceMembershipCreateInput!): SpaceMembershipCreateOutcome!
-}
-
-input SpaceMembershipCreateInput {
-	spaceId: ID!
-	userId: ID!
-	isActive: Boolean!
-	managerMemberIds: [ID!]!
+`, BuiltIn: false},
+	{Name: "pkg/space/api/membership.mut.create.graphql", Input: `input SpaceMembershipCreateInput {
+    spaceId: ID!
+    userId: ID!
+    isActive: Boolean!
+    managerMemberIds: [ID!]!
 }
 
 type SpaceMembershipCreateOutcome {
-	errors: [Error!]
-	membership: Membership
+    errors: [Error!]
+    membership: Membership
 }
-
-# ---------------------
-# Membership -> Update
-# ---------------------
-extend type Mutation {
-	spaceMembershipUpdate(input: SpaceMembershipUpdateInput!): SpaceMembershipCreateOutcome!
+`, BuiltIn: false},
+	{Name: "pkg/space/api/membership.mut.update.graphql", Input: `input SpaceMembershipUpdateInput {
+    id: ID!
+    version: ID!
+    Language: Language
+    isActive: Boolean!
 }
-
-input SpaceMembershipUpdateInput {
-	id: ID!
-	version: ID!
-	Language: Language
-	isActive: Boolean!
-}
-
-# ---------------------
-# Query Memberships
-# ---------------------
-extend type Query {
-	membership(id: ID!, version: ID): Membership
-	memberships(first: Int!, after: String, filters: MembershipsFilter!): MembershipConnection!
-}
-
-input MembershipsFilter {
-	space: MembershipsFilterSpace
-	userId: ID!
-	isActive: Boolean!
-	managerId: ID
+`, BuiltIn: false},
+	{Name: "pkg/space/api/membership.query.get.graphql", Input: `input MembershipsFilter {
+    space: MembershipsFilterSpace
+    userId: ID!
+    isActive: Boolean!
+    managerId: ID
 }
 
 input MembershipsFilterSpace {
-	title: String
-	domainName: String
+    title: String
+    domainName: String
 }
 
 type MembershipConnection {
-	edges: [MembershipEdge!]!
-	nodes: [Membership!]!
-	pageInfo: MembershipInfo!
+    edges: [MembershipEdge!]!
+    nodes: [Membership!]!
+    pageInfo: MembershipInfo!
 }
 
 type MembershipEdge {
-	cursor: String!
-	node: Membership!
+    cursor: String!
+    node: Membership!
 }
 
 type MembershipInfo {
-	endCursor: String
-	hasNextPage: Boolean!
-	startCursor: String
+    endCursor: String
+    hasNextPage: Boolean!
+    startCursor: String
 }
 `, BuiltIn: false},
-	{Name: "pkg/space/api/mutation.graphql", Input: `# ---------------------
-# Create space
-# ---------------------
-extend type Mutation {
-	spaceCreate(input: SpaceCreateInput!): SpaceCreateOutcome!
+	{Name: "pkg/space/api/mutation.graphql", Input: `extend type Mutation {
+    spaceCreate(input: SpaceCreateInput!): SpaceCreateOutcome!
+    spaceUpdate(input: SpaceUpdateInput!): SpaceCreateOutcome!
+    spaceMembershipCreate(input: SpaceMembershipCreateInput!): SpaceMembershipCreateOutcome!
+    spaceMembershipUpdate(input: SpaceMembershipUpdateInput!): SpaceMembershipCreateOutcome!
 }
-
-input SpaceCreateInput {
-	object: SpaceCreateInputObject!
+`, BuiltIn: false},
+	{Name: "pkg/space/api/query.graphql", Input: `extend type Query {
+	space(filters: SpaceFilters!): Space
+	membership(id: ID!, version: ID): Membership
+	memberships(first: Int!, after: String, filters: MembershipsFilter!): MembershipConnection!
+}
+`, BuiltIn: false},
+	{Name: "pkg/space/api/space.mut.create.graphql", Input: `input SpaceCreateInput {
+    object: SpaceCreateInputObject!
 }
 
 input SpaceCreateInputObject {
-	kind: SpaceKind!
-	title: String
-	language: Language!
-	isActive: Boolean!
-	domainNames: DomainNamesInput
-	features: SpaceFeaturesInput!
+    kind: SpaceKind!
+    title: String
+    language: Language!
+    isActive: Boolean!
+    domainNames: DomainNamesInput
+    features: SpaceFeaturesInput!
 }
 
 input SpaceFeaturesInput {
-	register: Boolean!
+    register: Boolean!
 }
 
 input DomainNamesInput {
-	primary: DomainNameInput!
-	secondary: [DomainNameInput]
+    primary: DomainNameInput!
+    secondary: [DomainNameInput]
 }
 
 input DomainNameInput {
-	verified: Boolean
-	value: String
-	isActive: Boolean
+    verified: Boolean
+    value: String
+    isActive: Boolean
 }
 
 type SpaceCreateOutcome {
-	errors: [Error!]
-	space: Space
+    errors: [Error!]
+    space: Space
 }
-
-# ---------------------
-# Update space
-# ---------------------
-extend type Mutation {
-	spaceUpdate(input: SpaceUpdateInput!): SpaceCreateOutcome!
-}
-
-input SpaceUpdateInput {
-	spaceId: ID!
-	spaceVersion: ID!
-	object: SpaceUpdateInputObject
+`, BuiltIn: false},
+	{Name: "pkg/space/api/space.mut.update.graphql", Input: `input SpaceUpdateInput {
+    spaceId: ID!
+    spaceVersion: ID!
+    object: SpaceUpdateInputObject
 }
 
 input SpaceUpdateInputObject {
-	features: SpaceUpdateInputFeatures
+    features: SpaceUpdateInputFeatures
 }
 
 input SpaceUpdateInputFeatures {
-	register: Boolean
+    register: Boolean
 }
 `, BuiltIn: false},
-	{Name: "pkg/space/api/query.graphql", Input: `# ---------------------
-# Load Space by ID
-# ---------------------
-extend type Query {
-	space(filters: SpaceFilters!): Space
-}
-
-input SpaceFilters {
-	id: ID
-	domain: Uri
+	{Name: "pkg/space/api/space.query.graphql", Input: `input SpaceFilters {
+    id: ID
+    domain: Uri
 }
 `, BuiltIn: false},
 	{Name: "pkg/user/api/entity.graphql", Input: `type User {
-	id: ID!
-	version: ID!
-	name: UserName!
-	emails: UserEmails
-	avatarUri: Uri
-	isActive: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
-	language: Language!
+    id:        ID!
+    version:   ID!
+    name:      UserName!
+    emails:    UserEmails
+    avatarUri: Uri
+    isActive:  Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+    language:  Language!
 }
 
 type UserName {
-	firstName: String
-	lastName: String
-	preferredName: String
+    firstName:     String
+    lastName:      String
+    preferredName: String
 }
 
 type UserEmails {
-	primary: UserEmail
-	secondary: [UserEmail]
+    primary:   UserEmail
+    secondary: [UserEmail]
 }
 
 type UserEmail {
-	id: ID!
-	verified: Boolean!
-	value: EmailAddress!
-	createdAt: Time!
-	updatedAt: Time!
-	isActive: Boolean!
+    id:        ID!
+    verified:  Boolean!
+    value:     EmailAddress!
+    createdAt: Time!
+    updatedAt: Time!
+    isActive:  Boolean!
 }
 `, BuiltIn: false},
-	{Name: "pkg/user/api/mutation.graphql", Input: `# ---------------------
-# User -> Create
-# ---------------------
-extend type Mutation {
-	userCreate(input: UserCreateInput): UserMutationOutcome
-}
-
-input UserCreateInput {
-	name: UserNameInput!
-	emails: UserEmailsInput
-	password: UserPasswordInput!
-	avatarUri: Uri
-	isActive: Boolean!
+	{Name: "pkg/user/api/mut-create.graphql", Input: `input UserCreateInput {
+    name: UserNameInput!
+    emails: UserEmailsInput
+    password: UserPasswordInput!
+    avatarUri: Uri
+    isActive: Boolean!
 }
 
 input UserNameInput {
-	firstName: String
-	lastName: String
-	preferredName: String
+    firstName: String
+    lastName: String
+    preferredName: String
 }
 
 input UserEmailsInput {
-	primary: UserEmailInput!
-	secondary: [UserEmailInput]
+    primary: UserEmailInput!
+    secondary: [UserEmailInput]
 }
 
 input UserEmailInput {
-	verified: Boolean!
-	value: EmailAddress!
-	isActive: Boolean!
+    verified: Boolean!
+    value: EmailAddress!
+    isActive: Boolean!
 }
 
 input UserPasswordInput {
-	hashedValue: String!
+    hashedValue: String!
 }
 
 type UserMutationOutcome {
-	user: User
-	errors: [Error!]
+    user: User
+    errors: [Error!]
 }
-
-
-# ---------------------
-# User -> Update
-# ---------------------
-extend type Mutation {
-	userUpdate(input: UserUpdateInput!): UserMutationOutcome
-}
-
-input UserUpdateInput {
-	id: ID!
-	version: ID!
-	values: UserUpdateValuesInput
+`, BuiltIn: false},
+	{Name: "pkg/user/api/mut-update.graphql", Input: `input UserUpdateInput {
+    id: ID!
+    version: ID!
+    values: UserUpdateValuesInput
 }
 
 input UserUpdateValuesInput {
-	password: UserPasswordInput!
+    password: UserPasswordInput!
 }
 `, BuiltIn: false},
 	{Name: "pkg/user/api/query.graphql", Input: `extend type Query {
 	user(id: ID!): User
 }
 `, BuiltIn: false},
+	{Name: "pkg/user/api/schema.graphql", Input: `extend type Mutation {
+    userCreate(input: UserCreateInput): UserMutationOutcome!
+    userUpdate(input: UserUpdateInput!): UserMutationOutcome!
+}
+`, BuiltIn: false},
 	{Name: "pkg/integration/s3/api/entity.graphql", Input: `type Application {
-	id: ID!
-	version: ID!
-	isActive: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
-	deletedAt: Time!
-	polices: [Policy!]
-	credentials: Credentials!
+    id: ID!
+    version: ID!
+    isActive: Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+    deletedAt: Time!
+    polices: [Policy!]
+    credentials: Credentials!
 }
 
-enum PolicyKind  {FileExtensions, RateLimit}
+enum PolicyKind  {
+    FileExtensions,
+    RateLimit
+}
 
 type Policy {
-	id: ID!
-	createdAt: Time!
-	updatedAt: Time!
-	kind: PolicyKind!
-	value: String!
+    id: ID!
+    createdAt: Time!
+    updatedAt: Time!
+    kind: PolicyKind!
+    value: String!
 }
 
 type Credentials {
-	id: ID!
-	endpoint: Uri!
-	bucket: String!
-	isSecure: Boolean!
-	accesskey: String! @comment(value: "no secret key")
+    id: ID!
+    endpoint: Uri!
+    bucket: String!
+    isSecure: Boolean!
+    accesskey: String! @comment(value: "no secret key")
 }
 `, BuiltIn: false},
-	{Name: "pkg/integration/s3/api/mutation.graphql", Input: `# ---------------------
-# Application: Create
-# ---------------------
-extend type Mutation  {
-	S3ApplicationCreate(input: S3ApplicationCreateInput): S3ApplicationMutationOutcome!
-}
-
-input S3ApplicationCreateInput {
-	isActive: Boolean!
-	credentials: S3ApplicationCredentialsCreateInput!
-	policies: [S3ApplicationPolicyCreateInput!]!
+	{Name: "pkg/integration/s3/api/mut-create.graphql", Input: `input S3ApplicationCreateInput {
+    isActive: Boolean!
+    credentials: S3ApplicationCredentialsCreateInput!
+    policies: [S3ApplicationPolicyCreateInput!]!
 }
 
 input S3ApplicationCredentialsCreateInput {
-	endpoint: Uri!
-	bucket: String!
-	isSecure: Boolean!
-	accessKey: String!
-	secretKey: String!
+    endpoint: Uri!
+    bucket: String!
+    isSecure: Boolean!
+    accessKey: String!
+    secretKey: String!
 }
 
 input S3ApplicationPolicyCreateInput {
-	kind: PolicyKind!
-	value: String!
+    kind: PolicyKind!
+    value: String!
 }
 
 type S3ApplicationMutationOutcome {
-	app: Application
-	errors: [Error!]
+    app: Application
+    errors: [Error!]
 }
-
-# ---------------------
-# Application: Update
-# ---------------------
-extend type Mutation  {
-	S3ApplicationUpdate(input: S3ApplicationUpdateInput): S3ApplicationMutationOutcome!
-}
-
-input S3ApplicationUpdateInput {
-	id: ID!
-	version: ID!
-	isActive: Boolean
-	credentials: S3ApplicationCredentialsUpdateInput
-	policies: S3ApplicationPolicyMutationInput
+`, BuiltIn: false},
+	{Name: "pkg/integration/s3/api/mut-update.graphql", Input: `input S3ApplicationUpdateInput {
+    id: ID!
+    version: ID!
+    isActive: Boolean
+    credentials: S3ApplicationCredentialsUpdateInput
+    policies: S3ApplicationPolicyMutationInput
 }
 
 input S3ApplicationCredentialsUpdateInput {
-	endpoint: Uri
-	bucket: String
-	isSecure: Boolean
-	accessKey: String
-	secretKey: String
+    endpoint: Uri
+    bucket: String
+    isSecure: Boolean
+    accessKey: String
+    secretKey: String
 }
 
 input S3ApplicationPolicyMutationInput {
-	create: [S3ApplicationPolicyCreateInput!]
-	update: [S3ApplicationPolicyUpdateInput!]
-	delete: [S3ApplicationPolicyDeleteInput!]
+    create: [S3ApplicationPolicyCreateInput!]
+    update: [S3ApplicationPolicyUpdateInput!]
+    delete: [S3ApplicationPolicyDeleteInput!]
 }
 
 input S3ApplicationPolicyUpdateInput {
-	id: ID!
-	value: String!
+    id: ID!
+    value: String!
 }
 
 input S3ApplicationPolicyDeleteInput {
-	id: ID!
+    id: ID!
 }
 `, BuiltIn: false},
-	{Name: "pkg/integration/s3/api/upload.graphql", Input: `# ---------------------
-# Upload token
-# ---------------------
-extend type Mutation  {
-    S3UploadToken(input: S3UploadTokenInput!): Map! @requireAuth
-}
-
-input S3UploadTokenInput {
+	{Name: "pkg/integration/s3/api/mut-upload.graphql", Input: `input S3UploadTokenInput {
     applicationId: ID!
     filePath:      Uri! @constraint(minLength: 7, maxLength: 128)
     contentType:   ContentType!
+}
+`, BuiltIn: false},
+	{Name: "pkg/integration/s3/api/mut.graphql", Input: `extend type Mutation  {
+    S3ApplicationCreate(input: S3ApplicationCreateInput): S3ApplicationMutationOutcome!
+    S3ApplicationUpdate(input: S3ApplicationUpdateInput): S3ApplicationMutationOutcome!
+    S3UploadToken(input: S3UploadTokenInput!): Map! @requireAuth
 }
 `, BuiltIn: false},
 	{Name: "pkg/integration/mailer/api/account/entity.graphql", Input: `type MailerAccount {
@@ -5529,8 +5482,8 @@ func (ec *executionContext) _MailerAccountMutation_create(ctx context.Context, f
 		Object:     "MailerAccountMutation",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5543,7 +5496,7 @@ func (ec *executionContext) _MailerAccountMutation_create(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Create, nil
+		return ec.resolvers.MailerAccountMutation().Create(rctx, obj, args["input"].(dto.MailerAccountCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5571,8 +5524,8 @@ func (ec *executionContext) _MailerAccountMutation_update(ctx context.Context, f
 		Object:     "MailerAccountMutation",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5585,7 +5538,7 @@ func (ec *executionContext) _MailerAccountMutation_update(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Update, nil
+		return ec.resolvers.MailerAccountMutation().Update(rctx, obj, args["input"].(dto.MailerAccountUpdateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5613,8 +5566,8 @@ func (ec *executionContext) _MailerAccountMutation_verify(ctx context.Context, f
 		Object:     "MailerAccountMutation",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5627,7 +5580,7 @@ func (ec *executionContext) _MailerAccountMutation_verify(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Verify, nil
+		return ec.resolvers.MailerAccountMutation().Verify(rctx, obj, args["id"].(string), args["version"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6261,8 +6214,8 @@ func (ec *executionContext) _MailerQueryAccount_get(ctx context.Context, field g
 		Object:     "MailerQueryAccount",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6275,7 +6228,7 @@ func (ec *executionContext) _MailerQueryAccount_get(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Get, nil
+		return ec.resolvers.MailerQueryAccount().Get(rctx, obj, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6300,8 +6253,8 @@ func (ec *executionContext) _MailerQueryAccount_getMultiple(ctx context.Context,
 		Object:     "MailerQueryAccount",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6315,7 +6268,7 @@ func (ec *executionContext) _MailerQueryAccount_getMultiple(ctx context.Context,
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return obj.GetMultiple, nil
+			return ec.resolvers.MailerQueryAccount().GetMultiple(rctx, obj, args["first"].(int), args["after"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.RequireAuth == nil {
@@ -7042,14 +6995,14 @@ func (ec *executionContext) _MailerTemplateMutation_create(ctx context.Context, 
 		Object:     "MailerTemplateMutation",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Create, nil
+		return ec.resolvers.MailerTemplateMutation().Create(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7074,14 +7027,14 @@ func (ec *executionContext) _MailerTemplateMutation_update(ctx context.Context, 
 		Object:     "MailerTemplateMutation",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Update, nil
+		return ec.resolvers.MailerTemplateMutation().Update(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7106,14 +7059,14 @@ func (ec *executionContext) _MailerTemplateMutation_delete(ctx context.Context, 
 		Object:     "MailerTemplateMutation",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Delete, nil
+		return ec.resolvers.MailerTemplateMutation().Delete(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7778,90 +7731,6 @@ func (ec *executionContext) _Mutation_sessionArchive(ctx context.Context, field 
 	return ec.marshalNSessionArchiveOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionArchiveOutcome(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_spaceMembershipCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_spaceMembershipCreate_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SpaceMembershipCreate(rctx, args["input"].(dto3.SpaceMembershipCreateInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*dto3.SpaceMembershipCreateOutcome)
-	fc.Result = res
-	return ec.marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_spaceMembershipUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_spaceMembershipUpdate_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SpaceMembershipUpdate(rctx, args["input"].(dto3.SpaceMembershipUpdateInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*dto3.SpaceMembershipCreateOutcome)
-	fc.Result = res
-	return ec.marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Mutation_spaceCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7946,6 +7815,90 @@ func (ec *executionContext) _Mutation_spaceUpdate(ctx context.Context, field gra
 	return ec.marshalNSpaceCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateOutcome(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_spaceMembershipCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_spaceMembershipCreate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SpaceMembershipCreate(rctx, args["input"].(dto3.SpaceMembershipCreateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto3.SpaceMembershipCreateOutcome)
+	fc.Result = res
+	return ec.marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_spaceMembershipUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_spaceMembershipUpdate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SpaceMembershipUpdate(rctx, args["input"].(dto3.SpaceMembershipUpdateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto3.SpaceMembershipCreateOutcome)
+	fc.Result = res
+	return ec.marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7978,11 +7931,14 @@ func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*dto4.UserMutationOutcome)
 	fc.Result = res
-	return ec.marshalOUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
+	return ec.marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_userUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8017,11 +7973,14 @@ func (ec *executionContext) _Mutation_userUpdate(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*dto4.UserMutationOutcome)
 	fc.Result = res
-	return ec.marshalOUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
+	return ec.marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_S3ApplicationCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8419,6 +8378,45 @@ func (ec *executionContext) _Query_session(ctx context.Context, field graphql.Co
 	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_space(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_space_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Space(rctx, args["filters"].(dto3.SpaceFilters))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model1.Space)
+	fc.Result = res
+	return ec.marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_membership(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -8498,45 +8496,6 @@ func (ec *executionContext) _Query_memberships(ctx context.Context, field graphq
 	res := resTmp.(*model1.MembershipConnection)
 	fc.Result = res
 	return ec.marshalNMembershipConnection2ᚖbeanᚋpkgᚋspaceᚋmodelᚐMembershipConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_space(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_space_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Space(rctx, args["filters"].(dto3.SpaceFilters))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model1.Space)
-	fc.Result = res
-	return ec.marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -13997,20 +13956,47 @@ func (ec *executionContext) _MailerAccountMutation(ctx context.Context, sel ast.
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MailerAccountMutation")
 		case "create":
-			out.Values[i] = ec._MailerAccountMutation_create(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerAccountMutation_create(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "update":
-			out.Values[i] = ec._MailerAccountMutation_update(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerAccountMutation_update(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "verify":
-			out.Values[i] = ec._MailerAccountMutation_verify(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerAccountMutation_verify(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14210,12 +14196,30 @@ func (ec *executionContext) _MailerQueryAccount(ctx context.Context, sel ast.Sel
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MailerQueryAccount")
 		case "get":
-			out.Values[i] = ec._MailerQueryAccount_get(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerQueryAccount_get(ctx, field, obj)
+				return res
+			})
 		case "getMultiple":
-			out.Values[i] = ec._MailerQueryAccount_getMultiple(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerQueryAccount_getMultiple(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14413,11 +14417,38 @@ func (ec *executionContext) _MailerTemplateMutation(ctx context.Context, sel ast
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MailerTemplateMutation")
 		case "create":
-			out.Values[i] = ec._MailerTemplateMutation_create(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerTemplateMutation_create(ctx, field, obj)
+				return res
+			})
 		case "update":
-			out.Values[i] = ec._MailerTemplateMutation_update(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerTemplateMutation_update(ctx, field, obj)
+				return res
+			})
 		case "delete":
-			out.Values[i] = ec._MailerTemplateMutation_delete(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerTemplateMutation_delete(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14652,16 +14683,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "spaceMembershipCreate":
-			out.Values[i] = ec._Mutation_spaceMembershipCreate(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "spaceMembershipUpdate":
-			out.Values[i] = ec._Mutation_spaceMembershipUpdate(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "spaceCreate":
 			out.Values[i] = ec._Mutation_spaceCreate(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -14672,10 +14693,26 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "spaceMembershipCreate":
+			out.Values[i] = ec._Mutation_spaceMembershipCreate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "spaceMembershipUpdate":
+			out.Values[i] = ec._Mutation_spaceMembershipUpdate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "userCreate":
 			out.Values[i] = ec._Mutation_userCreate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "userUpdate":
 			out.Values[i] = ec._Mutation_userUpdate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "S3ApplicationCreate":
 			out.Values[i] = ec._Mutation_S3ApplicationCreate(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -14780,6 +14817,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_session(ctx, field)
 				return res
 			})
+		case "space":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_space(ctx, field)
+				return res
+			})
 		case "membership":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -14803,17 +14851,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
-				return res
-			})
-		case "space":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_space(ctx, field)
 				return res
 			})
 		case "user":
@@ -16113,6 +16150,10 @@ func (ec *executionContext) marshalNMailerAccountMutation2ᚖbeanᚋpkgᚋintegr
 	return ec._MailerAccountMutation(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMailerAccountMutationOutcome2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto.MailerAccountMutationOutcome) graphql.Marshaler {
+	return ec._MailerAccountMutationOutcome(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNMailerAccountMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.MailerAccountMutationOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -16674,6 +16715,20 @@ func (ec *executionContext) marshalNUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx
 func (ec *executionContext) unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto4.UserEmailInput, error) {
 	res, err := ec.unmarshalInputUserEmailInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUserMutationOutcome2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto4.UserMutationOutcome) graphql.Marshaler {
+	return ec._UserMutationOutcome(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto4.UserMutationOutcome) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._UserMutationOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUserName2beanᚋpkgᚋuserᚋmodelᚐUserName(ctx context.Context, sel ast.SelectionSet, v model2.UserName) graphql.Marshaler {
@@ -17917,13 +17972,6 @@ func (ec *executionContext) unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋmod
 	}
 	res, err := ec.unmarshalInputUserEmailsInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto4.UserMutationOutcome) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._UserMutationOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOUserUpdateValuesInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateValuesInput(ctx context.Context, v interface{}) (*dto4.UserUpdateValuesInput, error) {

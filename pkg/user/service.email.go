@@ -12,7 +12,7 @@ import (
 )
 
 type EmailService struct {
-	bean *UserBundle
+	bundle *UserBundle
 }
 
 func (this EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserEmailsInput) error {
@@ -21,7 +21,7 @@ func (this EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserE
 	}
 
 	if nil != in.Primary {
-		err := this.bean.EmailService.Create(tx, user, *in.Primary, true)
+		err := this.bundle.EmailService.Create(tx, user, *in.Primary, true)
 		if nil != err {
 			return err
 		}
@@ -29,7 +29,7 @@ func (this EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserE
 
 	if nil != in.Secondary {
 		for _, secondaryInput := range in.Secondary {
-			err := this.bean.EmailService.Create(tx, user, *secondaryInput, false)
+			err := this.bundle.EmailService.Create(tx, user, *secondaryInput, false)
 			if nil != err {
 				return err
 			}
@@ -46,7 +46,7 @@ func (this EmailService) Create(tx *gorm.DB, user *model.User, in dto.UserEmailI
 	}
 
 	email := model.UserEmail{
-		ID:        this.bean.id.MustULID(),
+		ID:        this.bundle.id.MustULID(),
 		UserId:    user.ID,
 		Value:     in.Value.LowerCaseValue(),
 		IsActive:  in.Verified,
@@ -66,7 +66,7 @@ func (this EmailService) List(ctx context.Context, user *model.User) (*model.Use
 	emails := &model.UserEmails{}
 
 	var rows []*model.UserEmail
-	err := this.bean.db.
+	err := this.bundle.db.
 		WithContext(ctx).
 		Raw(`
 			     SELECT *, 1 AS is_verified FROM user_emails            WHERE user_id = ?

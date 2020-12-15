@@ -1,24 +1,24 @@
 type ConfigBucket {
-	id: ID!
-	version: ID!
-	slug: ID!
-	title: String!
-	description: String
-	hostId: ID!
-	access: AccessMode!
-	isPublished: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
+    id: ID!
+    version: ID!
+    slug: ID!
+    title: String!
+    description: String
+    hostId: ID!
+    access: AccessMode!
+    isPublished: Boolean!
+    createdAt: Time!
+    updatedAt: Time!
 }
 
 type ConfigVariable {
-	id: ID!
-	version: ID!
-	bucketId: ID!
-	name: String!
-	description: String
-	value: String!
-	createdAt: Time!
-	updatedAt: Time!
-	isLocked: Boolean!
+    id: ID!
+    version: ID!
+    bucketId: ID!
+    name: String!
+    description: String
+    value: String!
+    createdAt: Time!
+    updatedAt: Time!
+    isLocked: Boolean!
 }

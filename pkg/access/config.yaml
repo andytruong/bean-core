@@ -1,0 +1,10 @@
+# TODO: Explain
+timeout: "128h"
+
+# Algorithm is `RS512` because we don't need providing private-key for services to verify the claims.
+# To avoid configuration issues, path to keys should be absolute.
+jwt:
+    algorithm:  "RS512"
+    publicKey:  "${JWT_PUBLIC_KEY:resources/keys/id_rsa.pub}"
+    privateKey: "${JWT_PRIVATE_KEY:resources/keys/id_rsa}"
+    timeout:    "${JWT_TIMEOUT:5m}"

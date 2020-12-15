@@ -1,0 +1,11 @@
+input SpaceMembershipCreateInput {
+    spaceId: ID!
+    userId: ID!
+    isActive: Boolean!
+    managerMemberIds: [ID!]!
+}
+
+type SpaceMembershipCreateOutcome {
+    errors: [Error!]
+    membership: Membership
+}

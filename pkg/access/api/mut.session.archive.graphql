@@ -1,0 +1,4 @@
+type SessionArchiveOutcome {
+    errors: [Error!]
+    result: Boolean!
+}

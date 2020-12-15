@@ -18,17 +18,17 @@ func main() {
 		panic(err)
 	}
 
-	can, err := infra.NewCan(path)
+	container, err := infra.NewContainer(path)
 	if nil != err {
-		panic("failed creating can: " + err.Error())
+		panic("failed creating container: " + err.Error())
 	}
 
 	app := cli.App{
 		Name: "bean",
 		Commands: []*cli.Command{
-			cmd.HttpServerCommand(can),
-			cmd.MigrationCommand(can),
-			cmd.KeyGenCommand(can),
+			cmd.HttpServerCommand(container),
+			cmd.MigrationCommand(container),
+			cmd.KeyGenCommand(container),
 		},
 	}
 

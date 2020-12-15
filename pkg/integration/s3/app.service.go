@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/minio/minio-go/v7"
 	"gorm.io/gorm"
 
+	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
@@ -14,8 +16,7 @@ import (
 )
 
 type ApplicationService struct {
-	bundle   *S3IntegrationBundle
-	Resolver *ApplicationResolver
+	bundle *S3IntegrationBundle
 }
 
 func (this *ApplicationService) Load(ctx context.Context, id string) (*model.Application, error) {
@@ -134,4 +135,54 @@ func (this *ApplicationService) Delete(ctx context.Context, in dto.S3Application
 		Version:  in.Version,
 		IsActive: scalar.NilBool(true),
 	})
+}
+
+func (this *ApplicationService) S3UploadToken(ctx context.Context, in dto.S3UploadTokenInput) (map[string]interface{}, error) {
+	// get claims from context
+	claims, ok := ctx.Value(claim.ContextKey).(*claim.Payload)
+	if !ok {
+		return nil, util.ErrorAuthRequired
+	}
+
+	// load application
+	app, err := this.bundle.AppService.Load(ctx, in.ApplicationId)
+	if nil != err {
+		return nil, err
+	} else {
+		cred, err := this.bundle.credentialService.loadByApplicationId(ctx, in.ApplicationId)
+		if nil != err {
+			return nil, err
+		} else if client, err := this.bundle.credentialService.client(cred); nil != err {
+			return nil, err
+		} else {
+			policy := minio.NewPostPolicy()
+
+			err := scalar.NoError(
+				policy.SetBucket(cred.Bucket),
+				policy.SetKey(string(in.FilePath)),
+				policy.SetExpires(time.Now().UTC().Add(4*time.Hour)),
+				policy.SetContentType(string(in.ContentType)),
+				policy.SetUserMetadata("app", app.ID),
+				policy.SetUserMetadata("sid", claims.SessionId()),
+				policy.SetUserMetadata("nid", claims.SpaceId()),
+				policy.SetContentLengthRange(1, 10*1024*1024), // TODO: generate per application's policy
+			)
+
+			if nil != err {
+				return nil, err
+			} else if _, formData, err := client.PresignedPostPolicy(ctx, policy); nil != err {
+				return nil, err
+			} else {
+				response := map[string]interface{}{}
+
+				for k, v := range formData {
+					response[k] = v
+				}
+
+				return response, nil
+			}
+		}
+	}
+
+	return nil, nil
 }

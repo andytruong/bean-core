@@ -1,0 +1,30 @@
+input S3ApplicationUpdateInput {
+    id: ID!
+    version: ID!
+    isActive: Boolean
+    credentials: S3ApplicationCredentialsUpdateInput
+    policies: S3ApplicationPolicyMutationInput
+}
+
+input S3ApplicationCredentialsUpdateInput {
+    endpoint: Uri
+    bucket: String
+    isSecure: Boolean
+    accessKey: String
+    secretKey: String
+}
+
+input S3ApplicationPolicyMutationInput {
+    create: [S3ApplicationPolicyCreateInput!]
+    update: [S3ApplicationPolicyUpdateInput!]
+    delete: [S3ApplicationPolicyDeleteInput!]
+}
+
+input S3ApplicationPolicyUpdateInput {
+    id: ID!
+    value: String!
+}
+
+input S3ApplicationPolicyDeleteInput {
+    id: ID!
+}

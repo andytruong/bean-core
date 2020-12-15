@@ -1,11 +1,5 @@
-# ---------------------
-# Load Space by ID
-# ---------------------
 extend type Query {
 	space(filters: SpaceFilters!): Space
-}
-
-input SpaceFilters {
-	id: ID
-	domain: Uri
+	membership(id: ID!, version: ID): Membership
+	memberships(first: Int!, after: String, filters: MembershipsFilter!): MembershipConnection!
 }

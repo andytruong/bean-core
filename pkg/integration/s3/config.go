@@ -1,5 +1,5 @@
 package s3
 
-type Configuration struct {
+type S3Configuration struct {
 	Key string `yaml:"key"`
 }

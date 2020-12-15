@@ -1,0 +1,13 @@
+input SpaceUpdateInput {
+    spaceId: ID!
+    spaceVersion: ID!
+    object: SpaceUpdateInputObject
+}
+
+input SpaceUpdateInputObject {
+    features: SpaceUpdateInputFeatures
+}
+
+input SpaceUpdateInputFeatures {
+    register: Boolean
+}
