@@ -10,7 +10,7 @@ import (
 )
 
 type PasswordService struct {
-	bean *UserBundle
+	bundle *UserBundle
 }
 
 func (this *PasswordService) create(tx *gorm.DB, user *model.User, in *dto.UserPasswordInput) error {
@@ -19,7 +19,7 @@ func (this *PasswordService) create(tx *gorm.DB, user *model.User, in *dto.UserP
 	}
 
 	pass := &model.UserPassword{
-		ID:          this.bean.id.MustULID(),
+		ID:          this.bundle.id.MustULID(),
 		UserId:      user.ID,
 		HashedValue: in.HashedValue,
 		CreatedAt:   time.Now(),

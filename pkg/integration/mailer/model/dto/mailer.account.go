@@ -2,7 +2,7 @@ package dto
 
 import (
 	"time"
-	
+
 	"bean/components/scalar"
 	"bean/pkg/space/model"
 	"bean/pkg/util"

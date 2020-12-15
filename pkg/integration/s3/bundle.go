@@ -3,10 +3,10 @@ package s3
 import (
 	"path"
 	"runtime"
-	
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	
+
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
@@ -24,23 +24,23 @@ func NewS3Integration(
 		logger: logger,
 		config: conf,
 	}
-	
+
 	this.AppService = &ApplicationService{bundle: this}
 	this.credentialService = &credentialService{bundle: this}
 	this.policyService = &policyService{bundle: this}
 	this.resolvers = newResolvers(this)
-	
+
 	return this
 }
 
 type S3IntegrationBundle struct {
 	module.AbstractBundle
-	
+
 	db     *gorm.DB
 	id     *unique.Identifier
 	logger *zap.Logger
 	config *S3Configuration
-	
+
 	AppService        *ApplicationService
 	credentialService *credentialService
 	policyService     *policyService
@@ -52,7 +52,7 @@ func (this S3IntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
 	if !ok {
 		return nil
 	}
-	
+
 	runner := migrate.Runner{
 		Tx:     tx,
 		Logger: this.logger,
@@ -60,7 +60,7 @@ func (this S3IntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
 		Bean:   "integration.s3",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
-	
+
 	return runner.Run()
 }
 

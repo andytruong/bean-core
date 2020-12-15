@@ -2,7 +2,7 @@ package dto
 
 import (
 	"time"
-	
+
 	"bean/pkg/space/model"
 	mUser "bean/pkg/user/model"
 	"bean/pkg/util/api"

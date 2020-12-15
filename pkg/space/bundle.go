@@ -4,10 +4,10 @@ import (
 	"context"
 	"path"
 	"runtime"
-	
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	
+
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
@@ -29,36 +29,31 @@ func NewSpaceBundle(
 		userBundle: userBundle,
 		config:     config,
 	}
-	
+
+	this.resolvers = this.newResolvers()
 	this.Service = &SpaceService{bundle: this}
 	this.ConfigService = &ConfigService{bundle: this}
-	this.DomainNameService = &DomainNameService{bean: this}
-	this.MemberService = &MemberService{
-		bundle:   this,
-		Resolver: newMembershipResolver(this, userBundle),
-	}
-	
+	this.DomainNameService = &DomainNameService{bundle: this}
+	this.MemberService = &MemberService{bundle: this}
+
 	return this
 }
 
 type SpaceBundle struct {
 	module.AbstractBundle
-	
+
 	config       *SpaceConfiguration
 	logger       *zap.Logger
 	db           *gorm.DB
 	id           *unique.Identifier
 	userBundle   *user.UserBundle
 	configBundle *config.ConfigBundle
-	
+	resolvers    map[string]interface{}
+
 	Service           *SpaceService
 	ConfigService     *ConfigService
 	MemberService     *MemberService
 	DomainNameService *DomainNameService
-}
-
-func (this *SpaceBundle) MembershipResolver() MembershipResolver {
-	return this.MemberService.Resolver
 }
 
 func (this *SpaceBundle) Dependencies() []module.Bundle {
@@ -70,7 +65,7 @@ func (this SpaceBundle) Migrate(tx *gorm.DB, driver string) error {
 	if !ok {
 		return nil
 	}
-	
+
 	runner := migrate.Runner{
 		Tx:     tx,
 		Logger: this.logger,
@@ -78,8 +73,12 @@ func (this SpaceBundle) Migrate(tx *gorm.DB, driver string) error {
 		Bean:   "space",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
-	
+
 	return runner.Run()
+}
+
+func (this *SpaceBundle) GraphqlResolver() map[string]interface{} {
+	return this.resolvers
 }
 
 func (this SpaceBundle) Space(ctx context.Context, filters dto.SpaceFilters) (*model.Space, error) {

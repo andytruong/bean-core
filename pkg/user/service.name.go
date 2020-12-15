@@ -8,7 +8,7 @@ import (
 )
 
 type NameService struct {
-	bean *UserBundle
+	bundle *UserBundle
 }
 
 func (this *NameService) load(db *gorm.DB, userId string) (*model.UserName, error) {
@@ -24,7 +24,7 @@ func (this *NameService) load(db *gorm.DB, userId string) (*model.UserName, erro
 func (this *NameService) create(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
 	if nil != input.Name {
 		name := model.UserName{
-			ID:            this.bean.id.MustULID(),
+			ID:            this.bundle.id.MustULID(),
 			UserId:        user.ID,
 			FirstName:     input.Name.FirstName,
 			LastName:      input.Name.LastName,

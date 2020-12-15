@@ -2,9 +2,10 @@ package user
 
 import (
 	"context"
-	
+
 	"gorm.io/gorm"
-	
+
+	model2 "bean/pkg/space/model"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
 	"bean/pkg/util/connect"
@@ -15,33 +16,37 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 		"Query": map[string]interface{}{
 			"User": func(ctx context.Context, id string) (*model.User, error) {
 				db := bundle.db.WithContext(ctx)
-				
-				return bundle.UserService.Load(db, id)
+
+				return bundle.Service.Load(db, id)
+			},
+			// context.Background(), membership.ID, &membership.Version
+			"Membership": func(ctx context.Context, id string, version *string) (*model2.Membership, error) {
+				panic("WUO")
 			},
 		},
 		"Mutation": map[string]interface{}{
 			"UserCreate": func(ctx context.Context, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
 				var err error
 				var out *dto.UserMutationOutcome
-				
+
 				err = connect.Transaction(ctx, bundle.db, func(tx *gorm.DB) error {
-					out, err = bundle.UserService.Create(tx, in)
-					
+					out, err = bundle.Service.Create(tx, in)
+
 					return err
 				})
-				
+
 				return out, err
 			},
 			"UserUpdate": func(ctx context.Context, input dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
 				var err error
 				var out *dto.UserMutationOutcome
-				
+
 				err = connect.Transaction(ctx, bundle.db, func(tx *gorm.DB) error {
-					out, err = bundle.UserService.Update(tx, input)
-					
+					out, err = bundle.Service.Update(tx, input)
+
 					return err
 				})
-				
+
 				return out, err
 			},
 		},

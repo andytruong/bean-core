@@ -3,10 +3,10 @@ package config
 import (
 	"path"
 	"runtime"
-	
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	
+
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
@@ -17,16 +17,16 @@ func NewConfigBundle(id *unique.Identifier, logger *zap.Logger) *ConfigBundle {
 		id:     id,
 		logger: logger,
 	}
-	
+
 	this.BucketService = &BucketService{bundle: this}
 	this.VariableService = &VariableService{bundle: this}
-	
+
 	return this
 }
 
 type ConfigBundle struct {
 	module.AbstractBundle
-	
+
 	id              *unique.Identifier
 	logger          *zap.Logger
 	BucketService   *BucketService
@@ -38,7 +38,7 @@ func (this ConfigBundle) Migrate(tx *gorm.DB, driver string) error {
 	if !ok {
 		return nil
 	}
-	
+
 	runner := migrate.Runner{
 		Tx:     tx,
 		Logger: this.logger,
@@ -46,7 +46,7 @@ func (this ConfigBundle) Migrate(tx *gorm.DB, driver string) error {
 		Bean:   "config",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
-	
+
 	return runner.Run()
 }
 

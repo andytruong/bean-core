@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 	"time"
-	
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
-	
+
 	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/pkg/integration/s3/model"
@@ -24,7 +24,7 @@ func bean() *S3IntegrationBundle {
 	logger := util.MockLogger()
 	bundle := NewS3Integration(db, id, logger, &S3Configuration{Key: "01EBWB516AP6BQD7"})
 	util.MockInstall(bundle, db)
-	
+
 	return bundle
 }
 
@@ -32,22 +32,22 @@ func Test(t *testing.T) {
 	ass := assert.New(t)
 	this := bean()
 	ctx := context.Background()
-	
+
 	t.Run("DB schema", func(t *testing.T) {
 		this.db.Migrator().HasTable("s3_application")
 	})
-	
+
 	t.Run("Service", func(t *testing.T) {
 		t.Run("Credentials", func(t *testing.T) {
 			t.Run("Encrypt", func(t *testing.T) {
 				encrypted := this.credentialService.encrypt("xxxxxxxxxxxxxxxxxxxxx")
 				decrypted := this.credentialService.decrypt(encrypted)
-				
+
 				ass.Equal("xxxxxxxxxxxxxxxxxxxxx", decrypted)
 				ass.True(len(encrypted)*2 <= 256)
 			})
 		})
-		
+
 		t.Run("CRUD", func(t *testing.T) {
 			oCreate, err := this.AppService.Create(ctx, &dto.S3ApplicationCreateInput{
 				IsActive: false,
@@ -73,11 +73,11 @@ func Test(t *testing.T) {
 					},
 				},
 			})
-			
+
 			ass.NoError(err)
 			ass.NotNil(oCreate)
 			ass.Equal(false, oCreate.App.IsActive)
-			
+
 			t.Run("policies", func(t *testing.T) {
 				policies := []model.Policy{}
 				err := this.db.
@@ -93,18 +93,18 @@ func Test(t *testing.T) {
 				ass.Equal(policies[1].Value, "1MB/user/hour")
 				ass.Equal(policies[2].Value, "1GB/space/hour")
 			})
-			
+
 			t.Run("Update", func(t *testing.T) {
 				t.Run("Useless input", func(t *testing.T) {
 					oUpdate, err := this.AppService.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      oCreate.App.ID,
 						Version: oCreate.App.Version,
 					})
-					
+
 					ass.Error(err)
 					ass.Nil(oUpdate)
 				})
-				
+
 				t.Run("Status", func(t *testing.T) {
 					app, _ := this.AppService.Load(ctx, oCreate.App.ID)
 					oUpdate, err := this.AppService.Update(ctx, &dto.S3ApplicationUpdateInput{
@@ -112,24 +112,24 @@ func Test(t *testing.T) {
 						Version:  app.Version,
 						IsActive: scalar.NilBool(true),
 					})
-					
+
 					ass.NoError(err)
 					ass.NotNil(oUpdate)
 					ass.Equal(true, oUpdate.App.IsActive)
 				})
-				
+
 				t.Run("Bucket", func(t *testing.T) {
 					app, _ := this.AppService.Load(ctx, oCreate.App.ID)
 					oUpdate, err := this.AppService.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
 					})
-					
+
 					ass.Error(err)
 					ass.Equal(err, util.ErrorUselessInput)
 					ass.Nil(oUpdate)
 				})
-				
+
 				t.Run("Credentials", func(t *testing.T) {
 					app, _ := this.AppService.Load(ctx, oCreate.App.ID)
 					oUpdate, err := this.AppService.Update(ctx, &dto.S3ApplicationUpdateInput{
@@ -143,10 +143,10 @@ func Test(t *testing.T) {
 							SecretKey: scalar.NilString("minio"),
 						},
 					})
-					
+
 					ass.NoError(err)
 					ass.NotNil(oUpdate)
-					
+
 					// reload & assert
 					{
 						cred, err := this.credentialService.loadByApplicationId(ctx, app.ID)
@@ -158,13 +158,13 @@ func Test(t *testing.T) {
 						ass.Equal(false, cred.IsSecure)
 					}
 				})
-				
+
 				t.Run("Policies", func(t *testing.T) {
 					app, _ := this.AppService.Load(ctx, oCreate.App.ID)
 					policies := []model.Policy{}
 					err := this.db.Where("application_id = ?", oCreate.App.ID).Find(&policies).Error
 					ass.NoError(err)
-					
+
 					// before update
 					{
 						ass.Equal(3, len(policies))
@@ -175,7 +175,7 @@ func Test(t *testing.T) {
 						ass.Equal(policies[1].Value, "1MB/user/hour")
 						ass.Equal(policies[2].Value, "1GB/space/hour")
 					}
-					
+
 					oUpdate, err := this.AppService.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
@@ -199,10 +199,10 @@ func Test(t *testing.T) {
 							},
 						},
 					})
-					
+
 					ass.NoError(err)
 					ass.NotNil(oUpdate)
-					
+
 					// after update: add 1, update 1, remove 1
 					{
 						policies, err := this.policyService.loadByApplicationId(ctx, app.ID)
@@ -217,7 +217,7 @@ func Test(t *testing.T) {
 					}
 				})
 			})
-			
+
 			t.Run("delete", func(t *testing.T) {
 				app, _ := this.AppService.Load(ctx, oCreate.App.ID)
 				now := time.Now()
@@ -225,7 +225,7 @@ func Test(t *testing.T) {
 					Id:      app.ID,
 					Version: app.Version,
 				})
-				
+
 				ass.NoError(err)
 				ass.NotNil(oDelete)
 				ass.True(now.UnixNano() <= oDelete.App.DeletedAt.UnixNano())
@@ -237,23 +237,23 @@ func Test(t *testing.T) {
 func Test_UploadToken(t *testing.T) {
 	ass := assert.New(t)
 	this := bean()
-	
+
 	this.credentialService.transport = util.MockRoundTrip{
 		Callback: func(request *http.Request) (*http.Response, error) {
 			response := &http.Response{
 				Status:     "OK",
 				StatusCode: http.StatusOK,
 			}
-			
+
 			content := `<?xml version="1.0" encoding="UTF-8"?>`
 			content += `<LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">Europe</LocationConstraint>`
 			body := strings.NewReader(content)
 			response.Body = ioutil.NopCloser(body)
-			
+
 			return response, nil
 		},
 	}
-	
+
 	ctx := context.WithValue(context.Background(), claim.ContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{
 			Audience: this.id.MustULID(),
@@ -262,7 +262,7 @@ func Test_UploadToken(t *testing.T) {
 		},
 		Kind: claim.KindAuthenticated,
 	})
-	
+
 	oCreate, err := this.AppService.Create(ctx, &dto.S3ApplicationCreateInput{
 		IsActive: false,
 		Credentials: dto.S3ApplicationCredentialsCreateInput{
@@ -287,16 +287,16 @@ func Test_UploadToken(t *testing.T) {
 			},
 		},
 	})
-	
+
 	ass.NoError(err)
 	ass.NotNil(oCreate)
-	
+
 	formData, err := this.AppService.S3UploadToken(ctx, dto.S3UploadTokenInput{
 		ApplicationId: oCreate.App.ID,
 		FilePath:      "/path/to/image.png",
 		ContentType:   scalar.ImagePNG,
 	})
-	
+
 	ass.NoError(err)
 	ass.Equal(formData["bucket"], "test")
 	ass.Equal(formData["key"], "/path/to/image.png")

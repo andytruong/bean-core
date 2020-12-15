@@ -10,7 +10,7 @@ import (
 )
 
 type DomainNameService struct {
-	bean *SpaceBundle
+	bundle *SpaceBundle
 }
 
 func (this *DomainNameService) createMultiple(tx *gorm.DB, space *model.Space, in dto.SpaceCreateInput) error {
@@ -35,7 +35,7 @@ func (this *DomainNameService) createMultiple(tx *gorm.DB, space *model.Space, i
 
 func (this *DomainNameService) create(tx *gorm.DB, space *model.Space, in *dto.DomainNameInput, isPrimary bool) error {
 	domain := model.DomainName{
-		ID:         this.bean.id.MustULID(),
+		ID:         this.bundle.id.MustULID(),
 		SpaceId:    space.ID,
 		IsVerified: *in.Verified,
 		Value:      *in.Value,
@@ -55,7 +55,7 @@ func (this *DomainNameService) Find(space *model.Space) (*model.DomainNames, err
 	}
 
 	var domainNames []*model.DomainName
-	err := this.bean.db.
+	err := this.bundle.db.
 		Where("space_id = ?", space.ID).
 		Find(&domainNames).
 		Error

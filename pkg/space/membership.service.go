@@ -3,6 +3,7 @@ package space
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -10,17 +11,15 @@ import (
 	"bean/components/scalar"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
-	mUser "bean/pkg/user/model"
 	"bean/pkg/util"
 	"bean/pkg/util/connect"
 )
 
 type MemberService struct {
-	bundle   *SpaceBundle
-	Resolver MembershipResolver
+	bundle *SpaceBundle
 }
 
-func (this MemberService) load (ctx context.Context, id string, version *string) (*model.Membership, error) {
+func (this MemberService) load(ctx context.Context, id string, version *string) (*model.Membership, error) {
 	obj := &model.Membership{}
 	err := this.bundle.db.WithContext(ctx).First(&obj, "id = ?", id).Error
 	if nil != err {
@@ -30,7 +29,7 @@ func (this MemberService) load (ctx context.Context, id string, version *string)
 			return nil, util.ErrorVersionConflict
 		}
 	}
-	
+
 	return obj, nil
 }
 
@@ -128,13 +127,8 @@ func (this MemberService) findUnlimited(afterRaw *string, filters dto.Membership
 	return query, nil
 }
 
-func (this MemberService) Create(
-	tx *gorm.DB,
-	in dto.SpaceMembershipCreateInput,
-	space *model.Space,
-	user *mUser.User,
-) (*dto.SpaceMembershipCreateOutcome, error) {
-	membership, err := this.doCreate(tx, space.ID, user.ID, in.IsActive)
+func (this MemberService) Create(tx *gorm.DB, in dto.SpaceMembershipCreateInput) (*dto.SpaceMembershipCreateOutcome, error) {
+	membership, err := this.doCreate(tx, in.SpaceID, in.UserID, in.IsActive)
 
 	if nil != err {
 		return nil, err
@@ -233,4 +227,37 @@ func (this MemberService) Update(tx *gorm.DB, in dto.SpaceMembershipUpdateInput,
 	}
 
 	return &dto.SpaceMembershipCreateOutcome{Errors: nil, Membership: obj}, nil
+}
+
+func (this MemberService) FindRoles(ctx context.Context, userId string, spaceId string) ([]*model.Space, error) {
+	var roles []*model.Space
+
+	err := this.bundle.db.
+		WithContext(ctx).
+		Joins(
+			fmt.Sprintf(
+				"INNER JOIN %s ON %s.space_id = %s.id AND %s.user_id = ?",
+				connect.TableSpaceMemberships,
+				connect.TableSpaceMemberships,
+				connect.TableSpace,
+				connect.TableSpaceMemberships,
+			),
+			userId,
+		).
+		Where("kind = ?", model.SpaceKindRole).
+		Where("parent_id = ?", spaceId).
+		Find(&roles).
+		Error
+
+	if nil != err {
+		return nil, err
+	}
+
+	return roles, nil
+}
+
+func (this MemberService) UpdateLastLoginTime(db *gorm.DB, membership *model.Membership) error {
+	membership.LoggedInAt = scalar.NilTime(time.Now())
+
+	return db.Save(&membership).Error
 }

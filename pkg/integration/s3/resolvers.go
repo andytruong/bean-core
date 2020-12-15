@@ -2,7 +2,7 @@ package s3
 
 import (
 	"context"
-	
+
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )

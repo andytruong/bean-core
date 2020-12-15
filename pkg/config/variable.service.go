@@ -3,9 +3,9 @@ package config
 import (
 	"context"
 	"time"
-	
+
 	"gorm.io/gorm"
-	
+
 	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/pkg/config/model"
@@ -22,43 +22,43 @@ func (this VariableService) access(ctx context.Context, db *gorm.DB, bucketId st
 	if nil != err {
 		return false, err
 	}
-	
+
 	if nil == bucket {
 		return false, nil
 	}
-	
+
 	claims := claim.ContextToPayload(ctx)
 	isOwner := (nil != claims) && claims.UserId() == bucket.HostId
 	isMember := (nil != claims) && claims.SpaceId() == bucket.HostId
-	
+
 	switch action {
 	case "read":
 		return bucket.Access.CanRead(isOwner, isMember), nil
-	
+
 	case "write":
 		return bucket.Access.CanWrite(isOwner, isMember), nil
-	
+
 	case "delete":
 		return bucket.Access.CanDelete(isOwner, isMember), nil
 	}
-	
+
 	return false, nil
 }
 
 func (this VariableService) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigVariable, error) {
 	variable := &model.ConfigVariable{}
-	
+
 	err := db.First(&variable, "id = ?", id).Error
 	if nil != err {
 		return nil, err
 	}
-	
+
 	if access, err := this.access(ctx, db, variable.BucketId, "read"); nil != err {
 		return nil, err
 	} else if !access {
 		return nil, util.ErrorAccessDenied
 	}
-	
+
 	return variable, nil
 }
 
@@ -68,7 +68,7 @@ func (this VariableService) Create(ctx context.Context, tx *gorm.DB, in dto.Vari
 	} else if !access {
 		return nil, util.ErrorAccessDenied
 	}
-	
+
 	variable := &model.ConfigVariable{
 		Id:          this.bundle.id.MustULID(),
 		Version:     this.bundle.id.MustULID(),
@@ -80,7 +80,7 @@ func (this VariableService) Create(ctx context.Context, tx *gorm.DB, in dto.Vari
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
-	
+
 	err := tx.Create(&variable).Error
 	if nil != err {
 		return nil, err
@@ -97,45 +97,45 @@ func (this VariableService) Update(ctx context.Context, tx *gorm.DB, in dto.Vari
 	if nil != err {
 		return nil, err
 	}
-	
+
 	if access, err := this.access(ctx, tx, variable.BucketId, "write"); nil != err {
 		return nil, err
 	} else if !access {
 		return nil, util.ErrorAccessDenied
 	}
-	
+
 	if variable.Version != in.Version {
 		return nil, util.ErrorVersionConflict
 	} else {
 		changed := false
-		
+
 		if nil != in.Description {
 			if variable.Description != in.Description {
 				changed = true
 				variable.Description = in.Description
 			}
 		}
-		
+
 		if in.Value != nil {
 			if variable.Value != *in.Value {
 				changed = true
 				variable.Value = *in.Value
 			}
 		}
-		
+
 		if variable.IsLocked {
 			if changed {
 				return nil, util.ErrorLocked
 			}
 		}
-		
+
 		if nil != in.IsLocked {
 			if variable.IsLocked != *in.IsLocked {
 				changed = true
 				variable.IsLocked = *in.IsLocked
 			}
 		}
-		
+
 		if changed {
 			version := variable.Version
 			variable.Version = this.bundle.id.MustULID()
@@ -148,7 +148,7 @@ func (this VariableService) Update(ctx context.Context, tx *gorm.DB, in dto.Vari
 			}
 		}
 	}
-	
+
 	return &dto.VariableMutationOutcome{
 		Errors:   nil,
 		Variable: variable,
@@ -167,13 +167,13 @@ func (this VariableService) Delete(ctx context.Context, tx *gorm.DB, in dto.Vari
 		} else if !access {
 			return nil, util.ErrorAccessDenied
 		}
-		
+
 		err := tx.Delete(variable, "id = ?", variable.Id).Error
 		if nil != err {
 			return nil, err
 		}
 	}
-	
+
 	return &dto.VariableMutationOutcome{
 		Errors:   nil,
 		Variable: variable,

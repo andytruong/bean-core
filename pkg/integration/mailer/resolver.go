@@ -2,7 +2,7 @@ package mailer
 
 import (
 	"context"
-	
+
 	"bean/pkg/integration/mailer/model/dto"
 )
 
@@ -18,8 +18,7 @@ func newResoler(bundle *MailerIntegrationBundle) map[string]interface{} {
 				return &dto.MailerMutation{}, nil
 			},
 		},
-		"MailerQuery": map[string]interface{}{
-		},
+		"MailerQuery": map[string]interface{}{},
 		"MailerMutation": map[string]interface{}{
 			"Account": func(ctx context.Context) (*dto.MailerAccountMutation, error) {
 				return &dto.MailerAccountMutation{}, nil
