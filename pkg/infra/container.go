@@ -22,7 +22,6 @@ func NewContainer(path string) (*Container, error) {
 	this := &Container{
 		mutex:   &sync.Mutex{},
 		bundles: bundles{},
-		graph:   &graph{mutex: &sync.Mutex{}},
 		dbs: databases{
 			connections: &sync.Map{},
 		},
@@ -34,7 +33,6 @@ func NewContainer(path string) (*Container, error) {
 	}
 	
 	this.bundles.container = this
-	this.graph.container = this
 	this.dbs.config = this.Databases
 	
 	// setup logger
@@ -65,7 +63,6 @@ type (
 		
 		mutex   *sync.Mutex
 		id      *unique.Identifier
-		graph   *graph
 		dbs     databases
 		bundles bundles
 		logger  *zap.Logger

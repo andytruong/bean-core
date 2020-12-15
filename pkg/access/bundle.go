@@ -2,21 +2,26 @@ package access
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"runtime"
+	"time"
 	
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	
+	"bean/components/claim"
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	"bean/pkg/space"
+	space_model "bean/pkg/space/model"
 	"bean/pkg/user"
+	user_model "bean/pkg/user/model"
 	"bean/pkg/util"
 )
 
@@ -44,6 +49,7 @@ func NewAccessBundle(
 	}
 	
 	this.sessionService = &SessionService{bundle: this}
+	this.JwtService = &JwtService{bundle: this}
 	this.resolvers = this.newResolves()
 	
 	return this
@@ -59,6 +65,7 @@ type (
 		id              *unique.Identifier
 		SessionResolver ModelResolver
 		sessionService  *SessionService
+		JwtService      *JwtService
 		
 		// depends on userBundle bundle
 		userBundle  *user.UserBundle
@@ -119,6 +126,53 @@ func (this AccessBundle) newResolves() map[string]interface{} {
 			},
 			"SessionArchive": func(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
 				return this.SessionArchive(ctx)
+			},
+		},
+		"Session": map[string]interface{}{
+			"User": func(ctx context.Context, obj *model.Session) (*user_model.User, error) {
+				return this.userBundle.Resolvers.Query.User(ctx, obj.UserId)
+			},
+			"Context": func(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
+				panic("implement me")
+			},
+			"Scopes": func(ctx context.Context, obj *model.Session) ([]*model.AccessScope, error) {
+				return obj.Scopes, nil
+			},
+			"Space": func(ctx context.Context, obj *model.Session) (*space_model.Space, error) {
+				return this.spaceBundle.Load(ctx, obj.SpaceId)
+			},
+			"Jwt": func(ctx context.Context, session *model.Session, codeVerifier string) (string, error) {
+				roles, err := this.spaceBundle.MembershipResolver().FindRoles(ctx, session.UserId, session.SpaceId)
+				if nil != err {
+					return "", err
+				}
+				
+				if !session.Verify(codeVerifier) {
+					return "", fmt.Errorf("can not verify")
+				}
+				
+				claims := claim.Payload{
+					Kind: session.Kind,
+					Roles: func() []string {
+						var roleNames []string
+						
+						for _, role := range roles {
+							roleNames = append(roleNames, role.Title)
+						}
+						
+						return roleNames
+					}(),
+					StandardClaims: jwt.StandardClaims{
+						Issuer:    "access",
+						Id:        session.ID,
+						IssuedAt:  time.Now().Unix(),
+						ExpiresAt: time.Now().Add(this.config.Jwt.Timeout).Unix(),
+						Subject:   session.UserId,
+						Audience:  session.SpaceId,
+					},
+				}
+				
+				return this.Sign(claims)
 			},
 		},
 	}

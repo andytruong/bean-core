@@ -97,7 +97,7 @@ func (this MyPlugin) newResolver(data *codegen.Data, o *codegen.Object, f *codeg
 }
 
 func (this MyPlugin) resolverBody(data *codegen.Data, o *codegen.Object, f *codegen.Field) string {
-	implementation := `panic("no implementation")`
+	implementation := fmt.Sprintf(`panic("no implementation found in resolvers[%s][%s]")`, o.Name, f.GoFieldName)
 	
 	for _, bundle := range this.container.BundleList() {
 		resolvers := bundle.GraphqlResolver()

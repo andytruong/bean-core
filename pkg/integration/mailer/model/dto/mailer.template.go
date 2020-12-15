@@ -2,7 +2,7 @@ package dto
 
 import (
 	"time"
-
+	
 	"bean/pkg/space/model"
 	mUser "bean/pkg/user/model"
 	"bean/pkg/util/api"
@@ -35,7 +35,4 @@ type MailerTemplateMessage struct {
 }
 
 type MailerTemplateMutation struct {
-	Create *bool `json:"create"`
-	Update *bool `json:"update"`
-	Delete *bool `json:"delete"`
 }

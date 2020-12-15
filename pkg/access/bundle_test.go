@@ -115,7 +115,7 @@ func Test_Create(t *testing.T) {
 				
 				// check that JWT is valid
 				{
-					claims, err := this.SessionResolver.JwtValidation(signedString)
+					claims, err := this.JwtService.Validate(signedString)
 					ass.NoError(err)
 					ass.NotNil(claims)
 					ass.Equal(claims.SessionId(), out.Session.ID)

@@ -25,11 +25,11 @@ func NewUserBundle(db *gorm.DB, logger *zap.Logger, id *unique.Identifier) *User
 		maxSecondaryEmailPerUser: 20,
 	}
 	
-	this.Resolvers = newResolvers(this)
 	this.Service = &UserService{bundle: this}
 	this.NameService = &NameService{bean: this}
 	this.EmailService = &EmailService{bean: this}
 	this.PasswordService = &PasswordService{bean: this}
+	this.resolvers = newResolver(this)
 	
 	return this
 }
@@ -41,7 +41,7 @@ type UserBundle struct {
 	db                       *gorm.DB
 	id                       *unique.Identifier
 	maxSecondaryEmailPerUser uint8
-	Resolvers                *Resolvers
+	resolvers                map[string]interface{}
 	Service                  *UserService
 	NameService              *NameService
 	EmailService             *EmailService
@@ -63,4 +63,8 @@ func (this UserBundle) Migrate(tx *gorm.DB, driver string) error {
 	}
 	
 	return runner.Run()
+}
+
+func (this *UserBundle) GraphqlResolver() map[string]interface{} {
+	return this.resolvers
 }

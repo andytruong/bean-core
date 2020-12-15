@@ -1,6 +1,7 @@
 package space
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -17,6 +18,20 @@ import (
 type MemberService struct {
 	bundle   *SpaceBundle
 	Resolver MembershipResolver
+}
+
+func (this MemberService) load (ctx context.Context, id string, version *string) (*model.Membership, error) {
+	obj := &model.Membership{}
+	err := this.bundle.db.WithContext(ctx).First(&obj, "id = ?", id).Error
+	if nil != err {
+		return nil, err
+	} else if nil != version {
+		if obj.Version != *version {
+			return nil, util.ErrorVersionConflict
+		}
+	}
+	
+	return obj, nil
 }
 
 func (this MemberService) Find(first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {

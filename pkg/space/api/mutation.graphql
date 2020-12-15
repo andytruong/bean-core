@@ -1,60 +1,6 @@
-# ---------------------
-# Create space
-# ---------------------
 extend type Mutation {
-	spaceCreate(input: SpaceCreateInput!): SpaceCreateOutcome!
-}
-
-input SpaceCreateInput {
-	object: SpaceCreateInputObject!
-}
-
-input SpaceCreateInputObject {
-	kind: SpaceKind!
-	title: String
-	language: Language!
-	isActive: Boolean!
-	domainNames: DomainNamesInput
-	features: SpaceFeaturesInput!
-}
-
-input SpaceFeaturesInput {
-	register: Boolean!
-}
-
-input DomainNamesInput {
-	primary: DomainNameInput!
-	secondary: [DomainNameInput]
-}
-
-input DomainNameInput {
-	verified: Boolean
-	value: String
-	isActive: Boolean
-}
-
-type SpaceCreateOutcome {
-	errors: [Error!]
-	space: Space
-}
-
-# ---------------------
-# Update space
-# ---------------------
-extend type Mutation {
-	spaceUpdate(input: SpaceUpdateInput!): SpaceCreateOutcome!
-}
-
-input SpaceUpdateInput {
-	spaceId: ID!
-	spaceVersion: ID!
-	object: SpaceUpdateInputObject
-}
-
-input SpaceUpdateInputObject {
-	features: SpaceUpdateInputFeatures
-}
-
-input SpaceUpdateInputFeatures {
-	register: Boolean
+    spaceCreate(input: SpaceCreateInput!): SpaceCreateOutcome!
+    spaceUpdate(input: SpaceUpdateInput!): SpaceCreateOutcome!
+    spaceMembershipCreate(input: SpaceMembershipCreateInput!): SpaceMembershipCreateOutcome!
+    spaceMembershipUpdate(input: SpaceMembershipUpdateInput!): SpaceMembershipCreateOutcome!
 }

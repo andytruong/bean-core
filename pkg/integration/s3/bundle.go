@@ -28,10 +28,7 @@ func NewS3Integration(
 		config: conf,
 	}
 	
-	this.AppService = &ApplicationService{
-		bundle:   this,
-		Resolver: &ApplicationResolver{bundle: this},
-	}
+	this.AppService = &ApplicationService{bundle: this}
 	this.credentialService = &credentialService{bundle: this}
 	this.policyService = &policyService{bundle: this}
 	this.resolvers = this.newResolver()
@@ -84,7 +81,7 @@ func (this *S3IntegrationBundle) newResolver() map[string]interface{} {
 				return this.AppService.Update(ctx, input)
 			},
 			"S3UploadToken": func(ctx context.Context, input dto.S3UploadTokenInput) (map[string]interface{}, error) {
-				return this.AppService.Resolver.S3UploadToken(ctx, input)
+				return this.AppService.S3UploadToken(ctx, input)
 			},
 		},
 		"Application": map[string]interface{}{

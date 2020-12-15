@@ -2,7 +2,7 @@ package dto
 
 import (
 	"time"
-
+	
 	"bean/components/scalar"
 	"bean/pkg/space/model"
 	"bean/pkg/util"
@@ -58,10 +58,6 @@ type MailerAccountEdge struct {
 }
 
 type MailerAccountMutation struct {
-	Version string                        `json:"version"`
-	Create  *MailerAccountMutationOutcome `json:"create"`
-	Update  *MailerAccountMutationOutcome `json:"update"`
-	Verify  *MailerAccountMutationOutcome `json:"verify"`
 }
 
 type MailerAccountMutationOutcome struct {

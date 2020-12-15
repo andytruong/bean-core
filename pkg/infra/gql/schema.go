@@ -50,6 +50,9 @@ type Config struct {
 
 type ResolverRoot interface {
 	Application() ApplicationResolver
+	MailerAccountMutation() MailerAccountMutationResolver
+	MailerQueryAccount() MailerQueryAccountResolver
+	MailerTemplateMutation() MailerTemplateMutationResolver
 	Membership() MembershipResolver
 	MembershipConnection() MembershipConnectionResolver
 	Mutation() MutationResolver
@@ -413,6 +416,20 @@ type ComplexityRoot struct {
 type ApplicationResolver interface {
 	Polices(ctx context.Context, obj *model.Application) ([]*model.Policy, error)
 	Credentials(ctx context.Context, obj *model.Application) (*model.Credentials, error)
+}
+type MailerAccountMutationResolver interface {
+	Create(ctx context.Context, obj *dto.MailerAccountMutation, input dto.MailerAccountCreateInput) (*dto.MailerAccountMutationOutcome, error)
+	Update(ctx context.Context, obj *dto.MailerAccountMutation, input dto.MailerAccountUpdateInput) (*dto.MailerAccountMutationOutcome, error)
+	Verify(ctx context.Context, obj *dto.MailerAccountMutation, id string, version string) (*dto.MailerAccountMutationOutcome, error)
+}
+type MailerQueryAccountResolver interface {
+	Get(ctx context.Context, obj *dto.MailerQueryAccount, id string) (*dto.MailerAccount, error)
+	GetMultiple(ctx context.Context, obj *dto.MailerQueryAccount, first int, after *string) ([]*dto.MailerAccount, error)
+}
+type MailerTemplateMutationResolver interface {
+	Create(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error)
+	Update(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error)
+	Delete(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error)
 }
 type MembershipResolver interface {
 	Space(ctx context.Context, obj *model1.Membership) (*model1.Space, error)
@@ -2159,28 +2176,28 @@ enum FileType {
 }
 `, BuiltIn: false},
 	{Name: "pkg/config/api/entity.graphql", Input: `type ConfigBucket {
-	id: ID!
-	version: ID!
-	slug: ID!
-	title: String!
-	description: String
-	hostId: ID!
-	access: AccessMode!
-	isPublished: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
+    id: ID!
+    version: ID!
+    slug: ID!
+    title: String!
+    description: String
+    hostId: ID!
+    access: AccessMode!
+    isPublished: Boolean!
+    createdAt: Time!
+    updatedAt: Time!
 }
 
 type ConfigVariable {
-	id: ID!
-	version: ID!
-	bucketId: ID!
-	name: String!
-	description: String
-	value: String!
-	createdAt: Time!
-	updatedAt: Time!
-	isLocked: Boolean!
+    id: ID!
+    version: ID!
+    bucketId: ID!
+    name: String!
+    description: String
+    value: String!
+    createdAt: Time!
+    updatedAt: Time!
+    isLocked: Boolean!
 }
 `, BuiltIn: false},
 	{Name: "pkg/access/api/entity.graphql", Input: `enum AccessScope { Anonymous Authenticated }
@@ -5495,8 +5512,8 @@ func (ec *executionContext) _MailerAccountMutation_create(ctx context.Context, f
 		Object:     "MailerAccountMutation",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5509,7 +5526,7 @@ func (ec *executionContext) _MailerAccountMutation_create(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Create, nil
+		return ec.resolvers.MailerAccountMutation().Create(rctx, obj, args["input"].(dto.MailerAccountCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5537,8 +5554,8 @@ func (ec *executionContext) _MailerAccountMutation_update(ctx context.Context, f
 		Object:     "MailerAccountMutation",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5551,7 +5568,7 @@ func (ec *executionContext) _MailerAccountMutation_update(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Update, nil
+		return ec.resolvers.MailerAccountMutation().Update(rctx, obj, args["input"].(dto.MailerAccountUpdateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5579,8 +5596,8 @@ func (ec *executionContext) _MailerAccountMutation_verify(ctx context.Context, f
 		Object:     "MailerAccountMutation",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5593,7 +5610,7 @@ func (ec *executionContext) _MailerAccountMutation_verify(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Verify, nil
+		return ec.resolvers.MailerAccountMutation().Verify(rctx, obj, args["id"].(string), args["version"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6227,8 +6244,8 @@ func (ec *executionContext) _MailerQueryAccount_get(ctx context.Context, field g
 		Object:     "MailerQueryAccount",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6241,7 +6258,7 @@ func (ec *executionContext) _MailerQueryAccount_get(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Get, nil
+		return ec.resolvers.MailerQueryAccount().Get(rctx, obj, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6266,8 +6283,8 @@ func (ec *executionContext) _MailerQueryAccount_getMultiple(ctx context.Context,
 		Object:     "MailerQueryAccount",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6281,7 +6298,7 @@ func (ec *executionContext) _MailerQueryAccount_getMultiple(ctx context.Context,
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return obj.GetMultiple, nil
+			return ec.resolvers.MailerQueryAccount().GetMultiple(rctx, obj, args["first"].(int), args["after"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.RequireAuth == nil {
@@ -7008,14 +7025,14 @@ func (ec *executionContext) _MailerTemplateMutation_create(ctx context.Context, 
 		Object:     "MailerTemplateMutation",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Create, nil
+		return ec.resolvers.MailerTemplateMutation().Create(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7040,14 +7057,14 @@ func (ec *executionContext) _MailerTemplateMutation_update(ctx context.Context, 
 		Object:     "MailerTemplateMutation",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Update, nil
+		return ec.resolvers.MailerTemplateMutation().Update(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7072,14 +7089,14 @@ func (ec *executionContext) _MailerTemplateMutation_delete(ctx context.Context, 
 		Object:     "MailerTemplateMutation",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Delete, nil
+		return ec.resolvers.MailerTemplateMutation().Delete(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13969,20 +13986,47 @@ func (ec *executionContext) _MailerAccountMutation(ctx context.Context, sel ast.
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MailerAccountMutation")
 		case "create":
-			out.Values[i] = ec._MailerAccountMutation_create(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerAccountMutation_create(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "update":
-			out.Values[i] = ec._MailerAccountMutation_update(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerAccountMutation_update(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "verify":
-			out.Values[i] = ec._MailerAccountMutation_verify(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerAccountMutation_verify(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14182,12 +14226,30 @@ func (ec *executionContext) _MailerQueryAccount(ctx context.Context, sel ast.Sel
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MailerQueryAccount")
 		case "get":
-			out.Values[i] = ec._MailerQueryAccount_get(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerQueryAccount_get(ctx, field, obj)
+				return res
+			})
 		case "getMultiple":
-			out.Values[i] = ec._MailerQueryAccount_getMultiple(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerQueryAccount_getMultiple(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14385,11 +14447,38 @@ func (ec *executionContext) _MailerTemplateMutation(ctx context.Context, sel ast
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MailerTemplateMutation")
 		case "create":
-			out.Values[i] = ec._MailerTemplateMutation_create(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerTemplateMutation_create(ctx, field, obj)
+				return res
+			})
 		case "update":
-			out.Values[i] = ec._MailerTemplateMutation_update(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerTemplateMutation_update(ctx, field, obj)
+				return res
+			})
 		case "delete":
-			out.Values[i] = ec._MailerTemplateMutation_delete(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MailerTemplateMutation_delete(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16089,6 +16178,10 @@ func (ec *executionContext) marshalNMailerAccountMutation2ᚖbeanᚋpkgᚋintegr
 		return graphql.Null
 	}
 	return ec._MailerAccountMutation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMailerAccountMutationOutcome2beanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto.MailerAccountMutationOutcome) graphql.Marshaler {
+	return ec._MailerAccountMutationOutcome(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNMailerAccountMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋmailerᚋmodelᚋdtoᚐMailerAccountMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.MailerAccountMutationOutcome) graphql.Marshaler {

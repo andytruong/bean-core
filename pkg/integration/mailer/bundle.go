@@ -15,9 +15,8 @@ import (
 
 func NewMailerIntegration(genetic *MailerConfiguration, logger *zap.Logger) *MailerIntegrationBundle {
 	this := &MailerIntegrationBundle{
-		config:   genetic,
-		logger:   logger,
-		resolver: &MailerResolver{},
+		config: genetic,
+		logger: logger,
 	}
 	
 	return this
@@ -26,13 +25,8 @@ func NewMailerIntegration(genetic *MailerConfiguration, logger *zap.Logger) *Mai
 type MailerIntegrationBundle struct {
 	module.AbstractBundle
 	
-	config   *MailerConfiguration
-	logger   *zap.Logger
-	resolver *MailerResolver
-}
-
-func (this MailerIntegrationBundle) Resolver() *MailerResolver {
-	return this.resolver
+	config *MailerConfiguration
+	logger *zap.Logger
 }
 
 func (this MailerIntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
@@ -69,4 +63,8 @@ func (this MailerIntegrationBundle) Send(message model.Message) error {
 	dialer := &gomail.Dialer{} // gomail.NewDialer(host, port, username, password)
 	
 	return message.Send(dialer)
+}
+
+func (this *MailerIntegrationBundle) GraphqlResolver() map[string]interface{} {
+	return newResoler(this)
 }
