@@ -24,6 +24,7 @@ gql:
 	@go run cmd/gqlgen/main.go
 	@rm -rf pkg/infra/gql.resolver/*
 	@rm pkg/infra/__tmp__resolvers.go
+	@go fmt ./...
 
 migrate:
 	CONFIG=config.yaml go run -mod=vendor cmd/main.go migrate

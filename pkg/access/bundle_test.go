@@ -198,7 +198,7 @@ func Test_Query(t *testing.T) {
 		Kind:           claim.KindAuthenticated,
 	})
 	iSpace := fSpace.SpaceCreateInputFixture(false)
-	oSpace, _ := this.spaceBundle.Service.Create(this.db, iSpace)
+	oSpace, _ := this.spaceBundle.Service.Create(this.db.WithContext(ctx), iSpace)
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	outcome, err := this.SessionCreate(ctx, in)
@@ -224,7 +224,7 @@ func Test_Query(t *testing.T) {
 	})
 
 	t.Run("load one-time-login session -> session deleted", func(t *testing.T) {
-		// …
+		// TODO
 	})
 }
 
@@ -240,7 +240,7 @@ func Test_Archive(t *testing.T) {
 		Kind:           claim.KindAuthenticated,
 	})
 	iSpace := fSpace.SpaceCreateInputFixture(false)
-	oSpace, _ := this.spaceBundle.Service.Create(this.db, iSpace)
+	oSpace, _ := this.spaceBundle.Service.Create(this.db.WithContext(ctx), iSpace)
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	sessionOutcome, err := this.SessionCreate(ctx, in)

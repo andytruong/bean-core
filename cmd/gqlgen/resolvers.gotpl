@@ -17,7 +17,7 @@
 // Root resolver
 {{ if .HasRoot }}
     type {{.ResolverType}} struct {
-        container Container
+        container *Container
     }
 {{ end }}
 {{ range $object := .Objects -}}

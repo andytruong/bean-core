@@ -443,10 +443,10 @@ type MembershipConnectionResolver interface {
 type MutationResolver interface {
 	SessionCreate(ctx context.Context, input *dto2.SessionCreateInput) (*dto2.SessionCreateOutcome, error)
 	SessionArchive(ctx context.Context) (*dto2.SessionArchiveOutcome, error)
-	SpaceMembershipCreate(ctx context.Context, input dto3.SpaceMembershipCreateInput) (*dto3.SpaceMembershipCreateOutcome, error)
-	SpaceMembershipUpdate(ctx context.Context, input dto3.SpaceMembershipUpdateInput) (*dto3.SpaceMembershipCreateOutcome, error)
 	SpaceCreate(ctx context.Context, input dto3.SpaceCreateInput) (*dto3.SpaceCreateOutcome, error)
 	SpaceUpdate(ctx context.Context, input dto3.SpaceUpdateInput) (*dto3.SpaceCreateOutcome, error)
+	SpaceMembershipCreate(ctx context.Context, input dto3.SpaceMembershipCreateInput) (*dto3.SpaceMembershipCreateOutcome, error)
+	SpaceMembershipUpdate(ctx context.Context, input dto3.SpaceMembershipUpdateInput) (*dto3.SpaceMembershipCreateOutcome, error)
 	UserCreate(ctx context.Context, input *dto4.UserCreateInput) (*dto4.UserMutationOutcome, error)
 	UserUpdate(ctx context.Context, input dto4.UserUpdateInput) (*dto4.UserMutationOutcome, error)
 	S3ApplicationCreate(ctx context.Context, input *dto1.S3ApplicationCreateInput) (*dto1.S3ApplicationMutationOutcome, error)
@@ -456,9 +456,9 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Session(ctx context.Context, token string) (*model3.Session, error)
+	Space(ctx context.Context, filters dto3.SpaceFilters) (*model1.Space, error)
 	Membership(ctx context.Context, id string, version *string) (*model1.Membership, error)
 	Memberships(ctx context.Context, first int, after *string, filters dto3.MembershipsFilter) (*model1.MembershipConnection, error)
-	Space(ctx context.Context, filters dto3.SpaceFilters) (*model1.Space, error)
 	User(ctx context.Context, id string) (*model2.User, error)
 	MailerQuery(ctx context.Context) (*dto.MailerQuery, error)
 }
@@ -2337,148 +2337,118 @@ type SpaceFeatures {
 	updatedAt: Time!
 	roles: [Space!]!
 }
-
-# ---------------------
-# Membership -> Create
-# ---------------------
-extend type Mutation {
-	spaceMembershipCreate(input: SpaceMembershipCreateInput!): SpaceMembershipCreateOutcome!
-}
-
-input SpaceMembershipCreateInput {
-	spaceId: ID!
-	userId: ID!
-	isActive: Boolean!
-	managerMemberIds: [ID!]!
+`, BuiltIn: false},
+	{Name: "pkg/space/api/membership.mut.create.graphql", Input: `input SpaceMembershipCreateInput {
+    spaceId: ID!
+    userId: ID!
+    isActive: Boolean!
+    managerMemberIds: [ID!]!
 }
 
 type SpaceMembershipCreateOutcome {
-	errors: [Error!]
-	membership: Membership
+    errors: [Error!]
+    membership: Membership
 }
-
-# ---------------------
-# Membership -> Update
-# ---------------------
-extend type Mutation {
-	spaceMembershipUpdate(input: SpaceMembershipUpdateInput!): SpaceMembershipCreateOutcome!
+`, BuiltIn: false},
+	{Name: "pkg/space/api/membership.mut.update.graphql", Input: `input SpaceMembershipUpdateInput {
+    id: ID!
+    version: ID!
+    Language: Language
+    isActive: Boolean!
 }
-
-input SpaceMembershipUpdateInput {
-	id: ID!
-	version: ID!
-	Language: Language
-	isActive: Boolean!
-}
-
-# ---------------------
-# Query Memberships
-# ---------------------
-extend type Query {
-	membership(id: ID!, version: ID): Membership
-	memberships(first: Int!, after: String, filters: MembershipsFilter!): MembershipConnection!
-}
-
-input MembershipsFilter {
-	space: MembershipsFilterSpace
-	userId: ID!
-	isActive: Boolean!
-	managerId: ID
+`, BuiltIn: false},
+	{Name: "pkg/space/api/membership.query.get.graphql", Input: `input MembershipsFilter {
+    space: MembershipsFilterSpace
+    userId: ID!
+    isActive: Boolean!
+    managerId: ID
 }
 
 input MembershipsFilterSpace {
-	title: String
-	domainName: String
+    title: String
+    domainName: String
 }
 
 type MembershipConnection {
-	edges: [MembershipEdge!]!
-	nodes: [Membership!]!
-	pageInfo: MembershipInfo!
+    edges: [MembershipEdge!]!
+    nodes: [Membership!]!
+    pageInfo: MembershipInfo!
 }
 
 type MembershipEdge {
-	cursor: String!
-	node: Membership!
+    cursor: String!
+    node: Membership!
 }
 
 type MembershipInfo {
-	endCursor: String
-	hasNextPage: Boolean!
-	startCursor: String
+    endCursor: String
+    hasNextPage: Boolean!
+    startCursor: String
 }
 `, BuiltIn: false},
-	{Name: "pkg/space/api/mutation.graphql", Input: `# ---------------------
-# Create space
-# ---------------------
-extend type Mutation {
-	spaceCreate(input: SpaceCreateInput!): SpaceCreateOutcome!
+	{Name: "pkg/space/api/mutation.graphql", Input: `extend type Mutation {
+    spaceCreate(input: SpaceCreateInput!): SpaceCreateOutcome!
+    spaceUpdate(input: SpaceUpdateInput!): SpaceCreateOutcome!
+    spaceMembershipCreate(input: SpaceMembershipCreateInput!): SpaceMembershipCreateOutcome!
+    spaceMembershipUpdate(input: SpaceMembershipUpdateInput!): SpaceMembershipCreateOutcome!
 }
-
-input SpaceCreateInput {
-	object: SpaceCreateInputObject!
+`, BuiltIn: false},
+	{Name: "pkg/space/api/query.graphql", Input: `extend type Query {
+	space(filters: SpaceFilters!): Space
+	membership(id: ID!, version: ID): Membership
+	memberships(first: Int!, after: String, filters: MembershipsFilter!): MembershipConnection!
+}
+`, BuiltIn: false},
+	{Name: "pkg/space/api/space.mut.create.graphql", Input: `input SpaceCreateInput {
+    object: SpaceCreateInputObject!
 }
 
 input SpaceCreateInputObject {
-	kind: SpaceKind!
-	title: String
-	language: Language!
-	isActive: Boolean!
-	domainNames: DomainNamesInput
-	features: SpaceFeaturesInput!
+    kind: SpaceKind!
+    title: String
+    language: Language!
+    isActive: Boolean!
+    domainNames: DomainNamesInput
+    features: SpaceFeaturesInput!
 }
 
 input SpaceFeaturesInput {
-	register: Boolean!
+    register: Boolean!
 }
 
 input DomainNamesInput {
-	primary: DomainNameInput!
-	secondary: [DomainNameInput]
+    primary: DomainNameInput!
+    secondary: [DomainNameInput]
 }
 
 input DomainNameInput {
-	verified: Boolean
-	value: String
-	isActive: Boolean
+    verified: Boolean
+    value: String
+    isActive: Boolean
 }
 
 type SpaceCreateOutcome {
-	errors: [Error!]
-	space: Space
+    errors: [Error!]
+    space: Space
 }
-
-# ---------------------
-# Update space
-# ---------------------
-extend type Mutation {
-	spaceUpdate(input: SpaceUpdateInput!): SpaceCreateOutcome!
-}
-
-input SpaceUpdateInput {
-	spaceId: ID!
-	spaceVersion: ID!
-	object: SpaceUpdateInputObject
+`, BuiltIn: false},
+	{Name: "pkg/space/api/space.mut.update.graphql", Input: `input SpaceUpdateInput {
+    spaceId: ID!
+    spaceVersion: ID!
+    object: SpaceUpdateInputObject
 }
 
 input SpaceUpdateInputObject {
-	features: SpaceUpdateInputFeatures
+    features: SpaceUpdateInputFeatures
 }
 
 input SpaceUpdateInputFeatures {
-	register: Boolean
+    register: Boolean
 }
 `, BuiltIn: false},
-	{Name: "pkg/space/api/query.graphql", Input: `# ---------------------
-# Load Space by ID
-# ---------------------
-extend type Query {
-	space(filters: SpaceFilters!): Space
-}
-
-input SpaceFilters {
-	id: ID
-	domain: Uri
+	{Name: "pkg/space/api/space.query.graphql", Input: `input SpaceFilters {
+    id: ID
+    domain: Uri
 }
 `, BuiltIn: false},
 	{Name: "pkg/user/api/entity.graphql", Input: `type User {
@@ -7761,90 +7731,6 @@ func (ec *executionContext) _Mutation_sessionArchive(ctx context.Context, field 
 	return ec.marshalNSessionArchiveOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionArchiveOutcome(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_spaceMembershipCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_spaceMembershipCreate_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SpaceMembershipCreate(rctx, args["input"].(dto3.SpaceMembershipCreateInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*dto3.SpaceMembershipCreateOutcome)
-	fc.Result = res
-	return ec.marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_spaceMembershipUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_spaceMembershipUpdate_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SpaceMembershipUpdate(rctx, args["input"].(dto3.SpaceMembershipUpdateInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*dto3.SpaceMembershipCreateOutcome)
-	fc.Result = res
-	return ec.marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Mutation_spaceCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7927,6 +7813,90 @@ func (ec *executionContext) _Mutation_spaceUpdate(ctx context.Context, field gra
 	res := resTmp.(*dto3.SpaceCreateOutcome)
 	fc.Result = res
 	return ec.marshalNSpaceCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_spaceMembershipCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_spaceMembershipCreate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SpaceMembershipCreate(rctx, args["input"].(dto3.SpaceMembershipCreateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto3.SpaceMembershipCreateOutcome)
+	fc.Result = res
+	return ec.marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_spaceMembershipUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_spaceMembershipUpdate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SpaceMembershipUpdate(rctx, args["input"].(dto3.SpaceMembershipUpdateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto3.SpaceMembershipCreateOutcome)
+	fc.Result = res
+	return ec.marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8408,6 +8378,45 @@ func (ec *executionContext) _Query_session(ctx context.Context, field graphql.Co
 	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_space(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_space_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Space(rctx, args["filters"].(dto3.SpaceFilters))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model1.Space)
+	fc.Result = res
+	return ec.marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_membership(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -8487,45 +8496,6 @@ func (ec *executionContext) _Query_memberships(ctx context.Context, field graphq
 	res := resTmp.(*model1.MembershipConnection)
 	fc.Result = res
 	return ec.marshalNMembershipConnection2ᚖbeanᚋpkgᚋspaceᚋmodelᚐMembershipConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_space(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_space_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Space(rctx, args["filters"].(dto3.SpaceFilters))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model1.Space)
-	fc.Result = res
-	return ec.marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -14713,16 +14683,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "spaceMembershipCreate":
-			out.Values[i] = ec._Mutation_spaceMembershipCreate(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "spaceMembershipUpdate":
-			out.Values[i] = ec._Mutation_spaceMembershipUpdate(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "spaceCreate":
 			out.Values[i] = ec._Mutation_spaceCreate(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -14730,6 +14690,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "spaceUpdate":
 			out.Values[i] = ec._Mutation_spaceUpdate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "spaceMembershipCreate":
+			out.Values[i] = ec._Mutation_spaceMembershipCreate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "spaceMembershipUpdate":
+			out.Values[i] = ec._Mutation_spaceMembershipUpdate(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -14847,6 +14817,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_session(ctx, field)
 				return res
 			})
+		case "space":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_space(ctx, field)
+				return res
+			})
 		case "membership":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -14870,17 +14851,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
-				return res
-			})
-		case "space":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_space(ctx, field)
 				return res
 			})
 		case "user":

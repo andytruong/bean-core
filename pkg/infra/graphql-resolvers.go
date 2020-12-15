@@ -98,31 +98,51 @@ func (r *mailerAccountMutationResolver) Verify(ctx context.Context, obj *dto.Mai
 	return callback(ctx, obj, id, version)
 }
 func (r *mailerQueryAccountResolver) Get(ctx context.Context, obj *dto.MailerQueryAccount, id string) (*dto.MailerAccount, error) {
-	panic("no implementation in resolvers[MailerQueryAccount][Get]")
+	panic("no implementation found in resolvers[MailerQueryAccount][Get]")
 }
 func (r *mailerQueryAccountResolver) GetMultiple(ctx context.Context, obj *dto.MailerQueryAccount, first int, after *string) ([]*dto.MailerAccount, error) {
-	panic("no implementation in resolvers[MailerQueryAccount][GetMultiple]")
+	panic("no implementation found in resolvers[MailerQueryAccount][GetMultiple]")
 }
 func (r *mailerTemplateMutationResolver) Create(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error) {
-	panic("no implementation in resolvers[MailerTemplateMutation][Create]")
+	panic("no implementation found in resolvers[MailerTemplateMutation][Create]")
 }
 func (r *mailerTemplateMutationResolver) Update(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error) {
-	panic("no implementation in resolvers[MailerTemplateMutation][Update]")
+	panic("no implementation found in resolvers[MailerTemplateMutation][Update]")
 }
 func (r *mailerTemplateMutationResolver) Delete(ctx context.Context, obj *dto.MailerTemplateMutation) (*bool, error) {
-	panic("no implementation in resolvers[MailerTemplateMutation][Delete]")
+	panic("no implementation found in resolvers[MailerTemplateMutation][Delete]")
 }
 func (r *membershipResolver) Space(ctx context.Context, obj *model1.Membership) (*model1.Space, error) {
-	panic("no implementation in resolvers[Membership][Space]")
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Membership"].(map[string]interface{})
+	callback := objectResolver["Space"].(func(ctx context.Context, obj *model1.Membership) (*model1.Space, error))
+
+	return callback(ctx, obj)
 }
 func (r *membershipResolver) User(ctx context.Context, obj *model1.Membership) (*model2.User, error) {
-	panic("no implementation in resolvers[Membership][User]")
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Membership"].(map[string]interface{})
+	callback := objectResolver["User"].(func(ctx context.Context, obj *model1.Membership) (*model2.User, error))
+
+	return callback(ctx, obj)
 }
 func (r *membershipResolver) Roles(ctx context.Context, obj *model1.Membership) ([]*model1.Space, error) {
-	panic("no implementation in resolvers[Membership][Roles]")
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Membership"].(map[string]interface{})
+	callback := objectResolver["Roles"].(func(ctx context.Context, obj *model1.Membership) ([]*model1.Space, error))
+
+	return callback(ctx, obj)
 }
 func (r *membershipConnectionResolver) Edges(ctx context.Context, obj *model1.MembershipConnection) ([]*model1.MembershipEdge, error) {
-	panic("no implementation in resolvers[MembershipConnection][Edges]")
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["MembershipConnection"].(map[string]interface{})
+	callback := objectResolver["Edges"].(func(ctx context.Context, obj *model1.MembershipConnection) ([]*model1.MembershipEdge, error))
+
+	return callback(ctx, obj)
 }
 func (r *mutationResolver) SessionCreate(ctx context.Context, input *dto1.SessionCreateInput) (*dto1.SessionCreateOutcome, error) {
 	bundle, _ := r.container.bundles.Access()
@@ -140,23 +160,53 @@ func (r *mutationResolver) SessionArchive(ctx context.Context) (*dto1.SessionArc
 
 	return callback(ctx)
 }
-func (r *mutationResolver) SpaceMembershipCreate(ctx context.Context, input dto2.SpaceMembershipCreateInput) (*dto2.SpaceMembershipCreateOutcome, error) {
-	panic("no implementation in resolvers[Mutation][SpaceMembershipCreate]")
-}
-func (r *mutationResolver) SpaceMembershipUpdate(ctx context.Context, input dto2.SpaceMembershipUpdateInput) (*dto2.SpaceMembershipCreateOutcome, error) {
-	panic("no implementation in resolvers[Mutation][SpaceMembershipUpdate]")
-}
 func (r *mutationResolver) SpaceCreate(ctx context.Context, input dto2.SpaceCreateInput) (*dto2.SpaceCreateOutcome, error) {
-	panic("no implementation in resolvers[Mutation][SpaceCreate]")
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Mutation"].(map[string]interface{})
+	callback := objectResolver["SpaceCreate"].(func(ctx context.Context, input dto2.SpaceCreateInput) (*dto2.SpaceCreateOutcome, error))
+
+	return callback(ctx, input)
 }
 func (r *mutationResolver) SpaceUpdate(ctx context.Context, input dto2.SpaceUpdateInput) (*dto2.SpaceCreateOutcome, error) {
-	panic("no implementation in resolvers[Mutation][SpaceUpdate]")
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Mutation"].(map[string]interface{})
+	callback := objectResolver["SpaceUpdate"].(func(ctx context.Context, input dto2.SpaceUpdateInput) (*dto2.SpaceCreateOutcome, error))
+
+	return callback(ctx, input)
+}
+func (r *mutationResolver) SpaceMembershipCreate(ctx context.Context, input dto2.SpaceMembershipCreateInput) (*dto2.SpaceMembershipCreateOutcome, error) {
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Mutation"].(map[string]interface{})
+	callback := objectResolver["SpaceMembershipCreate"].(func(ctx context.Context, input dto2.SpaceMembershipCreateInput) (*dto2.SpaceMembershipCreateOutcome, error))
+
+	return callback(ctx, input)
+}
+func (r *mutationResolver) SpaceMembershipUpdate(ctx context.Context, input dto2.SpaceMembershipUpdateInput) (*dto2.SpaceMembershipCreateOutcome, error) {
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Mutation"].(map[string]interface{})
+	callback := objectResolver["SpaceMembershipUpdate"].(func(ctx context.Context, input dto2.SpaceMembershipUpdateInput) (*dto2.SpaceMembershipCreateOutcome, error))
+
+	return callback(ctx, input)
 }
 func (r *mutationResolver) UserCreate(ctx context.Context, input *dto3.UserCreateInput) (*dto3.UserMutationOutcome, error) {
-	panic("no implementation in resolvers[Mutation][UserCreate]")
+	bundle, _ := r.container.bundles.User()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Mutation"].(map[string]interface{})
+	callback := objectResolver["UserCreate"].(func(ctx context.Context, input *dto3.UserCreateInput) (*dto3.UserMutationOutcome, error))
+
+	return callback(ctx, input)
 }
 func (r *mutationResolver) UserUpdate(ctx context.Context, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error) {
-	panic("no implementation in resolvers[Mutation][UserUpdate]")
+	bundle, _ := r.container.bundles.User()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Mutation"].(map[string]interface{})
+	callback := objectResolver["UserUpdate"].(func(ctx context.Context, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error))
+
+	return callback(ctx, input)
 }
 func (r *mutationResolver) S3ApplicationCreate(ctx context.Context, input *dto4.S3ApplicationCreateInput) (*dto4.S3ApplicationMutationOutcome, error) {
 	bundle, _ := r.container.bundles.S3()
@@ -191,19 +241,34 @@ func (r *mutationResolver) MailerMutation(ctx context.Context) (*dto.MailerMutat
 	return callback(ctx)
 }
 func (r *queryResolver) Session(ctx context.Context, token string) (*model3.Session, error) {
-	panic("no implementation in resolvers[Query][Session]")
-}
-func (r *queryResolver) Membership(ctx context.Context, id string, version *string) (*model1.Membership, error) {
-	panic("no implementation in resolvers[Query][Membership]")
-}
-func (r *queryResolver) Memberships(ctx context.Context, first int, after *string, filters dto2.MembershipsFilter) (*model1.MembershipConnection, error) {
-	panic("no implementation in resolvers[Query][Memberships]")
+	panic("no implementation found in resolvers[Query][Session]")
 }
 func (r *queryResolver) Space(ctx context.Context, filters dto2.SpaceFilters) (*model1.Space, error) {
-	panic("no implementation in resolvers[Query][Space]")
+	panic("no implementation found in resolvers[Query][Space]")
+}
+func (r *queryResolver) Membership(ctx context.Context, id string, version *string) (*model1.Membership, error) {
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Query"].(map[string]interface{})
+	callback := objectResolver["Membership"].(func(ctx context.Context, id string, version *string) (*model1.Membership, error))
+
+	return callback(ctx, id, version)
+}
+func (r *queryResolver) Memberships(ctx context.Context, first int, after *string, filters dto2.MembershipsFilter) (*model1.MembershipConnection, error) {
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Query"].(map[string]interface{})
+	callback := objectResolver["Memberships"].(func(ctx context.Context, first int, after *string, filters dto2.MembershipsFilter) (*model1.MembershipConnection, error))
+
+	return callback(ctx, first, after, filters)
 }
 func (r *queryResolver) User(ctx context.Context, id string) (*model2.User, error) {
-	panic("no implementation in resolvers[Query][User]")
+	bundle, _ := r.container.bundles.User()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Query"].(map[string]interface{})
+	callback := objectResolver["User"].(func(ctx context.Context, id string) (*model2.User, error))
+
+	return callback(ctx, id)
 }
 func (r *queryResolver) MailerQuery(ctx context.Context) (*dto.MailerQuery, error) {
 	bundle, _ := r.container.bundles.Mailer()
@@ -254,20 +319,45 @@ func (r *sessionResolver) Jwt(ctx context.Context, obj *model3.Session, codeVeri
 	return callback(ctx, obj, codeVerifier)
 }
 func (r *spaceResolver) DomainNames(ctx context.Context, obj *model1.Space) (*model1.DomainNames, error) {
-	panic("no implementation in resolvers[Space][DomainNames]")
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Space"].(map[string]interface{})
+	callback := objectResolver["DomainNames"].(func(ctx context.Context, obj *model1.Space) (*model1.DomainNames, error))
+
+	return callback(ctx, obj)
 }
 func (r *spaceResolver) Features(ctx context.Context, obj *model1.Space) (*model1.SpaceFeatures, error) {
-	panic("no implementation in resolvers[Space][Features]")
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Space"].(map[string]interface{})
+	callback := objectResolver["Features"].(func(ctx context.Context, obj *model1.Space) (*model1.SpaceFeatures, error))
+
+	return callback(ctx, obj)
 }
 func (r *spaceResolver) Parent(ctx context.Context, obj *model1.Space) (*model1.Space, error) {
-	panic("no implementation in resolvers[Space][Parent]")
+	bundle, _ := r.container.bundles.Space()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["Space"].(map[string]interface{})
+	callback := objectResolver["Parent"].(func(ctx context.Context, obj *model1.Space) (*model1.Space, error))
+
+	return callback(ctx, obj)
 }
 func (r *userResolver) Name(ctx context.Context, obj *model2.User) (*model2.UserName, error) {
-	panic("no implementation in resolvers[User][Name]")
+	bundle, _ := r.container.bundles.User()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["User"].(map[string]interface{})
+	callback := objectResolver["Name"].(func(ctx context.Context, obj *model2.User) (*model2.UserName, error))
+
+	return callback(ctx, obj)
 }
 func (r *userResolver) Emails(ctx context.Context, obj *model2.User) (*model2.UserEmails, error) {
-	panic("no implementation in resolvers[User][Emails]")
+	bundle, _ := r.container.bundles.User()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["User"].(map[string]interface{})
+	callback := objectResolver["Emails"].(func(ctx context.Context, obj *model2.User) (*model2.UserEmails, error))
+
+	return callback(ctx, obj)
 }
 func (r *userEmailResolver) Verified(ctx context.Context, obj *model2.UserEmail) (bool, error) {
-	panic("no implementation in resolvers[UserEmail][Verified]")
+	panic("no implementation found in resolvers[UserEmail][Verified]")
 }
