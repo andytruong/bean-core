@@ -44,7 +44,7 @@ func (this MembershipResolver) Space(ctx context.Context, obj *model.Membership)
 }
 
 func (this MembershipResolver) User(ctx context.Context, obj *model.Membership) (*mUser.User, error) {
-	return this.user.Resolvers.Query.User(ctx, obj.UserID)
+	return this.user.UserService.Load(this.bean.db.WithContext(ctx), obj.UserID)
 }
 
 func (this MembershipResolver) UpdateLastLoginTime(db *gorm.DB, membership *model.Membership) error {

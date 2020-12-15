@@ -55,7 +55,7 @@ func (this *SpaceBundle) GraphqlResolver() map[string]interface{} {
 					return nil, err
 				}
 				
-				user, err := this.userBundle.Resolvers.Query.User(ctx, in.UserID)
+				user, err := this.userBundle.UserService.Load(this.db.WithContext(ctx), in.UserID)
 				if nil != err {
 					return nil, err
 				}

@@ -25,11 +25,11 @@ func NewUserBundle(db *gorm.DB, logger *zap.Logger, id *unique.Identifier) *User
 		maxSecondaryEmailPerUser: 20,
 	}
 	
-	this.Service = &UserService{bundle: this}
+	this.UserService = &UserService{bundle: this}
 	this.NameService = &NameService{bean: this}
 	this.EmailService = &EmailService{bean: this}
 	this.PasswordService = &PasswordService{bean: this}
-	this.resolvers = newResolver(this)
+	this.resolvers = newResolvers(this)
 	
 	return this
 }
@@ -42,7 +42,7 @@ type UserBundle struct {
 	id                       *unique.Identifier
 	maxSecondaryEmailPerUser uint8
 	resolvers                map[string]interface{}
-	Service                  *UserService
+	UserService              *UserService
 	NameService              *NameService
 	EmailService             *EmailService
 	PasswordService          *PasswordService

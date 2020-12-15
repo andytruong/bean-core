@@ -10,13 +10,13 @@ import (
 	"bean/pkg/util/connect"
 )
 
-func newResolver(bundle *UserBundle) map[string]interface{} {
+func newResolvers(bundle *UserBundle) map[string]interface{} {
 	return map[string]interface{}{
 		"Query": map[string]interface{}{
 			"User": func(ctx context.Context, id string) (*model.User, error) {
 				db := bundle.db.WithContext(ctx)
 				
-				return bundle.Service.Load(db, id)
+				return bundle.UserService.Load(db, id)
 			},
 		},
 		"Mutation": map[string]interface{}{
@@ -25,7 +25,7 @@ func newResolver(bundle *UserBundle) map[string]interface{} {
 				var out *dto.UserMutationOutcome
 				
 				err = connect.Transaction(ctx, bundle.db, func(tx *gorm.DB) error {
-					out, err = bundle.Service.Create(tx, in)
+					out, err = bundle.UserService.Create(tx, in)
 					
 					return err
 				})
@@ -37,7 +37,7 @@ func newResolver(bundle *UserBundle) map[string]interface{} {
 				var out *dto.UserMutationOutcome
 				
 				err = connect.Transaction(ctx, bundle.db, func(tx *gorm.DB) error {
-					out, err = bundle.Service.Update(tx, input)
+					out, err = bundle.UserService.Update(tx, input)
 					
 					return err
 				})

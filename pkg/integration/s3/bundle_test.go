@@ -149,7 +149,7 @@ func Test(t *testing.T) {
 					
 					// reload & assert
 					{
-						cred, err := this.AppService.Resolver.Credentials(ctx, app)
+						cred, err := this.credentialService.loadByApplicationId(ctx, app.ID)
 						ass.NoError(err)
 						ass.Equal("http://localhost:9191", string(cred.Endpoint))
 						ass.Equal("test", cred.Bucket)
@@ -205,7 +205,7 @@ func Test(t *testing.T) {
 					
 					// after update: add 1, update 1, remove 1
 					{
-						policies, err := this.AppService.Resolver.Polices(ctx, app)
+						policies, err := this.policyService.loadByApplicationId(ctx, app.ID)
 						ass.NoError(err)
 						ass.Equal(3, len(policies))
 						ass.Equal(policies[0].Kind, model.PolicyKindFileExtensions)
@@ -291,7 +291,7 @@ func Test_UploadToken(t *testing.T) {
 	ass.NoError(err)
 	ass.NotNil(oCreate)
 	
-	formData, err := this.AppService.Resolver.S3UploadToken(ctx, dto.S3UploadTokenInput{
+	formData, err := this.AppService.S3UploadToken(ctx, dto.S3UploadTokenInput{
 		ApplicationId: oCreate.App.ID,
 		FilePath:      "/path/to/image.png",
 		ContentType:   scalar.ImagePNG,

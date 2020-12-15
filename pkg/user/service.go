@@ -68,7 +68,7 @@ func (this *UserService) Create(tx *gorm.DB, in *dto.UserCreateInput) (*dto.User
 }
 
 func (this *UserService) Update(tx *gorm.DB, in dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
-	obj, err := this.bundle.Service.Load(tx, in.ID)
+	obj, err := this.bundle.UserService.Load(tx, in.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -42,12 +42,6 @@ func NewAccessBundle(
 		spaceBundle: spaceBundle,
 	}
 	
-	this.SessionResolver = ModelResolver{
-		logger: logger,
-		bundle: this,
-		config: config,
-	}
-	
 	this.sessionService = &SessionService{bundle: this}
 	this.JwtService = &JwtService{bundle: this}
 	this.resolvers = this.newResolves()
@@ -59,13 +53,12 @@ type (
 	AccessBundle struct {
 		module.AbstractBundle
 		
-		config          *AccessConfiguration
-		logger          *zap.Logger
-		db              *gorm.DB
-		id              *unique.Identifier
-		SessionResolver ModelResolver
-		sessionService  *SessionService
-		JwtService      *JwtService
+		config         *AccessConfiguration
+		logger         *zap.Logger
+		db             *gorm.DB
+		id             *unique.Identifier
+		sessionService *SessionService
+		JwtService     *JwtService
 		
 		// depends on userBundle bundle
 		userBundle  *user.UserBundle
@@ -119,7 +112,9 @@ func (this AccessBundle) GraphqlResolver() map[string]interface{} {
 
 func (this AccessBundle) newResolves() map[string]interface{} {
 	return map[string]interface{}{
-		"Query": map[string]interface{}{},
+		"Query": map[string]interface{}{
+		
+		},
 		"Mutation": map[string]interface{}{
 			"SessionCreate": func(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 				return this.SessionCreate(ctx, input)
@@ -130,7 +125,7 @@ func (this AccessBundle) newResolves() map[string]interface{} {
 		},
 		"Session": map[string]interface{}{
 			"User": func(ctx context.Context, obj *model.Session) (*user_model.User, error) {
-				return this.userBundle.Resolvers.Query.User(ctx, obj.UserId)
+				return this.userBundle.UserService.Load(this.db.WithContext(ctx), obj.UserId)
 			},
 			"Context": func(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
 				panic("implement me")
