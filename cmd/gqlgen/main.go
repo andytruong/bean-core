@@ -15,8 +15,8 @@ import (
 	. "github.com/99designs/gqlgen/plugin/resolvergen"
 	"github.com/pkg/errors"
 
+	util2 "bean/components/util"
 	"bean/pkg/infra"
-	"bean/pkg/util"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 	_ = os.Setenv("ENV", "test")
 	path := "config.yaml"
 	if "" == path {
-		err := errors.Wrap(util.ErrorConfig, "missing env CONFIG")
+		err := errors.Wrap(util2.ErrorConfig, "missing env CONFIG")
 		panic(err)
 	}
 

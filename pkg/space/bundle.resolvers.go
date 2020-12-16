@@ -6,10 +6,10 @@ import (
 	"github.com/pkg/errors"
 
 	"bean/components/scalar"
+	util2 "bean/components/util"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
 	mUser "bean/pkg/user/model"
-	"bean/pkg/util"
 )
 
 func (this *SpaceBundle) newResolvers() map[string]interface{} {
@@ -90,7 +90,7 @@ func (this *SpaceBundle) newResolvers() map[string]interface{} {
 				}
 
 				if !features.Register {
-					return nil, errors.Wrap(util.ErrorConfig, "register is off")
+					return nil, errors.Wrap(util2.ErrorConfig, "register is off")
 				}
 
 				tx := this.db.WithContext(ctx).Begin()

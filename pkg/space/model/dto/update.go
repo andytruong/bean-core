@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"bean/pkg/util/api"
+	"bean/pkg/infra/api"
 )
 
 type SpaceUpdateInput struct {

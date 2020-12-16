@@ -3,9 +3,9 @@ package dto
 import (
 	"time"
 
+	"bean/pkg/infra/api"
 	"bean/pkg/space/model"
 	mUser "bean/pkg/user/model"
-	"bean/pkg/util/api"
 )
 
 type MailerTemplate struct {

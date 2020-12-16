@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"bean/pkg/util/api"
+	"bean/pkg/infra/api"
 )
 
 type Space struct {

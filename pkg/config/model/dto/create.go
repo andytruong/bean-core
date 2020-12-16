@@ -2,8 +2,8 @@ package dto
 
 import (
 	"bean/components/scalar"
+	util2 "bean/components/util"
 	"bean/pkg/config/model"
-	"bean/pkg/util"
 )
 
 type BucketCreateInput struct {
@@ -20,6 +20,6 @@ type BucketCreateInput struct {
 }
 
 type BucketMutationOutcome struct {
-	Errors []util.Error        `json:"errors"`
+	Errors []util2.Error       `json:"errors"`
 	Bucket *model.ConfigBucket `json:"bucket"`
 }

@@ -2,9 +2,9 @@ package fixtures
 
 import (
 	"bean/components/scalar"
+	"bean/pkg/infra/api"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
-	"bean/pkg/util/api"
 )
 
 func SpaceCreateInputFixture(register bool) dto.SpaceCreateInput {

@@ -11,7 +11,7 @@ import (
 
 	"bean/components/claim"
 	"bean/components/scalar"
-	"bean/pkg/util"
+	util2 "bean/components/util"
 )
 
 type (
@@ -53,7 +53,7 @@ func (this *AccessConfiguration) signMethod() jwt.SigningMethod {
 		return jwt.SigningMethodRS512
 
 	default:
-		panic(util.ErrorToBeImplemented)
+		panic(util2.ErrorToBeImplemented)
 	}
 }
 

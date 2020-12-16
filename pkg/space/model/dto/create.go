@@ -1,9 +1,9 @@
 package dto
 
 import (
+	util2 "bean/components/util"
+	"bean/pkg/infra/api"
 	"bean/pkg/space/model"
-	"bean/pkg/util"
-	"bean/pkg/util/api"
 )
 
 type SpaceCreateInput struct {
@@ -38,6 +38,6 @@ type SpaceFeaturesInput struct {
 }
 
 type SpaceCreateOutcome struct {
-	Errors []util.Error `json:"errors"`
-	Space  *model.Space `json:"space"`
+	Errors []util2.Error `json:"errors"`
+	Space  *model.Space  `json:"space"`
 }

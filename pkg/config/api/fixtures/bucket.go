@@ -2,12 +2,12 @@ package fixtures
 
 import (
 	"bean/components/scalar"
+	util2 "bean/components/util"
 	"bean/pkg/config/model/dto"
-	"bean/pkg/util"
 )
 
 func NewConfigBucketCreate(access scalar.AccessMode) *dto.BucketCreateInput {
-	id := util.MockIdentifier()
+	id := util2.MockIdentifier()
 
 	return &dto.BucketCreateInput{
 		HostId:      id.MustULID(),

@@ -5,10 +5,10 @@ import (
 
 	"gorm.io/gorm"
 
+	connect2 "bean/components/util/connect"
 	model2 "bean/pkg/space/model"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
-	"bean/pkg/util/connect"
 )
 
 func newResolvers(bundle *UserBundle) map[string]interface{} {
@@ -36,7 +36,7 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 				var err error
 				var out *dto.UserMutationOutcome
 
-				err = connect.Transaction(ctx, bundle.db, func(tx *gorm.DB) error {
+				err = connect2.Transaction(ctx, bundle.db, func(tx *gorm.DB) error {
 					out, err = bundle.Service.Create(tx, in)
 
 					return err
@@ -48,7 +48,7 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 				var err error
 				var out *dto.UserMutationOutcome
 
-				err = connect.Transaction(ctx, bundle.db, func(tx *gorm.DB) error {
+				err = connect2.Transaction(ctx, bundle.db, func(tx *gorm.DB) error {
 					out, err = bundle.Service.Update(tx, input)
 
 					return err

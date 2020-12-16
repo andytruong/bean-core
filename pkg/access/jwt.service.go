@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"bean/components/claim"
-	"bean/pkg/util"
+	util2 "bean/components/util"
 )
 
 type JwtService struct {
@@ -41,7 +41,7 @@ func (this JwtService) Validate(authHeader string) (*claim.Payload, error) {
 func (this JwtService) Sign(claims jwt.Claims) (string, error) {
 	key, err := this.bundle.config.GetSignKey()
 	if nil != err {
-		return "", errors.Wrap(util.ErrorConfig, err.Error())
+		return "", errors.Wrap(util2.ErrorConfig, err.Error())
 	}
 
 	return jwt.

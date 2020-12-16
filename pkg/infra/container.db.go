@@ -10,7 +10,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	"bean/pkg/util"
+	util2 "bean/components/util"
 )
 
 type databases struct {
@@ -28,7 +28,7 @@ func (this *databases) get(name string) (*gorm.DB, error) {
 		return db.(*gorm.DB), nil
 	} else if cnf, ok := this.config[name]; !ok {
 		// No configuration found for requested-DB
-		return nil, errors.Wrap(util.ErrorConfig, "database config not provided: "+name)
+		return nil, errors.Wrap(util2.ErrorConfig, "database config not provided: "+name)
 	} else {
 		if con, err := gorm.Open(this.dialector(cnf), &gorm.Config{SkipDefaultTransaction: true}); nil != err {
 			return nil, err

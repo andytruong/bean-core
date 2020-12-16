@@ -9,10 +9,10 @@ import (
 	"gorm.io/gorm"
 
 	"bean/components/scalar"
+	util2 "bean/components/util"
+	connect2 "bean/components/util/connect"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
-	"bean/pkg/util"
-	"bean/pkg/util/connect"
 )
 
 type MemberService struct {
@@ -26,7 +26,7 @@ func (this MemberService) load(ctx context.Context, id string, version *string) 
 		return nil, err
 	} else if nil != version {
 		if obj.Version != *version {
-			return nil, util.ErrorVersionConflict
+			return nil, util2.ErrorVersionConflict
 		}
 	}
 
@@ -35,7 +35,7 @@ func (this MemberService) load(ctx context.Context, id string, version *string) 
 
 func (this MemberService) Find(first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {
 	if first > 100 {
-		return nil, errors.New(util.ErrorQueryTooMuch.String())
+		return nil, errors.New(util2.ErrorQueryTooMuch.String())
 	}
 
 	con := &model.MembershipConnection{
@@ -107,7 +107,7 @@ func (this MemberService) findUnlimited(afterRaw *string, filters dto.Membership
 
 	// Pagination -> after
 	if nil != afterRaw {
-		after, err := connect.DecodeCursor(*afterRaw)
+		after, err := connect2.DecodeCursor(*afterRaw)
 
 		if nil != err {
 			return nil, err
@@ -163,9 +163,9 @@ func (this MemberService) doCreate(tx *gorm.DB, spaceId string, userId string, i
 	return membership, nil
 }
 
-func (this MemberService) createRelationships(tx *gorm.DB, obj *model.Membership, managerMemberIds []string) ([]*util.Error, error) {
+func (this MemberService) createRelationships(tx *gorm.DB, obj *model.Membership, managerMemberIds []string) ([]*util2.Error, error) {
 	if len(managerMemberIds) > this.bundle.config.Manager.MaxNumberOfManager {
-		return util.NewErrors(util.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "exceeded limitation"), nil
+		return util2.NewErrors(util2.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "exceeded limitation"), nil
 	}
 
 	// validate manager in same space
@@ -182,7 +182,7 @@ func (this MemberService) createRelationships(tx *gorm.DB, obj *model.Membership
 		if nil != err {
 			return nil, err
 		} else if int(counter) != len(managerMemberIds) {
-			return util.NewErrors(util.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "one ore more IDs are invalid"), nil
+			return util2.NewErrors(util2.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "one ore more IDs are invalid"), nil
 		}
 	}
 
@@ -237,10 +237,10 @@ func (this MemberService) FindRoles(ctx context.Context, userId string, spaceId 
 		Joins(
 			fmt.Sprintf(
 				"INNER JOIN %s ON %s.space_id = %s.id AND %s.user_id = ?",
-				connect.TableSpaceMemberships,
-				connect.TableSpaceMemberships,
-				connect.TableSpace,
-				connect.TableSpaceMemberships,
+				connect2.TableSpaceMemberships,
+				connect2.TableSpaceMemberships,
+				connect2.TableSpace,
+				connect2.TableSpaceMemberships,
 			),
 			userId,
 		).

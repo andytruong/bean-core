@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"bean/components/scalar"
-	"bean/pkg/util/api"
+	"bean/pkg/infra/api"
 )
 
 type User struct {

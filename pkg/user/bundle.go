@@ -10,11 +10,11 @@ import (
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
-	"bean/pkg/util"
+	util2 "bean/components/util"
 )
 
 func NewUserBundle(db *gorm.DB, logger *zap.Logger, id *unique.Identifier) *UserBundle {
-	if err := util.NilPointerErrorValidate(db, logger, id); nil != err {
+	if err := util2.NilPointerErrorValidate(db, logger, id); nil != err {
 		panic(err)
 	}
 

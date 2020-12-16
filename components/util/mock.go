@@ -10,7 +10,7 @@ import (
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
-	"bean/pkg/util/connect"
+	connect2 "bean/components/util/connect"
 )
 
 func MockDatabase() *gorm.DB {
@@ -61,7 +61,7 @@ func mockInstall(bean module.Bundle, tx *gorm.DB) error {
 		}
 	}
 
-	if err := bean.Migrate(tx, connect.SQLite); nil != err {
+	if err := bean.Migrate(tx, connect2.SQLite); nil != err {
 		tx.Rollback()
 		panic(err)
 	}

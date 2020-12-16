@@ -1,5 +1,5 @@
 schema:
-    - pkg/util/api/*.graphql
+    - pkg/infra/api/*.graphql
     - pkg/config/api/*.graphql
     - pkg/access/api/*.graphql
     - pkg/space/api/*.graphql
@@ -20,8 +20,8 @@ resolver:
 
 autobind:
     - bean/components/scalar
-    - bean/pkg/util
-    - bean/pkg/util/api
+    - bean/components/util
+    - bean/pkg/infra/api
     - bean/pkg/config/model
     - bean/pkg/user/model
     - bean/pkg/user/model/dto

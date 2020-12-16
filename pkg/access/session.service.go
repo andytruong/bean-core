@@ -8,11 +8,11 @@ import (
 	"gorm.io/gorm"
 
 	"bean/components/claim"
+	util2 "bean/components/util"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	mSpace "bean/pkg/space/model"
 	mUser "bean/pkg/user/model"
-	"bean/pkg/util"
 )
 
 type SessionService struct {
@@ -46,7 +46,7 @@ func (this *SessionService) createUseCredentials(tx *gorm.DB, in *dto.SessionCre
 
 		if !email.IsActive {
 			return &dto.SessionCreateOutcome{
-				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.email"}, "email address is not active"),
+				Errors: util2.NewErrors(util2.ErrorCodeInput, []string{"input.email"}, "email address is not active"),
 			}, nil
 		}
 	}
@@ -58,7 +58,7 @@ func (this *SessionService) createUseCredentials(tx *gorm.DB, in *dto.SessionCre
 		if nil != err {
 			if err == gorm.ErrRecordNotFound {
 				return &dto.SessionCreateOutcome{
-					Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "invalid password"),
+					Errors: util2.NewErrors(util2.ErrorCodeInput, []string{"input.spaceId"}, "invalid password"),
 				}, nil
 			}
 		}
@@ -81,7 +81,7 @@ func (this *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (
 	}
 
 	if oneTimeSession.Kind != claim.KindOTLT {
-		return nil, util.ErrorInvalidArgument
+		return nil, util2.ErrorInvalidArgument
 	}
 
 	out, err := this.create(tx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.SpaceId, func(session *model.Session) {
@@ -118,7 +118,7 @@ func (this SessionService) create(
 
 		if err == gorm.ErrRecordNotFound {
 			return &dto.SessionCreateOutcome{
-				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "membership not found"),
+				Errors: util2.NewErrors(util2.ErrorCodeInput, []string{"input.spaceId"}, "membership not found"),
 			}, nil
 		}
 	}
