@@ -44,8 +44,15 @@ func (r *Resolver) Membership() gql.MembershipResolver { return &membershipResol
 func (r *Resolver) MembershipConnection() gql.MembershipConnectionResolver {
 	return &membershipConnectionResolver{r}
 }
-func (r *Resolver) Mutation() gql.MutationResolver   { return &mutationResolver{r} }
-func (r *Resolver) Query() gql.QueryResolver         { return &queryResolver{r} }
+func (r *Resolver) Mutation() gql.MutationResolver { return &mutationResolver{r} }
+func (r *Resolver) Query() gql.QueryResolver       { return &queryResolver{r} }
+func (r *Resolver) S3ApplicationMutation() gql.S3ApplicationMutationResolver {
+	return &s3ApplicationMutationResolver{r}
+}
+func (r *Resolver) S3Mutation() gql.S3MutationResolver { return &s3MutationResolver{r} }
+func (r *Resolver) S3UploadMutation() gql.S3UploadMutationResolver {
+	return &s3UploadMutationResolver{r}
+}
 func (r *Resolver) Session() gql.SessionResolver     { return &sessionResolver{r} }
 func (r *Resolver) Space() gql.SpaceResolver         { return &spaceResolver{r} }
 func (r *Resolver) User() gql.UserResolver           { return &userResolver{r} }
@@ -64,6 +71,9 @@ type membershipResolver struct{ *Resolver }
 type membershipConnectionResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type s3ApplicationMutationResolver struct{ *Resolver }
+type s3MutationResolver struct{ *Resolver }
+type s3UploadMutationResolver struct{ *Resolver }
 type sessionResolver struct{ *Resolver }
 type spaceResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
@@ -194,12 +204,6 @@ func (r *mutationResolver) AccessMutation(ctx context.Context) (*dto.AccessMutat
 
 	return callback(ctx)
 }
-func (r *mutationResolver) SessionCreate(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
-	panic("no implementation found in resolvers[Mutation][SessionCreate]")
-}
-func (r *mutationResolver) SessionArchive(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
-	panic("no implementation found in resolvers[Mutation][SessionArchive]")
-}
 func (r *mutationResolver) SpaceCreate(ctx context.Context, input dto2.SpaceCreateInput) (*dto2.SpaceCreateOutcome, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
@@ -248,29 +252,13 @@ func (r *mutationResolver) UserUpdate(ctx context.Context, input dto3.UserUpdate
 
 	return callback(ctx, input)
 }
-func (r *mutationResolver) S3ApplicationCreate(ctx context.Context, input *dto4.S3ApplicationCreateInput) (*dto4.S3ApplicationMutationOutcome, error) {
+func (r *mutationResolver) S3Mutation(ctx context.Context) (*dto4.S3Mutation, error) {
 	bundle, _ := r.container.bundles.S3()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Mutation"].(map[string]interface{})
-	callback := objectResolver["S3ApplicationCreate"].(func(ctx context.Context, input *dto4.S3ApplicationCreateInput) (*dto4.S3ApplicationMutationOutcome, error))
+	callback := objectResolver["S3Mutation"].(func(ctx context.Context) (*dto4.S3Mutation, error))
 
-	return callback(ctx, input)
-}
-func (r *mutationResolver) S3ApplicationUpdate(ctx context.Context, input *dto4.S3ApplicationUpdateInput) (*dto4.S3ApplicationMutationOutcome, error) {
-	bundle, _ := r.container.bundles.S3()
-	resolvers := bundle.GraphqlResolver()
-	objectResolver := resolvers["Mutation"].(map[string]interface{})
-	callback := objectResolver["S3ApplicationUpdate"].(func(ctx context.Context, input *dto4.S3ApplicationUpdateInput) (*dto4.S3ApplicationMutationOutcome, error))
-
-	return callback(ctx, input)
-}
-func (r *mutationResolver) S3UploadToken(ctx context.Context, input dto4.S3UploadTokenInput) (map[string]interface{}, error) {
-	bundle, _ := r.container.bundles.S3()
-	resolvers := bundle.GraphqlResolver()
-	objectResolver := resolvers["Mutation"].(map[string]interface{})
-	callback := objectResolver["S3UploadToken"].(func(ctx context.Context, input dto4.S3UploadTokenInput) (map[string]interface{}, error))
-
-	return callback(ctx, input)
+	return callback(ctx)
 }
 func (r *mutationResolver) MailerMutation(ctx context.Context) (*dto1.MailerMutation, error) {
 	bundle, _ := r.container.bundles.Mailer()
@@ -287,9 +275,6 @@ func (r *queryResolver) AccessQuery(ctx context.Context) (*dto.AccessQuery, erro
 	callback := objectResolver["AccessQuery"].(func(ctx context.Context) (*dto.AccessQuery, error))
 
 	return callback(ctx)
-}
-func (r *queryResolver) Session(ctx context.Context, token string) (*model.Session, error) {
-	panic("no implementation found in resolvers[Query][Session]")
 }
 func (r *queryResolver) Space(ctx context.Context, filters dto2.SpaceFilters) (*model2.Space, error) {
 	panic("no implementation found in resolvers[Query][Space]")
@@ -325,6 +310,41 @@ func (r *queryResolver) MailerQuery(ctx context.Context) (*dto1.MailerQuery, err
 	callback := objectResolver["MailerQuery"].(func(ctx context.Context) (*dto1.MailerQuery, error))
 
 	return callback(ctx)
+}
+func (r *s3ApplicationMutationResolver) Create(ctx context.Context, obj *dto4.S3ApplicationMutation, input *dto4.S3ApplicationCreateInput) (*dto4.S3ApplicationMutationOutcome, error) {
+	bundle, _ := r.container.bundles.S3()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["S3ApplicationMutation"].(map[string]interface{})
+	callback := objectResolver["Create"].(func(ctx context.Context, obj *dto4.S3ApplicationMutation, input *dto4.S3ApplicationCreateInput) (*dto4.S3ApplicationMutationOutcome, error))
+
+	return callback(ctx, obj, input)
+}
+func (r *s3ApplicationMutationResolver) Update(ctx context.Context, obj *dto4.S3ApplicationMutation, input *dto4.S3ApplicationUpdateInput) (*dto4.S3ApplicationMutationOutcome, error) {
+	bundle, _ := r.container.bundles.S3()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["S3ApplicationMutation"].(map[string]interface{})
+	callback := objectResolver["Update"].(func(ctx context.Context, obj *dto4.S3ApplicationMutation, input *dto4.S3ApplicationUpdateInput) (*dto4.S3ApplicationMutationOutcome, error))
+
+	return callback(ctx, obj, input)
+}
+func (r *s3MutationResolver) Application(ctx context.Context, obj *dto4.S3Mutation) (*dto4.S3ApplicationMutation, error) {
+	bundle, _ := r.container.bundles.S3()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["S3Mutation"].(map[string]interface{})
+	callback := objectResolver["Application"].(func(ctx context.Context, obj *dto4.S3Mutation) (*dto4.S3ApplicationMutation, error))
+
+	return callback(ctx, obj)
+}
+func (r *s3MutationResolver) Uploadd(ctx context.Context, obj *dto4.S3Mutation) (*dto4.S3UploadMutation, error) {
+	panic("no implementation found in resolvers[S3Mutation][Uploadd]")
+}
+func (r *s3UploadMutationResolver) Token(ctx context.Context, obj *dto4.S3UploadMutation, input dto4.S3UploadTokenInput) (map[string]interface{}, error) {
+	bundle, _ := r.container.bundles.S3()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["S3UploadMutation"].(map[string]interface{})
+	callback := objectResolver["Token"].(func(ctx context.Context, obj *dto4.S3UploadMutation, input dto4.S3UploadTokenInput) (map[string]interface{}, error))
+
+	return callback(ctx, obj, input)
 }
 func (r *sessionResolver) User(ctx context.Context, obj *model.Session) (*model3.User, error) {
 	bundle, _ := r.container.bundles.Access()

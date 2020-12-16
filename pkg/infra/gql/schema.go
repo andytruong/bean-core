@@ -9,11 +9,11 @@ import (
 	model4 "bean/pkg/config/model"
 	dto1 "bean/pkg/integration/mailer/model/dto"
 	model1 "bean/pkg/integration/s3/model"
-	dto2 "bean/pkg/integration/s3/model/dto"
+	dto4 "bean/pkg/integration/s3/model/dto"
 	model2 "bean/pkg/space/model"
-	dto3 "bean/pkg/space/model/dto"
+	dto2 "bean/pkg/space/model/dto"
 	model3 "bean/pkg/user/model"
-	dto4 "bean/pkg/user/model/dto"
+	dto3 "bean/pkg/user/model/dto"
 	"bean/pkg/util"
 	"bean/pkg/util/api"
 	"bytes"
@@ -61,6 +61,9 @@ type ResolverRoot interface {
 	MembershipConnection() MembershipConnectionResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	S3ApplicationMutation() S3ApplicationMutationResolver
+	S3Mutation() S3MutationResolver
+	S3UploadMutation() S3UploadMutationResolver
 	Session() SessionResolver
 	Space() SpaceResolver
 	User() UserResolver
@@ -297,17 +300,13 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AccessMutation        func(childComplexity int) int
 		MailerMutation        func(childComplexity int) int
-		S3ApplicationCreate   func(childComplexity int, input *dto2.S3ApplicationCreateInput) int
-		S3ApplicationUpdate   func(childComplexity int, input *dto2.S3ApplicationUpdateInput) int
-		S3UploadToken         func(childComplexity int, input dto2.S3UploadTokenInput) int
-		SessionArchive        func(childComplexity int) int
-		SessionCreate         func(childComplexity int, input *dto.SessionCreateInput) int
-		SpaceCreate           func(childComplexity int, input dto3.SpaceCreateInput) int
-		SpaceMembershipCreate func(childComplexity int, input dto3.SpaceMembershipCreateInput) int
-		SpaceMembershipUpdate func(childComplexity int, input dto3.SpaceMembershipUpdateInput) int
-		SpaceUpdate           func(childComplexity int, input dto3.SpaceUpdateInput) int
-		UserCreate            func(childComplexity int, input *dto4.UserCreateInput) int
-		UserUpdate            func(childComplexity int, input dto4.UserUpdateInput) int
+		S3Mutation            func(childComplexity int) int
+		SpaceCreate           func(childComplexity int, input dto2.SpaceCreateInput) int
+		SpaceMembershipCreate func(childComplexity int, input dto2.SpaceMembershipCreateInput) int
+		SpaceMembershipUpdate func(childComplexity int, input dto2.SpaceMembershipUpdateInput) int
+		SpaceUpdate           func(childComplexity int, input dto2.SpaceUpdateInput) int
+		UserCreate            func(childComplexity int, input *dto3.UserCreateInput) int
+		UserUpdate            func(childComplexity int, input dto3.UserUpdateInput) int
 	}
 
 	Policy struct {
@@ -322,15 +321,28 @@ type ComplexityRoot struct {
 		AccessQuery func(childComplexity int) int
 		MailerQuery func(childComplexity int) int
 		Membership  func(childComplexity int, id string, version *string) int
-		Memberships func(childComplexity int, first int, after *string, filters dto3.MembershipsFilter) int
-		Session     func(childComplexity int, token string) int
-		Space       func(childComplexity int, filters dto3.SpaceFilters) int
+		Memberships func(childComplexity int, first int, after *string, filters dto2.MembershipsFilter) int
+		Space       func(childComplexity int, filters dto2.SpaceFilters) int
 		User        func(childComplexity int, id string) int
+	}
+
+	S3ApplicationMutation struct {
+		Create func(childComplexity int, input *dto4.S3ApplicationCreateInput) int
+		Update func(childComplexity int, input *dto4.S3ApplicationUpdateInput) int
 	}
 
 	S3ApplicationMutationOutcome struct {
 		App    func(childComplexity int) int
 		Errors func(childComplexity int) int
+	}
+
+	S3Mutation struct {
+		Application func(childComplexity int) int
+		Uploadd     func(childComplexity int) int
+	}
+
+	S3UploadMutation struct {
+		Token func(childComplexity int, input dto4.S3UploadTokenInput) int
 	}
 
 	Session struct {
@@ -478,27 +490,33 @@ type MembershipConnectionResolver interface {
 }
 type MutationResolver interface {
 	AccessMutation(ctx context.Context) (*dto.AccessMutation, error)
-	SessionCreate(ctx context.Context, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error)
-	SessionArchive(ctx context.Context) (*dto.SessionArchiveOutcome, error)
-	SpaceCreate(ctx context.Context, input dto3.SpaceCreateInput) (*dto3.SpaceCreateOutcome, error)
-	SpaceUpdate(ctx context.Context, input dto3.SpaceUpdateInput) (*dto3.SpaceCreateOutcome, error)
-	SpaceMembershipCreate(ctx context.Context, input dto3.SpaceMembershipCreateInput) (*dto3.SpaceMembershipCreateOutcome, error)
-	SpaceMembershipUpdate(ctx context.Context, input dto3.SpaceMembershipUpdateInput) (*dto3.SpaceMembershipCreateOutcome, error)
-	UserCreate(ctx context.Context, input *dto4.UserCreateInput) (*dto4.UserMutationOutcome, error)
-	UserUpdate(ctx context.Context, input dto4.UserUpdateInput) (*dto4.UserMutationOutcome, error)
-	S3ApplicationCreate(ctx context.Context, input *dto2.S3ApplicationCreateInput) (*dto2.S3ApplicationMutationOutcome, error)
-	S3ApplicationUpdate(ctx context.Context, input *dto2.S3ApplicationUpdateInput) (*dto2.S3ApplicationMutationOutcome, error)
-	S3UploadToken(ctx context.Context, input dto2.S3UploadTokenInput) (map[string]interface{}, error)
+	SpaceCreate(ctx context.Context, input dto2.SpaceCreateInput) (*dto2.SpaceCreateOutcome, error)
+	SpaceUpdate(ctx context.Context, input dto2.SpaceUpdateInput) (*dto2.SpaceCreateOutcome, error)
+	SpaceMembershipCreate(ctx context.Context, input dto2.SpaceMembershipCreateInput) (*dto2.SpaceMembershipCreateOutcome, error)
+	SpaceMembershipUpdate(ctx context.Context, input dto2.SpaceMembershipUpdateInput) (*dto2.SpaceMembershipCreateOutcome, error)
+	UserCreate(ctx context.Context, input *dto3.UserCreateInput) (*dto3.UserMutationOutcome, error)
+	UserUpdate(ctx context.Context, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error)
+	S3Mutation(ctx context.Context) (*dto4.S3Mutation, error)
 	MailerMutation(ctx context.Context) (*dto1.MailerMutation, error)
 }
 type QueryResolver interface {
 	AccessQuery(ctx context.Context) (*dto.AccessQuery, error)
-	Session(ctx context.Context, token string) (*model.Session, error)
-	Space(ctx context.Context, filters dto3.SpaceFilters) (*model2.Space, error)
+	Space(ctx context.Context, filters dto2.SpaceFilters) (*model2.Space, error)
 	Membership(ctx context.Context, id string, version *string) (*model2.Membership, error)
-	Memberships(ctx context.Context, first int, after *string, filters dto3.MembershipsFilter) (*model2.MembershipConnection, error)
+	Memberships(ctx context.Context, first int, after *string, filters dto2.MembershipsFilter) (*model2.MembershipConnection, error)
 	User(ctx context.Context, id string) (*model3.User, error)
 	MailerQuery(ctx context.Context) (*dto1.MailerQuery, error)
+}
+type S3ApplicationMutationResolver interface {
+	Create(ctx context.Context, obj *dto4.S3ApplicationMutation, input *dto4.S3ApplicationCreateInput) (*dto4.S3ApplicationMutationOutcome, error)
+	Update(ctx context.Context, obj *dto4.S3ApplicationMutation, input *dto4.S3ApplicationUpdateInput) (*dto4.S3ApplicationMutationOutcome, error)
+}
+type S3MutationResolver interface {
+	Application(ctx context.Context, obj *dto4.S3Mutation) (*dto4.S3ApplicationMutation, error)
+	Uploadd(ctx context.Context, obj *dto4.S3Mutation) (*dto4.S3UploadMutation, error)
+}
+type S3UploadMutationResolver interface {
+	Token(ctx context.Context, obj *dto4.S3UploadMutation, input dto4.S3UploadTokenInput) (map[string]interface{}, error)
 }
 type SessionResolver interface {
 	User(ctx context.Context, obj *model.Session) (*model3.User, error)
@@ -1468,60 +1486,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.MailerMutation(childComplexity), true
 
-	case "Mutation.S3ApplicationCreate":
-		if e.complexity.Mutation.S3ApplicationCreate == nil {
+	case "Mutation.s3Mutation":
+		if e.complexity.Mutation.S3Mutation == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_S3ApplicationCreate_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.S3ApplicationCreate(childComplexity, args["input"].(*dto2.S3ApplicationCreateInput)), true
-
-	case "Mutation.S3ApplicationUpdate":
-		if e.complexity.Mutation.S3ApplicationUpdate == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_S3ApplicationUpdate_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.S3ApplicationUpdate(childComplexity, args["input"].(*dto2.S3ApplicationUpdateInput)), true
-
-	case "Mutation.S3UploadToken":
-		if e.complexity.Mutation.S3UploadToken == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_S3UploadToken_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.S3UploadToken(childComplexity, args["input"].(dto2.S3UploadTokenInput)), true
-
-	case "Mutation.sessionArchive":
-		if e.complexity.Mutation.SessionArchive == nil {
-			break
-		}
-
-		return e.complexity.Mutation.SessionArchive(childComplexity), true
-
-	case "Mutation.sessionCreate":
-		if e.complexity.Mutation.SessionCreate == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_sessionCreate_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SessionCreate(childComplexity, args["input"].(*dto.SessionCreateInput)), true
+		return e.complexity.Mutation.S3Mutation(childComplexity), true
 
 	case "Mutation.spaceCreate":
 		if e.complexity.Mutation.SpaceCreate == nil {
@@ -1533,7 +1503,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SpaceCreate(childComplexity, args["input"].(dto3.SpaceCreateInput)), true
+		return e.complexity.Mutation.SpaceCreate(childComplexity, args["input"].(dto2.SpaceCreateInput)), true
 
 	case "Mutation.spaceMembershipCreate":
 		if e.complexity.Mutation.SpaceMembershipCreate == nil {
@@ -1545,7 +1515,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SpaceMembershipCreate(childComplexity, args["input"].(dto3.SpaceMembershipCreateInput)), true
+		return e.complexity.Mutation.SpaceMembershipCreate(childComplexity, args["input"].(dto2.SpaceMembershipCreateInput)), true
 
 	case "Mutation.spaceMembershipUpdate":
 		if e.complexity.Mutation.SpaceMembershipUpdate == nil {
@@ -1557,7 +1527,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SpaceMembershipUpdate(childComplexity, args["input"].(dto3.SpaceMembershipUpdateInput)), true
+		return e.complexity.Mutation.SpaceMembershipUpdate(childComplexity, args["input"].(dto2.SpaceMembershipUpdateInput)), true
 
 	case "Mutation.spaceUpdate":
 		if e.complexity.Mutation.SpaceUpdate == nil {
@@ -1569,7 +1539,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SpaceUpdate(childComplexity, args["input"].(dto3.SpaceUpdateInput)), true
+		return e.complexity.Mutation.SpaceUpdate(childComplexity, args["input"].(dto2.SpaceUpdateInput)), true
 
 	case "Mutation.userCreate":
 		if e.complexity.Mutation.UserCreate == nil {
@@ -1581,7 +1551,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UserCreate(childComplexity, args["input"].(*dto4.UserCreateInput)), true
+		return e.complexity.Mutation.UserCreate(childComplexity, args["input"].(*dto3.UserCreateInput)), true
 
 	case "Mutation.userUpdate":
 		if e.complexity.Mutation.UserUpdate == nil {
@@ -1593,7 +1563,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UserUpdate(childComplexity, args["input"].(dto4.UserUpdateInput)), true
+		return e.complexity.Mutation.UserUpdate(childComplexity, args["input"].(dto3.UserUpdateInput)), true
 
 	case "Policy.createdAt":
 		if e.complexity.Policy.CreatedAt == nil {
@@ -1666,19 +1636,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Memberships(childComplexity, args["first"].(int), args["after"].(*string), args["filters"].(dto3.MembershipsFilter)), true
-
-	case "Query.session":
-		if e.complexity.Query.Session == nil {
-			break
-		}
-
-		args, err := ec.field_Query_session_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Session(childComplexity, args["token"].(string)), true
+		return e.complexity.Query.Memberships(childComplexity, args["first"].(int), args["after"].(*string), args["filters"].(dto2.MembershipsFilter)), true
 
 	case "Query.space":
 		if e.complexity.Query.Space == nil {
@@ -1690,7 +1648,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Space(childComplexity, args["filters"].(dto3.SpaceFilters)), true
+		return e.complexity.Query.Space(childComplexity, args["filters"].(dto2.SpaceFilters)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -1703,6 +1661,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.User(childComplexity, args["id"].(string)), true
+
+	case "S3ApplicationMutation.create":
+		if e.complexity.S3ApplicationMutation.Create == nil {
+			break
+		}
+
+		args, err := ec.field_S3ApplicationMutation_create_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.S3ApplicationMutation.Create(childComplexity, args["input"].(*dto4.S3ApplicationCreateInput)), true
+
+	case "S3ApplicationMutation.update":
+		if e.complexity.S3ApplicationMutation.Update == nil {
+			break
+		}
+
+		args, err := ec.field_S3ApplicationMutation_update_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.S3ApplicationMutation.Update(childComplexity, args["input"].(*dto4.S3ApplicationUpdateInput)), true
 
 	case "S3ApplicationMutationOutcome.app":
 		if e.complexity.S3ApplicationMutationOutcome.App == nil {
@@ -1717,6 +1699,32 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.S3ApplicationMutationOutcome.Errors(childComplexity), true
+
+	case "S3Mutation.application":
+		if e.complexity.S3Mutation.Application == nil {
+			break
+		}
+
+		return e.complexity.S3Mutation.Application(childComplexity), true
+
+	case "S3Mutation.uploadd":
+		if e.complexity.S3Mutation.Uploadd == nil {
+			break
+		}
+
+		return e.complexity.S3Mutation.Uploadd(childComplexity), true
+
+	case "S3UploadMutation.token":
+		if e.complexity.S3UploadMutation.Token == nil {
+			break
+		}
+
+		args, err := ec.field_S3UploadMutation_token_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.S3UploadMutation.Token(childComplexity, args["input"].(dto4.S3UploadTokenInput)), true
 
 	case "Session.context":
 		if e.complexity.Session.Context == nil {
@@ -2383,17 +2391,10 @@ type ValidationOutcome {
 `, BuiltIn: false},
 	{Name: "pkg/access/api/schema.graphql", Input: `extend type Query {
     accessQuery: AccessQuery!
-
-    # TODO: Remove this
-    session(token: ID!): Session
 }
 
 extend type Mutation {
     accessMutation: AccessMutation!
-
-    # TODO: Remove this
-    sessionCreate(input: SessionCreateInput): SessionCreateOutcome!
-    sessionArchive: SessionArchiveOutcome! @requireAuth
 }
 
 type AccessQuery {
@@ -2514,9 +2515,9 @@ type MembershipInfo {
 }
 `, BuiltIn: false},
 	{Name: "pkg/space/api/query.graphql", Input: `extend type Query {
-	space(filters: SpaceFilters!): Space
-	membership(id: ID!, version: ID): Membership
-	memberships(first: Int!, after: String, filters: MembershipsFilter!): MembershipConnection!
+    space(filters: SpaceFilters!): Space
+    membership(id: ID!, version: ID): Membership
+    memberships(first: Int!, after: String, filters: MembershipsFilter!): MembershipConnection!
 }
 `, BuiltIn: false},
 	{Name: "pkg/space/api/space.mut.create.graphql", Input: `input SpaceCreateInput {
@@ -2750,9 +2751,21 @@ input S3ApplicationPolicyDeleteInput {
 }
 `, BuiltIn: false},
 	{Name: "pkg/integration/s3/api/mut.graphql", Input: `extend type Mutation  {
-    S3ApplicationCreate(input: S3ApplicationCreateInput): S3ApplicationMutationOutcome!
-    S3ApplicationUpdate(input: S3ApplicationUpdateInput): S3ApplicationMutationOutcome!
-    S3UploadToken(input: S3UploadTokenInput!): Map! @requireAuth
+    s3Mutation: S3Mutation!
+}
+
+type S3Mutation {
+    application: S3ApplicationMutation!
+    uploadd: S3UploadMutation!
+}
+
+type S3ApplicationMutation {
+    create(input: S3ApplicationCreateInput): S3ApplicationMutationOutcome!
+    update(input: S3ApplicationUpdateInput): S3ApplicationMutationOutcome!
+}
+
+type S3UploadMutation {
+    token(input: S3UploadTokenInput!): Map! @requireAuth
 }
 `, BuiltIn: false},
 	{Name: "pkg/integration/mailer/api/account/entity.graphql", Input: `type MailerAccount {
@@ -3135,70 +3148,10 @@ func (ec *executionContext) field_MailerQueryAccount_get_args(ctx context.Contex
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_S3ApplicationCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *dto2.S3ApplicationCreateInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOS3ApplicationCreateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCreateInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_S3ApplicationUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *dto2.S3ApplicationUpdateInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOS3ApplicationUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationUpdateInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_S3UploadToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 dto2.S3UploadTokenInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNS3UploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadTokenInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_sessionCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *dto.SessionCreateInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_spaceCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 dto3.SpaceCreateInput
+	var arg0 dto2.SpaceCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNSpaceCreateInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateInput(ctx, tmp)
@@ -3213,7 +3166,7 @@ func (ec *executionContext) field_Mutation_spaceCreate_args(ctx context.Context,
 func (ec *executionContext) field_Mutation_spaceMembershipCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 dto3.SpaceMembershipCreateInput
+	var arg0 dto2.SpaceMembershipCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNSpaceMembershipCreateInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateInput(ctx, tmp)
@@ -3228,7 +3181,7 @@ func (ec *executionContext) field_Mutation_spaceMembershipCreate_args(ctx contex
 func (ec *executionContext) field_Mutation_spaceMembershipUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 dto3.SpaceMembershipUpdateInput
+	var arg0 dto2.SpaceMembershipUpdateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNSpaceMembershipUpdateInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipUpdateInput(ctx, tmp)
@@ -3243,7 +3196,7 @@ func (ec *executionContext) field_Mutation_spaceMembershipUpdate_args(ctx contex
 func (ec *executionContext) field_Mutation_spaceUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 dto3.SpaceUpdateInput
+	var arg0 dto2.SpaceUpdateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNSpaceUpdateInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceUpdateInput(ctx, tmp)
@@ -3258,7 +3211,7 @@ func (ec *executionContext) field_Mutation_spaceUpdate_args(ctx context.Context,
 func (ec *executionContext) field_Mutation_userCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto4.UserCreateInput
+	var arg0 *dto3.UserCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx, tmp)
@@ -3273,7 +3226,7 @@ func (ec *executionContext) field_Mutation_userCreate_args(ctx context.Context, 
 func (ec *executionContext) field_Mutation_userUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 dto4.UserUpdateInput
+	var arg0 dto3.UserUpdateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNUserUpdateInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateInput(ctx, tmp)
@@ -3345,7 +3298,7 @@ func (ec *executionContext) field_Query_memberships_args(ctx context.Context, ra
 		}
 	}
 	args["after"] = arg1
-	var arg2 dto3.MembershipsFilter
+	var arg2 dto2.MembershipsFilter
 	if tmp, ok := rawArgs["filters"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filters"))
 		arg2, err = ec.unmarshalNMembershipsFilter2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐMembershipsFilter(ctx, tmp)
@@ -3357,25 +3310,10 @@ func (ec *executionContext) field_Query_memberships_args(ctx context.Context, ra
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_session_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["token"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("token"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["token"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_space_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 dto3.SpaceFilters
+	var arg0 dto2.SpaceFilters
 	if tmp, ok := rawArgs["filters"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filters"))
 		arg0, err = ec.unmarshalNSpaceFilters2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceFilters(ctx, tmp)
@@ -3399,6 +3337,51 @@ func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_S3ApplicationMutation_create_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *dto4.S3ApplicationCreateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOS3ApplicationCreateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCreateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_S3ApplicationMutation_update_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *dto4.S3ApplicationUpdateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOS3ApplicationUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationUpdateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_S3UploadMutation_token_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 dto4.S3UploadTokenInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNS3UploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadTokenInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -8025,103 +8008,6 @@ func (ec *executionContext) _Mutation_accessMutation(ctx context.Context, field 
 	return ec.marshalNAccessMutation2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessMutation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_sessionCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_sessionCreate_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SessionCreate(rctx, args["input"].(*dto.SessionCreateInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*dto.SessionCreateOutcome)
-	fc.Result = res
-	return ec.marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_sessionArchive(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SessionArchive(rctx)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.RequireAuth == nil {
-				return nil, errors.New("directive requireAuth is not implemented")
-			}
-			return ec.directives.RequireAuth(ctx, nil, directive0)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*dto.SessionArchiveOutcome); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *bean/pkg/access/model/dto.SessionArchiveOutcome`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*dto.SessionArchiveOutcome)
-	fc.Result = res
-	return ec.marshalNSessionArchiveOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionArchiveOutcome(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Mutation_spaceCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -8147,7 +8033,7 @@ func (ec *executionContext) _Mutation_spaceCreate(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SpaceCreate(rctx, args["input"].(dto3.SpaceCreateInput))
+		return ec.resolvers.Mutation().SpaceCreate(rctx, args["input"].(dto2.SpaceCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8159,7 +8045,7 @@ func (ec *executionContext) _Mutation_spaceCreate(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto3.SpaceCreateOutcome)
+	res := resTmp.(*dto2.SpaceCreateOutcome)
 	fc.Result = res
 	return ec.marshalNSpaceCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateOutcome(ctx, field.Selections, res)
 }
@@ -8189,7 +8075,7 @@ func (ec *executionContext) _Mutation_spaceUpdate(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SpaceUpdate(rctx, args["input"].(dto3.SpaceUpdateInput))
+		return ec.resolvers.Mutation().SpaceUpdate(rctx, args["input"].(dto2.SpaceUpdateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8201,7 +8087,7 @@ func (ec *executionContext) _Mutation_spaceUpdate(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto3.SpaceCreateOutcome)
+	res := resTmp.(*dto2.SpaceCreateOutcome)
 	fc.Result = res
 	return ec.marshalNSpaceCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateOutcome(ctx, field.Selections, res)
 }
@@ -8231,7 +8117,7 @@ func (ec *executionContext) _Mutation_spaceMembershipCreate(ctx context.Context,
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SpaceMembershipCreate(rctx, args["input"].(dto3.SpaceMembershipCreateInput))
+		return ec.resolvers.Mutation().SpaceMembershipCreate(rctx, args["input"].(dto2.SpaceMembershipCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8243,7 +8129,7 @@ func (ec *executionContext) _Mutation_spaceMembershipCreate(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto3.SpaceMembershipCreateOutcome)
+	res := resTmp.(*dto2.SpaceMembershipCreateOutcome)
 	fc.Result = res
 	return ec.marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx, field.Selections, res)
 }
@@ -8273,7 +8159,7 @@ func (ec *executionContext) _Mutation_spaceMembershipUpdate(ctx context.Context,
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SpaceMembershipUpdate(rctx, args["input"].(dto3.SpaceMembershipUpdateInput))
+		return ec.resolvers.Mutation().SpaceMembershipUpdate(rctx, args["input"].(dto2.SpaceMembershipUpdateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8285,7 +8171,7 @@ func (ec *executionContext) _Mutation_spaceMembershipUpdate(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto3.SpaceMembershipCreateOutcome)
+	res := resTmp.(*dto2.SpaceMembershipCreateOutcome)
 	fc.Result = res
 	return ec.marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx, field.Selections, res)
 }
@@ -8315,7 +8201,7 @@ func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UserCreate(rctx, args["input"].(*dto4.UserCreateInput))
+		return ec.resolvers.Mutation().UserCreate(rctx, args["input"].(*dto3.UserCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8327,7 +8213,7 @@ func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto4.UserMutationOutcome)
+	res := resTmp.(*dto3.UserMutationOutcome)
 	fc.Result = res
 	return ec.marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
 }
@@ -8357,7 +8243,7 @@ func (ec *executionContext) _Mutation_userUpdate(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UserUpdate(rctx, args["input"].(dto4.UserUpdateInput))
+		return ec.resolvers.Mutation().UserUpdate(rctx, args["input"].(dto3.UserUpdateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8369,12 +8255,12 @@ func (ec *executionContext) _Mutation_userUpdate(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto4.UserMutationOutcome)
+	res := resTmp.(*dto3.UserMutationOutcome)
 	fc.Result = res
 	return ec.marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_S3ApplicationCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_s3Mutation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8390,16 +8276,9 @@ func (ec *executionContext) _Mutation_S3ApplicationCreate(ctx context.Context, f
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_S3ApplicationCreate_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().S3ApplicationCreate(rctx, args["input"].(*dto2.S3ApplicationCreateInput))
+		return ec.resolvers.Mutation().S3Mutation(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8411,113 +8290,9 @@ func (ec *executionContext) _Mutation_S3ApplicationCreate(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto2.S3ApplicationMutationOutcome)
+	res := resTmp.(*dto4.S3Mutation)
 	fc.Result = res
-	return ec.marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_S3ApplicationUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_S3ApplicationUpdate_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().S3ApplicationUpdate(rctx, args["input"].(*dto2.S3ApplicationUpdateInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*dto2.S3ApplicationMutationOutcome)
-	fc.Result = res
-	return ec.marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_S3UploadToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_S3UploadToken_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().S3UploadToken(rctx, args["input"].(dto2.S3UploadTokenInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.RequireAuth == nil {
-				return nil, errors.New("directive requireAuth is not implemented")
-			}
-			return ec.directives.RequireAuth(ctx, nil, directive0)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(map[string]interface{}); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be map[string]interface{}`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(map[string]interface{})
-	fc.Result = res
-	return ec.marshalNMap2map(ctx, field.Selections, res)
+	return ec.marshalNS3Mutation2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3Mutation(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_mailerMutation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8765,45 +8540,6 @@ func (ec *executionContext) _Query_accessQuery(ctx context.Context, field graphq
 	return ec.marshalNAccessQuery2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐAccessQuery(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_session(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_session_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Session(rctx, args["token"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.Session)
-	fc.Result = res
-	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Query_space(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -8829,7 +8565,7 @@ func (ec *executionContext) _Query_space(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Space(rctx, args["filters"].(dto3.SpaceFilters))
+		return ec.resolvers.Query().Space(rctx, args["filters"].(dto2.SpaceFilters))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8907,7 +8643,7 @@ func (ec *executionContext) _Query_memberships(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Memberships(rctx, args["first"].(int), args["after"].(*string), args["filters"].(dto3.MembershipsFilter))
+		return ec.resolvers.Query().Memberships(rctx, args["first"].(int), args["after"].(*string), args["filters"].(dto2.MembershipsFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9069,7 +8805,91 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _S3ApplicationMutationOutcome_app(ctx context.Context, field graphql.CollectedField, obj *dto2.S3ApplicationMutationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _S3ApplicationMutation_create(ctx context.Context, field graphql.CollectedField, obj *dto4.S3ApplicationMutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3ApplicationMutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_S3ApplicationMutation_create_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.S3ApplicationMutation().Create(rctx, obj, args["input"].(*dto4.S3ApplicationCreateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto4.S3ApplicationMutationOutcome)
+	fc.Result = res
+	return ec.marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3ApplicationMutation_update(ctx context.Context, field graphql.CollectedField, obj *dto4.S3ApplicationMutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3ApplicationMutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_S3ApplicationMutation_update_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.S3ApplicationMutation().Update(rctx, obj, args["input"].(*dto4.S3ApplicationUpdateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto4.S3ApplicationMutationOutcome)
+	fc.Result = res
+	return ec.marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3ApplicationMutationOutcome_app(ctx context.Context, field graphql.CollectedField, obj *dto4.S3ApplicationMutationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9101,7 +8921,7 @@ func (ec *executionContext) _S3ApplicationMutationOutcome_app(ctx context.Contex
 	return ec.marshalOApplication2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐApplication(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _S3ApplicationMutationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto2.S3ApplicationMutationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _S3ApplicationMutationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto4.S3ApplicationMutationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9131,6 +8951,138 @@ func (ec *executionContext) _S3ApplicationMutationOutcome_errors(ctx context.Con
 	res := resTmp.([]*util.Error)
 	fc.Result = res
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3Mutation_application(ctx context.Context, field graphql.CollectedField, obj *dto4.S3Mutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.S3Mutation().Application(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto4.S3ApplicationMutation)
+	fc.Result = res
+	return ec.marshalNS3ApplicationMutation2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3Mutation_uploadd(ctx context.Context, field graphql.CollectedField, obj *dto4.S3Mutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.S3Mutation().Uploadd(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto4.S3UploadMutation)
+	fc.Result = res
+	return ec.marshalNS3UploadMutation2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadMutation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3UploadMutation_token(ctx context.Context, field graphql.CollectedField, obj *dto4.S3UploadMutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3UploadMutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_S3UploadMutation_token_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.S3UploadMutation().Token(rctx, obj, args["input"].(dto4.S3UploadTokenInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.RequireAuth == nil {
+				return nil, errors.New("directive requireAuth is not implemented")
+			}
+			return ec.directives.RequireAuth(ctx, obj, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(map[string]interface{}); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be map[string]interface{}`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalNMap2map(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Session_id(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
@@ -10180,7 +10132,7 @@ func (ec *executionContext) _Space_parent(ctx context.Context, field graphql.Col
 	return ec.marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SpaceCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto3.SpaceCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SpaceCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto2.SpaceCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10212,7 +10164,7 @@ func (ec *executionContext) _SpaceCreateOutcome_errors(ctx context.Context, fiel
 	return ec.marshalOError2ᚕbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SpaceCreateOutcome_space(ctx context.Context, field graphql.CollectedField, obj *dto3.SpaceCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SpaceCreateOutcome_space(ctx context.Context, field graphql.CollectedField, obj *dto2.SpaceCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10279,7 +10231,7 @@ func (ec *executionContext) _SpaceFeatures_register(ctx context.Context, field g
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SpaceMembershipCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto3.SpaceMembershipCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SpaceMembershipCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto2.SpaceMembershipCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10311,7 +10263,7 @@ func (ec *executionContext) _SpaceMembershipCreateOutcome_errors(ctx context.Con
 	return ec.marshalOError2ᚕᚖbeanᚋpkgᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SpaceMembershipCreateOutcome_membership(ctx context.Context, field graphql.CollectedField, obj *dto3.SpaceMembershipCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SpaceMembershipCreateOutcome_membership(ctx context.Context, field graphql.CollectedField, obj *dto2.SpaceMembershipCreateOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10926,7 +10878,7 @@ func (ec *executionContext) _UserEmails_secondary(ctx context.Context, field gra
 	return ec.marshalOUserEmail2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserMutationOutcome_user(ctx context.Context, field graphql.CollectedField, obj *dto4.UserMutationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserMutationOutcome_user(ctx context.Context, field graphql.CollectedField, obj *dto3.UserMutationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10958,7 +10910,7 @@ func (ec *executionContext) _UserMutationOutcome_user(ctx context.Context, field
 	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UserMutationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto4.UserMutationOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserMutationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto3.UserMutationOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -12240,8 +12192,8 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputDomainNameInput(ctx context.Context, obj interface{}) (dto3.DomainNameInput, error) {
-	var it dto3.DomainNameInput
+func (ec *executionContext) unmarshalInputDomainNameInput(ctx context.Context, obj interface{}) (dto2.DomainNameInput, error) {
+	var it dto2.DomainNameInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12276,8 +12228,8 @@ func (ec *executionContext) unmarshalInputDomainNameInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputDomainNamesInput(ctx context.Context, obj interface{}) (dto3.DomainNamesInput, error) {
-	var it dto3.DomainNamesInput
+func (ec *executionContext) unmarshalInputDomainNamesInput(ctx context.Context, obj interface{}) (dto2.DomainNamesInput, error) {
+	var it dto2.DomainNamesInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12652,8 +12604,8 @@ func (ec *executionContext) unmarshalInputMailerAccountUpdateValueInput(ctx cont
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMembershipsFilter(ctx context.Context, obj interface{}) (dto3.MembershipsFilter, error) {
-	var it dto3.MembershipsFilter
+func (ec *executionContext) unmarshalInputMembershipsFilter(ctx context.Context, obj interface{}) (dto2.MembershipsFilter, error) {
+	var it dto2.MembershipsFilter
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12696,8 +12648,8 @@ func (ec *executionContext) unmarshalInputMembershipsFilter(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMembershipsFilterSpace(ctx context.Context, obj interface{}) (dto3.MembershipsFilterSpace, error) {
-	var it dto3.MembershipsFilterSpace
+func (ec *executionContext) unmarshalInputMembershipsFilterSpace(ctx context.Context, obj interface{}) (dto2.MembershipsFilterSpace, error) {
+	var it dto2.MembershipsFilterSpace
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12724,8 +12676,8 @@ func (ec *executionContext) unmarshalInputMembershipsFilterSpace(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationCreateInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationCreateInput, error) {
-	var it dto2.S3ApplicationCreateInput
+func (ec *executionContext) unmarshalInputS3ApplicationCreateInput(ctx context.Context, obj interface{}) (dto4.S3ApplicationCreateInput, error) {
+	var it dto4.S3ApplicationCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12760,8 +12712,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationCreateInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationCredentialsCreateInput, error) {
-	var it dto2.S3ApplicationCredentialsCreateInput
+func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ctx context.Context, obj interface{}) (dto4.S3ApplicationCredentialsCreateInput, error) {
+	var it dto4.S3ApplicationCredentialsCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12812,8 +12764,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ct
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationCredentialsUpdateInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationCredentialsUpdateInput, error) {
-	var it dto2.S3ApplicationCredentialsUpdateInput
+func (ec *executionContext) unmarshalInputS3ApplicationCredentialsUpdateInput(ctx context.Context, obj interface{}) (dto4.S3ApplicationCredentialsUpdateInput, error) {
+	var it dto4.S3ApplicationCredentialsUpdateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12864,8 +12816,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationCredentialsUpdateInput(ct
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationPolicyCreateInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationPolicyCreateInput, error) {
-	var it dto2.S3ApplicationPolicyCreateInput
+func (ec *executionContext) unmarshalInputS3ApplicationPolicyCreateInput(ctx context.Context, obj interface{}) (dto4.S3ApplicationPolicyCreateInput, error) {
+	var it dto4.S3ApplicationPolicyCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12892,8 +12844,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationPolicyCreateInput(ctx con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationPolicyDeleteInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationPolicyDeleteInput, error) {
-	var it dto2.S3ApplicationPolicyDeleteInput
+func (ec *executionContext) unmarshalInputS3ApplicationPolicyDeleteInput(ctx context.Context, obj interface{}) (dto4.S3ApplicationPolicyDeleteInput, error) {
+	var it dto4.S3ApplicationPolicyDeleteInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12912,8 +12864,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationPolicyDeleteInput(ctx con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationPolicyMutationInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationPolicyMutationInput, error) {
-	var it dto2.S3ApplicationPolicyMutationInput
+func (ec *executionContext) unmarshalInputS3ApplicationPolicyMutationInput(ctx context.Context, obj interface{}) (dto4.S3ApplicationPolicyMutationInput, error) {
+	var it dto4.S3ApplicationPolicyMutationInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12948,8 +12900,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationPolicyMutationInput(ctx c
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationPolicyUpdateInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationPolicyUpdateInput, error) {
-	var it dto2.S3ApplicationPolicyUpdateInput
+func (ec *executionContext) unmarshalInputS3ApplicationPolicyUpdateInput(ctx context.Context, obj interface{}) (dto4.S3ApplicationPolicyUpdateInput, error) {
+	var it dto4.S3ApplicationPolicyUpdateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -12976,8 +12928,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationPolicyUpdateInput(ctx con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationUpdateInput(ctx context.Context, obj interface{}) (dto2.S3ApplicationUpdateInput, error) {
-	var it dto2.S3ApplicationUpdateInput
+func (ec *executionContext) unmarshalInputS3ApplicationUpdateInput(ctx context.Context, obj interface{}) (dto4.S3ApplicationUpdateInput, error) {
+	var it dto4.S3ApplicationUpdateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13028,8 +12980,8 @@ func (ec *executionContext) unmarshalInputS3ApplicationUpdateInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3UploadTokenInput(ctx context.Context, obj interface{}) (dto2.S3UploadTokenInput, error) {
-	var it dto2.S3UploadTokenInput
+func (ec *executionContext) unmarshalInputS3UploadTokenInput(ctx context.Context, obj interface{}) (dto4.S3UploadTokenInput, error) {
+	var it dto4.S3UploadTokenInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13292,8 +13244,8 @@ func (ec *executionContext) unmarshalInputSessionCreateUseOTLT(ctx context.Conte
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSpaceCreateInput(ctx context.Context, obj interface{}) (dto3.SpaceCreateInput, error) {
-	var it dto3.SpaceCreateInput
+func (ec *executionContext) unmarshalInputSpaceCreateInput(ctx context.Context, obj interface{}) (dto2.SpaceCreateInput, error) {
+	var it dto2.SpaceCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13312,8 +13264,8 @@ func (ec *executionContext) unmarshalInputSpaceCreateInput(ctx context.Context, 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSpaceCreateInputObject(ctx context.Context, obj interface{}) (dto3.SpaceCreateInputObject, error) {
-	var it dto3.SpaceCreateInputObject
+func (ec *executionContext) unmarshalInputSpaceCreateInputObject(ctx context.Context, obj interface{}) (dto2.SpaceCreateInputObject, error) {
+	var it dto2.SpaceCreateInputObject
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13372,8 +13324,8 @@ func (ec *executionContext) unmarshalInputSpaceCreateInputObject(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSpaceFeaturesInput(ctx context.Context, obj interface{}) (dto3.SpaceFeaturesInput, error) {
-	var it dto3.SpaceFeaturesInput
+func (ec *executionContext) unmarshalInputSpaceFeaturesInput(ctx context.Context, obj interface{}) (dto2.SpaceFeaturesInput, error) {
+	var it dto2.SpaceFeaturesInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13392,8 +13344,8 @@ func (ec *executionContext) unmarshalInputSpaceFeaturesInput(ctx context.Context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSpaceFilters(ctx context.Context, obj interface{}) (dto3.SpaceFilters, error) {
-	var it dto3.SpaceFilters
+func (ec *executionContext) unmarshalInputSpaceFilters(ctx context.Context, obj interface{}) (dto2.SpaceFilters, error) {
+	var it dto2.SpaceFilters
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13420,8 +13372,8 @@ func (ec *executionContext) unmarshalInputSpaceFilters(ctx context.Context, obj 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSpaceMembershipCreateInput(ctx context.Context, obj interface{}) (dto3.SpaceMembershipCreateInput, error) {
-	var it dto3.SpaceMembershipCreateInput
+func (ec *executionContext) unmarshalInputSpaceMembershipCreateInput(ctx context.Context, obj interface{}) (dto2.SpaceMembershipCreateInput, error) {
+	var it dto2.SpaceMembershipCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13464,8 +13416,8 @@ func (ec *executionContext) unmarshalInputSpaceMembershipCreateInput(ctx context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSpaceMembershipUpdateInput(ctx context.Context, obj interface{}) (dto3.SpaceMembershipUpdateInput, error) {
-	var it dto3.SpaceMembershipUpdateInput
+func (ec *executionContext) unmarshalInputSpaceMembershipUpdateInput(ctx context.Context, obj interface{}) (dto2.SpaceMembershipUpdateInput, error) {
+	var it dto2.SpaceMembershipUpdateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13508,8 +13460,8 @@ func (ec *executionContext) unmarshalInputSpaceMembershipUpdateInput(ctx context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSpaceUpdateInput(ctx context.Context, obj interface{}) (dto3.SpaceUpdateInput, error) {
-	var it dto3.SpaceUpdateInput
+func (ec *executionContext) unmarshalInputSpaceUpdateInput(ctx context.Context, obj interface{}) (dto2.SpaceUpdateInput, error) {
+	var it dto2.SpaceUpdateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13544,8 +13496,8 @@ func (ec *executionContext) unmarshalInputSpaceUpdateInput(ctx context.Context, 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSpaceUpdateInputFeatures(ctx context.Context, obj interface{}) (dto3.SpaceUpdateInputFeatures, error) {
-	var it dto3.SpaceUpdateInputFeatures
+func (ec *executionContext) unmarshalInputSpaceUpdateInputFeatures(ctx context.Context, obj interface{}) (dto2.SpaceUpdateInputFeatures, error) {
+	var it dto2.SpaceUpdateInputFeatures
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13564,8 +13516,8 @@ func (ec *executionContext) unmarshalInputSpaceUpdateInputFeatures(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSpaceUpdateInputObject(ctx context.Context, obj interface{}) (dto3.SpaceUpdateInputObject, error) {
-	var it dto3.SpaceUpdateInputObject
+func (ec *executionContext) unmarshalInputSpaceUpdateInputObject(ctx context.Context, obj interface{}) (dto2.SpaceUpdateInputObject, error) {
+	var it dto2.SpaceUpdateInputObject
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13584,8 +13536,8 @@ func (ec *executionContext) unmarshalInputSpaceUpdateInputObject(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, obj interface{}) (dto4.UserCreateInput, error) {
-	var it dto4.UserCreateInput
+func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, obj interface{}) (dto3.UserCreateInput, error) {
+	var it dto3.UserCreateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13636,8 +13588,8 @@ func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserEmailInput(ctx context.Context, obj interface{}) (dto4.UserEmailInput, error) {
-	var it dto4.UserEmailInput
+func (ec *executionContext) unmarshalInputUserEmailInput(ctx context.Context, obj interface{}) (dto3.UserEmailInput, error) {
+	var it dto3.UserEmailInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13672,8 +13624,8 @@ func (ec *executionContext) unmarshalInputUserEmailInput(ctx context.Context, ob
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserEmailsInput(ctx context.Context, obj interface{}) (dto4.UserEmailsInput, error) {
-	var it dto4.UserEmailsInput
+func (ec *executionContext) unmarshalInputUserEmailsInput(ctx context.Context, obj interface{}) (dto3.UserEmailsInput, error) {
+	var it dto3.UserEmailsInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13700,8 +13652,8 @@ func (ec *executionContext) unmarshalInputUserEmailsInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserNameInput(ctx context.Context, obj interface{}) (dto4.UserNameInput, error) {
-	var it dto4.UserNameInput
+func (ec *executionContext) unmarshalInputUserNameInput(ctx context.Context, obj interface{}) (dto3.UserNameInput, error) {
+	var it dto3.UserNameInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13736,8 +13688,8 @@ func (ec *executionContext) unmarshalInputUserNameInput(ctx context.Context, obj
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserPasswordInput(ctx context.Context, obj interface{}) (dto4.UserPasswordInput, error) {
-	var it dto4.UserPasswordInput
+func (ec *executionContext) unmarshalInputUserPasswordInput(ctx context.Context, obj interface{}) (dto3.UserPasswordInput, error) {
+	var it dto3.UserPasswordInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13756,8 +13708,8 @@ func (ec *executionContext) unmarshalInputUserPasswordInput(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserUpdateInput(ctx context.Context, obj interface{}) (dto4.UserUpdateInput, error) {
-	var it dto4.UserUpdateInput
+func (ec *executionContext) unmarshalInputUserUpdateInput(ctx context.Context, obj interface{}) (dto3.UserUpdateInput, error) {
+	var it dto3.UserUpdateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13792,8 +13744,8 @@ func (ec *executionContext) unmarshalInputUserUpdateInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserUpdateValuesInput(ctx context.Context, obj interface{}) (dto4.UserUpdateValuesInput, error) {
-	var it dto4.UserUpdateValuesInput
+func (ec *executionContext) unmarshalInputUserUpdateValuesInput(ctx context.Context, obj interface{}) (dto3.UserUpdateValuesInput, error) {
+	var it dto3.UserUpdateValuesInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -15259,16 +15211,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "sessionCreate":
-			out.Values[i] = ec._Mutation_sessionCreate(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "sessionArchive":
-			out.Values[i] = ec._Mutation_sessionArchive(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "spaceCreate":
 			out.Values[i] = ec._Mutation_spaceCreate(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -15299,18 +15241,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "S3ApplicationCreate":
-			out.Values[i] = ec._Mutation_S3ApplicationCreate(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "S3ApplicationUpdate":
-			out.Values[i] = ec._Mutation_S3ApplicationUpdate(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "S3UploadToken":
-			out.Values[i] = ec._Mutation_S3UploadToken(ctx, field)
+		case "s3Mutation":
+			out.Values[i] = ec._Mutation_s3Mutation(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -15406,17 +15338,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "session":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_session(ctx, field)
-				return res
-			})
 		case "space":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -15493,9 +15414,59 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
+var s3ApplicationMutationImplementors = []string{"S3ApplicationMutation"}
+
+func (ec *executionContext) _S3ApplicationMutation(ctx context.Context, sel ast.SelectionSet, obj *dto4.S3ApplicationMutation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, s3ApplicationMutationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("S3ApplicationMutation")
+		case "create":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._S3ApplicationMutation_create(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "update":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._S3ApplicationMutation_update(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var s3ApplicationMutationOutcomeImplementors = []string{"S3ApplicationMutationOutcome"}
 
-func (ec *executionContext) _S3ApplicationMutationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto2.S3ApplicationMutationOutcome) graphql.Marshaler {
+func (ec *executionContext) _S3ApplicationMutationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto4.S3ApplicationMutationOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, s3ApplicationMutationOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15508,6 +15479,92 @@ func (ec *executionContext) _S3ApplicationMutationOutcome(ctx context.Context, s
 			out.Values[i] = ec._S3ApplicationMutationOutcome_app(ctx, field, obj)
 		case "errors":
 			out.Values[i] = ec._S3ApplicationMutationOutcome_errors(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var s3MutationImplementors = []string{"S3Mutation"}
+
+func (ec *executionContext) _S3Mutation(ctx context.Context, sel ast.SelectionSet, obj *dto4.S3Mutation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, s3MutationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("S3Mutation")
+		case "application":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._S3Mutation_application(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "uploadd":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._S3Mutation_uploadd(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var s3UploadMutationImplementors = []string{"S3UploadMutation"}
+
+func (ec *executionContext) _S3UploadMutation(ctx context.Context, sel ast.SelectionSet, obj *dto4.S3UploadMutation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, s3UploadMutationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("S3UploadMutation")
+		case "token":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._S3UploadMutation_token(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15813,7 +15870,7 @@ func (ec *executionContext) _Space(ctx context.Context, sel ast.SelectionSet, ob
 
 var spaceCreateOutcomeImplementors = []string{"SpaceCreateOutcome"}
 
-func (ec *executionContext) _SpaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto3.SpaceCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) _SpaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto2.SpaceCreateOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, spaceCreateOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -15866,7 +15923,7 @@ func (ec *executionContext) _SpaceFeatures(ctx context.Context, sel ast.Selectio
 
 var spaceMembershipCreateOutcomeImplementors = []string{"SpaceMembershipCreateOutcome"}
 
-func (ec *executionContext) _SpaceMembershipCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto3.SpaceMembershipCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) _SpaceMembershipCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto2.SpaceMembershipCreateOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, spaceMembershipCreateOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -16058,7 +16115,7 @@ func (ec *executionContext) _UserEmails(ctx context.Context, sel ast.SelectionSe
 
 var userMutationOutcomeImplementors = []string{"UserMutationOutcome"}
 
-func (ec *executionContext) _UserMutationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto4.UserMutationOutcome) graphql.Marshaler {
+func (ec *executionContext) _UserMutationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto3.UserMutationOutcome) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userMutationOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -16505,7 +16562,7 @@ func (ec *executionContext) marshalNDomainName2ᚖbeanᚋpkgᚋspaceᚋmodelᚐD
 	return ec._DomainName(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNDomainNameInput2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) (*dto3.DomainNameInput, error) {
+func (ec *executionContext) unmarshalNDomainNameInput2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) (*dto2.DomainNameInput, error) {
 	res, err := ec.unmarshalInputDomainNameInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
@@ -17050,7 +17107,7 @@ func (ec *executionContext) marshalNMembershipInfo2beanᚋpkgᚋspaceᚋmodelᚐ
 	return ec._MembershipInfo(ctx, sel, &v)
 }
 
-func (ec *executionContext) unmarshalNMembershipsFilter2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐMembershipsFilter(ctx context.Context, v interface{}) (dto3.MembershipsFilter, error) {
+func (ec *executionContext) unmarshalNMembershipsFilter2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐMembershipsFilter(ctx context.Context, v interface{}) (dto2.MembershipsFilter, error) {
 	res, err := ec.unmarshalInputMembershipsFilter(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -17081,16 +17138,30 @@ func (ec *executionContext) marshalNPolicyKind2beanᚋpkgᚋintegrationᚋs3ᚋm
 	return res
 }
 
-func (ec *executionContext) unmarshalNS3ApplicationCredentialsCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsCreateInput(ctx context.Context, v interface{}) (dto2.S3ApplicationCredentialsCreateInput, error) {
+func (ec *executionContext) unmarshalNS3ApplicationCredentialsCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsCreateInput(ctx context.Context, v interface{}) (dto4.S3ApplicationCredentialsCreateInput, error) {
 	res, err := ec.unmarshalInputS3ApplicationCredentialsCreateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNS3ApplicationMutationOutcome2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto2.S3ApplicationMutationOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNS3ApplicationMutation2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutation(ctx context.Context, sel ast.SelectionSet, v dto4.S3ApplicationMutation) graphql.Marshaler {
+	return ec._S3ApplicationMutation(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNS3ApplicationMutation2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutation(ctx context.Context, sel ast.SelectionSet, v *dto4.S3ApplicationMutation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._S3ApplicationMutation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNS3ApplicationMutationOutcome2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto4.S3ApplicationMutationOutcome) graphql.Marshaler {
 	return ec._S3ApplicationMutationOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto2.S3ApplicationMutationOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto4.S3ApplicationMutationOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -17100,12 +17171,12 @@ func (ec *executionContext) marshalNS3ApplicationMutationOutcome2ᚖbeanᚋpkg�
 	return ec._S3ApplicationMutationOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInput(ctx context.Context, v interface{}) (dto2.S3ApplicationPolicyCreateInput, error) {
+func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInput(ctx context.Context, v interface{}) (dto4.S3ApplicationPolicyCreateInput, error) {
 	res, err := ec.unmarshalInputS3ApplicationPolicyCreateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInputᚄ(ctx context.Context, v interface{}) ([]dto2.S3ApplicationPolicyCreateInput, error) {
+func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInputᚄ(ctx context.Context, v interface{}) ([]dto4.S3ApplicationPolicyCreateInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -17115,7 +17186,7 @@ func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2ᚕbeanᚋp
 		}
 	}
 	var err error
-	res := make([]dto2.S3ApplicationPolicyCreateInput, len(vSlice))
+	res := make([]dto4.S3ApplicationPolicyCreateInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNS3ApplicationPolicyCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInput(ctx, vSlice[i])
@@ -17126,17 +17197,45 @@ func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2ᚕbeanᚋp
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalNS3ApplicationPolicyDeleteInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInput(ctx context.Context, v interface{}) (dto2.S3ApplicationPolicyDeleteInput, error) {
+func (ec *executionContext) unmarshalNS3ApplicationPolicyDeleteInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInput(ctx context.Context, v interface{}) (dto4.S3ApplicationPolicyDeleteInput, error) {
 	res, err := ec.unmarshalInputS3ApplicationPolicyDeleteInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNS3ApplicationPolicyUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInput(ctx context.Context, v interface{}) (dto2.S3ApplicationPolicyUpdateInput, error) {
+func (ec *executionContext) unmarshalNS3ApplicationPolicyUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInput(ctx context.Context, v interface{}) (dto4.S3ApplicationPolicyUpdateInput, error) {
 	res, err := ec.unmarshalInputS3ApplicationPolicyUpdateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNS3UploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadTokenInput(ctx context.Context, v interface{}) (dto2.S3UploadTokenInput, error) {
+func (ec *executionContext) marshalNS3Mutation2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3Mutation(ctx context.Context, sel ast.SelectionSet, v dto4.S3Mutation) graphql.Marshaler {
+	return ec._S3Mutation(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNS3Mutation2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3Mutation(ctx context.Context, sel ast.SelectionSet, v *dto4.S3Mutation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._S3Mutation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNS3UploadMutation2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadMutation(ctx context.Context, sel ast.SelectionSet, v dto4.S3UploadMutation) graphql.Marshaler {
+	return ec._S3UploadMutation(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNS3UploadMutation2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadMutation(ctx context.Context, sel ast.SelectionSet, v *dto4.S3UploadMutation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._S3UploadMutation(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNS3UploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadTokenInput(ctx context.Context, v interface{}) (dto4.S3UploadTokenInput, error) {
 	res, err := ec.unmarshalInputS3UploadTokenInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -17220,21 +17319,21 @@ func (ec *executionContext) marshalNSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(
 	return ec._Space(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNSpaceCreateInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateInput(ctx context.Context, v interface{}) (dto3.SpaceCreateInput, error) {
+func (ec *executionContext) unmarshalNSpaceCreateInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateInput(ctx context.Context, v interface{}) (dto2.SpaceCreateInput, error) {
 	res, err := ec.unmarshalInputSpaceCreateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNSpaceCreateInputObject2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateInputObject(ctx context.Context, v interface{}) (dto3.SpaceCreateInputObject, error) {
+func (ec *executionContext) unmarshalNSpaceCreateInputObject2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateInputObject(ctx context.Context, v interface{}) (dto2.SpaceCreateInputObject, error) {
 	res, err := ec.unmarshalInputSpaceCreateInputObject(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNSpaceCreateOutcome2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto3.SpaceCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNSpaceCreateOutcome2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto2.SpaceCreateOutcome) graphql.Marshaler {
 	return ec._SpaceCreateOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNSpaceCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto3.SpaceCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNSpaceCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto2.SpaceCreateOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -17244,12 +17343,12 @@ func (ec *executionContext) marshalNSpaceCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋm
 	return ec._SpaceCreateOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNSpaceFeaturesInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceFeaturesInput(ctx context.Context, v interface{}) (dto3.SpaceFeaturesInput, error) {
+func (ec *executionContext) unmarshalNSpaceFeaturesInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceFeaturesInput(ctx context.Context, v interface{}) (dto2.SpaceFeaturesInput, error) {
 	res, err := ec.unmarshalInputSpaceFeaturesInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNSpaceFilters2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceFilters(ctx context.Context, v interface{}) (dto3.SpaceFilters, error) {
+func (ec *executionContext) unmarshalNSpaceFilters2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceFilters(ctx context.Context, v interface{}) (dto2.SpaceFilters, error) {
 	res, err := ec.unmarshalInputSpaceFilters(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -17264,16 +17363,16 @@ func (ec *executionContext) marshalNSpaceKind2beanᚋpkgᚋspaceᚋmodelᚐSpace
 	return v
 }
 
-func (ec *executionContext) unmarshalNSpaceMembershipCreateInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateInput(ctx context.Context, v interface{}) (dto3.SpaceMembershipCreateInput, error) {
+func (ec *executionContext) unmarshalNSpaceMembershipCreateInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateInput(ctx context.Context, v interface{}) (dto2.SpaceMembershipCreateInput, error) {
 	res, err := ec.unmarshalInputSpaceMembershipCreateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNSpaceMembershipCreateOutcome2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto3.SpaceMembershipCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNSpaceMembershipCreateOutcome2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto2.SpaceMembershipCreateOutcome) graphql.Marshaler {
 	return ec._SpaceMembershipCreateOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto3.SpaceMembershipCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto2.SpaceMembershipCreateOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -17283,12 +17382,12 @@ func (ec *executionContext) marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkg�
 	return ec._SpaceMembershipCreateOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNSpaceMembershipUpdateInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipUpdateInput(ctx context.Context, v interface{}) (dto3.SpaceMembershipUpdateInput, error) {
+func (ec *executionContext) unmarshalNSpaceMembershipUpdateInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipUpdateInput(ctx context.Context, v interface{}) (dto2.SpaceMembershipUpdateInput, error) {
 	res, err := ec.unmarshalInputSpaceMembershipUpdateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNSpaceUpdateInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceUpdateInput(ctx context.Context, v interface{}) (dto3.SpaceUpdateInput, error) {
+func (ec *executionContext) unmarshalNSpaceUpdateInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceUpdateInput(ctx context.Context, v interface{}) (dto2.SpaceUpdateInput, error) {
 	res, err := ec.unmarshalInputSpaceUpdateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -17368,16 +17467,16 @@ func (ec *executionContext) marshalNUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto4.UserEmailInput, error) {
+func (ec *executionContext) unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto3.UserEmailInput, error) {
 	res, err := ec.unmarshalInputUserEmailInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNUserMutationOutcome2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto4.UserMutationOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNUserMutationOutcome2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto3.UserMutationOutcome) graphql.Marshaler {
 	return ec._UserMutationOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto4.UserMutationOutcome) graphql.Marshaler {
+func (ec *executionContext) marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v *dto3.UserMutationOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -17401,17 +17500,17 @@ func (ec *executionContext) marshalNUserName2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser
 	return ec._UserName(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNUserNameInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserNameInput(ctx context.Context, v interface{}) (*dto4.UserNameInput, error) {
+func (ec *executionContext) unmarshalNUserNameInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserNameInput(ctx context.Context, v interface{}) (*dto3.UserNameInput, error) {
 	res, err := ec.unmarshalInputUserNameInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx context.Context, v interface{}) (*dto4.UserPasswordInput, error) {
+func (ec *executionContext) unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx context.Context, v interface{}) (*dto3.UserPasswordInput, error) {
 	res, err := ec.unmarshalInputUserPasswordInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNUserUpdateInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateInput(ctx context.Context, v interface{}) (dto4.UserUpdateInput, error) {
+func (ec *executionContext) unmarshalNUserUpdateInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateInput(ctx context.Context, v interface{}) (dto3.UserUpdateInput, error) {
 	res, err := ec.unmarshalInputUserUpdateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -17834,7 +17933,7 @@ func (ec *executionContext) marshalODomainName2ᚖbeanᚋpkgᚋspaceᚋmodelᚐD
 	return ec._DomainName(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) ([]*dto3.DomainNameInput, error) {
+func (ec *executionContext) unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) ([]*dto2.DomainNameInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17847,7 +17946,7 @@ func (ec *executionContext) unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋspace�
 		}
 	}
 	var err error
-	res := make([]*dto3.DomainNameInput, len(vSlice))
+	res := make([]*dto2.DomainNameInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalODomainNameInput2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐDomainNameInput(ctx, vSlice[i])
@@ -17858,7 +17957,7 @@ func (ec *executionContext) unmarshalODomainNameInput2ᚕᚖbeanᚋpkgᚋspace�
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalODomainNameInput2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) (*dto3.DomainNameInput, error) {
+func (ec *executionContext) unmarshalODomainNameInput2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐDomainNameInput(ctx context.Context, v interface{}) (*dto2.DomainNameInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17873,7 +17972,7 @@ func (ec *executionContext) marshalODomainNames2ᚖbeanᚋpkgᚋspaceᚋmodelᚐ
 	return ec._DomainNames(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalODomainNamesInput2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐDomainNamesInput(ctx context.Context, v interface{}) (*dto3.DomainNamesInput, error) {
+func (ec *executionContext) unmarshalODomainNamesInput2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐDomainNamesInput(ctx context.Context, v interface{}) (*dto2.DomainNamesInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18194,7 +18293,7 @@ func (ec *executionContext) marshalOMembership2ᚖbeanᚋpkgᚋspaceᚋmodelᚐM
 	return ec._Membership(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOMembershipsFilterSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐMembershipsFilterSpace(ctx context.Context, v interface{}) (*dto3.MembershipsFilterSpace, error) {
+func (ec *executionContext) unmarshalOMembershipsFilterSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐMembershipsFilterSpace(ctx context.Context, v interface{}) (*dto2.MembershipsFilterSpace, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18242,7 +18341,7 @@ func (ec *executionContext) marshalOPolicy2ᚕᚖbeanᚋpkgᚋintegrationᚋs3�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationCreateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCreateInput(ctx context.Context, v interface{}) (*dto2.S3ApplicationCreateInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationCreateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCreateInput(ctx context.Context, v interface{}) (*dto4.S3ApplicationCreateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18250,7 +18349,7 @@ func (ec *executionContext) unmarshalOS3ApplicationCreateInput2ᚖbeanᚋpkgᚋi
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationCredentialsUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsUpdateInput(ctx context.Context, v interface{}) (*dto2.S3ApplicationCredentialsUpdateInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationCredentialsUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsUpdateInput(ctx context.Context, v interface{}) (*dto4.S3ApplicationCredentialsUpdateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18258,7 +18357,7 @@ func (ec *executionContext) unmarshalOS3ApplicationCredentialsUpdateInput2ᚖbea
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationPolicyCreateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInputᚄ(ctx context.Context, v interface{}) ([]dto2.S3ApplicationPolicyCreateInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationPolicyCreateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInputᚄ(ctx context.Context, v interface{}) ([]dto4.S3ApplicationPolicyCreateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18271,7 +18370,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyCreateInput2ᚕbeanᚋp
 		}
 	}
 	var err error
-	res := make([]dto2.S3ApplicationPolicyCreateInput, len(vSlice))
+	res := make([]dto4.S3ApplicationPolicyCreateInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNS3ApplicationPolicyCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInput(ctx, vSlice[i])
@@ -18282,7 +18381,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyCreateInput2ᚕbeanᚋp
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationPolicyDeleteInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInputᚄ(ctx context.Context, v interface{}) ([]dto2.S3ApplicationPolicyDeleteInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationPolicyDeleteInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInputᚄ(ctx context.Context, v interface{}) ([]dto4.S3ApplicationPolicyDeleteInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18295,7 +18394,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyDeleteInput2ᚕbeanᚋp
 		}
 	}
 	var err error
-	res := make([]dto2.S3ApplicationPolicyDeleteInput, len(vSlice))
+	res := make([]dto4.S3ApplicationPolicyDeleteInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNS3ApplicationPolicyDeleteInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInput(ctx, vSlice[i])
@@ -18306,7 +18405,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyDeleteInput2ᚕbeanᚋp
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationPolicyMutationInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyMutationInput(ctx context.Context, v interface{}) (*dto2.S3ApplicationPolicyMutationInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationPolicyMutationInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyMutationInput(ctx context.Context, v interface{}) (*dto4.S3ApplicationPolicyMutationInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18314,7 +18413,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyMutationInput2ᚖbean�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationPolicyUpdateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInputᚄ(ctx context.Context, v interface{}) ([]dto2.S3ApplicationPolicyUpdateInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationPolicyUpdateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInputᚄ(ctx context.Context, v interface{}) ([]dto4.S3ApplicationPolicyUpdateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18327,7 +18426,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyUpdateInput2ᚕbeanᚋp
 		}
 	}
 	var err error
-	res := make([]dto2.S3ApplicationPolicyUpdateInput, len(vSlice))
+	res := make([]dto4.S3ApplicationPolicyUpdateInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNS3ApplicationPolicyUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInput(ctx, vSlice[i])
@@ -18338,7 +18437,7 @@ func (ec *executionContext) unmarshalOS3ApplicationPolicyUpdateInput2ᚕbeanᚋp
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationUpdateInput(ctx context.Context, v interface{}) (*dto2.S3ApplicationUpdateInput, error) {
+func (ec *executionContext) unmarshalOS3ApplicationUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationUpdateInput(ctx context.Context, v interface{}) (*dto4.S3ApplicationUpdateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18414,7 +18513,7 @@ func (ec *executionContext) marshalOSpaceFeatures2ᚖbeanᚋpkgᚋspaceᚋmodel�
 	return ec._SpaceFeatures(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOSpaceUpdateInputFeatures2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceUpdateInputFeatures(ctx context.Context, v interface{}) (*dto3.SpaceUpdateInputFeatures, error) {
+func (ec *executionContext) unmarshalOSpaceUpdateInputFeatures2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceUpdateInputFeatures(ctx context.Context, v interface{}) (*dto2.SpaceUpdateInputFeatures, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18422,7 +18521,7 @@ func (ec *executionContext) unmarshalOSpaceUpdateInputFeatures2ᚖbeanᚋpkgᚋs
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOSpaceUpdateInputObject2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceUpdateInputObject(ctx context.Context, v interface{}) (*dto3.SpaceUpdateInputObject, error) {
+func (ec *executionContext) unmarshalOSpaceUpdateInputObject2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceUpdateInputObject(ctx context.Context, v interface{}) (*dto2.SpaceUpdateInputObject, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18528,7 +18627,7 @@ func (ec *executionContext) marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx context.Context, v interface{}) (*dto4.UserCreateInput, error) {
+func (ec *executionContext) unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx context.Context, v interface{}) (*dto3.UserCreateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18583,7 +18682,7 @@ func (ec *executionContext) marshalOUserEmail2ᚖbeanᚋpkgᚋuserᚋmodelᚐUse
 	return ec._UserEmail(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) ([]*dto4.UserEmailInput, error) {
+func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) ([]*dto3.UserEmailInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18596,7 +18695,7 @@ func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋm
 		}
 	}
 	var err error
-	res := make([]*dto4.UserEmailInput, len(vSlice))
+	res := make([]*dto3.UserEmailInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx, vSlice[i])
@@ -18607,7 +18706,7 @@ func (ec *executionContext) unmarshalOUserEmailInput2ᚕᚖbeanᚋpkgᚋuserᚋm
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto4.UserEmailInput, error) {
+func (ec *executionContext) unmarshalOUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto3.UserEmailInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18622,7 +18721,7 @@ func (ec *executionContext) marshalOUserEmails2ᚖbeanᚋpkgᚋuserᚋmodelᚐUs
 	return ec._UserEmails(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailsInput(ctx context.Context, v interface{}) (*dto4.UserEmailsInput, error) {
+func (ec *executionContext) unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailsInput(ctx context.Context, v interface{}) (*dto3.UserEmailsInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -18630,7 +18729,7 @@ func (ec *executionContext) unmarshalOUserEmailsInput2ᚖbeanᚋpkgᚋuserᚋmod
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOUserUpdateValuesInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateValuesInput(ctx context.Context, v interface{}) (*dto4.UserUpdateValuesInput, error) {
+func (ec *executionContext) unmarshalOUserUpdateValuesInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateValuesInput(ctx context.Context, v interface{}) (*dto3.UserUpdateValuesInput, error) {
 	if v == nil {
 		return nil, nil
 	}
