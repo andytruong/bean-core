@@ -29,8 +29,8 @@ func NewSpaceBundle(
 
 	this.resolvers = this.newResolvers()
 	this.Service = &SpaceService{bundle: this}
-	this.ConfigService = &ConfigService{bundle: this}
-	this.DomainNameService = &DomainNameService{bundle: this}
+	this.configService = &ConfigService{bundle: this}
+	this.domainNameService = &DomainNameService{bundle: this}
 	this.MemberService = &MemberService{bundle: this}
 
 	return this
@@ -39,18 +39,19 @@ func NewSpaceBundle(
 type SpaceBundle struct {
 	module.AbstractBundle
 
-	config       *SpaceConfiguration
-	logger       *zap.Logger
-	db           *gorm.DB
-	id           *unique.Identifier
-	userBundle   *user.UserBundle
-	configBundle *config.ConfigBundle
-	resolvers    map[string]interface{}
+	Service       *SpaceService
+	MemberService *MemberService
 
-	Service           *SpaceService
-	ConfigService     *ConfigService
-	MemberService     *MemberService
-	DomainNameService *DomainNameService
+	// Internal services
+	config            *SpaceConfiguration
+	logger            *zap.Logger
+	db                *gorm.DB
+	id                *unique.Identifier
+	userBundle        *user.UserBundle
+	configBundle      *config.ConfigBundle
+	resolvers         map[string]interface{}
+	configService     *ConfigService
+	domainNameService *DomainNameService
 }
 
 func (this *SpaceBundle) Dependencies() []module.Bundle {

@@ -5,8 +5,10 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/pkg/errors"
 
 	"bean/components/claim"
+	"bean/pkg/util"
 )
 
 type JwtService struct {
@@ -34,4 +36,15 @@ func (this JwtService) Validate(authHeader string) (*claim.Payload, error) {
 	}
 
 	return nil, fmt.Errorf("ivnalid authentication header")
+}
+
+func (this JwtService) Sign(claims jwt.Claims) (string, error) {
+	key, err := this.bundle.config.GetSignKey()
+	if nil != err {
+		return "", errors.Wrap(util.ErrorConfig, err.Error())
+	}
+
+	return jwt.
+		NewWithClaims(this.bundle.config.signMethod(), claims).
+		SignedString(key)
 }

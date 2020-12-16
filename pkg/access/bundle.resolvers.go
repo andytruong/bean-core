@@ -110,7 +110,7 @@ func (this *AccessBundle) newResolves() map[string]interface{} {
 					},
 				}
 
-				return this.Sign(claims)
+				return this.JwtService.Sign(claims)
 			},
 		},
 	}

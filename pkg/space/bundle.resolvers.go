@@ -84,7 +84,7 @@ func (this *SpaceBundle) newResolvers() map[string]interface{} {
 					return nil, err
 				}
 
-				features, err := this.ConfigService.List(ctx, space)
+				features, err := this.configService.List(ctx, space)
 				if nil != err {
 					return nil, err
 				}
@@ -130,10 +130,10 @@ func (this *SpaceBundle) newResolvers() map[string]interface{} {
 				return this.Service.Load(ctx, *obj.ParentID)
 			},
 			"DomainNames": func(ctx context.Context, space *model.Space) (*model.DomainNames, error) {
-				return this.DomainNameService.Find(space)
+				return this.domainNameService.Find(space)
 			},
 			"Features": func(ctx context.Context, space *model.Space) (*model.SpaceFeatures, error) {
-				return this.ConfigService.List(ctx, space)
+				return this.configService.List(ctx, space)
 			},
 		},
 		"Membership": map[string]interface{}{

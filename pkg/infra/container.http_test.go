@@ -45,7 +45,7 @@ func Test_Authorization(t *testing.T) {
 		r.Header.Add("Authorization", func() string {
 			claims := jwt.StandardClaims{Id: "1"}
 			access, _ := can.bundles.Access()
-			token, _ := access.Sign(claims)
+			token, _ := access.JwtService.Sign(claims)
 
 			return "Bearer " + token
 		}())

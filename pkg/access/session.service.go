@@ -75,7 +75,7 @@ func (this *SessionService) generateOTLT(tx *gorm.DB, in *dto.SessionCreateGener
 }
 
 func (this *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
-	oneTimeSession, err := this.LoadByToken(tx.Statement.Context, tx, in.Token)
+	oneTimeSession, err := this.LoadByToken(tx, in.Token)
 	if nil != err {
 		return nil, err
 	}
@@ -181,10 +181,9 @@ func (this SessionService) load(ctx context.Context, db *gorm.DB, id string) (*m
 	return session, nil
 }
 
-func (this SessionService) LoadByToken(ctx context.Context, db *gorm.DB, token string) (*model.Session, error) {
+func (this SessionService) LoadByToken(db *gorm.DB, token string) (*model.Session, error) {
 	session := &model.Session{}
 	err := db.
-		WithContext(ctx).
 		First(&session, "hashed_token = ?", this.bundle.id.Encode(token)).
 		Error
 
