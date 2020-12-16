@@ -8,11 +8,11 @@ import (
 	"github.com/dgrijalva/jwt-go"
 
 	"bean/components/claim"
+	util2 "bean/components/util"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	space_model "bean/pkg/space/model"
 	user_model "bean/pkg/user/model"
-	"bean/pkg/util"
 )
 
 func (this *AccessBundle) newResolves() map[string]interface{} {
@@ -49,7 +49,7 @@ func (this *AccessBundle) newResolves() map[string]interface{} {
 			"Archive": func(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
 				claims := claim.ContextToPayload(ctx)
 				if nil == claims {
-					return nil, util.ErrorAuthRequired
+					return nil, util2.ErrorAuthRequired
 				}
 
 				sess, _ := this.sessionService.load(ctx, this.db.WithContext(ctx), claims.SessionId())
@@ -60,7 +60,7 @@ func (this *AccessBundle) newResolves() map[string]interface{} {
 				}
 
 				return &dto.SessionArchiveOutcome{
-					Errors: util.NewErrors(util.ErrorCodeInput, []string{"token"}, "session not found"),
+					Errors: util2.NewErrors(util2.ErrorCodeInput, []string{"token"}, "session not found"),
 					Result: false,
 				}, nil
 			},

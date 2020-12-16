@@ -9,10 +9,10 @@ import (
 
 	"bean/components/claim"
 	"bean/components/scalar"
+	util2 "bean/components/util"
+	connect2 "bean/components/util/connect"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
-	"bean/pkg/util"
-	"bean/pkg/util/connect"
 )
 
 type ApplicationService struct {
@@ -38,7 +38,7 @@ func (this *ApplicationService) Load(ctx context.Context, id string) (*model.App
 func (this *ApplicationService) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
 	var app *model.Application
 
-	err := connect.Transaction(
+	err := connect2.Transaction(
 		ctx,
 		this.bundle.db,
 		func(tx *gorm.DB) error {
@@ -77,7 +77,7 @@ func (this *ApplicationService) Update(ctx context.Context, in *dto.S3Applicatio
 	if nil != err {
 		return nil, err
 	} else if app.Version != in.Version {
-		return nil, util.ErrorVersionConflict
+		return nil, util2.ErrorVersionConflict
 	}
 
 	changed := false
@@ -95,13 +95,13 @@ func (this *ApplicationService) Update(ctx context.Context, in *dto.S3Applicatio
 
 	if !changed {
 		if nil == in.Credentials && nil == in.Policies {
-			return nil, util.ErrorUselessInput
+			return nil, util2.ErrorUselessInput
 		}
 	}
 
 	app.Version = this.bundle.id.MustULID()
 	app.UpdatedAt = time.Now()
-	err = connect.Transaction(
+	err = connect2.Transaction(
 		ctx,
 		this.bundle.db,
 		func(tx *gorm.DB) error {
@@ -141,7 +141,7 @@ func (this *ApplicationService) S3UploadToken(ctx context.Context, in dto.S3Uplo
 	// get claims from context
 	claims, ok := ctx.Value(claim.ContextKey).(*claim.Payload)
 	if !ok {
-		return nil, util.ErrorAuthRequired
+		return nil, util2.ErrorAuthRequired
 	}
 
 	// load application

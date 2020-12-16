@@ -16,8 +16,8 @@ import (
 	"go.uber.org/zap"
 
 	"bean/components/claim"
+	util2 "bean/components/util"
 	"bean/pkg/infra/gql"
-	"bean/pkg/util"
 )
 
 func (this *Container) HttpRouter(router *mux.Router) *mux.Router {
@@ -74,7 +74,7 @@ func (this *Container) beforeServeHTTP(r *http.Request) error {
 	if "" != authHeader {
 		bundle, err := this.bundles.Access()
 		if nil != err {
-			return errors.Wrap(err, util.ErrorCodeConfig.String())
+			return errors.Wrap(err, util2.ErrorCodeConfig.String())
 		}
 
 		claims, err := bundle.JwtService.Validate(authHeader)

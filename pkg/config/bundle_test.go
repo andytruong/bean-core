@@ -11,15 +11,15 @@ import (
 
 	"bean/components/claim"
 	"bean/components/scalar"
+	util2 "bean/components/util"
+	connect2 "bean/components/util/connect"
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
-	"bean/pkg/util"
-	"bean/pkg/util/connect"
 )
 
 func bean() *ConfigBundle {
-	id := util.MockIdentifier()
-	logger := util.MockLogger()
+	id := util2.MockIdentifier()
+	logger := util2.MockLogger()
 	bundle := NewConfigBundle(id, logger)
 
 	return bundle
@@ -31,11 +31,11 @@ func Test_Bucket(t *testing.T) {
 	ass := assert.New(t)
 	ctx := context.Background()
 	this := bean()
-	db := util.MockDatabase()
-	util.MockInstall(this, db)
+	db := util2.MockDatabase()
+	util2.MockInstall(this, db)
 
 	t.Run("bucket.create", func(t *testing.T) {
-		err := connect.Transaction(
+		err := connect2.Transaction(
 			context.Background(),
 			db,
 			func(tx *gorm.DB) error {
@@ -122,7 +122,7 @@ func Test_Bucket(t *testing.T) {
 			})
 
 			ass.Error(err)
-			ass.Equal(util.ErrorVersionConflict.Error(), err.Error())
+			ass.Equal(util2.ErrorVersionConflict.Error(), err.Error())
 		})
 	})
 
@@ -162,8 +162,8 @@ func Test_Bucket(t *testing.T) {
 func Test_Variable(t *testing.T) {
 	ass := assert.New(t)
 	this := bean()
-	db := util.MockDatabase()
-	util.MockInstall(this, db)
+	db := util2.MockDatabase()
+	util2.MockInstall(this, db)
 
 	t.Run("variable.create", func(t *testing.T) {
 		t.Run("on read-only bucket", func(t *testing.T) {
@@ -198,7 +198,7 @@ func Test_Variable(t *testing.T) {
 
 			// assert error
 			ass.Error(err)
-			ass.Equal(util.ErrorAccessDenied, err)
+			ass.Equal(util2.ErrorAccessDenied, err)
 			ass.Nil(out)
 		})
 

@@ -13,17 +13,18 @@ import (
 
 	"bean/components/claim"
 	"bean/components/scalar"
+	util2 "bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
-	"bean/pkg/util"
 )
 
 func bean() *S3IntegrationBundle {
-	db := util.MockDatabase()
-	id := util.MockIdentifier()
-	logger := util.MockLogger()
+	db := util2.MockDatabase()
+	id := util2.MockIdentifier()
+	logger := util2.MockLogger()
 	bundle := NewS3Integration(db, id, logger, &S3Configuration{Key: "01EBWB516AP6BQD7"})
-	util.MockInstall(bundle, db)
+	util2.MockInstall(bundle, db)
 
 	return bundle
 }
@@ -126,7 +127,7 @@ func Test(t *testing.T) {
 					})
 
 					ass.Error(err)
-					ass.Equal(err, util.ErrorUselessInput)
+					ass.Equal(err, util2.ErrorUselessInput)
 					ass.Nil(oUpdate)
 				})
 
@@ -238,7 +239,7 @@ func Test_UploadToken(t *testing.T) {
 	ass := assert.New(t)
 	this := bean()
 
-	this.credentialService.transport = util.MockRoundTrip{
+	this.credentialService.transport = connect.MockRoundTrip{
 		Callback: func(request *http.Request) (*http.Response, error) {
 			response := &http.Response{
 				Status:     "OK",

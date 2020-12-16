@@ -15,9 +15,9 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"gorm.io/gorm"
 
+	util2 "bean/components/util"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
-	"bean/pkg/util"
 )
 
 type credentialService struct {
@@ -98,7 +98,7 @@ func (this *credentialService) onAppUpdate(tx *gorm.DB, app *model.Application, 
 			return tx.Save(&cre).Error
 		}
 
-		return util.ErrorUselessInput
+		return util2.ErrorUselessInput
 	} else {
 		if gorm.ErrRecordNotFound != err {
 			return err

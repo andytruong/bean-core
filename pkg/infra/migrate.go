@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"bean/components/module/migrate"
-	"bean/pkg/util/connect"
+	connect2 "bean/components/util/connect"
 )
 
 func (this *Container) Migrate(ctx context.Context) error {
@@ -14,7 +14,7 @@ func (this *Container) Migrate(ctx context.Context) error {
 		return err
 	} else {
 		// start transaction
-		driver := connect.Driver(con)
+		driver := connect2.Driver(con)
 		tx := db.WithContext(ctx).Begin()
 
 		// create migration table if not existing

@@ -7,9 +7,9 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
+	util2 "bean/components/util"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
-	"bean/pkg/util"
 )
 
 type UserService struct {
@@ -30,7 +30,7 @@ func (this *UserService) Load(db *gorm.DB, id string) (*model.User, error) {
 func (this *UserService) Create(tx *gorm.DB, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
 	if uint8(len(in.Emails.Secondary)) > this.bundle.maxSecondaryEmailPerUser {
 		return nil, errors.Wrap(
-			util.ErrorInvalidArgument,
+			util2.ErrorInvalidArgument,
 			fmt.Sprintf("too many secondary emails, limit is %d", this.bundle.maxSecondaryEmailPerUser),
 		)
 	}
@@ -75,7 +75,7 @@ func (this *UserService) Update(tx *gorm.DB, in dto.UserUpdateInput) (*dto.UserM
 
 	// validate version
 	if obj.Version != in.Version {
-		errList := util.NewErrors(util.ErrorCodeConflict, []string{"version"}, "")
+		errList := util2.NewErrors(util2.ErrorCodeConflict, []string{"version"}, "")
 
 		return &dto.UserMutationOutcome{Errors: errList, User: nil}, nil
 	}

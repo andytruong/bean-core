@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"bean/components/scalar"
+	util2 "bean/components/util"
+	"bean/pkg/infra/api"
 	"bean/pkg/space/model"
-	"bean/pkg/util"
-	"bean/pkg/util/api"
 )
 
 type MailerAccount struct {
@@ -62,7 +62,7 @@ type MailerAccountMutation struct {
 
 type MailerAccountMutationOutcome struct {
 	Account *MailerAccount `json:"account"`
-	Errors  []*util.Error  `json:"errors"`
+	Errors  []*util2.Error `json:"errors"`
 }
 
 type MailerAccountPageInfo struct {

@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"bean/pkg/util/connect"
+	connect2 "bean/components/util/connect"
 )
 
 type (
@@ -40,7 +40,7 @@ func (this Membership) TableName() string {
 }
 
 func MembershipNodeCursor(node Membership) string {
-	after := connect.Cursor{
+	after := connect2.Cursor{
 		Entity:   "Membership",
 		Property: "logged_in_at",
 		Value:    node.LoggedInAt.String(),

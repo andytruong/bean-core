@@ -9,10 +9,10 @@ import (
 
 	"bean/components/claim"
 	"bean/components/scalar"
+	util2 "bean/components/util"
+	"bean/pkg/infra/api"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
-	"bean/pkg/util"
-	"bean/pkg/util/api"
 )
 
 type SpaceService struct {
@@ -140,7 +140,7 @@ func (this *SpaceService) createRelationships(tx *gorm.DB, space *model.Space, i
 func (this SpaceService) Update(tx *gorm.DB, obj model.Space, in dto.SpaceUpdateInput) (*dto.SpaceCreateOutcome, error) {
 	// check version for conflict
 	if in.SpaceVersion != obj.Version {
-		return nil, util.ErrorVersionConflict
+		return nil, util2.ErrorVersionConflict
 	}
 
 	if nil != in.Object.Language {

@@ -1,8 +1,8 @@
 package dto
 
 import (
+	util2 "bean/components/util"
 	"bean/pkg/config/model"
-	"bean/pkg/util"
 )
 
 type VariableCreateInput struct {
@@ -27,6 +27,6 @@ type VariableDeleteInput struct {
 }
 
 type VariableMutationOutcome struct {
-	Errors   []*util.Error         `json:"errors"`
+	Errors   []*util2.Error        `json:"errors"`
 	Variable *model.ConfigVariable `json:"variable"`
 }

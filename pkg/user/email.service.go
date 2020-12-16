@@ -6,9 +6,9 @@ import (
 
 	"gorm.io/gorm"
 
+	connect2 "bean/components/util/connect"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
-	"bean/pkg/util/connect"
 )
 
 type EmailService struct {
@@ -40,9 +40,9 @@ func (this EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserE
 }
 
 func (this EmailService) Create(tx *gorm.DB, user *model.User, in dto.UserEmailInput, isPrimary bool) error {
-	table := connect.TableUserEmail
+	table := connect2.TableUserEmail
 	if !in.Verified {
-		table = connect.TableUserEmailUnverified
+		table = connect2.TableUserEmailUnverified
 	}
 
 	email := model.UserEmail{

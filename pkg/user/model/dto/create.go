@@ -2,8 +2,8 @@ package dto
 
 import (
 	"bean/components/scalar"
+	util2 "bean/components/util"
 	"bean/pkg/user/model"
-	"bean/pkg/util"
 )
 
 type UserCreateInput struct {
@@ -36,6 +36,6 @@ type UserPasswordInput struct {
 }
 
 type UserMutationOutcome struct {
-	Errors []*util.Error `json:"errors"`
-	User   *model.User   `json:"user"`
+	Errors []*util2.Error `json:"errors"`
+	User   *model.User    `json:"user"`
 }

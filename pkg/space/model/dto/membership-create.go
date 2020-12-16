@@ -1,8 +1,8 @@
 package dto
 
 import (
+	util2 "bean/components/util"
 	"bean/pkg/space/model"
-	"bean/pkg/util"
 )
 
 type SpaceMembershipCreateInput struct {
@@ -13,6 +13,6 @@ type SpaceMembershipCreateInput struct {
 }
 
 type SpaceMembershipCreateOutcome struct {
-	Errors     []*util.Error     `json:"errors"`
+	Errors     []*util2.Error    `json:"errors"`
 	Membership *model.Membership `json:"membership"`
 }

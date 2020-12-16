@@ -10,6 +10,7 @@ import (
 
 	"bean/components/claim"
 	"bean/components/conf"
+	util2 "bean/components/util"
 	"bean/pkg/access/api/fixtures"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
@@ -17,7 +18,6 @@ import (
 	fSpace "bean/pkg/space/api/fixtures"
 	"bean/pkg/user"
 	fUser "bean/pkg/user/api/fixtures"
-	"bean/pkg/util"
 )
 
 func accessBundle() *AccessBundle {
@@ -33,13 +33,13 @@ func accessBundle() *AccessBundle {
 		panic(err)
 	}
 
-	db := util.MockDatabase()
-	logger := util.MockLogger()
-	id := util.MockIdentifier()
+	db := util2.MockDatabase()
+	logger := util2.MockLogger()
+	id := util2.MockIdentifier()
 	userBundle := user.NewUserBundle(db, logger, id)
 	spaceBundle := space.NewSpaceBundle(db, logger, id, userBundle, config.Bundles.Space)
 	bundle := NewAccessBundle(db, id, logger, userBundle, spaceBundle, config.Bundles.Access)
-	util.MockInstall(bundle, db)
+	util2.MockInstall(bundle, db)
 
 	return bundle
 }
@@ -85,7 +85,7 @@ func Test_Create(t *testing.T) {
 			outcome, err := this.sessionService.Create(this.db.WithContext(ctx), in)
 
 			ass.NoError(err)
-			ass.Equal(util.ErrorCodeInput, *outcome.Errors[0].Code)
+			ass.Equal(util2.ErrorCodeInput, *outcome.Errors[0].Code)
 			ass.Equal(outcome.Errors[0].Message, "invalid password")
 			ass.Equal(outcome.Errors[0].Fields, []string{"input.spaceId"})
 		})

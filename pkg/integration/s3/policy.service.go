@@ -6,9 +6,9 @@ import (
 
 	"gorm.io/gorm"
 
+	util2 "bean/components/util"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
-	"bean/pkg/util"
 )
 
 type policyService struct {
@@ -122,7 +122,7 @@ func (this *policyService) onAppUpdate(tx *gorm.DB, app *model.Application, in *
 	}
 
 	if useless {
-		return util.ErrorUselessInput
+		return util2.ErrorUselessInput
 	}
 
 	return nil
