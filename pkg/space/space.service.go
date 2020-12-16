@@ -21,7 +21,7 @@ type SpaceService struct {
 
 func (this SpaceService) Load(ctx context.Context, id string) (*model.Space, error) {
 	obj := &model.Space{}
-	err := this.bundle.db.First(&obj, "id = ?", id).Error
+	err := this.bundle.db.WithContext(ctx).First(&obj, "id = ?", id).Error
 	if nil != err {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (this SpaceService) FindOne(ctx context.Context, filters dto.SpaceFilters) 
 		return this.Load(ctx, *filters.ID)
 	} else if nil != filters.Domain {
 		domain := &model.DomainName{}
-		err := this.bundle.db.Where("value = ?", filters.Domain).First(&domain).Error
+		err := this.bundle.db.WithContext(ctx).Where("value = ?", filters.Domain).First(&domain).Error
 		if nil != err {
 			return nil, err
 		} else if !domain.IsActive {
@@ -91,13 +91,13 @@ func (this *SpaceService) create(tx *gorm.DB, in dto.SpaceCreateInput) (*model.S
 }
 
 func (this *SpaceService) createRelationships(tx *gorm.DB, space *model.Space, in dto.SpaceCreateInput) error {
-	if err := this.bundle.DomainNameService.createMultiple(tx, space, in); nil != err {
+	if err := this.bundle.domainNameService.createMultiple(tx, space, in); nil != err {
 		return err
 	}
 
 	// space configuration
 	{
-		if err := this.bundle.ConfigService.CreateFeatures(tx, space, in); nil != err {
+		if err := this.bundle.configService.CreateFeatures(tx, space, in); nil != err {
 			return err
 		}
 	}
@@ -153,7 +153,7 @@ func (this SpaceService) Update(tx *gorm.DB, obj model.Space, in dto.SpaceUpdate
 		return nil, err
 	}
 
-	err := this.bundle.ConfigService.updateFeatures(tx, &obj, in)
+	err := this.bundle.configService.updateFeatures(tx, &obj, in)
 	if nil != err {
 		return nil, err
 	}

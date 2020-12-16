@@ -1,22 +1,17 @@
 package access
 
 import (
-	"context"
 	"path"
 	"runtime"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
-	"bean/pkg/access/model"
 	"bean/pkg/space"
 	"bean/pkg/user"
-	"bean/pkg/util"
 )
 
 func NewAccessBundle(
@@ -83,21 +78,6 @@ func (this AccessBundle) Migrate(tx *gorm.DB, driver string) error {
 	}
 
 	return runner.Run()
-}
-
-func (this AccessBundle) Session(ctx context.Context, token string) (*model.Session, error) {
-	return this.sessionService.LoadByToken(ctx, this.db, token)
-}
-
-func (this AccessBundle) Sign(claims jwt.Claims) (string, error) {
-	key, err := this.config.GetSignKey()
-	if nil != err {
-		return "", errors.Wrap(util.ErrorConfig, err.Error())
-	}
-
-	return jwt.
-		NewWithClaims(this.config.signMethod(), claims).
-		SignedString(key)
 }
 
 func (this AccessBundle) GraphqlResolver() map[string]interface{} {

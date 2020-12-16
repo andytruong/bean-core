@@ -100,7 +100,7 @@ func Test_Create(t *testing.T) {
 
 			// check that code challenged & method are saved correctly
 			{
-				session, err := this.sessionService.LoadByToken(ctx, this.db, *out.Token)
+				session, err := this.sessionService.LoadByToken(this.db.WithContext(ctx), *out.Token)
 				ass.NoError(err)
 				ass.Equal("S256", session.CodeChallengeMethod)
 				ass.Equal(
@@ -154,7 +154,7 @@ func Test_Create(t *testing.T) {
 
 				// load again -> should not be found
 				{
-					otltSession, err := this.Session(ctx, *oGenerate.Token)
+					otltSession, err := this.sessionService.LoadByToken(this.db.WithContext(ctx), *oGenerate.Token)
 					ass.Error(err)
 					ass.Nil(otltSession)
 				}
@@ -205,7 +205,7 @@ func Test_Query(t *testing.T) {
 	ass.NoError(err)
 
 	// can load session without issue
-	session, err := this.Session(ctx, *out.Token)
+	session, err := this.sessionService.LoadByToken(this.db.WithContext(ctx), *out.Token)
 	ass.NoError(err)
 	ass.Equal(session.SpaceId, oSpace.Space.ID)
 	ass.Equal(session.UserId, oUser.User.ID)
@@ -218,7 +218,7 @@ func Test_Query(t *testing.T) {
 		ass.NoError(err)
 
 		// load again -> error: session expired
-		_, err = this.Session(ctx, *out.Token)
+		_, err = this.sessionService.LoadByToken(this.db.WithContext(ctx), *out.Token)
 		ass.Error(err)
 		ass.Equal(err.Error(), "session expired")
 	})

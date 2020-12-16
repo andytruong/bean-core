@@ -21,7 +21,7 @@ func (this EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserE
 	}
 
 	if nil != in.Primary {
-		err := this.bundle.EmailService.Create(tx, user, *in.Primary, true)
+		err := this.bundle.emailService.Create(tx, user, *in.Primary, true)
 		if nil != err {
 			return err
 		}
@@ -29,7 +29,7 @@ func (this EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserE
 
 	if nil != in.Secondary {
 		for _, secondaryInput := range in.Secondary {
-			err := this.bundle.EmailService.Create(tx, user, *secondaryInput, false)
+			err := this.bundle.emailService.Create(tx, user, *secondaryInput, false)
 			if nil != err {
 				return err
 			}

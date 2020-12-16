@@ -176,7 +176,7 @@ func Test_Space(t *testing.T) {
 				ass.Equal(obj.Language, api.LanguageUS)
 			}
 
-			features, err := this.ConfigService.List(context.Background(), out.Space)
+			features, err := this.configService.List(context.Background(), out.Space)
 			ass.NoError(err)
 			ass.True(features.Register)
 		})

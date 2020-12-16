@@ -26,9 +26,9 @@ func NewUserBundle(db *gorm.DB, logger *zap.Logger, id *unique.Identifier) *User
 	}
 
 	this.Service = &UserService{bundle: this}
-	this.NameService = &NameService{bundle: this}
-	this.EmailService = &EmailService{bundle: this}
-	this.PasswordService = &PasswordService{bundle: this}
+	this.nameService = &NameService{bundle: this}
+	this.emailService = &EmailService{bundle: this}
+	this.passwordService = &PasswordService{bundle: this}
 	this.resolvers = newResolvers(this)
 
 	return this
@@ -37,15 +37,17 @@ func NewUserBundle(db *gorm.DB, logger *zap.Logger, id *unique.Identifier) *User
 type UserBundle struct {
 	module.AbstractBundle
 
+	Service *UserService
+
+	// Internal services
 	logger                   *zap.Logger
 	db                       *gorm.DB
 	id                       *unique.Identifier
 	maxSecondaryEmailPerUser uint8
 	resolvers                map[string]interface{}
-	Service                  *UserService
-	NameService              *NameService
-	EmailService             *EmailService
-	PasswordService          *PasswordService
+	nameService              *NameService
+	emailService             *EmailService
+	passwordService          *PasswordService
 }
 
 func (this UserBundle) Migrate(tx *gorm.DB, driver string) error {

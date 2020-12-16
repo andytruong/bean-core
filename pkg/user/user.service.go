@@ -50,17 +50,17 @@ func (this *UserService) Create(tx *gorm.DB, in *dto.UserCreateInput) (*dto.User
 	}
 
 	// create emails
-	if err := this.bundle.EmailService.CreateBulk(tx, obj, in.Emails); nil != err {
+	if err := this.bundle.emailService.CreateBulk(tx, obj, in.Emails); nil != err {
 		return nil, err
 	}
 
 	// save name object
-	if err := this.bundle.NameService.create(tx, obj, in); nil != err {
+	if err := this.bundle.nameService.create(tx, obj, in); nil != err {
 		return nil, err
 	}
 
 	// save password
-	if err := this.bundle.PasswordService.create(tx, obj, in.Password); nil != err {
+	if err := this.bundle.passwordService.create(tx, obj, in.Password); nil != err {
 		return nil, err
 	}
 
@@ -80,7 +80,7 @@ func (this *UserService) Update(tx *gorm.DB, in dto.UserUpdateInput) (*dto.UserM
 		return &dto.UserMutationOutcome{Errors: errList, User: nil}, nil
 	}
 
-	if err := this.bundle.PasswordService.create(tx, obj, in.Values.Password); nil != err {
+	if err := this.bundle.passwordService.create(tx, obj, in.Values.Password); nil != err {
 		return nil, err
 	}
 

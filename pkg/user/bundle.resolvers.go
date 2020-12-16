@@ -59,13 +59,13 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 		},
 		"User": map[string]interface{}{
 			"Name": func(ctx context.Context, user *model.User) (*model.UserName, error) {
-				return bundle.NameService.load(bundle.db.WithContext(ctx), user.ID)
+				return bundle.nameService.load(bundle.db.WithContext(ctx), user.ID)
 			},
 			"Verified": func(ctx context.Context, obj *model.UserEmail) (bool, error) {
 				return obj.IsVerified, nil
 			},
 			"Emails": func(ctx context.Context, obj *model.User) (*model.UserEmails, error) {
-				return bundle.EmailService.List(ctx, obj)
+				return bundle.emailService.List(ctx, obj)
 			},
 		},
 	}
