@@ -32,7 +32,7 @@ func Test(t *testing.T) {
 		t.Run("test happy case, no error", func(t *testing.T) {
 			now := time.Now()
 
-			resolver := this.resolvers["Mutation"].(map[string]interface{})["UserCreate"].(func(context.Context, *dto.UserCreateInput) (*dto.UserMutationOutcome, error))
+			resolver := this.resolvers["UserMutation"].(map[string]interface{})["Create"].(func(context.Context, *dto.UserCreateInput) (*dto.UserMutationOutcome, error))
 			out, err := resolver(context.Background(), iCreate)
 			ass.NoError(err)
 			ass.Empty(out.Errors)
@@ -70,13 +70,13 @@ func Test_Update(t *testing.T) {
 		defer tearDown(this)
 
 		// create user so we can edit
-		rCreate := this.resolvers["Mutation"].(map[string]interface{})["UserCreate"].(func(context.Context, *dto.UserCreateInput) (*dto.UserMutationOutcome, error))
+		rCreate := this.resolvers["UserMutation"].(map[string]interface{})["Create"].(func(context.Context, *dto.UserCreateInput) (*dto.UserMutationOutcome, error))
 		oCreate, err := rCreate(context.Background(), iCreate)
 		ass.NoError(err)
 		ass.NotNil(oCreate)
 
 		t.Run("version conflict", func(t *testing.T) {
-			rUpdate := this.resolvers["Mutation"].(map[string]interface{})["UserUpdate"].(func(context.Context, dto.UserUpdateInput) (*dto.UserMutationOutcome, error))
+			rUpdate := this.resolvers["UserMutation"].(map[string]interface{})["Update"].(func(context.Context, dto.UserUpdateInput) (*dto.UserMutationOutcome, error))
 			oUpdate, err := rUpdate(context.Background(), dto.UserUpdateInput{
 				ID:      oCreate.User.ID,
 				Version: this.id.MustULID(), // some other version
@@ -87,7 +87,7 @@ func Test_Update(t *testing.T) {
 		})
 
 		t.Run("update password", func(t *testing.T) {
-			rUpdate := this.resolvers["Mutation"].(map[string]interface{})["UserUpdate"].(func(context.Context, dto.UserUpdateInput) (*dto.UserMutationOutcome, error))
+			rUpdate := this.resolvers["UserMutation"].(map[string]interface{})["Update"].(func(context.Context, dto.UserUpdateInput) (*dto.UserMutationOutcome, error))
 			oUpdate, err := rUpdate(context.Background(), dto.UserUpdateInput{
 				ID:      oCreate.User.ID,
 				Version: oCreate.User.Version,

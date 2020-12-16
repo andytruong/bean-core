@@ -53,10 +53,11 @@ func (r *Resolver) S3Mutation() gql.S3MutationResolver { return &s3MutationResol
 func (r *Resolver) S3UploadMutation() gql.S3UploadMutationResolver {
 	return &s3UploadMutationResolver{r}
 }
-func (r *Resolver) Session() gql.SessionResolver     { return &sessionResolver{r} }
-func (r *Resolver) Space() gql.SpaceResolver         { return &spaceResolver{r} }
-func (r *Resolver) User() gql.UserResolver           { return &userResolver{r} }
-func (r *Resolver) UserEmail() gql.UserEmailResolver { return &userEmailResolver{r} }
+func (r *Resolver) Session() gql.SessionResolver           { return &sessionResolver{r} }
+func (r *Resolver) Space() gql.SpaceResolver               { return &spaceResolver{r} }
+func (r *Resolver) User() gql.UserResolver                 { return &userResolver{r} }
+func (r *Resolver) UserEmail() gql.UserEmailResolver       { return &userEmailResolver{r} }
+func (r *Resolver) UserMutation() gql.UserMutationResolver { return &userMutationResolver{r} }
 
 // Resolvers
 type accessMutationResolver struct{ *Resolver }
@@ -78,6 +79,7 @@ type sessionResolver struct{ *Resolver }
 type spaceResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
 type userEmailResolver struct{ *Resolver }
+type userMutationResolver struct{ *Resolver }
 
 func (r *accessMutationResolver) Session(ctx context.Context, obj *dto.AccessMutation) (*dto.AccessSessionMutation, error) {
 	panic("no implementation found in resolvers[AccessMutation][Session]")
@@ -236,21 +238,14 @@ func (r *mutationResolver) SpaceMembershipUpdate(ctx context.Context, input dto2
 
 	return callback(ctx, input)
 }
+func (r *mutationResolver) User(ctx context.Context) (*dto3.UserMutation, error) {
+	panic("no implementation found in resolvers[Mutation][User]")
+}
 func (r *mutationResolver) UserCreate(ctx context.Context, input *dto3.UserCreateInput) (*dto3.UserMutationOutcome, error) {
-	bundle, _ := r.container.bundles.User()
-	resolvers := bundle.GraphqlResolver()
-	objectResolver := resolvers["Mutation"].(map[string]interface{})
-	callback := objectResolver["UserCreate"].(func(ctx context.Context, input *dto3.UserCreateInput) (*dto3.UserMutationOutcome, error))
-
-	return callback(ctx, input)
+	panic("no implementation found in resolvers[Mutation][UserCreate]")
 }
 func (r *mutationResolver) UserUpdate(ctx context.Context, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error) {
-	bundle, _ := r.container.bundles.User()
-	resolvers := bundle.GraphqlResolver()
-	objectResolver := resolvers["Mutation"].(map[string]interface{})
-	callback := objectResolver["UserUpdate"].(func(ctx context.Context, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error))
-
-	return callback(ctx, input)
+	panic("no implementation found in resolvers[Mutation][UserUpdate]")
 }
 func (r *mutationResolver) S3Mutation(ctx context.Context) (*dto4.S3Mutation, error) {
 	bundle, _ := r.container.bundles.S3()
@@ -428,4 +423,20 @@ func (r *userResolver) Emails(ctx context.Context, obj *model3.User) (*model3.Us
 }
 func (r *userEmailResolver) Verified(ctx context.Context, obj *model3.UserEmail) (bool, error) {
 	panic("no implementation found in resolvers[UserEmail][Verified]")
+}
+func (r *userMutationResolver) Create(ctx context.Context, obj *dto3.UserMutation, input *dto3.UserCreateInput) (*dto3.UserMutationOutcome, error) {
+	bundle, _ := r.container.bundles.User()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["UserMutation"].(map[string]interface{})
+	callback := objectResolver["Create"].(func(ctx context.Context, obj *dto3.UserMutation, input *dto3.UserCreateInput) (*dto3.UserMutationOutcome, error))
+
+	return callback(ctx, obj, input)
+}
+func (r *userMutationResolver) Update(ctx context.Context, obj *dto3.UserMutation, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error) {
+	bundle, _ := r.container.bundles.User()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["UserMutation"].(map[string]interface{})
+	callback := objectResolver["Update"].(func(ctx context.Context, obj *dto3.UserMutation, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error))
+
+	return callback(ctx, obj, input)
 }
