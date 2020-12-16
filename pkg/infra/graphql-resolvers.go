@@ -96,10 +96,20 @@ type userMutationResolver struct{ *Resolver }
 type userQueryResolver struct{ *Resolver }
 
 func (r *accessMutationResolver) Session(ctx context.Context, obj *dto.AccessMutation) (*dto.AccessSessionMutation, error) {
-	panic("no implementation found in resolvers[AccessMutation][Session]")
+	bundle, _ := r.container.bundles.Access()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["AccessMutation"].(map[string]interface{})
+	callback := objectResolver["Session"].(func(ctx context.Context, obj *dto.AccessMutation) (*dto.AccessSessionMutation, error))
+
+	return callback(ctx, obj)
 }
 func (r *accessQueryResolver) Session(ctx context.Context, obj *dto.AccessQuery) (*dto.AccessSessionQuery, error) {
-	panic("no implementation found in resolvers[AccessQuery][Session]")
+	bundle, _ := r.container.bundles.Access()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["AccessQuery"].(map[string]interface{})
+	callback := objectResolver["Session"].(func(ctx context.Context, obj *dto.AccessQuery) (*dto.AccessSessionQuery, error))
+
+	return callback(ctx, obj)
 }
 func (r *accessSessionMutationResolver) Create(ctx context.Context, obj *dto.AccessSessionMutation, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 	bundle, _ := r.container.bundles.Access()

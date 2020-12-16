@@ -19,14 +19,17 @@ func NewMailerIntegration(genetic *MailerConfiguration, logger *zap.Logger) *Mai
 		logger: logger,
 	}
 
+	this.resolvers = newResoler(this)
+
 	return this
 }
 
 type MailerIntegrationBundle struct {
 	module.AbstractBundle
 
-	config *MailerConfiguration
-	logger *zap.Logger
+	config    *MailerConfiguration
+	logger    *zap.Logger
+	resolvers map[string]interface{}
 }
 
 func (this MailerIntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
@@ -66,5 +69,5 @@ func (this MailerIntegrationBundle) Send(message model.Message) error {
 }
 
 func (this *MailerIntegrationBundle) GraphqlResolver() map[string]interface{} {
-	return newResoler(this)
+	return this.resolvers
 }
