@@ -39,7 +39,7 @@ func Test(t *testing.T) {
 			ass.Equal("https://foo.bar", string(*out.User.AvatarURI))
 
 			{
-				resolver := this.resolvers["Query"].(map[string]interface{})["User"].(func(ctx context.Context, id string) (*model.User, error))
+				resolver := this.resolvers["UserQuery"].(map[string]interface{})["Load"].(func(ctx context.Context, id string) (*model.User, error))
 				theUser, err := resolver(context.Background(), out.User.ID)
 				ass.NoError(err)
 				ass.True(theUser.CreatedAt.UnixNano() >= now.UnixNano())

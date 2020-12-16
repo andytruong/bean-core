@@ -28,7 +28,7 @@ func (this *AccessBundle) newResolves() map[string]interface{} {
 			},
 		},
 		"AccessQuery": map[string]interface{}{
-			"AccessSessionQuery": func(ctx context.Context) (*dto.AccessSessionQuery, error) {
+			"Session": func(ctx context.Context) (*dto.AccessSessionQuery, error) {
 				return &dto.AccessSessionQuery{}, nil
 			},
 		},
@@ -38,7 +38,7 @@ func (this *AccessBundle) newResolves() map[string]interface{} {
 			},
 		},
 		"AccessMutation": map[string]interface{}{
-			"AccessSessionMutation": func(ctx context.Context) (*dto.AccessSessionMutation, error) {
+			"Session": func(ctx context.Context) (*dto.AccessSessionMutation, error) {
 				return &dto.AccessSessionMutation{}, nil
 			},
 		},
