@@ -1,6 +1,0 @@
-extend type Mutation {
-    spaceCreate(input: SpaceCreateInput!): SpaceCreateOutcome!
-    spaceUpdate(input: SpaceUpdateInput!): SpaceCreateOutcome!
-    spaceMembershipCreate(input: SpaceMembershipCreateInput!): SpaceMembershipCreateOutcome!
-    spaceMembershipUpdate(input: SpaceMembershipUpdateInput!): SpaceMembershipCreateOutcome!
-}

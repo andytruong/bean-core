@@ -123,7 +123,7 @@ func Test_Space(t *testing.T) {
 		id := oCreate.Space.ID
 
 		t.Run("load by ID", func(t *testing.T) {
-			obj, err := this.Load(context.Background(), id)
+			obj, err := this.Service.Load(context.Background(), id)
 			ass.NoError(err)
 			ass.Equal(obj.ID, id)
 			ass.Equal(obj.Title, *iCreate.Object.Title)
@@ -132,9 +132,7 @@ func Test_Space(t *testing.T) {
 
 		t.Run("load by domain name -> inactive domain name", func(t *testing.T) {
 			domainName := scalar.Uri(*iCreate.Object.DomainNames.Secondary[1].Value)
-			obj, err := this.Space(context.Background(), dto.SpaceFilters{
-				Domain: &domainName,
-			})
+			obj, err := this.Service.FindOne(context.Background(), dto.SpaceFilters{Domain: &domainName})
 
 			ass.Error(err)
 			ass.Equal(err.Error(), "domain name is not active")
@@ -143,7 +141,7 @@ func Test_Space(t *testing.T) {
 
 		t.Run("load by domain name -> verified", func(t *testing.T) {
 			domainName := scalar.Uri(*iCreate.Object.DomainNames.Primary.Value)
-			obj, err := this.Space(context.Background(), dto.SpaceFilters{Domain: &domainName})
+			obj, err := this.Service.FindOne(context.Background(), dto.SpaceFilters{Domain: &domainName})
 
 			ass.NoError(err)
 			ass.Equal(obj.ID, id)
@@ -173,7 +171,7 @@ func Test_Space(t *testing.T) {
 			})
 
 			{
-				obj, err := this.Load(context.Background(), out.Space.ID)
+				obj, err := this.Service.Load(context.Background(), out.Space.ID)
 				ass.NoError(err)
 				ass.Equal(obj.Language, api.LanguageUS)
 			}
@@ -252,7 +250,7 @@ func Test_Membership(t *testing.T) {
 		})
 
 		t.Run("create failed of feature is off", func(t *testing.T) {
-			space, err := this.Load(context.Background(), oSpace.Space.ID)
+			space, err := this.Service.Load(context.Background(), oSpace.Space.ID)
 			ass.NoError(err)
 
 			// change feature off
@@ -280,7 +278,7 @@ func Test_Membership(t *testing.T) {
 				IsActive: false,
 			}
 
-			resolver := this.resolvers["Mutation"].(map[string]interface{})["SpaceMembershipCreate"].(func(context.Context, dto.SpaceMembershipCreateInput) (*dto.SpaceMembershipCreateOutcome, error))
+			resolver := this.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Create"].(func(context.Context, dto.SpaceMembershipCreateInput) (*dto.SpaceMembershipCreateOutcome, error))
 			outcome, err := resolver(context.Background(), input)
 
 			// check error
@@ -318,7 +316,7 @@ func Test_Membership(t *testing.T) {
 		})
 
 		t.Run("update membership", func(t *testing.T) {
-			resolver := this.resolvers["Mutation"].(map[string]interface{})["SpaceMembershipUpdate"].(func(context.Context, dto.SpaceMembershipUpdateInput) (*dto.SpaceMembershipCreateOutcome, error))
+			resolver := this.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Update"].(func(context.Context, dto.SpaceMembershipUpdateInput) (*dto.SpaceMembershipCreateOutcome, error))
 			membership := &model.Membership{}
 
 			// create a membership with status OFF.
@@ -336,7 +334,7 @@ func Test_Membership(t *testing.T) {
 
 			// load membership
 			{
-				resolver := this.resolvers["Query"].(map[string]interface{})["Membership"].(func(context.Context, string, *string) (*model.Membership, error))
+				resolver := this.resolvers["SpaceMembershipQuery"].(map[string]interface{})["Load"].(func(context.Context, string, *string) (*model.Membership, error))
 
 				// without version
 				{

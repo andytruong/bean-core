@@ -29,7 +29,7 @@ func (this SpaceService) Load(ctx context.Context, id string) (*model.Space, err
 	return obj, nil
 }
 
-func (this SpaceService) Find(ctx context.Context, filters dto.SpaceFilters) (*model.Space, error) {
+func (this SpaceService) FindOne(ctx context.Context, filters dto.SpaceFilters) (*model.Space, error) {
 	if nil != filters.ID {
 		return this.Load(ctx, *filters.ID)
 	} else if nil != filters.Domain {
