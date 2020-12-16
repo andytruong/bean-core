@@ -25,7 +25,12 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 			},
 		},
 		"Mutation": map[string]interface{}{
-			"UserCreate": func(ctx context.Context, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
+			"UserMutation": func(ctx context.Context) (*dto.UserMutation, error) {
+				return &dto.UserMutation{}, nil
+			},
+		},
+		"UserMutation": map[string]interface{}{
+			"Create": func(ctx context.Context, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
 				var err error
 				var out *dto.UserMutationOutcome
 
@@ -37,7 +42,7 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 
 				return out, err
 			},
-			"UserUpdate": func(ctx context.Context, input dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
+			"Update": func(ctx context.Context, input dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
 				var err error
 				var out *dto.UserMutationOutcome
 

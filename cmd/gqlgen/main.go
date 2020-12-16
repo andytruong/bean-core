@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -18,6 +20,7 @@ import (
 )
 
 func main() {
+	log.SetOutput(ioutil.Discard)
 	_ = os.Setenv("ENV", "test")
 	path := "config.yaml"
 	if "" == path {

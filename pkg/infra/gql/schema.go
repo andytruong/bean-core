@@ -68,6 +68,7 @@ type ResolverRoot interface {
 	Space() SpaceResolver
 	User() UserResolver
 	UserEmail() UserEmailResolver
+	UserMutation() UserMutationResolver
 }
 
 type DirectiveRoot struct {
@@ -305,6 +306,7 @@ type ComplexityRoot struct {
 		SpaceMembershipCreate func(childComplexity int, input dto2.SpaceMembershipCreateInput) int
 		SpaceMembershipUpdate func(childComplexity int, input dto2.SpaceMembershipUpdateInput) int
 		SpaceUpdate           func(childComplexity int, input dto2.SpaceUpdateInput) int
+		User                  func(childComplexity int) int
 		UserCreate            func(childComplexity int, input *dto3.UserCreateInput) int
 		UserUpdate            func(childComplexity int, input dto3.UserUpdateInput) int
 	}
@@ -431,6 +433,11 @@ type ComplexityRoot struct {
 		Secondary func(childComplexity int) int
 	}
 
+	UserMutation struct {
+		Create func(childComplexity int, input *dto3.UserCreateInput) int
+		Update func(childComplexity int, input dto3.UserUpdateInput) int
+	}
+
 	UserMutationOutcome struct {
 		Errors func(childComplexity int) int
 		User   func(childComplexity int) int
@@ -494,6 +501,7 @@ type MutationResolver interface {
 	SpaceUpdate(ctx context.Context, input dto2.SpaceUpdateInput) (*dto2.SpaceCreateOutcome, error)
 	SpaceMembershipCreate(ctx context.Context, input dto2.SpaceMembershipCreateInput) (*dto2.SpaceMembershipCreateOutcome, error)
 	SpaceMembershipUpdate(ctx context.Context, input dto2.SpaceMembershipUpdateInput) (*dto2.SpaceMembershipCreateOutcome, error)
+	User(ctx context.Context) (*dto3.UserMutation, error)
 	UserCreate(ctx context.Context, input *dto3.UserCreateInput) (*dto3.UserMutationOutcome, error)
 	UserUpdate(ctx context.Context, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error)
 	S3Mutation(ctx context.Context) (*dto4.S3Mutation, error)
@@ -538,6 +546,10 @@ type UserResolver interface {
 }
 type UserEmailResolver interface {
 	Verified(ctx context.Context, obj *model3.UserEmail) (bool, error)
+}
+type UserMutationResolver interface {
+	Create(ctx context.Context, obj *dto3.UserMutation, input *dto3.UserCreateInput) (*dto3.UserMutationOutcome, error)
+	Update(ctx context.Context, obj *dto3.UserMutation, input dto3.UserUpdateInput) (*dto3.UserMutationOutcome, error)
 }
 
 type executableSchema struct {
@@ -1541,6 +1553,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SpaceUpdate(childComplexity, args["input"].(dto2.SpaceUpdateInput)), true
 
+	case "Mutation.user":
+		if e.complexity.Mutation.User == nil {
+			break
+		}
+
+		return e.complexity.Mutation.User(childComplexity), true
+
 	case "Mutation.userCreate":
 		if e.complexity.Mutation.UserCreate == nil {
 			break
@@ -2102,6 +2121,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UserEmails.Secondary(childComplexity), true
 
+	case "UserMutation.create":
+		if e.complexity.UserMutation.Create == nil {
+			break
+		}
+
+		args, err := ec.field_UserMutation_create_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.UserMutation.Create(childComplexity, args["input"].(*dto3.UserCreateInput)), true
+
+	case "UserMutation.update":
+		if e.complexity.UserMutation.Update == nil {
+			break
+		}
+
+		args, err := ec.field_UserMutation_update_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.UserMutation.Update(childComplexity, args["input"].(dto3.UserUpdateInput)), true
+
 	case "UserMutationOutcome.errors":
 		if e.complexity.UserMutationOutcome.Errors == nil {
 			break
@@ -2646,6 +2689,15 @@ type UserMutationOutcome {
 
 input UserUpdateValuesInput {
     password: UserPasswordInput!
+}
+`, BuiltIn: false},
+	{Name: "pkg/user/api/mut.graphql", Input: `extend type Mutation {
+    user: UserMutation!
+}
+
+type UserMutation {
+    create(input: UserCreateInput): UserMutationOutcome!
+    update(input: UserUpdateInput!): UserMutationOutcome!
 }
 `, BuiltIn: false},
 	{Name: "pkg/user/api/query.graphql", Input: `extend type Query {
@@ -3397,6 +3449,36 @@ func (ec *executionContext) field_Session_jwt_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["codeVerifier"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_UserMutation_create_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *dto3.UserCreateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOUserCreateInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserCreateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_UserMutation_update_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 dto3.UserUpdateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUserUpdateInput2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserUpdateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -8176,6 +8258,41 @@ func (ec *executionContext) _Mutation_spaceMembershipUpdate(ctx context.Context,
 	return ec.marshalNSpaceMembershipCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipCreateOutcome(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().User(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto3.UserMutation)
+	fc.Result = res
+	return ec.marshalNUserMutation2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutation(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_userCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -10876,6 +10993,90 @@ func (ec *executionContext) _UserEmails_secondary(ctx context.Context, field gra
 	res := resTmp.([]*model3.UserEmail)
 	fc.Result = res
 	return ec.marshalOUserEmail2ᚕᚖbeanᚋpkgᚋuserᚋmodelᚐUserEmail(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserMutation_create(ctx context.Context, field graphql.CollectedField, obj *dto3.UserMutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UserMutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_UserMutation_create_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserMutation().Create(rctx, obj, args["input"].(*dto3.UserCreateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto3.UserMutationOutcome)
+	fc.Result = res
+	return ec.marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserMutation_update(ctx context.Context, field graphql.CollectedField, obj *dto3.UserMutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UserMutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_UserMutation_update_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserMutation().Update(rctx, obj, args["input"].(dto3.UserUpdateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto3.UserMutationOutcome)
+	fc.Result = res
+	return ec.marshalNUserMutationOutcome2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserMutationOutcome_user(ctx context.Context, field graphql.CollectedField, obj *dto3.UserMutationOutcome) (ret graphql.Marshaler) {
@@ -15231,6 +15432,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "user":
+			out.Values[i] = ec._Mutation_user(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "userCreate":
 			out.Values[i] = ec._Mutation_userCreate(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -16102,6 +16308,56 @@ func (ec *executionContext) _UserEmails(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._UserEmails_primary(ctx, field, obj)
 		case "secondary":
 			out.Values[i] = ec._UserEmails_secondary(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var userMutationImplementors = []string{"UserMutation"}
+
+func (ec *executionContext) _UserMutation(ctx context.Context, sel ast.SelectionSet, obj *dto3.UserMutation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userMutationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserMutation")
+		case "create":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UserMutation_create(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "update":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UserMutation_update(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17470,6 +17726,20 @@ func (ec *executionContext) marshalNUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx
 func (ec *executionContext) unmarshalNUserEmailInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserEmailInput(ctx context.Context, v interface{}) (*dto3.UserEmailInput, error) {
 	res, err := ec.unmarshalInputUserEmailInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUserMutation2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutation(ctx context.Context, sel ast.SelectionSet, v dto3.UserMutation) graphql.Marshaler {
+	return ec._UserMutation(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserMutation2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutation(ctx context.Context, sel ast.SelectionSet, v *dto3.UserMutation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._UserMutation(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUserMutationOutcome2beanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutationOutcome(ctx context.Context, sel ast.SelectionSet, v dto3.UserMutationOutcome) graphql.Marshaler {
