@@ -14,19 +14,21 @@ import (
 func newResolvers(bundle *UserBundle) map[string]interface{} {
 	return map[string]interface{}{
 		"Query": map[string]interface{}{
-			"User": func(ctx context.Context, id string) (*model.User, error) {
-				db := bundle.db.WithContext(ctx)
-
-				return bundle.Service.Load(db, id)
+			"UserQuery": func(ctx context.Context) (*dto.UserQuery, error) {
+				return &dto.UserQuery{}, nil
 			},
-			// context.Background(), membership.ID, &membership.Version
 			"Membership": func(ctx context.Context, id string, version *string) (*model2.Membership, error) {
-				panic("WUO")
+				panic("TODO")
 			},
 		},
 		"Mutation": map[string]interface{}{
 			"UserMutation": func(ctx context.Context) (*dto.UserMutation, error) {
 				return &dto.UserMutation{}, nil
+			},
+		},
+		"UserQuery": map[string]interface{}{
+			"Load": func(ctx context.Context, id string) (*model.User, error) {
+				return bundle.Service.Load(bundle.db.WithContext(ctx), id)
 			},
 		},
 		"UserMutation": map[string]interface{}{
