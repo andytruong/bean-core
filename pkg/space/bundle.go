@@ -1,7 +1,6 @@
 package space
 
 import (
-	"context"
 	"path"
 	"runtime"
 
@@ -12,8 +11,6 @@ import (
 	"bean/components/module/migrate"
 	"bean/components/unique"
 	"bean/pkg/config"
-	"bean/pkg/space/model"
-	"bean/pkg/space/model/dto"
 	"bean/pkg/user"
 )
 
@@ -79,12 +76,4 @@ func (this SpaceBundle) Migrate(tx *gorm.DB, driver string) error {
 
 func (this *SpaceBundle) GraphqlResolver() map[string]interface{} {
 	return this.resolvers
-}
-
-func (this SpaceBundle) Space(ctx context.Context, filters dto.SpaceFilters) (*model.Space, error) {
-	return this.Service.Find(ctx, filters)
-}
-
-func (this SpaceBundle) Load(ctx context.Context, id string) (*model.Space, error) {
-	return this.Service.Load(ctx, id)
 }

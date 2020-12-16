@@ -1,0 +1,14 @@
+extend type Mutation {
+    spaceMutation: SpaceMutation!
+}
+
+type SpaceMutation {
+    create(input: SpaceCreateInput!): SpaceCreateOutcome!
+    update(input: SpaceUpdateInput!): SpaceCreateOutcome!
+    membership: SpaceMembershipMutation!
+}
+
+type SpaceMembershipMutation {
+    create(input: SpaceMembershipCreateInput!): SpaceMembershipCreateOutcome!
+    update(input: SpaceMembershipUpdateInput!): SpaceMembershipCreateOutcome!
+}

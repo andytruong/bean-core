@@ -76,7 +76,7 @@ func (this *AccessBundle) newResolves() map[string]interface{} {
 				return obj.Scopes, nil
 			},
 			"Space": func(ctx context.Context, obj *model.Session) (*space_model.Space, error) {
-				return this.spaceBundle.Load(ctx, obj.SpaceId)
+				return this.spaceBundle.Service.Load(ctx, obj.SpaceId)
 			},
 			"Jwt": func(ctx context.Context, session *model.Session, codeVerifier string) (string, error) {
 				roles, err := this.spaceBundle.MemberService.FindRoles(ctx, session.UserId, session.SpaceId)
