@@ -1,13 +1,14 @@
 package user
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
 )
@@ -16,8 +17,9 @@ type UserService struct {
 	bundle *UserBundle
 }
 
-func (service *UserService) Load(db *gorm.DB, id string) (*model.User, error) {
+func (service *UserService) Load(ctx context.Context, id string) (*model.User, error) {
 	user := &model.User{}
+	db := connect.ContextToDB(ctx)
 	err := db.Where(&model.User{ID: id}).First(user).Error
 
 	if nil != err {
@@ -27,7 +29,9 @@ func (service *UserService) Load(db *gorm.DB, id string) (*model.User, error) {
 	return user, nil
 }
 
-func (service *UserService) Create(tx *gorm.DB, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
+func (service *UserService) Create(ctx context.Context, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
+	tx := connect.ContextToDB(ctx)
+
 	if uint8(len(in.Emails.Secondary)) > service.bundle.maxSecondaryEmailPerUser {
 		return nil, errors.Wrap(
 			util.ErrorInvalidArgument,
@@ -37,8 +41,8 @@ func (service *UserService) Create(tx *gorm.DB, in *dto.UserCreateInput) (*dto.U
 
 	// create base record
 	obj := &model.User{
-		ID:        service.bundle.id.MustULID(),
-		Version:   service.bundle.id.MustULID(),
+		ID:        service.bundle.idr.MustULID(),
+		Version:   service.bundle.idr.MustULID(),
 		AvatarURI: in.AvatarURI,
 		IsActive:  in.IsActive,
 		CreatedAt: time.Now(),
@@ -67,8 +71,9 @@ func (service *UserService) Create(tx *gorm.DB, in *dto.UserCreateInput) (*dto.U
 	return &dto.UserMutationOutcome{User: obj}, nil
 }
 
-func (service *UserService) Update(tx *gorm.DB, in dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
-	obj, err := service.bundle.Service.Load(tx, in.ID)
+func (service *UserService) Update(ctx context.Context, in dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
+	tx := connect.ContextToDB(ctx)
+	obj, err := service.bundle.Service.Load(ctx, in.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +90,7 @@ func (service *UserService) Update(tx *gorm.DB, in dto.UserUpdateInput) (*dto.Us
 	}
 
 	// bump new version
-	obj.Version = service.bundle.id.MustULID()
+	obj.Version = service.bundle.idr.MustULID()
 	if err := tx.Save(obj).Error; nil != err {
 		return nil, err
 	}

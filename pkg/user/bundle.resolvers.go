@@ -28,7 +28,7 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 		},
 		"UserQuery": map[string]interface{}{
 			"Load": func(ctx context.Context, id string) (*model.User, error) {
-				return bundle.Service.Load(bundle.db.WithContext(ctx), id)
+				return bundle.Service.Load(ctx, id)
 			},
 		},
 		"UserMutation": map[string]interface{}{
@@ -37,7 +37,7 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 				var out *dto.UserMutationOutcome
 
 				err = connect2.Transaction(ctx, bundle.db, func(tx *gorm.DB) error {
-					out, err = bundle.Service.Create(tx, in)
+					out, err = bundle.Service.Create(connect2.DBToContext(ctx, tx), in)
 
 					return err
 				})
@@ -49,7 +49,7 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 				var out *dto.UserMutationOutcome
 
 				err = connect2.Transaction(ctx, bundle.db, func(tx *gorm.DB) error {
-					out, err = bundle.Service.Update(tx, input)
+					out, err = bundle.Service.Update(connect2.DBToContext(ctx, tx), input)
 
 					return err
 				})

@@ -25,6 +25,7 @@ func Test(t *testing.T) {
 	this := NewUserBundle(db, util.MockLogger(), util.MockIdentifier())
 	util.MockInstall(this, db)
 	iCreate := fixtures.NewUserCreateInputFixture()
+	ctx := connect.DBToContext(context.Background(), db)
 
 	t.Run("Create", func(t *testing.T) {
 		defer tearDown(this)
@@ -40,7 +41,7 @@ func Test(t *testing.T) {
 
 			{
 				resolver := this.resolvers["UserQuery"].(map[string]interface{})["Load"].(func(ctx context.Context, id string) (*model.User, error))
-				theUser, err := resolver(context.Background(), out.User.ID)
+				theUser, err := resolver(ctx, out.User.ID)
 				ass.NoError(err)
 				ass.True(theUser.CreatedAt.UnixNano() >= now.UnixNano())
 				ass.Equal("https://foo.bar", string(*theUser.AvatarURI))
@@ -79,7 +80,7 @@ func Test_Update(t *testing.T) {
 			rUpdate := this.resolvers["UserMutation"].(map[string]interface{})["Update"].(func(context.Context, dto.UserUpdateInput) (*dto.UserMutationOutcome, error))
 			oUpdate, err := rUpdate(context.Background(), dto.UserUpdateInput{
 				ID:      oCreate.User.ID,
-				Version: this.id.MustULID(), // some other version
+				Version: this.idr.MustULID(), // some other version
 			})
 
 			ass.NoError(err)
@@ -93,7 +94,7 @@ func Test_Update(t *testing.T) {
 				Version: oCreate.User.Version,
 				Values: &dto.UserUpdateValuesInput{
 					Password: &dto.UserPasswordInput{
-						HashedValue: this.id.MustULID(),
+						HashedValue: this.idr.MustULID(),
 					},
 				},
 			})

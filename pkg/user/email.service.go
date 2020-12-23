@@ -46,7 +46,7 @@ func (service EmailService) Create(tx *gorm.DB, user *model.User, in dto.UserEma
 	}
 
 	email := model.UserEmail{
-		ID:        service.bundle.id.MustULID(),
+		ID:        service.bundle.idr.MustULID(),
 		UserId:    user.ID,
 		Value:     in.Value.LowerCaseValue(),
 		IsActive:  in.Verified,

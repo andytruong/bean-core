@@ -24,7 +24,7 @@ func (service *NameService) load(db *gorm.DB, userId string) (*model.UserName, e
 func (service *NameService) create(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
 	if nil != input.Name {
 		name := model.UserName{
-			ID:            service.bundle.id.MustULID(),
+			ID:            service.bundle.idr.MustULID(),
 			UserId:        user.ID,
 			FirstName:     input.Name.FirstName,
 			LastName:      input.Name.LastName,
