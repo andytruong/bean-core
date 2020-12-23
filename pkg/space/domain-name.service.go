@@ -35,7 +35,7 @@ func (service *DomainNameService) createMultiple(tx *gorm.DB, space *model.Space
 
 func (service *DomainNameService) create(tx *gorm.DB, space *model.Space, in *dto.DomainNameInput, isPrimary bool) error {
 	domain := model.DomainName{
-		ID:         service.bundle.id.MustULID(),
+		ID:         service.bundle.idr.MustULID(),
 		SpaceId:    space.ID,
 		IsVerified: *in.Verified,
 		Value:      *in.Value,

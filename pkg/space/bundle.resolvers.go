@@ -7,6 +7,7 @@ import (
 
 	"bean/components/scalar"
 	"bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
 	mUser "bean/pkg/user/model"
@@ -42,14 +43,14 @@ func (bundle *SpaceBundle) newResolvers() map[string]interface{} {
 		},
 		"SpaceMutation": map[string]interface{}{
 			"Create": func(ctx context.Context, input dto.SpaceCreateInput) (*dto.SpaceCreateOutcome, error) {
-				txn := bundle.db.WithContext(ctx).Begin()
-				out, err := bundle.Service.Create(txn, input)
+				tx := bundle.db.WithContext(ctx).Begin()
+				out, err := bundle.Service.Create(connect.DBToContext(ctx, tx), input)
 
 				if nil != err {
-					txn.Rollback()
+					tx.Rollback()
 					return nil, err
 				} else {
-					return out, txn.Commit().Error
+					return out, tx.Commit().Error
 				}
 			},
 			"Update": func(ctx context.Context, in dto.SpaceUpdateInput) (*dto.SpaceCreateOutcome, error) {
@@ -79,7 +80,7 @@ func (bundle *SpaceBundle) newResolvers() map[string]interface{} {
 					return nil, err
 				}
 
-				_, err = bundle.userBundle.Service.Load(bundle.db.WithContext(ctx), in.UserID)
+				_, err = bundle.userBundle.Service.Load(connect.DBToContext(ctx, bundle.db), in.UserID)
 				if nil != err {
 					return nil, err
 				}
@@ -141,7 +142,7 @@ func (bundle *SpaceBundle) newResolvers() map[string]interface{} {
 				return bundle.Service.Load(ctx, obj.SpaceID)
 			},
 			"User": func(ctx context.Context, obj *model.Membership) (*mUser.User, error) {
-				return bundle.userBundle.Service.Load(bundle.db.WithContext(ctx), obj.UserID)
+				return bundle.userBundle.Service.Load(connect.DBToContext(ctx, bundle.db), obj.UserID)
 			},
 			"Roles": func(ctx context.Context, obj *model.Membership) ([]*model.Space, error) {
 				return bundle.MemberService.FindRoles(ctx, obj.UserID, obj.SpaceID)
