@@ -106,32 +106,32 @@ type (
 	}
 )
 
-func (container *Container) Logger() *zap.Logger {
-	return container.logger
+func (c *Container) Logger() *zap.Logger {
+	return c.logger
 }
 
-func (container *Container) Identifier() *unique.Identifier {
-	if container.id == nil {
-		container.mutex.Lock()
-		container.id = &unique.Identifier{}
-		container.mutex.Unlock()
+func (c *Container) Identifier() *unique.Identifier {
+	if c.id == nil {
+		c.mutex.Lock()
+		c.id = &unique.Identifier{}
+		c.mutex.Unlock()
 	}
 
-	return container.id
+	return c.id
 }
 
-func (container *Container) BundleList() []module.Bundle {
-	return container.bundles.List()
+func (c *Container) BundleList() []module.Bundle {
+	return c.bundles.List()
 }
 
-func (container *Container) Bundle(i int) module.Bundle {
-	bundles := container.BundleList()
+func (c *Container) Bundle(i int) module.Bundle {
+	bundles := c.BundleList()
 
 	return bundles[i]
 }
 
 // TODO: Generate this code
-func (container *Container) BundlePath(bundle module.Bundle) string {
+func (c *Container) BundlePath(bundle module.Bundle) string {
 	switch bundle.(type) {
 	case *user.UserBundle:
 		return "User"

@@ -1,6 +1,8 @@
 package claim
 
-type ContextKey string
+import (
+	"bean/components/scalar"
+)
 
 // string -> *util.Payload
-const ClaimsContextKey ContextKey = "bean.claims"
+const ClaimsContextKey scalar.ContextKey = "bean.claims"

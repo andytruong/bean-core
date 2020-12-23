@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func NewMockCan() *Container {
+func NewMockContainer() *Container {
 	_ = os.Setenv("ENV", "test")
 	_ = os.Setenv("DB_MASTER_URL", ":memory:")
 	_ = os.Setenv("DB_SLAVE_URL", ":memory:")
@@ -24,7 +24,7 @@ func Test(t *testing.T) {
 	t.Parallel()
 
 	ass := assert.New(t)
-	can := NewMockCan()
+	can := NewMockContainer()
 	id := can.Identifier()
 	ass.NotNil(t, id)
 

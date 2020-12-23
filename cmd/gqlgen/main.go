@@ -74,7 +74,7 @@ func (p plugin) GenerateCode(data *codegen.Data) error {
 	}
 
 	options := templates.Options{
-		Filename:    "pkg/infra/graphql-resolvers.go",
+		Filename:    "pkg/infra/graphql.resolvers.go",
 		PackageName: "infra",
 		FileNotice:  `// THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.`,
 		Data:        build,

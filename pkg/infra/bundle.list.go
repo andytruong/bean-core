@@ -4,6 +4,7 @@ import (
 	"bean/components/module"
 	"bean/pkg/access"
 	"bean/pkg/app"
+	"bean/pkg/config"
 	"bean/pkg/integration/mailer"
 	"bean/pkg/integration/s3"
 	"bean/pkg/space"
@@ -70,13 +71,22 @@ func (list *bundles) Space() (*space.SpaceBundle, error) {
 }
 
 // TODO: Generate this code
+func (list *bundles) Config() (*config.ConfigBundle, error) {
+	var err error
+
+	if nil == list.config {
+		list.config = config.NewConfigBundle(
+			list.container.Identifier(),
+			list.container.logger,
+		)
+	}
+
+	return list.config, err
+}
+
+// TODO: Generate this code
 func (list *bundles) Access() (*access.AccessBundle, error) {
 	if nil == list.access {
-		db, err := list.container.dbs.master()
-		if nil != err {
-			return nil, err
-		}
-
 		userBundle, err := list.User()
 		if nil != err {
 			return nil, err
@@ -88,7 +98,6 @@ func (list *bundles) Access() (*access.AccessBundle, error) {
 		}
 
 		list.access = access.NewAccessBundle(
-			db,
 			list.container.Identifier(),
 			list.container.logger,
 			userBundle,
@@ -112,15 +121,21 @@ func (list *bundles) Mailer() (*mailer.MailerBundle, error) {
 // TODO: Generate this code
 func (list *bundles) App() (*app.AppBundle, error) {
 	if nil == list.app {
-		db, err := list.container.dbs.master()
+		spaceBundle, err := list.Space()
+		if nil != err {
+			return nil, err
+		}
+
+		configBundle, err := list.Config()
 		if nil != err {
 			return nil, err
 		}
 
 		list.app, err = app.NewApplicationBundle(
-			db,
 			list.container.Identifier(),
 			list.container.logger,
+			spaceBundle,
+			configBundle,
 		)
 
 		if nil != err {
