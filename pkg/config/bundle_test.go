@@ -17,12 +17,12 @@ import (
 	"bean/pkg/config/model/dto"
 )
 
-func bean() *ConfigBundle {
-	id := util.MockIdentifier()
-	logger := util.MockLogger()
-	bundle := NewConfigBundle(id, logger)
+func bundle() *ConfigBundle {
+	idr := util.MockIdentifier()
+	log := util.MockLogger()
+	bun := NewConfigBundle(idr, log)
 
-	return bundle
+	return bun
 }
 
 func Test_Bucket(t *testing.T) {
@@ -30,7 +30,7 @@ func Test_Bucket(t *testing.T) {
 
 	ass := assert.New(t)
 	ctx := context.Background()
-	this := bean()
+	this := bundle()
 	db := util.MockDatabase()
 	util.MockInstall(this, db)
 
@@ -161,7 +161,7 @@ func Test_Bucket(t *testing.T) {
 
 func Test_Variable(t *testing.T) {
 	ass := assert.New(t)
-	this := bean()
+	this := bundle()
 	db := util.MockDatabase()
 	util.MockInstall(this, db)
 

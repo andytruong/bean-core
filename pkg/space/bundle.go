@@ -66,7 +66,7 @@ func (bundle SpaceBundle) Migrate(tx *gorm.DB, driver string) error {
 		Tx:     tx,
 		Logger: bundle.logger,
 		Driver: driver,
-		Bean:   "space",
+		Bundle: "space",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 

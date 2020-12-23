@@ -20,7 +20,7 @@ import (
 	"bean/pkg/integration/s3/model/dto"
 )
 
-func bean() *S3Bundle {
+func bundle() *S3Bundle {
 	con := util.MockDatabase()
 	idr := util.MockIdentifier()
 	log := util.MockLogger()
@@ -33,7 +33,7 @@ func bean() *S3Bundle {
 
 func Test(t *testing.T) {
 	ass := assert.New(t)
-	this := bean()
+	this := bundle()
 	ctx := context.Background()
 
 	t.Run("DB schema", func(t *testing.T) {
@@ -239,7 +239,7 @@ func Test(t *testing.T) {
 
 func Test_UploadToken(t *testing.T) {
 	ass := assert.New(t)
-	this := bean()
+	this := bundle()
 
 	this.credentialService.transport = connect.MockRoundTrip{
 		Callback: func(request *http.Request) (*http.Response, error) {

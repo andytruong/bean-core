@@ -65,7 +65,7 @@ func (bundle S3Bundle) Migrate(tx *gorm.DB, driver string) error {
 		Tx:     tx,
 		Logger: bundle.logger,
 		Driver: driver,
-		Bean:   "integration.s3",
+		Bundle: "integration.s3",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 
