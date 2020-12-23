@@ -54,10 +54,14 @@ func (this *Container) HttpRouter(router *mux.Router) *mux.Router {
 
 	router.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
 		//  Verify JWT authorization if provided.
-		if err := this.beforeServeHTTP(r); nil != err {
+		if ctx, err := this.beforeServeHTTP(r); nil != err {
 			this.respond403(w, err)
 		} else {
-			srv.ServeHTTP(w, r)
+			if nil != ctx {
+				srv.ServeHTTP(w, r.WithContext(ctx))
+			} else {
+				srv.ServeHTTP(w, r)
+			}
 		}
 	})
 
@@ -69,25 +73,25 @@ func (this *Container) HttpRouter(router *mux.Router) *mux.Router {
 	return router
 }
 
-func (this *Container) beforeServeHTTP(r *http.Request) error {
+func (this *Container) beforeServeHTTP(r *http.Request) (context.Context, error) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader != "" {
 		bundle, err := this.bundles.Access()
 		if nil != err {
-			return errors.Wrap(err, util.ErrorCodeConfig.String())
+			return nil, errors.Wrap(err, util.ErrorCodeConfig.String())
 		}
 
 		claims, err := bundle.JwtService.Validate(authHeader)
 
 		if err != nil {
-			return err
+			return nil, err
 		} else if nil != claims {
 			ctx := context.WithValue(r.Context(), claim.ContextKey, claims)
-			r = r.WithContext(ctx)
+			return ctx, nil
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (this *Container) respond403(w http.ResponseWriter, err error) {

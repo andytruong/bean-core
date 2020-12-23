@@ -58,7 +58,7 @@ func (payload *Payload) UnmarshalGQL(v interface{}) error {
 
 func (payload Payload) MarshalGQL(w io.Writer) {
 	mySigningKey := []byte("AllYourBase")
-	
+
 	// Create the Payload
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
 	ss, err := token.SignedString(mySigningKey)

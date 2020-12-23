@@ -317,7 +317,7 @@ func Test_Membership(t *testing.T) {
 
 		t.Run("update membership", func(t *testing.T) {
 			resolver := this.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Update"].(func(context.Context, dto.SpaceMembershipUpdateInput) (*dto.SpaceMembershipCreateOutcome, error))
-			membership := &model.Membership{}
+			var membership *model.Membership
 
 			// create a membership with status OFF.
 			{
