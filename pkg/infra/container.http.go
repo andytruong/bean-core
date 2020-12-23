@@ -71,7 +71,7 @@ func (this *Container) HttpRouter(router *mux.Router) *mux.Router {
 
 func (this *Container) beforeServeHTTP(r *http.Request) error {
 	authHeader := r.Header.Get("Authorization")
-	if "" != authHeader {
+	if authHeader != "" {
 		bundle, err := this.bundles.Access()
 		if nil != err {
 			return errors.Wrap(err, util.ErrorCodeConfig.String())

@@ -36,7 +36,7 @@ func NewContainer(path string) (*Container, error) {
 	this.dbs.config = this.Databases
 
 	// setup logger
-	if "dev" == this.Env {
+	if this.Env == "dev" {
 		if this.logger, err = zap.NewDevelopment(); nil != err {
 			return nil, err
 		}

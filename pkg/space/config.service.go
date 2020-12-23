@@ -56,7 +56,7 @@ func (this *ConfigService) List(ctx context.Context, space *model.Space) (*model
 		case "default":
 			switch config.Key {
 			case "register":
-				if "true" == string(config.Value) {
+				if string(config.Value) == "true" {
 					features.Register = true
 				}
 

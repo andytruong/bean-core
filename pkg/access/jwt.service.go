@@ -19,7 +19,7 @@ func (this JwtService) Validate(authHeader string) (*claim.Payload, error) {
 	chunks := strings.Split(authHeader, " ")
 	authHeader = chunks[len(chunks)-1]
 	
-	if parts := strings.Split(authHeader, "."); 3 == len(parts) {
+	if parts := strings.Split(authHeader, "."); len(parts) == 3 {
 		token, err := jwt.ParseWithClaims(
 			authHeader,
 			&claim.Payload{},

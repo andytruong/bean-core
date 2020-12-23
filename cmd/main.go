@@ -13,7 +13,7 @@ import (
 
 func main() {
 	path := os.Getenv("CONFIG")
-	if "" == path {
+	if path == "" {
 		err := errors.Wrap(util.ErrorConfig, "missing env CONFIG")
 		panic(err)
 	}
