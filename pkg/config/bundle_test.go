@@ -34,14 +34,14 @@ func Test_Bucket(t *testing.T) {
 	db := util.MockDatabase()
 	util.MockInstall(this, db)
 
-	t.Run("bucket.create", func(t *testing.T) {
+	t.Run("create", func(t *testing.T) {
 		err := connect.Transaction(
 			context.Background(),
 			db,
 			func(tx *gorm.DB) error {
-				hostId := this.id.MustULID()
+				hostId := this.idr.MustULID()
 				access := scalar.AccessMode("444")
-				out, err := this.BucketService.Create(tx, dto.BucketCreateInput{
+				out, err := this.BucketService.Create(connect.DBToContext(ctx, tx), dto.BucketCreateInput{
 					HostId:      hostId,
 					Slug:        scalar.NilString("doe"),
 					Title:       scalar.NilString("Doe"),
@@ -65,13 +65,13 @@ func Test_Bucket(t *testing.T) {
 		ass.NoError(err)
 	})
 
-	t.Run("bucket.update", func(t *testing.T) {
+	t.Run("update", func(t *testing.T) {
 		tx := db.Begin()
 		defer tx.Rollback()
 
 		privateAccess := scalar.AccessModePrivate
-		oCreate, _ := this.BucketService.Create(tx, dto.BucketCreateInput{
-			HostId:      this.id.MustULID(),
+		oCreate, _ := this.BucketService.Create(connect.DBToContext(ctx, tx), dto.BucketCreateInput{
+			HostId:      this.idr.MustULID(),
 			Slug:        scalar.NilString("qa"),
 			Title:       scalar.NilString("QA"),
 			Description: scalar.NilString("Just for QA"),
@@ -81,7 +81,7 @@ func Test_Bucket(t *testing.T) {
 		})
 
 		publicAccess := scalar.AccessModePublicRead
-		oUpdate, err := this.BucketService.Update(ctx, tx, dto.BucketUpdateInput{
+		oUpdate, err := this.BucketService.Update(connect.DBToContext(ctx, tx), dto.BucketUpdateInput{
 			Id:          oCreate.Bucket.Id,
 			Version:     oCreate.Bucket.Version,
 			Title:       scalar.NilString("Test"),
@@ -101,7 +101,7 @@ func Test_Bucket(t *testing.T) {
 		ass.Equal(publicAccess, oUpdate.Bucket.Access)
 
 		t.Run("can't unpublished a published bucket", func(t *testing.T) {
-			_, err := this.BucketService.Update(ctx, tx, dto.BucketUpdateInput{
+			_, err := this.BucketService.Update(connect.DBToContext(ctx, tx), dto.BucketUpdateInput{
 				Id:          oUpdate.Bucket.Id,
 				Version:     oUpdate.Bucket.Version,
 				IsPublished: scalar.NilBool(false),
@@ -112,7 +112,7 @@ func Test_Bucket(t *testing.T) {
 		})
 
 		t.Run("can't change schema is isPublished on", func(t *testing.T) {
-			_, err := this.BucketService.Update(ctx, tx, dto.BucketUpdateInput{
+			_, err := this.BucketService.Update(connect.DBToContext(ctx, tx), dto.BucketUpdateInput{
 				Id:          oCreate.Bucket.Id,
 				Version:     oCreate.Bucket.Version,
 				Title:       scalar.NilString("Test"),
@@ -126,16 +126,16 @@ func Test_Bucket(t *testing.T) {
 		})
 	})
 
-	t.Run("bucket.load", func(t *testing.T) {
+	t.Run("load", func(t *testing.T) {
 		var err error
 		var oCreate *dto.BucketMutationOutcome
 		var bucket *model.ConfigBucket
-		hostId := this.id.MustULID()
+		hostId := this.idr.MustULID()
 		access := scalar.AccessMode("444")
 		tx := db.Begin()
 		defer tx.Rollback()
 
-		oCreate, err = this.BucketService.Create(tx, dto.BucketCreateInput{
+		oCreate, err = this.BucketService.Create(connect.DBToContext(ctx, tx), dto.BucketCreateInput{
 			HostId:      hostId,
 			Slug:        scalar.NilString("load-doe"),
 			Title:       scalar.NilString("Doe"),
@@ -148,7 +148,7 @@ func Test_Bucket(t *testing.T) {
 		ass.NoError(err)
 		ass.NotNil(oCreate)
 
-		bucket, err = this.BucketService.Load(context.Background(), tx, oCreate.Bucket.Id)
+		bucket, err = this.BucketService.Load(connect.DBToContext(context.Background(), tx), oCreate.Bucket.Id)
 		ass.NoError(err)
 		ass.Equal(hostId, bucket.HostId)
 		ass.Equal("load-doe", bucket.Slug)
@@ -163,18 +163,19 @@ func Test_Variable(t *testing.T) {
 	ass := assert.New(t)
 	this := bundle()
 	db := util.MockDatabase()
+	ctx := connect.DBToContext(context.Background(), db)
 	util.MockInstall(this, db)
 
-	t.Run("variable.create", func(t *testing.T) {
-		t.Run("on read-only bucket", func(t *testing.T) {
+	t.Run("create", func(t *testing.T) {
+		t.Run("read-only bucket", func(t *testing.T) {
 			ctx := context.Background()
 			tx := db.Begin(&sql.TxOptions{})
 			defer tx.Rollback()
-			hostId := this.id.MustULID()
+			hostId := this.idr.MustULID()
 			access := scalar.AccessModePrivateReadonly
 
 			// create read-only bucket
-			oCreate, err := this.BucketService.Create(tx, dto.BucketCreateInput{
+			oCreate, err := this.BucketService.Create(connect.DBToContext(ctx, tx), dto.BucketCreateInput{
 				HostId:      hostId,
 				Slug:        scalar.NilString("load-doe"),
 				Title:       scalar.NilString("Doe"),
@@ -188,7 +189,7 @@ func Test_Variable(t *testing.T) {
 			ass.Empty(oCreate.Errors)
 
 			// create variable
-			out, err := this.VariableService.Create(ctx, tx, dto.VariableCreateInput{
+			out, err := this.VariableService.Create(connect.DBToContext(ctx, tx), dto.VariableCreateInput{
 				BucketId:    oCreate.Bucket.Id,
 				Name:        "foo",
 				Description: nil,
@@ -202,8 +203,8 @@ func Test_Variable(t *testing.T) {
 			ass.Nil(out)
 		})
 
-		t.Run("on writable bucket", func(t *testing.T) {
-			userId := this.id.MustULID()
+		t.Run("writable bucket", func(t *testing.T) {
+			userId := this.idr.MustULID()
 			ctx := context.WithValue(context.Background(), claim.ClaimsContextKey, &claim.Payload{
 				StandardClaims: jwt.StandardClaims{Subject: userId},
 			})
@@ -212,13 +213,13 @@ func Test_Variable(t *testing.T) {
 			access := scalar.AccessModePrivate
 
 			// create read-only bucket
-			oCreate, err := this.BucketService.Create(tx, dto.BucketCreateInput{
+			oCreate, err := this.BucketService.Create(connect.DBToContext(ctx, tx), dto.BucketCreateInput{
 				HostId:      userId,
 				Slug:        scalar.NilString("load-doe"),
 				Title:       scalar.NilString("Doe"),
 				Description: scalar.NilString("Just for John Doe"),
 				Access:      &access,
-				Schema:      `{"type:"number"}`,
+				Schema:      `{"type":"number"}`,
 				IsPublished: true,
 			})
 
@@ -226,7 +227,7 @@ func Test_Variable(t *testing.T) {
 			ass.Empty(oCreate.Errors)
 
 			// create variable
-			out, err := this.VariableService.Create(ctx, tx, dto.VariableCreateInput{
+			out, err := this.VariableService.Create(connect.DBToContext(ctx, tx), dto.VariableCreateInput{
 				BucketId:    oCreate.Bucket.Id,
 				Name:        "foo",
 				Description: nil,
@@ -242,20 +243,20 @@ func Test_Variable(t *testing.T) {
 		})
 	})
 
-	t.Run("variable.load", func(t *testing.T) {
+	t.Run("load", func(t *testing.T) {
 		tx := db.Begin()
 		defer tx.Rollback()
 
 		setup := func(access scalar.AccessMode) (context.Context, *model.ConfigBucket, *model.ConfigVariable) {
-			authorId := this.id.MustULID()
+			authorId := this.idr.MustULID()
 			authorClaims := &claim.Payload{}
 			authorClaims.Subject = authorId
 			authorCtx := context.WithValue(context.Background(), claim.ClaimsContextKey, authorClaims)
 
 			// create private bucket
-			oBucketCreate, err := this.BucketService.Create(tx, dto.BucketCreateInput{
+			oBucketCreate, err := this.BucketService.Create(connect.DBToContext(authorCtx, tx), dto.BucketCreateInput{
 				HostId:      authorId,
-				Slug:        scalar.NilString(this.id.MustULID()),
+				Slug:        scalar.NilString(this.idr.MustULID()),
 				Title:       scalar.NilString("Doe"),
 				Description: scalar.NilString("Just for John Doe"),
 				Access:      &access,
@@ -266,7 +267,7 @@ func Test_Variable(t *testing.T) {
 			ass.NoError(err)
 
 			// create variable
-			oVarCreate, err := this.VariableService.Create(authorCtx, tx, dto.VariableCreateInput{
+			oVarCreate, err := this.VariableService.Create(connect.DBToContext(authorCtx, tx), dto.VariableCreateInput{
 				BucketId:    oBucketCreate.Bucket.Id,
 				Name:        "foo",
 				Description: nil,
@@ -279,43 +280,45 @@ func Test_Variable(t *testing.T) {
 			return authorCtx, oBucketCreate.Bucket, oVarCreate.Variable
 		}
 
-		t.Run("load on private bucket", func(t *testing.T) {
+		t.Run("private bucket", func(t *testing.T) {
 			_, _, variable := setup(scalar.AccessModePrivate)
 
 			// load & assert outcome
-			otherCtx := context.Background()
-			load, err := this.VariableService.Load(otherCtx, tx, variable.Id)
+			load, err := this.VariableService.Load(ctx, variable.Id)
 			ass.Error(err)
 			ass.Nil(load)
 		})
 
-		t.Run("load on read only bucket", func(t *testing.T) {
+		t.Run("read-only bucket", func(t *testing.T) {
 			ctx, bucket, variable := setup(scalar.AccessModePrivate)
 
 			// load & assert outcome
-			load, err := this.VariableService.Load(ctx, tx, variable.Id)
+			load, err := this.VariableService.Load(connect.DBToContext(ctx, tx), variable.Id)
 			ass.NoError(err)
 			ass.Equal(bucket.Id, load.BucketId)
 			ass.Equal("1", load.Value)
 		})
 	})
 
-	t.Run("variable.update", func(t *testing.T) {
-		t.Run("update on read-only bucket", func(t *testing.T) {
+	t.Run("update", func(t *testing.T) {
+		t.Run("read-only bucket", func(t *testing.T) {
+			// TODO
 			// create read-only bucket
 			// create variable
 			// update variable & assert outcome
 		})
 
-		t.Run("update on writable bucket", func(t *testing.T) {
+		t.Run("writable bucket", func(t *testing.T) {
+			// TODO
 			// create read-only bucket
 			// create variable
 			// update variable & assert outcome
 		})
 	})
 
-	t.Run("variable delete", func(t *testing.T) {
+	t.Run("delete", func(t *testing.T) {
 		t.Run("delete on read-only bucket", func(t *testing.T) {
+			// TODO
 			// create read-only bucket
 			// create variable
 			// delete variable & assert outcome
@@ -323,18 +326,18 @@ func Test_Variable(t *testing.T) {
 
 		t.Run("delete on writable bucket", func(t *testing.T) {
 			t.Run("write on locked variable", func(t *testing.T) {
+				// TODO
 				// create read-only bucket
 				// create variable
 				// delete variable & assert outcome
 			})
 
 			t.Run("write on unlocked variable", func(t *testing.T) {
+				// TODO
 				// create read-only bucket
 				// create variable
 				// delete variable & assert outcome
 			})
 		})
 	})
-
-	ass.True(true, "WIP")
 }

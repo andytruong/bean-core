@@ -12,22 +12,22 @@ import (
 	"bean/components/unique"
 )
 
-func NewConfigBundle(id *unique.Identifier, logger *zap.Logger) *ConfigBundle {
-	this := &ConfigBundle{
-		id:     id,
+func NewConfigBundle(idr *unique.Identifier, logger *zap.Logger) *ConfigBundle {
+	bundle := &ConfigBundle{
+		idr:    idr,
 		logger: logger,
 	}
 
-	this.BucketService = &BucketService{bundle: this}
-	this.VariableService = &VariableService{bundle: this}
+	bundle.BucketService = &BucketService{bundle: bundle}
+	bundle.VariableService = &VariableService{bundle: bundle}
 
-	return this
+	return bundle
 }
 
 type ConfigBundle struct {
 	module.AbstractBundle
 
-	id              *unique.Identifier
+	idr             *unique.Identifier
 	logger          *zap.Logger
 	BucketService   *BucketService
 	VariableService *VariableService
@@ -48,8 +48,4 @@ func (bundle ConfigBundle) Migrate(tx *gorm.DB, driver string) error {
 	}
 
 	return runner.Run()
-}
-
-func (bundle ConfigBundle) Dependencies() []module.Bundle {
-	return nil
 }

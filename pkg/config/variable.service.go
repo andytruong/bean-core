@@ -4,11 +4,10 @@ import (
 	"context"
 	"time"
 
-	"gorm.io/gorm"
-
 	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
 )
@@ -17,8 +16,9 @@ type VariableService struct {
 	bundle *ConfigBundle
 }
 
-func (service VariableService) access(ctx context.Context, db *gorm.DB, bucketId string, action string) (bool, error) {
-	bucket, err := service.bundle.BucketService.Load(ctx, db, bucketId)
+func (service VariableService) access(ctx context.Context, bucketId string, action string) (bool, error) {
+	db := connect.ContextToDB(ctx)
+	bucket, err := service.bundle.BucketService.Load(connect.DBToContext(ctx, db), bucketId)
 	if nil != err {
 		return false, err
 	}
@@ -45,7 +45,8 @@ func (service VariableService) access(ctx context.Context, db *gorm.DB, bucketId
 	return false, nil
 }
 
-func (service VariableService) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigVariable, error) {
+func (service VariableService) Load(ctx context.Context, id string) (*model.ConfigVariable, error) {
+	db := connect.ContextToDB(ctx)
 	variable := &model.ConfigVariable{}
 
 	err := db.First(&variable, "id = ?", id).Error
@@ -53,7 +54,7 @@ func (service VariableService) Load(ctx context.Context, db *gorm.DB, id string)
 		return nil, err
 	}
 
-	if access, err := service.access(ctx, db, variable.BucketId, "read"); nil != err {
+	if access, err := service.access(ctx, variable.BucketId, "read"); nil != err {
 		return nil, err
 	} else if !access {
 		return nil, util.ErrorAccessDenied
@@ -62,16 +63,17 @@ func (service VariableService) Load(ctx context.Context, db *gorm.DB, id string)
 	return variable, nil
 }
 
-func (service VariableService) Create(ctx context.Context, tx *gorm.DB, in dto.VariableCreateInput) (*dto.VariableMutationOutcome, error) {
-	if access, err := service.access(ctx, tx, in.BucketId, "write"); nil != err {
+func (service VariableService) Create(ctx context.Context, in dto.VariableCreateInput) (*dto.VariableMutationOutcome, error) {
+	tx := connect.ContextToDB(ctx)
+	if access, err := service.access(ctx, in.BucketId, "write"); nil != err {
 		return nil, err
 	} else if !access {
 		return nil, util.ErrorAccessDenied
 	}
 
 	variable := &model.ConfigVariable{
-		Id:          service.bundle.id.MustULID(),
-		Version:     service.bundle.id.MustULID(),
+		Id:          service.bundle.idr.MustULID(),
+		Version:     service.bundle.idr.MustULID(),
 		BucketId:    in.BucketId,
 		Name:        in.Name,
 		Description: in.Description,
@@ -92,13 +94,14 @@ func (service VariableService) Create(ctx context.Context, tx *gorm.DB, in dto.V
 	}
 }
 
-func (service VariableService) Update(ctx context.Context, tx *gorm.DB, in dto.VariableUpdateInput) (*dto.VariableMutationOutcome, error) {
-	variable, err := service.Load(ctx, tx, in.Id)
+func (service VariableService) Update(ctx context.Context, in dto.VariableUpdateInput) (*dto.VariableMutationOutcome, error) {
+	tx := connect.ContextToDB(ctx)
+	variable, err := service.Load(ctx, in.Id)
 	if nil != err {
 		return nil, err
 	}
 
-	if access, err := service.access(ctx, tx, variable.BucketId, "write"); nil != err {
+	if access, err := service.access(ctx, variable.BucketId, "write"); nil != err {
 		return nil, err
 	} else if !access {
 		return nil, util.ErrorAccessDenied
@@ -138,7 +141,7 @@ func (service VariableService) Update(ctx context.Context, tx *gorm.DB, in dto.V
 
 		if changed {
 			version := variable.Version
-			variable.Version = service.bundle.id.MustULID()
+			variable.Version = service.bundle.idr.MustULID()
 			err = tx.
 				Where("version = ?", version).
 				Save(&variable).
@@ -155,14 +158,15 @@ func (service VariableService) Update(ctx context.Context, tx *gorm.DB, in dto.V
 	}, nil
 }
 
-func (service VariableService) Delete(ctx context.Context, tx *gorm.DB, in dto.VariableDeleteInput) (*dto.VariableMutationOutcome, error) {
-	variable, err := service.Load(ctx, tx, in.Id)
+func (service VariableService) Delete(ctx context.Context, in dto.VariableDeleteInput) (*dto.VariableMutationOutcome, error) {
+	tx := connect.ContextToDB(ctx)
+	variable, err := service.Load(ctx, in.Id)
 	if nil != err {
 		return nil, err
 	} else if variable.IsLocked {
 		return nil, util.ErrorLocked
 	} else {
-		if access, err := service.access(ctx, tx, variable.BucketId, "delete"); nil != err {
+		if access, err := service.access(ctx, variable.BucketId, "delete"); nil != err {
 			return nil, err
 		} else if !access {
 			return nil, util.ErrorAccessDenied
