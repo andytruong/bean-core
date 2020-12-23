@@ -73,7 +73,7 @@ func (bundle AccessBundle) Migrate(tx *gorm.DB, driver string) error {
 		Tx:     tx,
 		Logger: bundle.logger,
 		Driver: driver,
-		Bean:   "access",
+		Bundle: "access",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 

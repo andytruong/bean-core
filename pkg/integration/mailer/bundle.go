@@ -42,7 +42,7 @@ func (bundle MailerBundle) Migrate(tx *gorm.DB, driver string) error {
 		Tx:     tx,
 		Logger: bundle.logger,
 		Driver: driver,
-		Bean:   "integration.mailer",
+		Bundle: "integration.mailer",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 

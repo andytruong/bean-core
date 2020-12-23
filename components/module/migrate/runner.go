@@ -14,7 +14,7 @@ type Runner struct {
 	Tx     *gorm.DB
 	Logger *zap.Logger
 	Driver string
-	Bean   string
+	Bundle string
 	Dir    string
 }
 
@@ -34,7 +34,7 @@ func (runner Runner) Run() error {
 }
 
 func (runner Runner) installFile(file string) error {
-	migration := NewMigration(runner.Bean, file)
+	migration := NewMigration(runner.Bundle, file)
 	path := migration.RealPath()
 
 	if !migration.DriverMatch(runner.Driver) {

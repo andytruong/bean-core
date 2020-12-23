@@ -58,7 +58,7 @@ func (bundle AppBundle) Migrate(tx *gorm.DB, driver string) error {
 		Tx:     tx,
 		Logger: bundle.logger,
 		Driver: driver,
-		Bean:   "bundle",
+		Bundle: "bundle",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 
