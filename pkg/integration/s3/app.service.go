@@ -183,6 +183,4 @@ func (service *ApplicationService) S3UploadToken(ctx context.Context, in dto.S3U
 			}
 		}
 	}
-
-	return nil, nil
 }

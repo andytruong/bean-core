@@ -39,7 +39,8 @@ dev.clean:
 	@git fetch --prune origin
 	@rm -rf ./pkg/infra/gql/__tmp__*
 
-dev.staticCheck:
+dev.lint:
+	@go vet ./...
 	@staticcheck ./...
 
 dev.check-size:
