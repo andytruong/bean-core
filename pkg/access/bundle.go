@@ -23,10 +23,10 @@ func NewAccessBundle(
 	config *AccessConfiguration,
 ) *AccessBundle {
 	this := &AccessBundle{
-		config:      config.init(),
+		cnf:         config.init(),
 		logger:      logger,
-		db:          db,
-		id:          id,
+		con:         db,
+		idr:         id,
 		userBundle:  userBundle,
 		spaceBundle: spaceBundle,
 	}
@@ -42,10 +42,10 @@ type (
 	AccessBundle struct {
 		module.AbstractBundle
 
-		config         *AccessConfiguration
+		cnf            *AccessConfiguration
 		logger         *zap.Logger
-		db             *gorm.DB
-		id             *unique.Identifier
+		con            *gorm.DB
+		idr            *unique.Identifier
 		sessionService *SessionService
 		JwtService     *JwtService
 

@@ -24,7 +24,7 @@ func (service JwtService) Validate(authHeader string) (*claim.Payload, error) {
 			authHeader,
 			&claim.Payload{},
 			func(token *jwt.Token) (interface{}, error) {
-				return service.bundle.config.GetParseKey()
+				return service.bundle.cnf.GetParseKey()
 			},
 		)
 
@@ -39,12 +39,12 @@ func (service JwtService) Validate(authHeader string) (*claim.Payload, error) {
 }
 
 func (service JwtService) Sign(claims jwt.Claims) (string, error) {
-	key, err := service.bundle.config.GetSignKey()
+	key, err := service.bundle.cnf.GetSignKey()
 	if nil != err {
 		return "", errors.Wrap(util.ErrorConfig, err.Error())
 	}
 
 	return jwt.
-		NewWithClaims(service.bundle.config.signMethod(), claims).
+		NewWithClaims(service.bundle.cnf.signMethod(), claims).
 		SignedString(key)
 }

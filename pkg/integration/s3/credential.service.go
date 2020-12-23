@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"bean/components/util"
+	model2 "bean/pkg/app/model"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
@@ -40,7 +41,7 @@ func (service *credentialService) loadByApplicationId(ctx context.Context, appId
 	return cred, nil
 }
 
-func (service *credentialService) onAppCreate(tx *gorm.DB, app *model.Application, in dto.S3ApplicationCredentialsCreateInput) error {
+func (service *credentialService) onAppCreate(tx *gorm.DB, app *model2.Application, in dto.S3ApplicationCredentialsCreateInput) error {
 	cre := model.Credentials{
 		ID:            service.bundle.id.MustULID(),
 		ApplicationId: app.ID,
@@ -54,7 +55,7 @@ func (service *credentialService) onAppCreate(tx *gorm.DB, app *model.Applicatio
 	return tx.Create(&cre).Error
 }
 
-func (service *credentialService) onAppUpdate(tx *gorm.DB, app *model.Application, in *dto.S3ApplicationCredentialsUpdateInput) error {
+func (service *credentialService) onAppUpdate(tx *gorm.DB, app *model2.Application, in *dto.S3ApplicationCredentialsUpdateInput) error {
 	if nil == in {
 		return nil
 	}

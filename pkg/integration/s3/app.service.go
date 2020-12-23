@@ -11,6 +11,7 @@ import (
 	"bean/components/scalar"
 	"bean/components/util"
 	"bean/components/util/connect"
+	model2 "bean/pkg/app/model"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
@@ -19,8 +20,8 @@ type ApplicationService struct {
 	bundle *S3Bundle
 }
 
-func (service *ApplicationService) Load(ctx context.Context, id string) (*model.Application, error) {
-	app := &model.Application{}
+func (service *ApplicationService) Load(ctx context.Context, id string) (*model2.Application, error) {
+	app := &model2.Application{}
 
 	// TODO: don't allow to load pending deleted S3 applications.
 	err := service.bundle.db.
@@ -36,13 +37,13 @@ func (service *ApplicationService) Load(ctx context.Context, id string) (*model.
 }
 
 func (service *ApplicationService) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
-	var app *model.Application
+	var app *model2.Application
 
 	err := connect.Transaction(
 		ctx,
 		service.bundle.db,
 		func(tx *gorm.DB) error {
-			app = &model.Application{
+			app = &model2.Application{
 				ID:        service.bundle.id.MustULID(),
 				Version:   service.bundle.id.MustULID(),
 				IsActive:  in.IsActive,

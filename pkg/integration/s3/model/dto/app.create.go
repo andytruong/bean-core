@@ -3,7 +3,7 @@ package dto
 import (
 	"bean/components/scalar"
 	"bean/components/util"
-	"bean/pkg/integration/s3/model"
+	model2 "bean/pkg/app/model"
 )
 
 type S3ApplicationCreateInput struct {
@@ -21,6 +21,6 @@ type S3ApplicationCredentialsCreateInput struct {
 }
 
 type S3ApplicationMutationOutcome struct {
-	App    *model.Application `json:"application"`
-	Errors []*util.Error      `json:"errors"`
+	App    *model2.Application `json:"application"`
+	Errors []*util.Error       `json:"errors"`
 }
