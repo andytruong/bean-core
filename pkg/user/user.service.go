@@ -16,7 +16,7 @@ type UserService struct {
 	bundle *UserBundle
 }
 
-func (this *UserService) Load(db *gorm.DB, id string) (*model.User, error) {
+func (service *UserService) Load(db *gorm.DB, id string) (*model.User, error) {
 	user := &model.User{}
 	err := db.Where(&model.User{ID: id}).First(user).Error
 
@@ -27,18 +27,18 @@ func (this *UserService) Load(db *gorm.DB, id string) (*model.User, error) {
 	return user, nil
 }
 
-func (this *UserService) Create(tx *gorm.DB, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
-	if uint8(len(in.Emails.Secondary)) > this.bundle.maxSecondaryEmailPerUser {
+func (service *UserService) Create(tx *gorm.DB, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
+	if uint8(len(in.Emails.Secondary)) > service.bundle.maxSecondaryEmailPerUser {
 		return nil, errors.Wrap(
 			util.ErrorInvalidArgument,
-			fmt.Sprintf("too many secondary emails, limit is %d", this.bundle.maxSecondaryEmailPerUser),
+			fmt.Sprintf("too many secondary emails, limit is %d", service.bundle.maxSecondaryEmailPerUser),
 		)
 	}
 
 	// create base record
 	obj := &model.User{
-		ID:        this.bundle.id.MustULID(),
-		Version:   this.bundle.id.MustULID(),
+		ID:        service.bundle.id.MustULID(),
+		Version:   service.bundle.id.MustULID(),
 		AvatarURI: in.AvatarURI,
 		IsActive:  in.IsActive,
 		CreatedAt: time.Now(),
@@ -50,25 +50,25 @@ func (this *UserService) Create(tx *gorm.DB, in *dto.UserCreateInput) (*dto.User
 	}
 
 	// create emails
-	if err := this.bundle.emailService.CreateBulk(tx, obj, in.Emails); nil != err {
+	if err := service.bundle.emailService.CreateBulk(tx, obj, in.Emails); nil != err {
 		return nil, err
 	}
 
 	// save name object
-	if err := this.bundle.nameService.create(tx, obj, in); nil != err {
+	if err := service.bundle.nameService.create(tx, obj, in); nil != err {
 		return nil, err
 	}
 
 	// save password
-	if err := this.bundle.passwordService.create(tx, obj, in.Password); nil != err {
+	if err := service.bundle.passwordService.create(tx, obj, in.Password); nil != err {
 		return nil, err
 	}
 
 	return &dto.UserMutationOutcome{User: obj}, nil
 }
 
-func (this *UserService) Update(tx *gorm.DB, in dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
-	obj, err := this.bundle.Service.Load(tx, in.ID)
+func (service *UserService) Update(tx *gorm.DB, in dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
+	obj, err := service.bundle.Service.Load(tx, in.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -80,12 +80,12 @@ func (this *UserService) Update(tx *gorm.DB, in dto.UserUpdateInput) (*dto.UserM
 		return &dto.UserMutationOutcome{Errors: errList, User: nil}, nil
 	}
 
-	if err := this.bundle.passwordService.create(tx, obj, in.Values.Password); nil != err {
+	if err := service.bundle.passwordService.create(tx, obj, in.Values.Password); nil != err {
 		return nil, err
 	}
 
 	// bump new version
-	obj.Version = this.bundle.id.MustULID()
+	obj.Version = service.bundle.id.MustULID()
 	if err := tx.Save(obj).Error; nil != err {
 		return nil, err
 	}

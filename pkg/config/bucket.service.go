@@ -17,11 +17,11 @@ type BucketService struct {
 	bundle *ConfigBundle
 }
 
-func (this BucketService) Create(tx *gorm.DB, in dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
+func (service BucketService) Create(tx *gorm.DB, in dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
 	bucket := &model.ConfigBucket{
-		Id:          this.bundle.id.MustULID(),
-		Version:     this.bundle.id.MustULID(),
-		Slug:        scalar.NotNilString(in.Slug, this.bundle.id.MustULID()),
+		Id:          service.bundle.id.MustULID(),
+		Version:     service.bundle.id.MustULID(),
+		Slug:        scalar.NotNilString(in.Slug, service.bundle.id.MustULID()),
 		Title:       scalar.NotNilString(in.Title, ""),
 		Description: in.Description,
 		Access:      "777",
@@ -44,8 +44,8 @@ func (this BucketService) Create(tx *gorm.DB, in dto.BucketCreateInput) (*dto.Bu
 	return &dto.BucketMutationOutcome{Errors: nil, Bucket: bucket}, nil
 }
 
-func (this BucketService) Update(ctx context.Context, tx *gorm.DB, in dto.BucketUpdateInput) (*dto.BucketMutationOutcome, error) {
-	bucket, err := this.Load(ctx, tx, in.Id)
+func (service BucketService) Update(ctx context.Context, tx *gorm.DB, in dto.BucketUpdateInput) (*dto.BucketMutationOutcome, error) {
+	bucket, err := service.Load(ctx, tx, in.Id)
 	if nil != err {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (this BucketService) Update(ctx context.Context, tx *gorm.DB, in dto.Bucket
 	}
 
 	if changed {
-		bucket.Version = this.bundle.id.MustULID()
+		bucket.Version = service.bundle.id.MustULID()
 		err = tx.Save(&bucket).Error
 		if nil != err {
 			return nil, err
@@ -112,7 +112,7 @@ func (this BucketService) Update(ctx context.Context, tx *gorm.DB, in dto.Bucket
 }
 
 // TODO: need data-loader
-func (this BucketService) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigBucket, error) {
+func (service BucketService) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigBucket, error) {
 	bucket := &model.ConfigBucket{}
 
 	err := db.WithContext(ctx).Where("id = ?", id).First(&bucket).Error

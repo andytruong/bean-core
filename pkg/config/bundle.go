@@ -33,7 +33,7 @@ type ConfigBundle struct {
 	VariableService *VariableService
 }
 
-func (this ConfigBundle) Migrate(tx *gorm.DB, driver string) error {
+func (bundle ConfigBundle) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -41,7 +41,7 @@ func (this ConfigBundle) Migrate(tx *gorm.DB, driver string) error {
 
 	runner := migrate.Runner{
 		Tx:     tx,
-		Logger: this.logger,
+		Logger: bundle.logger,
 		Driver: driver,
 		Bean:   "config",
 		Dir:    path.Dir(filename) + "/model/migration/",
@@ -50,6 +50,6 @@ func (this ConfigBundle) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this ConfigBundle) Dependencies() []module.Bundle {
+func (bundle ConfigBundle) Dependencies() []module.Bundle {
 	return nil
 }

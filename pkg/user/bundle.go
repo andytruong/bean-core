@@ -50,7 +50,7 @@ type UserBundle struct {
 	passwordService          *PasswordService
 }
 
-func (this UserBundle) Migrate(tx *gorm.DB, driver string) error {
+func (bundle UserBundle) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -58,7 +58,7 @@ func (this UserBundle) Migrate(tx *gorm.DB, driver string) error {
 
 	runner := migrate.Runner{
 		Tx:     tx,
-		Logger: this.logger,
+		Logger: bundle.logger,
 		Driver: driver,
 		Bean:   "user",
 		Dir:    path.Dir(filename) + "/model/migration/",
@@ -67,6 +67,6 @@ func (this UserBundle) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this *UserBundle) GraphqlResolver() map[string]interface{} {
-	return this.resolvers
+func (bundle *UserBundle) GraphqlResolver() map[string]interface{} {
+	return bundle.resolvers
 }

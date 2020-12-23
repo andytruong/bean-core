@@ -11,7 +11,7 @@ type NameService struct {
 	bundle *UserBundle
 }
 
-func (this *NameService) load(db *gorm.DB, userId string) (*model.UserName, error) {
+func (service *NameService) load(db *gorm.DB, userId string) (*model.UserName, error) {
 	name := &model.UserName{}
 	err := db.Where(model.UserName{UserId: userId}).First(&name).Error
 	if nil != err {
@@ -21,10 +21,10 @@ func (this *NameService) load(db *gorm.DB, userId string) (*model.UserName, erro
 	return name, nil
 }
 
-func (this *NameService) create(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
+func (service *NameService) create(tx *gorm.DB, user *model.User, input *dto.UserCreateInput) error {
 	if nil != input.Name {
 		name := model.UserName{
-			ID:            this.bundle.id.MustULID(),
+			ID:            service.bundle.id.MustULID(),
 			UserId:        user.ID,
 			FirstName:     input.Name.FirstName,
 			LastName:      input.Name.LastName,

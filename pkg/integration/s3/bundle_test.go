@@ -19,7 +19,7 @@ import (
 	"bean/pkg/integration/s3/model/dto"
 )
 
-func bean() *S3IntegrationBundle {
+func bean() *S3Bundle {
 	db := util.MockDatabase()
 	id := util.MockIdentifier()
 	logger := util.MockLogger()

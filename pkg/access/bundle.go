@@ -56,14 +56,14 @@ type (
 	}
 )
 
-func (this AccessBundle) Dependencies() []module.Bundle {
+func (bundle AccessBundle) Dependencies() []module.Bundle {
 	return []module.Bundle{
-		this.userBundle,
-		this.spaceBundle,
+		bundle.userBundle,
+		bundle.spaceBundle,
 	}
 }
 
-func (this AccessBundle) Migrate(tx *gorm.DB, driver string) error {
+func (bundle AccessBundle) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -71,7 +71,7 @@ func (this AccessBundle) Migrate(tx *gorm.DB, driver string) error {
 
 	runner := migrate.Runner{
 		Tx:     tx,
-		Logger: this.logger,
+		Logger: bundle.logger,
 		Driver: driver,
 		Bean:   "access",
 		Dir:    path.Dir(filename) + "/model/migration/",
@@ -80,6 +80,6 @@ func (this AccessBundle) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this AccessBundle) GraphqlResolver() map[string]interface{} {
-	return this.resolvers
+func (bundle AccessBundle) GraphqlResolver() map[string]interface{} {
+	return bundle.resolvers
 }

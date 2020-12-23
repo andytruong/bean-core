@@ -9,14 +9,14 @@ import (
 
 type EmailAddress string
 
-func (this EmailAddress) LowerCaseValue() EmailAddress {
-	stringRaw := string(this)
+func (address EmailAddress) LowerCaseValue() EmailAddress {
+	stringRaw := string(address)
 	stringLower := strings.ToLower(stringRaw)
 
 	return EmailAddress(stringLower)
 }
 
-func (this *EmailAddress) UnmarshalGQL(v interface{}) error {
+func (address *EmailAddress) UnmarshalGQL(v interface{}) error {
 	if in, ok := v.(string); !ok {
 		return fmt.Errorf("email-address must be strings")
 	} else {
@@ -25,12 +25,12 @@ func (this *EmailAddress) UnmarshalGQL(v interface{}) error {
 			return err
 		}
 
-		*this = EmailAddress(in)
+		*address = EmailAddress(in)
 	}
 
 	return nil
 }
 
-func (this EmailAddress) MarshalGQL(w io.Writer) {
-	fmt.Fprintf(w, `"%s"`, this)
+func (address EmailAddress) MarshalGQL(w io.Writer) {
+	fmt.Fprintf(w, `"%s"`, address)
 }

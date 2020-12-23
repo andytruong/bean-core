@@ -19,48 +19,48 @@ const (
 	AccessModePublicRead      AccessMode = "444"
 )
 
-func (this AccessMode) Owner() string {
-	return string(string(this)[0])
+func (mode AccessMode) Owner() string {
+	return string(string(mode)[0])
 }
 
-func (this AccessMode) Group() string {
-	return string(string(this)[1])
+func (mode AccessMode) Group() string {
+	return string(string(mode)[1])
 }
 
-func (this AccessMode) Public() string {
-	return string(string(this)[2])
+func (mode AccessMode) Public() string {
+	return string(string(mode)[2])
 }
 
-func (this AccessMode) CanRead(isOwner, isMember bool) bool {
-	return this.can(isOwner, isMember, 4)
+func (mode AccessMode) CanRead(isOwner, isMember bool) bool {
+	return mode.can(isOwner, isMember, 4)
 }
 
-func (this AccessMode) CanWrite(isOwner, isMember bool) bool {
-	return this.can(isOwner, isMember, 2)
+func (mode AccessMode) CanWrite(isOwner, isMember bool) bool {
+	return mode.can(isOwner, isMember, 2)
 }
 
-func (this AccessMode) CanDelete(isOwner, isMember bool) bool {
-	return this.can(isOwner, isMember, 1)
+func (mode AccessMode) CanDelete(isOwner, isMember bool) bool {
+	return mode.can(isOwner, isMember, 1)
 }
 
-func (this AccessMode) can(isOwner, isMember bool, check int) bool {
+func (mode AccessMode) can(isOwner, isMember bool, check int) bool {
 	// Check public access
-	if this.check(this.Public(), check) {
+	if mode.check(mode.Public(), check) {
 		return true
 	}
 
-	if isMember && this.check(this.Group(), check) {
+	if isMember && mode.check(mode.Group(), check) {
 		return true
 	}
 
-	if isOwner && this.check(this.Owner(), check) {
+	if isOwner && mode.check(mode.Owner(), check) {
 		return true
 	}
 
 	return false
 }
 
-func (this AccessMode) check(scope string, check int) bool {
+func (mode AccessMode) check(scope string, check int) bool {
 	actual, err := strconv.Atoi(scope)
 	if nil != err {
 		return false
@@ -81,24 +81,24 @@ func (this AccessMode) check(scope string, check int) bool {
 	return false
 }
 
-func (this *AccessMode) UnmarshalGQL(v interface{}) error {
+func (mode *AccessMode) UnmarshalGQL(v interface{}) error {
 	if in, ok := v.(string); !ok {
 		return fmt.Errorf("access-mode must be strings")
 	} else if len(in) != 3 {
 		return fmt.Errorf("access-mode must be strings with length of 3")
 	} else {
-		*this = AccessMode(in)
+		*mode = AccessMode(in)
 
 		g := errgroup.Group{}
-		g.Go(func() error { return this.isValidMode(this.Owner()) })
-		g.Go(func() error { return this.isValidMode(this.Group()) })
-		g.Go(func() error { return this.isValidMode(this.Public()) })
+		g.Go(func() error { return mode.isValidMode(mode.Owner()) })
+		g.Go(func() error { return mode.isValidMode(mode.Group()) })
+		g.Go(func() error { return mode.isValidMode(mode.Public()) })
 
 		return g.Wait()
 	}
 }
 
-func (this *AccessMode) isValidMode(char string) error {
+func (mode *AccessMode) isValidMode(char string) error {
 	val, err := strconv.Atoi(char)
 
 	if nil != err {
@@ -112,6 +112,6 @@ func (this *AccessMode) isValidMode(char string) error {
 	return nil
 }
 
-func (this AccessMode) MarshalGQL(w io.Writer) {
-	fmt.Fprintf(w, `"%s"`, this)
+func (mode AccessMode) MarshalGQL(w io.Writer) {
+	fmt.Fprintf(w, `"%s"`, mode)
 }

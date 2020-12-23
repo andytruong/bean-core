@@ -19,23 +19,23 @@ type SessionService struct {
 	bundle *AccessBundle
 }
 
-func (this *SessionService) Create(tx *gorm.DB, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+func (service *SessionService) Create(tx *gorm.DB, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 	if nil != in.UseCredentials {
-		return this.createUseCredentials(tx, in.UseCredentials)
+		return service.createUseCredentials(tx, in.UseCredentials)
 	}
 
 	if nil != in.GenerateOTLT {
-		return this.generateOTLT(tx, in.GenerateOTLT)
+		return service.generateOTLT(tx, in.GenerateOTLT)
 	}
 
 	if nil != in.UseOTLT {
-		return this.useOTLT(tx, in.UseOTLT)
+		return service.useOTLT(tx, in.UseOTLT)
 	}
 
 	return nil, nil
 }
 
-func (this *SessionService) createUseCredentials(tx *gorm.DB, in *dto.SessionCreateUseCredentialsInput) (*dto.SessionCreateOutcome, error) {
+func (service *SessionService) createUseCredentials(tx *gorm.DB, in *dto.SessionCreateUseCredentialsInput) (*dto.SessionCreateOutcome, error) {
 	// load email object, so we have userID
 	email := mUser.UserEmail{}
 	{
@@ -64,18 +64,18 @@ func (this *SessionService) createUseCredentials(tx *gorm.DB, in *dto.SessionCre
 		}
 	}
 
-	return this.create(tx, claim.KindCredentials, email.UserId, in.SpaceID, func(session *model.Session) {
+	return service.create(tx, claim.KindCredentials, email.UserId, in.SpaceID, func(session *model.Session) {
 		session.CodeChallengeMethod = in.CodeChallengeMethod
 		session.CodeChallenge = in.CodeChallenge
 	})
 }
 
-func (this *SessionService) generateOTLT(tx *gorm.DB, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
-	return this.create(tx, claim.KindOTLT, in.UserID, in.SpaceID, nil)
+func (service *SessionService) generateOTLT(tx *gorm.DB, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
+	return service.create(tx, claim.KindOTLT, in.UserID, in.SpaceID, nil)
 }
 
-func (this *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
-	oneTimeSession, err := this.LoadByToken(tx, in.Token)
+func (service *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
+	oneTimeSession, err := service.LoadByToken(tx, in.Token)
 	if nil != err {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (this *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (
 		return nil, util.ErrorInvalidArgument
 	}
 
-	out, err := this.create(tx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.SpaceId, func(session *model.Session) {
+	out, err := service.create(tx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.SpaceId, func(session *model.Session) {
 		session.CodeChallengeMethod = in.CodeChallengeMethod
 		session.CodeChallenge = in.CodeChallenge
 	})
@@ -94,7 +94,7 @@ func (this *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (
 
 	// delete OTLT session
 	{
-		_, err := this.Delete(tx, oneTimeSession)
+		_, err := service.Delete(tx, oneTimeSession)
 		if nil != err {
 			return nil, err
 		}
@@ -103,7 +103,7 @@ func (this *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (
 	return out, err
 }
 
-func (this SessionService) create(
+func (service SessionService) create(
 	tx *gorm.DB,
 	kind claim.Kind, userId string, spaceId string,
 	create func(*model.Session),
@@ -123,19 +123,19 @@ func (this SessionService) create(
 		}
 	}
 
-	token := this.bundle.id.MustULID()
+	token := service.bundle.id.MustULID()
 	session := &model.Session{
-		ID:          this.bundle.id.MustULID(),
-		Version:     this.bundle.id.MustULID(),
+		ID:          service.bundle.id.MustULID(),
+		Version:     service.bundle.id.MustULID(),
 		Kind:        kind,
 		UserId:      userId,
 		SpaceId:     spaceId,
-		HashedToken: this.bundle.id.Encode(token),
+		HashedToken: service.bundle.id.Encode(token),
 		Scopes:      nil, // TODO
 		IsActive:    true,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
-		ExpiredAt:   time.Now().Add(this.bundle.config.SessionTimeout),
+		ExpiredAt:   time.Now().Add(service.bundle.config.SessionTimeout),
 	}
 
 	if nil != create {
@@ -146,7 +146,7 @@ func (this SessionService) create(
 		return nil, err
 	} else {
 		// update membership -> last-time-login
-		err := this.bundle.spaceBundle.MemberService.UpdateLastLoginTime(tx, membership)
+		err := service.bundle.spaceBundle.MemberService.UpdateLastLoginTime(tx, membership)
 		if nil != err {
 			return nil, err
 		}
@@ -159,7 +159,7 @@ func (this SessionService) create(
 	}, nil
 }
 
-func (this SessionService) load(ctx context.Context, db *gorm.DB, id string) (*model.Session, error) {
+func (service SessionService) load(ctx context.Context, db *gorm.DB, id string) (*model.Session, error) {
 	session := &model.Session{}
 	err := db.
 		WithContext(ctx).
@@ -181,14 +181,14 @@ func (this SessionService) load(ctx context.Context, db *gorm.DB, id string) (*m
 	return session, nil
 }
 
-func (this SessionService) LoadByToken(db *gorm.DB, token string) (*model.Session, error) {
+func (service SessionService) LoadByToken(db *gorm.DB, token string) (*model.Session, error) {
 	session := &model.Session{}
 	err := db.
-		First(&session, "hashed_token = ?", this.bundle.id.Encode(token)).
+		First(&session, "hashed_token = ?", service.bundle.id.Encode(token)).
 		Error
 
 	if err == gorm.ErrRecordNotFound {
-		return nil, errors.New("session not found: " + this.bundle.id.Encode(token))
+		return nil, errors.New("session not found: " + service.bundle.id.Encode(token))
 	}
 
 	if session.ExpiredAt.Unix() <= time.Now().Unix() {
@@ -202,9 +202,9 @@ func (this SessionService) LoadByToken(db *gorm.DB, token string) (*model.Sessio
 	return session, nil
 }
 
-func (this SessionService) Delete(tx *gorm.DB, session *model.Session) (*dto.SessionArchiveOutcome, error) {
+func (service SessionService) Delete(tx *gorm.DB, session *model.Session) (*dto.SessionArchiveOutcome, error) {
 	session.IsActive = false
-	session.Version = this.bundle.id.MustULID()
+	session.Version = service.bundle.id.MustULID()
 	session.UpdatedAt = time.Now()
 	err := tx.Save(&session).Error
 	if nil != err {

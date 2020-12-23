@@ -106,32 +106,32 @@ type (
 	}
 )
 
-func (this *Container) Logger() *zap.Logger {
-	return this.logger
+func (container *Container) Logger() *zap.Logger {
+	return container.logger
 }
 
-func (this *Container) Identifier() *unique.Identifier {
-	if this.id == nil {
-		this.mutex.Lock()
-		this.id = &unique.Identifier{}
-		this.mutex.Unlock()
+func (container *Container) Identifier() *unique.Identifier {
+	if container.id == nil {
+		container.mutex.Lock()
+		container.id = &unique.Identifier{}
+		container.mutex.Unlock()
 	}
 
-	return this.id
+	return container.id
 }
 
-func (this *Container) BundleList() []module.Bundle {
-	return this.bundles.List()
+func (container *Container) BundleList() []module.Bundle {
+	return container.bundles.List()
 }
 
-func (this *Container) Bundle(i int) module.Bundle {
-	bundles := this.BundleList()
+func (container *Container) Bundle(i int) module.Bundle {
+	bundles := container.BundleList()
 
 	return bundles[i]
 }
 
 // TODO: Generate this code
-func (this *Container) BundlePath(bundle module.Bundle) string {
+func (container *Container) BundlePath(bundle module.Bundle) string {
 	switch bundle.(type) {
 	case *user.UserBundle:
 		return "User"
@@ -142,10 +142,10 @@ func (this *Container) BundlePath(bundle module.Bundle) string {
 	case *access.AccessBundle:
 		return "Access"
 
-	case *s3.S3IntegrationBundle:
+	case *s3.S3Bundle:
 		return "S3"
 
-	case *mailer.MailerIntegrationBundle:
+	case *mailer.MailerBundle:
 		return "Mailer"
 	}
 

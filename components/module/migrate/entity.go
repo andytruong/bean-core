@@ -28,20 +28,20 @@ type Migration struct {
 	CreatedAt time.Time
 }
 
-func (this Migration) RealPath() string {
-	return RootDirectory() + "/" + this.Name
+func (migration Migration) RealPath() string {
+	return RootDirectory() + "/" + migration.Name
 }
 
-func (this Migration) DriverMatch(driver string) bool {
-	return strings.HasSuffix(this.Name, "."+driver+".sql")
+func (migration Migration) DriverMatch(driver string) bool {
+	return strings.HasSuffix(migration.Name, "."+driver+".sql")
 }
 
-func (this *Migration) IsExecuted(tx *gorm.DB) (bool, error) {
+func (migration *Migration) IsExecuted(tx *gorm.DB) (bool, error) {
 	var count int64
 
 	err := tx.
 		Model(&Migration{}).
-		Where(&Migration{Bundle: this.Bundle, Name: this.Name}).
+		Where(&Migration{Bundle: migration.Bundle, Name: migration.Name}).
 		Count(&count).
 		Error
 
@@ -52,8 +52,8 @@ func (this *Migration) IsExecuted(tx *gorm.DB) (bool, error) {
 	return count == 0, nil
 }
 
-func (this *Migration) Save(tx *gorm.DB) error {
-	return tx.Create(this).Error
+func (migration *Migration) Save(tx *gorm.DB) error {
+	return tx.Create(migration).Error
 }
 
 func RootDirectory() string {

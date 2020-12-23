@@ -11,7 +11,7 @@ import (
 
 	"bean/components/claim"
 	"bean/components/scalar"
-	util2 "bean/components/util"
+	"bean/components/util"
 )
 
 type (
@@ -32,64 +32,64 @@ type (
 	}
 )
 
-func (this *AccessConfiguration) init() *AccessConfiguration {
-	if nil == this.mutex {
-		this.mutex = &sync.Mutex{}
+func (cnf *AccessConfiguration) init() *AccessConfiguration {
+	if nil == cnf.mutex {
+		cnf.mutex = &sync.Mutex{}
 	}
 
-	if time.Duration(0) == this.SessionTimeout {
-		this.SessionTimeout, _ = time.ParseDuration("128h")
+	if time.Duration(0) == cnf.SessionTimeout {
+		cnf.SessionTimeout, _ = time.ParseDuration("128h")
 	}
 
 	// go time to validate configuration
 	// …
 
-	return this
+	return cnf
 }
 
-func (this *AccessConfiguration) signMethod() jwt.SigningMethod {
-	switch this.Jwt.Algorithm {
+func (cnf *AccessConfiguration) signMethod() jwt.SigningMethod {
+	switch cnf.Jwt.Algorithm {
 	case "RS512":
 		return jwt.SigningMethodRS512
 
 	default:
-		panic(util2.ErrorToBeImplemented)
+		panic(util.ErrorToBeImplemented)
 	}
 }
 
-func (this *AccessConfiguration) GetSignKey() (interface{}, error) {
-	if nil == this.privateKey {
-		this.mutex.Lock()
-		defer this.mutex.Unlock()
+func (cnf *AccessConfiguration) GetSignKey() (interface{}, error) {
+	if nil == cnf.privateKey {
+		cnf.mutex.Lock()
+		defer cnf.mutex.Unlock()
 
-		file, err := ioutil.ReadFile(this.Jwt.PrivateKey.String())
+		file, err := ioutil.ReadFile(cnf.Jwt.PrivateKey.String())
 		if nil != err {
 			return nil, err
 		}
 
 		block, _ := pem.Decode(file)
-		this.privateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+		cnf.privateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return this.privateKey, nil
+	return cnf.privateKey, nil
 }
 
-func (this *AccessConfiguration) GetParseKey() (interface{}, error) {
-	if nil == this.publicKey {
-		this.mutex.Lock()
-		defer this.mutex.Unlock()
+func (cnf *AccessConfiguration) GetParseKey() (interface{}, error) {
+	if nil == cnf.publicKey {
+		cnf.mutex.Lock()
+		defer cnf.mutex.Unlock()
 
-		pub, err := claim.ParseRsaPublicKeyFromFile(this.Jwt.PublicKey.String())
+		pub, err := claim.ParseRsaPublicKeyFromFile(cnf.Jwt.PublicKey.String())
 		if err != nil {
 			return nil, err
 		} else {
-			this.publicKey = pub
+			cnf.publicKey = pub
 		}
 	}
 
-	return this.publicKey, nil
+	return cnf.publicKey, nil
 }

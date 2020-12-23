@@ -7,8 +7,8 @@ import (
 	connect2 "bean/components/util/connect"
 )
 
-func (this *Container) Migrate(ctx context.Context) error {
-	if db, err := this.dbs.master(); nil != err {
+func (container *Container) Migrate(ctx context.Context) error {
+	if db, err := container.dbs.master(); nil != err {
 		return err
 	} else if con, err := db.DB(); nil != err {
 		return err
@@ -26,7 +26,7 @@ func (this *Container) Migrate(ctx context.Context) error {
 		}
 
 		// loop through bundles
-		for _, bundle := range this.BundleList() {
+		for _, bundle := range container.BundleList() {
 			if err := bundle.Migrate(tx, driver); nil != err {
 				tx.Rollback()
 				return err

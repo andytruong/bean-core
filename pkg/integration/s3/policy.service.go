@@ -12,10 +12,10 @@ import (
 )
 
 type policyService struct {
-	bundle *S3IntegrationBundle
+	bundle *S3Bundle
 }
 
-func (this *policyService) load(tx *gorm.DB, appId string, id string) (*model.Policy, error) {
+func (service *policyService) load(tx *gorm.DB, appId string, id string) (*model.Policy, error) {
 	policy := &model.Policy{}
 	err := tx.
 		Where("application_id = ?", appId).
@@ -28,9 +28,9 @@ func (this *policyService) load(tx *gorm.DB, appId string, id string) (*model.Po
 	return policy, nil
 }
 
-func (this *policyService) create(tx *gorm.DB, appId string, kind model.PolicyKind, value string) (*model.Policy, error) {
+func (service *policyService) create(tx *gorm.DB, appId string, kind model.PolicyKind, value string) (*model.Policy, error) {
 	policy := &model.Policy{
-		ID:            this.bundle.id.MustULID(),
+		ID:            service.bundle.id.MustULID(),
 		ApplicationId: appId,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
@@ -46,10 +46,10 @@ func (this *policyService) create(tx *gorm.DB, appId string, kind model.PolicyKi
 	return policy, nil
 }
 
-func (this *policyService) loadByApplicationId(ctx context.Context, appId string) ([]*model.Policy, error) {
+func (service *policyService) loadByApplicationId(ctx context.Context, appId string) ([]*model.Policy, error) {
 	policies := []*model.Policy{}
 
-	err := this.bundle.db.WithContext(ctx).
+	err := service.bundle.db.WithContext(ctx).
 		Where("application_id = ?", appId).
 		Find(&policies).
 		Error
@@ -60,9 +60,9 @@ func (this *policyService) loadByApplicationId(ctx context.Context, appId string
 	return policies, nil
 }
 
-func (this *policyService) onAppCreate(tx *gorm.DB, app *model.Application, in []dto.S3ApplicationPolicyCreateInput) error {
+func (service *policyService) onAppCreate(tx *gorm.DB, app *model.Application, in []dto.S3ApplicationPolicyCreateInput) error {
 	for _, input := range in {
-		_, err := this.create(tx, app.ID, input.Kind, input.Value)
+		_, err := service.create(tx, app.ID, input.Kind, input.Value)
 		if nil != err {
 			return err
 		}
@@ -71,7 +71,7 @@ func (this *policyService) onAppCreate(tx *gorm.DB, app *model.Application, in [
 	return nil
 }
 
-func (this *policyService) onAppUpdate(tx *gorm.DB, app *model.Application, in *dto.S3ApplicationPolicyMutationInput) error {
+func (service *policyService) onAppUpdate(tx *gorm.DB, app *model.Application, in *dto.S3ApplicationPolicyMutationInput) error {
 	if nil == in {
 		return nil
 	}
@@ -80,7 +80,7 @@ func (this *policyService) onAppUpdate(tx *gorm.DB, app *model.Application, in *
 
 	if nil != in.Create {
 		for _, input := range in.Create {
-			_, err := this.create(tx, app.ID, input.Kind, input.Value)
+			_, err := service.create(tx, app.ID, input.Kind, input.Value)
 			if nil != err {
 				return err
 			}
@@ -91,7 +91,7 @@ func (this *policyService) onAppUpdate(tx *gorm.DB, app *model.Application, in *
 
 	if nil != in.Update {
 		for _, input := range in.Update {
-			if policy, err := this.load(tx, app.ID, input.Id); nil != err {
+			if policy, err := service.load(tx, app.ID, input.Id); nil != err {
 				return err
 			} else {
 				policy.Value = input.Value
@@ -108,7 +108,7 @@ func (this *policyService) onAppUpdate(tx *gorm.DB, app *model.Application, in *
 
 	if nil != in.Delete {
 		for _, input := range in.Delete {
-			if policy, err := this.load(tx, app.ID, input.Id); nil != err {
+			if policy, err := service.load(tx, app.ID, input.Id); nil != err {
 				return err
 			} else {
 				err := tx.Delete(policy).Error

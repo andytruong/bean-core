@@ -17,8 +17,8 @@ type VariableService struct {
 	bundle *ConfigBundle
 }
 
-func (this VariableService) access(ctx context.Context, db *gorm.DB, bucketId string, action string) (bool, error) {
-	bucket, err := this.bundle.BucketService.Load(ctx, db, bucketId)
+func (service VariableService) access(ctx context.Context, db *gorm.DB, bucketId string, action string) (bool, error) {
+	bucket, err := service.bundle.BucketService.Load(ctx, db, bucketId)
 	if nil != err {
 		return false, err
 	}
@@ -45,7 +45,7 @@ func (this VariableService) access(ctx context.Context, db *gorm.DB, bucketId st
 	return false, nil
 }
 
-func (this VariableService) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigVariable, error) {
+func (service VariableService) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigVariable, error) {
 	variable := &model.ConfigVariable{}
 
 	err := db.First(&variable, "id = ?", id).Error
@@ -53,7 +53,7 @@ func (this VariableService) Load(ctx context.Context, db *gorm.DB, id string) (*
 		return nil, err
 	}
 
-	if access, err := this.access(ctx, db, variable.BucketId, "read"); nil != err {
+	if access, err := service.access(ctx, db, variable.BucketId, "read"); nil != err {
 		return nil, err
 	} else if !access {
 		return nil, util.ErrorAccessDenied
@@ -62,16 +62,16 @@ func (this VariableService) Load(ctx context.Context, db *gorm.DB, id string) (*
 	return variable, nil
 }
 
-func (this VariableService) Create(ctx context.Context, tx *gorm.DB, in dto.VariableCreateInput) (*dto.VariableMutationOutcome, error) {
-	if access, err := this.access(ctx, tx, in.BucketId, "write"); nil != err {
+func (service VariableService) Create(ctx context.Context, tx *gorm.DB, in dto.VariableCreateInput) (*dto.VariableMutationOutcome, error) {
+	if access, err := service.access(ctx, tx, in.BucketId, "write"); nil != err {
 		return nil, err
 	} else if !access {
 		return nil, util.ErrorAccessDenied
 	}
 
 	variable := &model.ConfigVariable{
-		Id:          this.bundle.id.MustULID(),
-		Version:     this.bundle.id.MustULID(),
+		Id:          service.bundle.id.MustULID(),
+		Version:     service.bundle.id.MustULID(),
 		BucketId:    in.BucketId,
 		Name:        in.Name,
 		Description: in.Description,
@@ -92,13 +92,13 @@ func (this VariableService) Create(ctx context.Context, tx *gorm.DB, in dto.Vari
 	}
 }
 
-func (this VariableService) Update(ctx context.Context, tx *gorm.DB, in dto.VariableUpdateInput) (*dto.VariableMutationOutcome, error) {
-	variable, err := this.Load(ctx, tx, in.Id)
+func (service VariableService) Update(ctx context.Context, tx *gorm.DB, in dto.VariableUpdateInput) (*dto.VariableMutationOutcome, error) {
+	variable, err := service.Load(ctx, tx, in.Id)
 	if nil != err {
 		return nil, err
 	}
 
-	if access, err := this.access(ctx, tx, variable.BucketId, "write"); nil != err {
+	if access, err := service.access(ctx, tx, variable.BucketId, "write"); nil != err {
 		return nil, err
 	} else if !access {
 		return nil, util.ErrorAccessDenied
@@ -138,7 +138,7 @@ func (this VariableService) Update(ctx context.Context, tx *gorm.DB, in dto.Vari
 
 		if changed {
 			version := variable.Version
-			variable.Version = this.bundle.id.MustULID()
+			variable.Version = service.bundle.id.MustULID()
 			err = tx.
 				Where("version = ?", version).
 				Save(&variable).
@@ -155,14 +155,14 @@ func (this VariableService) Update(ctx context.Context, tx *gorm.DB, in dto.Vari
 	}, nil
 }
 
-func (this VariableService) Delete(ctx context.Context, tx *gorm.DB, in dto.VariableDeleteInput) (*dto.VariableMutationOutcome, error) {
-	variable, err := this.Load(ctx, tx, in.Id)
+func (service VariableService) Delete(ctx context.Context, tx *gorm.DB, in dto.VariableDeleteInput) (*dto.VariableMutationOutcome, error) {
+	variable, err := service.Load(ctx, tx, in.Id)
 	if nil != err {
 		return nil, err
 	} else if variable.IsLocked {
 		return nil, util.ErrorLocked
 	} else {
-		if access, err := this.access(ctx, tx, variable.BucketId, "delete"); nil != err {
+		if access, err := service.access(ctx, tx, variable.BucketId, "delete"); nil != err {
 			return nil, err
 		} else if !access {
 			return nil, util.ErrorAccessDenied

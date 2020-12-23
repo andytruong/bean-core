@@ -20,9 +20,9 @@ import (
 	"bean/pkg/infra/gql"
 )
 
-func (this *Container) HttpRouter(router *mux.Router) *mux.Router {
+func (container *Container) HttpRouter(router *mux.Router) *mux.Router {
 	cnf := gql.Config{
-		Resolvers: &Resolver{container: this},
+		Resolvers: &Resolver{container: container},
 		Directives: gql.DirectiveRoot{
 			// Comment: nil - just for comment
 			Constraint: func(ctx context.Context, obj interface{}, next graphql.Resolver, maxLength *int, minLength *int) (res interface{}, err error) {
@@ -40,22 +40,22 @@ func (this *Container) HttpRouter(router *mux.Router) *mux.Router {
 
 	schema := gql.NewExecutableSchema(cnf)
 	srv := handler.New(schema)
-	if this.HttpServer.GraphQL.Transports.Post {
+	if container.HttpServer.GraphQL.Transports.Post {
 		srv.AddTransport(transport.POST{})
 	}
 
-	if this.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval != 0 {
-		srv.AddTransport(transport.Websocket{KeepAlivePingInterval: this.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval})
+	if container.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval != 0 {
+		srv.AddTransport(transport.Websocket{KeepAlivePingInterval: container.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval})
 	}
 
-	if this.HttpServer.GraphQL.Introspection {
+	if container.HttpServer.GraphQL.Introspection {
 		srv.Use(extension.Introspection{})
 	}
 
 	router.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
 		//  Verify JWT authorization if provided.
-		if ctx, err := this.beforeServeHTTP(r); nil != err {
-			this.respond403(w, err)
+		if ctx, err := container.beforeServeHTTP(r); nil != err {
+			container.respond403(w, err)
 		} else {
 			if nil != ctx {
 				srv.ServeHTTP(w, r.WithContext(ctx))
@@ -65,18 +65,18 @@ func (this *Container) HttpRouter(router *mux.Router) *mux.Router {
 		}
 	})
 
-	if this.HttpServer.GraphQL.Playround.Enabled {
-		hdl := playground.Handler(this.HttpServer.GraphQL.Playround.Title, "/query")
-		router.Handle(this.HttpServer.GraphQL.Playround.Path, hdl)
+	if container.HttpServer.GraphQL.Playround.Enabled {
+		hdl := playground.Handler(container.HttpServer.GraphQL.Playround.Title, "/query")
+		router.Handle(container.HttpServer.GraphQL.Playround.Path, hdl)
 	}
 
 	return router
 }
 
-func (this *Container) beforeServeHTTP(r *http.Request) (context.Context, error) {
+func (container *Container) beforeServeHTTP(r *http.Request) (context.Context, error) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader != "" {
-		bundle, err := this.bundles.Access()
+		bundle, err := container.bundles.Access()
 		if nil != err {
 			return nil, errors.Wrap(err, util.ErrorCodeConfig.String())
 		}
@@ -94,7 +94,7 @@ func (this *Container) beforeServeHTTP(r *http.Request) (context.Context, error)
 	return nil, nil
 }
 
-func (this *Container) respond403(w http.ResponseWriter, err error) {
+func (container *Container) respond403(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusForbidden)
 	errList := gqlerror.List{{Message: err.Error()}}
 	body := graphql.Response{Errors: errList}
@@ -102,6 +102,6 @@ func (this *Container) respond403(w http.ResponseWriter, err error) {
 
 	_, err = w.Write(content)
 	if nil != err {
-		this.logger.Error("failed responding", zap.String("message", err.Error()))
+		container.logger.Error("failed responding", zap.String("message", err.Error()))
 	}
 }

@@ -13,7 +13,7 @@ type DomainName struct {
 	IsActive   bool      `json:"isActive"`
 }
 
-func (this DomainName) TableName() string {
+func (DomainName) TableName() string {
 	return "space_domains"
 }
 

@@ -8,14 +8,14 @@ import (
 	"github.com/dgrijalva/jwt-go"
 
 	"bean/components/claim"
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	space_model "bean/pkg/space/model"
 	user_model "bean/pkg/user/model"
 )
 
-func (this *AccessBundle) newResolves() map[string]interface{} {
+func (bundle *AccessBundle) newResolves() map[string]interface{} {
 	return map[string]interface{}{
 		"Query": map[string]interface{}{
 			"AccessQuery": func(ctx context.Context) (*dto.AccessQuery, error) {
@@ -34,7 +34,7 @@ func (this *AccessBundle) newResolves() map[string]interface{} {
 		},
 		"AccessSessionQuery": map[string]interface{}{
 			"Load": func(ctx context.Context, id string) (*model.Session, error) {
-				return this.sessionService.load(ctx, this.db, id)
+				return bundle.sessionService.load(ctx, bundle.db, id)
 			},
 		},
 		"AccessMutation": map[string]interface{}{
@@ -44,30 +44,30 @@ func (this *AccessBundle) newResolves() map[string]interface{} {
 		},
 		"AccessSessionMutation": map[string]interface{}{
 			"Create": func(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
-				return this.sessionService.Create(this.db, in)
+				return bundle.sessionService.Create(bundle.db, in)
 			},
 			"Archive": func(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
 				claims := claim.ContextToPayload(ctx)
 				if nil == claims {
-					return nil, util2.ErrorAuthRequired
+					return nil, util.ErrorAuthRequired
 				}
 
-				sess, _ := this.sessionService.load(ctx, this.db.WithContext(ctx), claims.SessionId())
+				sess, _ := bundle.sessionService.load(ctx, bundle.db.WithContext(ctx), claims.SessionId())
 				if sess != nil {
-					out, err := this.sessionService.Delete(this.db.WithContext(ctx), sess)
+					out, err := bundle.sessionService.Delete(bundle.db.WithContext(ctx), sess)
 
 					return out, err
 				}
 
 				return &dto.SessionArchiveOutcome{
-					Errors: util2.NewErrors(util2.ErrorCodeInput, []string{"token"}, "session not found"),
+					Errors: util.NewErrors(util.ErrorCodeInput, []string{"token"}, "session not found"),
 					Result: false,
 				}, nil
 			},
 		},
 		"Session": map[string]interface{}{
 			"User": func(ctx context.Context, obj *model.Session) (*user_model.User, error) {
-				return this.userBundle.Service.Load(this.db.WithContext(ctx), obj.UserId)
+				return bundle.userBundle.Service.Load(bundle.db.WithContext(ctx), obj.UserId)
 			},
 			"Context": func(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
 				panic("implement me")
@@ -76,10 +76,10 @@ func (this *AccessBundle) newResolves() map[string]interface{} {
 				return obj.Scopes, nil
 			},
 			"Space": func(ctx context.Context, obj *model.Session) (*space_model.Space, error) {
-				return this.spaceBundle.Service.Load(ctx, obj.SpaceId)
+				return bundle.spaceBundle.Service.Load(ctx, obj.SpaceId)
 			},
 			"Jwt": func(ctx context.Context, session *model.Session, codeVerifier string) (string, error) {
-				roles, err := this.spaceBundle.MemberService.FindRoles(ctx, session.UserId, session.SpaceId)
+				roles, err := bundle.spaceBundle.MemberService.FindRoles(ctx, session.UserId, session.SpaceId)
 
 				if nil != err {
 					return "", err
@@ -104,13 +104,13 @@ func (this *AccessBundle) newResolves() map[string]interface{} {
 						Issuer:    "access",
 						Id:        session.ID,
 						IssuedAt:  time.Now().Unix(),
-						ExpiresAt: time.Now().Add(this.config.Jwt.Timeout).Unix(),
+						ExpiresAt: time.Now().Add(bundle.config.Jwt.Timeout).Unix(),
 						Subject:   session.UserId,
 						Audience:  session.SpaceId,
 					},
 				}
 
-				return this.JwtService.Sign(claims)
+				return bundle.JwtService.Sign(claims)
 			},
 		},
 	}

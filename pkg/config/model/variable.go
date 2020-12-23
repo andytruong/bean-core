@@ -14,6 +14,6 @@ type ConfigVariable struct {
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
-func (this ConfigVariable) TableName() string {
+func (ConfigVariable) TableName() string {
 	return "config_variables"
 }

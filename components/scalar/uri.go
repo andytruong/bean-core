@@ -12,7 +12,7 @@ func NilUri(in Uri) *Uri {
 
 type Uri string
 
-func (this *Uri) UnmarshalGQL(v interface{}) error {
+func (value *Uri) UnmarshalGQL(v interface{}) error {
 	if in, ok := v.(string); !ok {
 		return fmt.Errorf("URI must be strings")
 	} else {
@@ -25,12 +25,12 @@ func (this *Uri) UnmarshalGQL(v interface{}) error {
 			return fmt.Errorf("missing request URI")
 		}
 
-		*this = Uri(in)
+		*value = Uri(in)
 	}
 
 	return nil
 }
 
-func (this Uri) MarshalGQL(w io.Writer) {
-	fmt.Fprintf(w, `"%s"`, this)
+func (value Uri) MarshalGQL(w io.Writer) {
+	fmt.Fprintf(w, `"%s"`, value)
 }
