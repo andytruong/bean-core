@@ -1,34 +1,36 @@
 schema:
-    - pkg/infra/api/*.graphql
-    - pkg/config/api/*.graphql
-    - pkg/access/api/*.graphql
-    - pkg/space/api/*.graphql
-    - pkg/user/api/*.graphql
-    - pkg/integration/s3/api/*.graphql
-    - pkg/integration/mailer/api/*/*.graphql
-    - pkg/integration/mailer/api/*.graphql
+  - pkg/access/api/*.graphql
+  - pkg/app/api/*.graphql
+  - pkg/config/api/*.graphql
+  - pkg/infra/api/*.graphql
+  - pkg/integration/mailer/api/*.graphql
+  - pkg/integration/mailer/api/*/*.graphql
+  - pkg/integration/s3/api/*.graphql
+  - pkg/space/api/*.graphql
+  - pkg/user/api/*.graphql
 
 exec:
-    filename: pkg/infra/gql/schema.go
+  filename: pkg/infra/gql/schema.go
 
 model:
-    filename: pkg/infra/gql/__tmp__model.go
+  filename: pkg/infra/gql/__tmp__model.go
 
 resolver:
-    filename: pkg/infra/__tmp__resolvers.go
-    type: Resolver
+  filename: pkg/infra/__tmp__resolvers.go
+  type: Resolver
 
 autobind:
-    - bean/components/scalar
-    - bean/components/util
-    - bean/pkg/infra/api
-    - bean/pkg/config/model
-    - bean/pkg/user/model
-    - bean/pkg/user/model/dto
-    - bean/pkg/space/model
-    - bean/pkg/space/model/dto
-    - bean/pkg/access/model
-    - bean/pkg/access/model/dto
-    - bean/pkg/integration/s3/model
-    - bean/pkg/integration/s3/model/dto
-    - bean/pkg/integration/mailer/model/dto
+  - bean/components/scalar
+  - bean/components/util
+  - bean/pkg/access/model
+  - bean/pkg/access/model/dto
+  - bean/pkg/app/model
+  - bean/pkg/config/model
+  - bean/pkg/infra/api
+  - bean/pkg/integration/mailer/model/dto
+  - bean/pkg/integration/s3/model
+  - bean/pkg/integration/s3/model/dto
+  - bean/pkg/space/model
+  - bean/pkg/space/model/dto
+  - bean/pkg/user/model
+  - bean/pkg/user/model/dto

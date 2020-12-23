@@ -50,5 +50,5 @@ func (this MyBundle) GraphqlResolver() map[string]interface{} {
 ## 4. Regenerate
 
 ```
-make gql
+make dev.gql
 ```

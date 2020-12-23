@@ -47,7 +47,7 @@ func accessBundle() *AccessBundle {
 func Test_Config(t *testing.T) {
 	ass := assert.New(t)
 	this := accessBundle()
-	key, err := this.config.GetSignKey()
+	key, err := this.cnf.GetSignKey()
 	ass.NoError(err)
 	ass.NotNil(key)
 }
@@ -59,7 +59,7 @@ func Test_Create(t *testing.T) {
 
 	// create userBundle
 	iUser := fUser.NewUserCreateInputFixture()
-	oUser, err := this.userBundle.Service.Create(this.db, iUser)
+	oUser, err := this.userBundle.Service.Create(this.con, iUser)
 	ass.NoError(err)
 
 	// create space
@@ -68,21 +68,21 @@ func Test_Create(t *testing.T) {
 		Kind:           claim.KindAuthenticated,
 	})
 	iSpace := fSpace.SpaceCreateInputFixture(false)
-	oSpace, err := this.spaceBundle.Service.Create(this.db.WithContext(ctx), iSpace)
+	oSpace, err := this.spaceBundle.Service.Create(this.con.WithContext(ctx), iSpace)
 	ass.NoError(err)
 
 	t.Run("use credentials", func(t *testing.T) {
 		t.Run("email inactive", func(t *testing.T) {
 			in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 			in.UseCredentials.Email = iUser.Emails.Secondary[1].Value
-			_, err := this.sessionService.Create(this.db.WithContext(ctx), in)
+			_, err := this.sessionService.Create(this.con.WithContext(ctx), in)
 			ass.Equal(err.Error(), "userBundle not found")
 		})
 
 		t.Run("password unmatched", func(t *testing.T) {
 			in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 			in.UseCredentials.HashedPassword = "invalid-password"
-			outcome, err := this.sessionService.Create(this.db.WithContext(ctx), in)
+			outcome, err := this.sessionService.Create(this.con.WithContext(ctx), in)
 
 			ass.NoError(err)
 			ass.Equal(util.ErrorCodeInput, *outcome.Errors[0].Code)
@@ -92,7 +92,7 @@ func Test_Create(t *testing.T) {
 
 		t.Run("ok", func(t *testing.T) {
 			in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-			out, err := this.sessionService.Create(this.db.WithContext(ctx), in)
+			out, err := this.sessionService.Create(this.con.WithContext(ctx), in)
 			ass.NoError(err)
 			ass.Equal(oUser.User.ID, out.Session.UserId)
 			ass.Equal(oSpace.Space.ID, out.Session.SpaceId)
@@ -100,7 +100,7 @@ func Test_Create(t *testing.T) {
 
 			// check that code challenged & method are saved correctly
 			{
-				session, err := this.sessionService.LoadByToken(this.db.WithContext(ctx), *out.Token)
+				session, err := this.sessionService.LoadByToken(this.con.WithContext(ctx), *out.Token)
 				ass.NoError(err)
 				ass.Equal("S256", session.CodeChallengeMethod)
 				ass.Equal(
@@ -134,7 +134,7 @@ func Test_Create(t *testing.T) {
 
 	t.Run("OTLT - one time login token", func(t *testing.T) {
 		t.Run("generate", func(t *testing.T) {
-			oGenerate, err := this.sessionService.Create(this.db.WithContext(ctx), &dto.SessionCreateInput{
+			oGenerate, err := this.sessionService.Create(this.con.WithContext(ctx), &dto.SessionCreateInput{
 				GenerateOTLT: &dto.SessionCreateGenerateOTLT{
 					SpaceID: oSpace.Space.ID,
 					UserID:  oUser.User.ID,
@@ -145,7 +145,7 @@ func Test_Create(t *testing.T) {
 			ass.Equal(claim.KindOTLT, oGenerate.Session.Kind)
 
 			{
-				out, err := this.sessionService.Create(this.db.WithContext(ctx), &dto.SessionCreateInput{
+				out, err := this.sessionService.Create(this.con.WithContext(ctx), &dto.SessionCreateInput{
 					UseOTLT: &dto.SessionCreateUseOTLT{Token: *oGenerate.Token},
 				})
 
@@ -154,7 +154,7 @@ func Test_Create(t *testing.T) {
 
 				// load again -> should not be found
 				{
-					otltSession, err := this.sessionService.LoadByToken(this.db.WithContext(ctx), *oGenerate.Token)
+					otltSession, err := this.sessionService.LoadByToken(this.con.WithContext(ctx), *oGenerate.Token)
 					ass.Error(err)
 					ass.Nil(otltSession)
 				}
@@ -173,13 +173,13 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 
 	// create space
 	iSpace := fSpace.SpaceCreateInputFixture(false)
-	oSpace, err := this.spaceBundle.Service.Create(this.db, iSpace)
+	oSpace, err := this.spaceBundle.Service.Create(this.con, iSpace)
 	ass.NoError(err)
 
 	// base input
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
-	out, err := this.sessionService.Create(this.db.WithContext(ctx), in)
+	out, err := this.sessionService.Create(this.con.WithContext(ctx), in)
 	ass.Error(err)
 	ass.Nil(out)
 	ass.Contains(err.Error(), "userBundle not found")
@@ -191,21 +191,21 @@ func Test_Query(t *testing.T) {
 	this := accessBundle()
 
 	iUser := fUser.NewUserCreateInputFixture()
-	oUser, _ := this.userBundle.Service.Create(this.db, iUser)
+	oUser, _ := this.userBundle.Service.Create(this.con, iUser)
 
 	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
 		Kind:           claim.KindAuthenticated,
 	})
 	iSpace := fSpace.SpaceCreateInputFixture(false)
-	oSpace, _ := this.spaceBundle.Service.Create(this.db.WithContext(ctx), iSpace)
+	oSpace, _ := this.spaceBundle.Service.Create(this.con.WithContext(ctx), iSpace)
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
-	out, err := this.sessionService.Create(this.db.WithContext(ctx), in)
+	out, err := this.sessionService.Create(this.con.WithContext(ctx), in)
 	ass.NoError(err)
 
 	// can load session without issue
-	session, err := this.sessionService.LoadByToken(this.db.WithContext(ctx), *out.Token)
+	session, err := this.sessionService.LoadByToken(this.con.WithContext(ctx), *out.Token)
 	ass.NoError(err)
 	ass.Equal(session.SpaceId, oSpace.Space.ID)
 	ass.Equal(session.UserId, oUser.User.ID)
@@ -214,11 +214,11 @@ func Test_Query(t *testing.T) {
 		// change session expiration time
 		oneMinDuration, _ := time.ParseDuration("129h")
 		session.ExpiredAt = session.ExpiredAt.Add(-1 * oneMinDuration)
-		err := this.db.Save(&session).Error
+		err := this.con.Save(&session).Error
 		ass.NoError(err)
 
 		// load again -> error: session expired
-		_, err = this.sessionService.LoadByToken(this.db.WithContext(ctx), *out.Token)
+		_, err = this.sessionService.LoadByToken(this.con.WithContext(ctx), *out.Token)
 		ass.Error(err)
 		ass.Equal(err.Error(), "session expired")
 	})
@@ -234,16 +234,16 @@ func Test_Archive(t *testing.T) {
 	this := accessBundle()
 
 	iUser := fUser.NewUserCreateInputFixture()
-	oUser, _ := this.userBundle.Service.Create(this.db, iUser)
+	oUser, _ := this.userBundle.Service.Create(this.con, iUser)
 	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
 		Kind:           claim.KindAuthenticated,
 	})
 	iSpace := fSpace.SpaceCreateInputFixture(false)
-	oSpace, _ := this.spaceBundle.Service.Create(this.db.WithContext(ctx), iSpace)
+	oSpace, _ := this.spaceBundle.Service.Create(this.con.WithContext(ctx), iSpace)
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
-	sessionOutcome, err := this.sessionService.Create(this.db.WithContext(ctx), in)
+	sessionOutcome, err := this.sessionService.Create(this.con.WithContext(ctx), in)
 	ass.NoError(err)
 
 	{

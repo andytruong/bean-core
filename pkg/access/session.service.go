@@ -123,19 +123,19 @@ func (service SessionService) create(
 		}
 	}
 
-	token := service.bundle.id.MustULID()
+	token := service.bundle.idr.MustULID()
 	session := &model.Session{
-		ID:          service.bundle.id.MustULID(),
-		Version:     service.bundle.id.MustULID(),
+		ID:          service.bundle.idr.MustULID(),
+		Version:     service.bundle.idr.MustULID(),
 		Kind:        kind,
 		UserId:      userId,
 		SpaceId:     spaceId,
-		HashedToken: service.bundle.id.Encode(token),
+		HashedToken: service.bundle.idr.Encode(token),
 		Scopes:      nil, // TODO
 		IsActive:    true,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
-		ExpiredAt:   time.Now().Add(service.bundle.config.SessionTimeout),
+		ExpiredAt:   time.Now().Add(service.bundle.cnf.SessionTimeout),
 	}
 
 	if nil != create {
@@ -184,11 +184,11 @@ func (service SessionService) load(ctx context.Context, db *gorm.DB, id string) 
 func (service SessionService) LoadByToken(db *gorm.DB, token string) (*model.Session, error) {
 	session := &model.Session{}
 	err := db.
-		First(&session, "hashed_token = ?", service.bundle.id.Encode(token)).
+		First(&session, "hashed_token = ?", service.bundle.idr.Encode(token)).
 		Error
 
 	if err == gorm.ErrRecordNotFound {
-		return nil, errors.New("session not found: " + service.bundle.id.Encode(token))
+		return nil, errors.New("session not found: " + service.bundle.idr.Encode(token))
 	}
 
 	if session.ExpiredAt.Unix() <= time.Now().Unix() {
@@ -204,7 +204,7 @@ func (service SessionService) LoadByToken(db *gorm.DB, token string) (*model.Ses
 
 func (service SessionService) Delete(tx *gorm.DB, session *model.Session) (*dto.SessionArchiveOutcome, error) {
 	session.IsActive = false
-	session.Version = service.bundle.id.MustULID()
+	session.Version = service.bundle.idr.MustULID()
 	session.UpdatedAt = time.Now()
 	err := tx.Save(&session).Error
 	if nil != err {

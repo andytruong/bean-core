@@ -34,7 +34,7 @@ func (bundle *AccessBundle) newResolves() map[string]interface{} {
 		},
 		"AccessSessionQuery": map[string]interface{}{
 			"Load": func(ctx context.Context, id string) (*model.Session, error) {
-				return bundle.sessionService.load(ctx, bundle.db, id)
+				return bundle.sessionService.load(ctx, bundle.con, id)
 			},
 		},
 		"AccessMutation": map[string]interface{}{
@@ -44,7 +44,7 @@ func (bundle *AccessBundle) newResolves() map[string]interface{} {
 		},
 		"AccessSessionMutation": map[string]interface{}{
 			"Create": func(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
-				return bundle.sessionService.Create(bundle.db, in)
+				return bundle.sessionService.Create(bundle.con, in)
 			},
 			"Archive": func(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
 				claims := claim.ContextToPayload(ctx)
@@ -52,9 +52,9 @@ func (bundle *AccessBundle) newResolves() map[string]interface{} {
 					return nil, util.ErrorAuthRequired
 				}
 
-				sess, _ := bundle.sessionService.load(ctx, bundle.db.WithContext(ctx), claims.SessionId())
+				sess, _ := bundle.sessionService.load(ctx, bundle.con.WithContext(ctx), claims.SessionId())
 				if sess != nil {
-					out, err := bundle.sessionService.Delete(bundle.db.WithContext(ctx), sess)
+					out, err := bundle.sessionService.Delete(bundle.con.WithContext(ctx), sess)
 
 					return out, err
 				}
@@ -67,7 +67,7 @@ func (bundle *AccessBundle) newResolves() map[string]interface{} {
 		},
 		"Session": map[string]interface{}{
 			"User": func(ctx context.Context, obj *model.Session) (*user_model.User, error) {
-				return bundle.userBundle.Service.Load(bundle.db.WithContext(ctx), obj.UserId)
+				return bundle.userBundle.Service.Load(bundle.con.WithContext(ctx), obj.UserId)
 			},
 			"Context": func(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
 				panic("implement me")
@@ -104,7 +104,7 @@ func (bundle *AccessBundle) newResolves() map[string]interface{} {
 						Issuer:    "access",
 						Id:        session.ID,
 						IssuedAt:  time.Now().Unix(),
-						ExpiresAt: time.Now().Add(bundle.config.Jwt.Timeout).Unix(),
+						ExpiresAt: time.Now().Add(bundle.cnf.Jwt.Timeout).Unix(),
 						Subject:   session.UserId,
 						Audience:  session.SpaceId,
 					},

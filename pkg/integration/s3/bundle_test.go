@@ -15,18 +15,20 @@ import (
 	"bean/components/scalar"
 	"bean/components/util"
 	"bean/components/util/connect"
+	"bean/pkg/app"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
 
 func bean() *S3Bundle {
-	db := util.MockDatabase()
-	id := util.MockIdentifier()
-	logger := util.MockLogger()
-	bundle := NewS3Integration(db, id, logger, &S3Configuration{Key: "01EBWB516AP6BQD7"})
-	util.MockInstall(bundle, db)
+	con := util.MockDatabase()
+	idr := util.MockIdentifier()
+	log := util.MockLogger()
+	appBundle, _ := app.NewApplicationBundle(con, idr, log)
+	bun := NewS3Integration(con, idr, log, &S3Configuration{Key: "01EBWB516AP6BQD7"}, appBundle)
+	util.MockInstall(bun, con)
 
-	return bundle
+	return bun
 }
 
 func Test(t *testing.T) {
@@ -35,7 +37,7 @@ func Test(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("DB schema", func(t *testing.T) {
-		this.db.Migrator().HasTable("s3_application")
+		ass.True(this.db.Migrator().HasTable("s3_application_policy"))
 	})
 
 	t.Run("Service", func(t *testing.T) {

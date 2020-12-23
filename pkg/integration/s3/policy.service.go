@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"bean/components/util"
+	model2 "bean/pkg/app/model"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
@@ -60,7 +61,7 @@ func (service *policyService) loadByApplicationId(ctx context.Context, appId str
 	return policies, nil
 }
 
-func (service *policyService) onAppCreate(tx *gorm.DB, app *model.Application, in []dto.S3ApplicationPolicyCreateInput) error {
+func (service *policyService) onAppCreate(tx *gorm.DB, app *model2.Application, in []dto.S3ApplicationPolicyCreateInput) error {
 	for _, input := range in {
 		_, err := service.create(tx, app.ID, input.Kind, input.Value)
 		if nil != err {
@@ -71,7 +72,7 @@ func (service *policyService) onAppCreate(tx *gorm.DB, app *model.Application, i
 	return nil
 }
 
-func (service *policyService) onAppUpdate(tx *gorm.DB, app *model.Application, in *dto.S3ApplicationPolicyMutationInput) error {
+func (service *policyService) onAppUpdate(tx *gorm.DB, app *model2.Application, in *dto.S3ApplicationPolicyMutationInput) error {
 	if nil == in {
 		return nil
 	}

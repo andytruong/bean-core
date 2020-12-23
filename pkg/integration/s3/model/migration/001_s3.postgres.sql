@@ -1,13 +1,3 @@
-CREATE TABLE s3_application
-(
-    id         character varying(26) NOT NULL PRIMARY KEY,
-    version    character varying(26) NOT NULL UNIQUE,
-    is_active  boolean               NOT NULL,
-    created_at timestamp             NOT NULL,
-    updated_at timestamp             NOT NULL,
-    deleted_at timestamp
-);
-
 CREATE TABLE s3_credentials
 (
     id             character varying(26)  NOT NULL PRIMARY KEY,
@@ -17,7 +7,7 @@ CREATE TABLE s3_credentials
     access_key     character varying(128) NOT NULL,
     secret_key     character varying(128) NOT NULL,
     is_secure      boolean                NOT NULL,
-    FOREIGN KEY (application_id) REFERENCES s3_application (id)
+    FOREIGN KEY (application_id) REFERENCES applications (id)
 );
 
 CREATE TABLE s3_application_policy
