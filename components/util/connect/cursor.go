@@ -32,8 +32,8 @@ type Cursor struct {
 	Value    string
 }
 
-func (this Cursor) Encode() string {
-	outcome := fmt.Sprintf("%v:%v:%v", this.Entity, this.Property, this.Value)
+func (cursor Cursor) Encode() string {
+	outcome := fmt.Sprintf("%v:%v:%v", cursor.Entity, cursor.Property, cursor.Value)
 
 	return base64.StdEncoding.EncodeToString([]byte(outcome))
 }

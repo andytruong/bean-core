@@ -35,7 +35,7 @@ type (
 	}
 )
 
-func (this Membership) TableName() string {
+func (Membership) TableName() string {
 	return "space_memberships"
 }
 

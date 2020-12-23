@@ -1,7 +1,7 @@
 package dto
 
 import (
-	util2 "bean/components/util"
+	"bean/components/util"
 )
 
 type ValidationInput struct {
@@ -9,6 +9,6 @@ type ValidationInput struct {
 }
 
 type ValidationOutcome struct {
-	Status bool           `json:"status"`
-	Errors []*util2.Error `json:"errors"`
+	Status bool          `json:"status"`
+	Errors []*util.Error `json:"errors"`
 }

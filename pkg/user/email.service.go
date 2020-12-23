@@ -15,13 +15,13 @@ type EmailService struct {
 	bundle *UserBundle
 }
 
-func (this EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserEmailsInput) error {
+func (service EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserEmailsInput) error {
 	if nil == in {
 		return nil
 	}
 
 	if nil != in.Primary {
-		err := this.bundle.emailService.Create(tx, user, *in.Primary, true)
+		err := service.bundle.emailService.Create(tx, user, *in.Primary, true)
 		if nil != err {
 			return err
 		}
@@ -29,7 +29,7 @@ func (this EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserE
 
 	if nil != in.Secondary {
 		for _, secondaryInput := range in.Secondary {
-			err := this.bundle.emailService.Create(tx, user, *secondaryInput, false)
+			err := service.bundle.emailService.Create(tx, user, *secondaryInput, false)
 			if nil != err {
 				return err
 			}
@@ -39,14 +39,14 @@ func (this EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserE
 	return nil
 }
 
-func (this EmailService) Create(tx *gorm.DB, user *model.User, in dto.UserEmailInput, isPrimary bool) error {
+func (service EmailService) Create(tx *gorm.DB, user *model.User, in dto.UserEmailInput, isPrimary bool) error {
 	table := connect2.TableUserEmail
 	if !in.Verified {
 		table = connect2.TableUserEmailUnverified
 	}
 
 	email := model.UserEmail{
-		ID:        this.bundle.id.MustULID(),
+		ID:        service.bundle.id.MustULID(),
 		UserId:    user.ID,
 		Value:     in.Value.LowerCaseValue(),
 		IsActive:  in.Verified,
@@ -62,11 +62,11 @@ func (this EmailService) Create(tx *gorm.DB, user *model.User, in dto.UserEmailI
 
 // TODO: need a better resolver, we not always load secondary emails.
 //       see: https://gqlgen.com/reference/field-collection/
-func (this EmailService) List(ctx context.Context, user *model.User) (*model.UserEmails, error) {
+func (service EmailService) List(ctx context.Context, user *model.User) (*model.UserEmails, error) {
 	emails := &model.UserEmails{}
 
 	var rows []*model.UserEmail
-	err := this.bundle.db.
+	err := service.bundle.db.
 		WithContext(ctx).
 		Raw(`
 			     SELECT *, 1 AS is_verified FROM user_emails            WHERE user_id = ?

@@ -13,13 +13,13 @@ type PasswordService struct {
 	bundle *UserBundle
 }
 
-func (this *PasswordService) create(tx *gorm.DB, user *model.User, in *dto.UserPasswordInput) error {
+func (service *PasswordService) create(tx *gorm.DB, user *model.User, in *dto.UserPasswordInput) error {
 	if nil == in {
 		return nil
 	}
 
 	pass := &model.UserPassword{
-		ID:          this.bundle.id.MustULID(),
+		ID:          service.bundle.id.MustULID(),
 		UserId:      user.ID,
 		HashedValue: in.HashedValue,
 		CreatedAt:   time.Now(),

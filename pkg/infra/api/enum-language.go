@@ -24,35 +24,35 @@ var AllLanguage = []Language{
 	LanguageVN,
 }
 
-func (this Language) IsValid() bool {
-	switch this {
+func (lang Language) IsValid() bool {
+	switch lang {
 	case LanguageAU, LanguageUS, LanguageUK, LanguageVN:
 		return true
 	}
 	return false
 }
 
-func (this Language) String() string {
-	return string(this)
+func (lang Language) String() string {
+	return string(lang)
 }
 
-func (this Language) Nil() *Language {
-	return &this
+func (lang Language) Nil() *Language {
+	return &lang
 }
 
-func (this *Language) UnmarshalGQL(v interface{}) error {
+func (lang *Language) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*this = Language(str)
-	if !this.IsValid() {
+	*lang = Language(str)
+	if !lang.IsValid() {
 		return fmt.Errorf("%s is not a valid Language", str)
 	}
 	return nil
 }
 
-func (this Language) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(this.String()))
+func (lang Language) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(lang.String()))
 }

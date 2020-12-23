@@ -11,6 +11,6 @@ type UserPassword struct {
 	IsActive    bool      `json:"isActive"`
 }
 
-func (this UserPassword) TableName() string {
+func (UserPassword) TableName() string {
 	return "user_passwords"
 }

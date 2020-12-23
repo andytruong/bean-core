@@ -12,10 +12,10 @@ import (
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/codegen/templates"
-	. "github.com/99designs/gqlgen/plugin/resolvergen"
+	"github.com/99designs/gqlgen/plugin/resolvergen"
 	"github.com/pkg/errors"
 
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/pkg/infra"
 )
 
@@ -23,8 +23,8 @@ func main() {
 	log.SetOutput(ioutil.Discard)
 	_ = os.Setenv("ENV", "test")
 	path := "config.yaml"
-	if "" == path {
-		err := errors.Wrap(util2.ErrorConfig, "missing env CONFIG")
+	if path == "" {
+		err := errors.Wrap(util.ErrorConfig, "missing env CONFIG")
 		panic(err)
 	}
 
@@ -35,7 +35,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "failed to load config", err.Error())
 		os.Exit(2)
 	} else {
-		err = api.Generate(cfg, api.AddPlugin(MyPlugin{container: container}))
+		err = api.Generate(cfg, api.AddPlugin(plugin{container: container}))
 
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
@@ -44,17 +44,17 @@ func main() {
 	}
 }
 
-type MyPlugin struct {
+type plugin struct {
 	container *infra.Container
 }
 
-func (this MyPlugin) Name() string {
+func (p plugin) Name() string {
 	return "bean"
 }
 
-func (this MyPlugin) GenerateCode(data *codegen.Data) error {
-	build := &ResolverBuild{
-		File:         &File{},
+func (p plugin) GenerateCode(data *codegen.Data) error {
+	build := &resolvergen.ResolverBuild{
+		File:         &resolvergen.File{},
 		PackageName:  data.Config.Resolver.Package,
 		ResolverType: data.Config.Resolver.Type,
 		HasRoot:      true,
@@ -69,7 +69,7 @@ func (this MyPlugin) GenerateCode(data *codegen.Data) error {
 				continue
 			}
 
-			build.File.Resolvers = append(build.File.Resolvers, this.newResolver(data, o, f))
+			build.File.Resolvers = append(build.File.Resolvers, p.newResolver(data, o, f))
 		}
 	}
 
@@ -89,20 +89,20 @@ func (this MyPlugin) GenerateCode(data *codegen.Data) error {
 	return templates.Render(options)
 }
 
-func (this MyPlugin) newResolver(data *codegen.Data, o *codegen.Object, f *codegen.Field) *Resolver {
-	resolver := &Resolver{
+func (p plugin) newResolver(data *codegen.Data, o *codegen.Object, f *codegen.Field) *resolvergen.Resolver {
+	resolver := &resolvergen.Resolver{
 		Object:         o,
 		Field:          f,
-		Implementation: this.resolverBody(data, o, f),
+		Implementation: p.resolverBody(data, o, f),
 	}
 
 	return resolver
 }
 
-func (this MyPlugin) resolverBody(data *codegen.Data, o *codegen.Object, f *codegen.Field) string {
+func (p plugin) resolverBody(data *codegen.Data, o *codegen.Object, f *codegen.Field) string {
 	implementation := fmt.Sprintf(`panic("no implementation found in resolvers[%s][%s]")`, o.Name, f.GoFieldName)
 
-	for _, bundle := range this.container.BundleList() {
+	for _, bundle := range p.container.BundleList() {
 		resolvers := bundle.GraphqlResolver()
 		if nil == resolvers {
 			continue
@@ -134,7 +134,7 @@ func (this MyPlugin) resolverBody(data *codegen.Data, o *codegen.Object, f *code
 						},
 						"\n",
 					),
-					this.container.BundlePath(bundle),
+					p.container.BundlePath(bundle),
 					o.Name,
 					fieldResolverType,
 					f.GoFieldName,

@@ -13,6 +13,6 @@ type SpaceConfig struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func (this SpaceConfig) TableName() string {
+func (SpaceConfig) TableName() string {
 	return "space_config"
 }

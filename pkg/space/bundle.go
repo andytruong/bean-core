@@ -10,7 +10,6 @@ import (
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
-	"bean/pkg/config"
 	"bean/pkg/user"
 )
 
@@ -48,17 +47,16 @@ type SpaceBundle struct {
 	db                *gorm.DB
 	id                *unique.Identifier
 	userBundle        *user.UserBundle
-	configBundle      *config.ConfigBundle
 	resolvers         map[string]interface{}
 	configService     *ConfigService
 	domainNameService *DomainNameService
 }
 
-func (this *SpaceBundle) Dependencies() []module.Bundle {
-	return []module.Bundle{this.userBundle}
+func (bundle *SpaceBundle) Dependencies() []module.Bundle {
+	return []module.Bundle{bundle.userBundle}
 }
 
-func (this SpaceBundle) Migrate(tx *gorm.DB, driver string) error {
+func (bundle SpaceBundle) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -66,7 +64,7 @@ func (this SpaceBundle) Migrate(tx *gorm.DB, driver string) error {
 
 	runner := migrate.Runner{
 		Tx:     tx,
-		Logger: this.logger,
+		Logger: bundle.logger,
 		Driver: driver,
 		Bean:   "space",
 		Dir:    path.Dir(filename) + "/model/migration/",
@@ -75,6 +73,6 @@ func (this SpaceBundle) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this *SpaceBundle) GraphqlResolver() map[string]interface{} {
-	return this.resolvers
+func (bundle *SpaceBundle) GraphqlResolver() map[string]interface{} {
+	return bundle.resolvers
 }

@@ -17,8 +17,8 @@ func NewS3Integration(
 	id *unique.Identifier,
 	logger *zap.Logger,
 	conf *S3Configuration,
-) *S3IntegrationBundle {
-	this := &S3IntegrationBundle{
+) *S3Bundle {
+	this := &S3Bundle{
 		db:     db,
 		id:     id,
 		logger: logger,
@@ -33,7 +33,7 @@ func NewS3Integration(
 	return this
 }
 
-type S3IntegrationBundle struct {
+type S3Bundle struct {
 	module.AbstractBundle
 
 	db     *gorm.DB
@@ -47,7 +47,7 @@ type S3IntegrationBundle struct {
 	resolvers         map[string]interface{}
 }
 
-func (this S3IntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
+func (bundle S3Bundle) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -55,7 +55,7 @@ func (this S3IntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
 
 	runner := migrate.Runner{
 		Tx:     tx,
-		Logger: this.logger,
+		Logger: bundle.logger,
 		Driver: driver,
 		Bean:   "integration.s3",
 		Dir:    path.Dir(filename) + "/model/migration/",
@@ -64,6 +64,6 @@ func (this S3IntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this *S3IntegrationBundle) GraphqlResolver() map[string]interface{} {
-	return this.resolvers
+func (bundle *S3Bundle) GraphqlResolver() map[string]interface{} {
+	return bundle.resolvers
 }

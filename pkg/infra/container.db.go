@@ -10,7 +10,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	util2 "bean/components/util"
+	"bean/components/util"
 )
 
 type databases struct {
@@ -18,29 +18,29 @@ type databases struct {
 	connections *sync.Map
 }
 
-func (this *databases) master() (*gorm.DB, error) {
-	return this.get("master")
+func (dbs *databases) master() (*gorm.DB, error) {
+	return dbs.get("master")
 }
 
-func (this *databases) get(name string) (*gorm.DB, error) {
-	if db, ok := this.connections.Load(name); ok {
+func (dbs *databases) get(name string) (*gorm.DB, error) {
+	if db, ok := dbs.connections.Load(name); ok {
 		// Connection already established
 		return db.(*gorm.DB), nil
-	} else if cnf, ok := this.config[name]; !ok {
+	} else if cnf, ok := dbs.config[name]; !ok {
 		// No configuration found for requested-DB
-		return nil, errors.Wrap(util2.ErrorConfig, "database config not provided: "+name)
+		return nil, errors.Wrap(util.ErrorConfig, "database config not provided: "+name)
 	} else {
-		if con, err := gorm.Open(this.dialector(cnf), &gorm.Config{SkipDefaultTransaction: true}); nil != err {
+		if con, err := gorm.Open(dbs.dialector(cnf), &gorm.Config{SkipDefaultTransaction: true}); nil != err {
 			return nil, err
 		} else {
-			this.connections.Store(name, con)
+			dbs.connections.Store(name, con)
 
 			return con, nil
 		}
 	}
 }
 
-func (this *databases) dialector(cnf DatabaseConfig) gorm.Dialector {
+func (dbs *databases) dialector(cnf DatabaseConfig) gorm.Dialector {
 	switch cnf.Driver {
 	case "sqlite3":
 		return sqlite.Open(cnf.Url)

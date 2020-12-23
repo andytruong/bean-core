@@ -9,21 +9,21 @@ import (
 
 	"bean/components/claim"
 	"bean/components/scalar"
-	util2 "bean/components/util"
-	connect2 "bean/components/util/connect"
+	"bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
 
 type ApplicationService struct {
-	bundle *S3IntegrationBundle
+	bundle *S3Bundle
 }
 
-func (this *ApplicationService) Load(ctx context.Context, id string) (*model.Application, error) {
+func (service *ApplicationService) Load(ctx context.Context, id string) (*model.Application, error) {
 	app := &model.Application{}
 
 	// TODO: don't allow to load pending deleted S3 applications.
-	err := this.bundle.db.
+	err := service.bundle.db.
 		WithContext(ctx).
 		Where("id = ?", id).
 		First(&app).
@@ -35,16 +35,16 @@ func (this *ApplicationService) Load(ctx context.Context, id string) (*model.App
 	return app, nil
 }
 
-func (this *ApplicationService) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
+func (service *ApplicationService) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
 	var app *model.Application
 
-	err := connect2.Transaction(
+	err := connect.Transaction(
 		ctx,
-		this.bundle.db,
+		service.bundle.db,
 		func(tx *gorm.DB) error {
 			app = &model.Application{
-				ID:        this.bundle.id.MustULID(),
-				Version:   this.bundle.id.MustULID(),
+				ID:        service.bundle.id.MustULID(),
+				Version:   service.bundle.id.MustULID(),
 				IsActive:  in.IsActive,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
@@ -54,9 +54,9 @@ func (this *ApplicationService) Create(ctx context.Context, in *dto.S3Applicatio
 			err := tx.Create(&app).Error
 			if nil != err {
 				return err
-			} else if err := this.bundle.credentialService.onAppCreate(tx, app, in.Credentials); nil != err {
+			} else if err := service.bundle.credentialService.onAppCreate(tx, app, in.Credentials); nil != err {
 				return err
-			} else if err = this.bundle.policyService.onAppCreate(tx, app, in.Policies); nil != err {
+			} else if err = service.bundle.policyService.onAppCreate(tx, app, in.Policies); nil != err {
 				return err
 			}
 
@@ -71,13 +71,13 @@ func (this *ApplicationService) Create(ctx context.Context, in *dto.S3Applicatio
 	return &dto.S3ApplicationMutationOutcome{App: app, Errors: nil}, nil
 }
 
-func (this *ApplicationService) Update(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
-	app, err := this.Load(ctx, in.Id)
+func (service *ApplicationService) Update(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
+	app, err := service.Load(ctx, in.Id)
 
 	if nil != err {
 		return nil, err
 	} else if app.Version != in.Version {
-		return nil, util2.ErrorVersionConflict
+		return nil, util.ErrorVersionConflict
 	}
 
 	changed := false
@@ -88,34 +88,34 @@ func (this *ApplicationService) Update(ctx context.Context, in *dto.S3Applicatio
 		}
 	}
 
-	if deletedAt, ok := ctx.Value("bundle.integration-s3.delete").(time.Time); ok {
+	if deletedAt, ok := ctx.Value(model.DeleteContextKey).(time.Time); ok {
 		app.DeletedAt = &deletedAt
 		changed = true
 	}
 
 	if !changed {
 		if nil == in.Credentials && nil == in.Policies {
-			return nil, util2.ErrorUselessInput
+			return nil, util.ErrorUselessInput
 		}
 	}
 
-	app.Version = this.bundle.id.MustULID()
+	app.Version = service.bundle.id.MustULID()
 	app.UpdatedAt = time.Now()
-	err = connect2.Transaction(
+	err = connect.Transaction(
 		ctx,
-		this.bundle.db,
+		service.bundle.db,
 		func(tx *gorm.DB) error {
 			err := tx.Save(&app).Error
 			if nil != err {
 				return err
 			}
 
-			err = this.bundle.credentialService.onAppUpdate(tx, app, in.Credentials)
+			err = service.bundle.credentialService.onAppUpdate(tx, app, in.Credentials)
 			if nil != err {
 				return err
 			}
 
-			err = this.bundle.policyService.onAppUpdate(tx, app, in.Policies)
+			err = service.bundle.policyService.onAppUpdate(tx, app, in.Policies)
 			if nil != err {
 				return err
 			}
@@ -127,32 +127,32 @@ func (this *ApplicationService) Update(ctx context.Context, in *dto.S3Applicatio
 	return &dto.S3ApplicationMutationOutcome{App: app, Errors: nil}, err
 }
 
-func (this *ApplicationService) Delete(ctx context.Context, in dto.S3ApplicationDeleteInput) (*dto.S3ApplicationMutationOutcome, error) {
-	ctx = context.WithValue(ctx, "bundle.integration-s3.delete", time.Now())
+func (service *ApplicationService) Delete(ctx context.Context, in dto.S3ApplicationDeleteInput) (*dto.S3ApplicationMutationOutcome, error) {
+	ctx = context.WithValue(ctx, model.DeleteContextKey, time.Now())
 
-	return this.Update(ctx, &dto.S3ApplicationUpdateInput{
+	return service.Update(ctx, &dto.S3ApplicationUpdateInput{
 		Id:       in.Id,
 		Version:  in.Version,
 		IsActive: scalar.NilBool(true),
 	})
 }
 
-func (this *ApplicationService) S3UploadToken(ctx context.Context, in dto.S3UploadTokenInput) (map[string]interface{}, error) {
+func (service *ApplicationService) S3UploadToken(ctx context.Context, in dto.S3UploadTokenInput) (map[string]interface{}, error) {
 	// get claims from context
-	claims, ok := ctx.Value(claim.ContextKey).(*claim.Payload)
+	claims, ok := ctx.Value(claim.ClaimsContextKey).(*claim.Payload)
 	if !ok {
-		return nil, util2.ErrorAuthRequired
+		return nil, util.ErrorAuthRequired
 	}
 
 	// load application
-	app, err := this.bundle.AppService.Load(ctx, in.ApplicationId)
+	app, err := service.bundle.AppService.Load(ctx, in.ApplicationId)
 	if nil != err {
 		return nil, err
 	} else {
-		cred, err := this.bundle.credentialService.loadByApplicationId(ctx, in.ApplicationId)
+		cred, err := service.bundle.credentialService.loadByApplicationId(ctx, in.ApplicationId)
 		if nil != err {
 			return nil, err
-		} else if client, err := this.bundle.credentialService.client(cred); nil != err {
+		} else if client, err := service.bundle.credentialService.client(cred); nil != err {
 			return nil, err
 		} else {
 			policy := minio.NewPostPolicy()

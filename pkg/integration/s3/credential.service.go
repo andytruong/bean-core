@@ -15,20 +15,20 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"gorm.io/gorm"
 
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
 
 type credentialService struct {
-	bundle    *S3IntegrationBundle
+	bundle    *S3Bundle
 	transport http.RoundTripper
 }
 
-func (this *credentialService) loadByApplicationId(ctx context.Context, appId string) (*model.Credentials, error) {
+func (service *credentialService) loadByApplicationId(ctx context.Context, appId string) (*model.Credentials, error) {
 	cred := &model.Credentials{}
 
-	err := this.bundle.db.WithContext(ctx).
+	err := service.bundle.db.WithContext(ctx).
 		Where("application_id = ?", appId).
 		First(&cred).
 		Error
@@ -40,21 +40,21 @@ func (this *credentialService) loadByApplicationId(ctx context.Context, appId st
 	return cred, nil
 }
 
-func (this *credentialService) onAppCreate(tx *gorm.DB, app *model.Application, in dto.S3ApplicationCredentialsCreateInput) error {
+func (service *credentialService) onAppCreate(tx *gorm.DB, app *model.Application, in dto.S3ApplicationCredentialsCreateInput) error {
 	cre := model.Credentials{
-		ID:            this.bundle.id.MustULID(),
+		ID:            service.bundle.id.MustULID(),
 		ApplicationId: app.ID,
 		Endpoint:      in.Endpoint,
 		Bucket:        in.Bucket,
 		AccessKey:     in.AccessKey,
-		SecretKey:     this.encrypt(in.SecretKey),
+		SecretKey:     service.encrypt(in.SecretKey),
 		IsSecure:      in.IsSecure,
 	}
 
 	return tx.Create(&cre).Error
 }
 
-func (this *credentialService) onAppUpdate(tx *gorm.DB, app *model.Application, in *dto.S3ApplicationCredentialsUpdateInput) error {
+func (service *credentialService) onAppUpdate(tx *gorm.DB, app *model.Application, in *dto.S3ApplicationCredentialsUpdateInput) error {
 	if nil == in {
 		return nil
 	}
@@ -90,7 +90,7 @@ func (this *credentialService) onAppUpdate(tx *gorm.DB, app *model.Application, 
 
 			if nil != in.SecretKey {
 				changed = true
-				cre.SecretKey = this.encrypt(*in.SecretKey)
+				cre.SecretKey = service.encrypt(*in.SecretKey)
 			}
 		}
 
@@ -98,7 +98,7 @@ func (this *credentialService) onAppUpdate(tx *gorm.DB, app *model.Application, 
 			return tx.Save(&cre).Error
 		}
 
-		return util2.ErrorUselessInput
+		return util.ErrorUselessInput
 	} else {
 		if gorm.ErrRecordNotFound != err {
 			return err
@@ -107,11 +107,11 @@ func (this *credentialService) onAppUpdate(tx *gorm.DB, app *model.Application, 
 		if nil != in.Endpoint && nil != in.AccessKey && nil != in.SecretKey {
 			// if not found -> create
 			cre = &model.Credentials{
-				ID:            this.bundle.id.MustULID(),
+				ID:            service.bundle.id.MustULID(),
 				ApplicationId: app.ID,
 				Endpoint:      *in.Endpoint,
 				AccessKey:     *in.AccessKey,
-				SecretKey:     this.encrypt(*in.SecretKey),
+				SecretKey:     service.encrypt(*in.SecretKey),
 				IsSecure:      false,
 			}
 
@@ -125,10 +125,10 @@ func (this *credentialService) onAppUpdate(tx *gorm.DB, app *model.Application, 
 	return nil
 }
 
-func (this credentialService) encrypt(text string) string {
+func (service credentialService) encrypt(text string) string {
 	plaintext := []byte(text)
 
-	block, err := aes.NewCipher([]byte(this.bundle.config.Key))
+	block, err := aes.NewCipher([]byte(service.bundle.config.Key))
 	if err != nil {
 		panic(err)
 	}
@@ -145,9 +145,9 @@ func (this credentialService) encrypt(text string) string {
 	return base64.URLEncoding.EncodeToString(cipherText)
 }
 
-func (this credentialService) decrypt(cryptoText string) string {
+func (service credentialService) decrypt(cryptoText string) string {
 	cipherText, _ := base64.URLEncoding.DecodeString(cryptoText)
-	block, err := aes.NewCipher([]byte(this.bundle.config.Key))
+	block, err := aes.NewCipher([]byte(service.bundle.config.Key))
 	if err != nil {
 		panic(err)
 	}
@@ -164,7 +164,7 @@ func (this credentialService) decrypt(cryptoText string) string {
 	return fmt.Sprintf("%s", cipherText)
 }
 
-func (this *credentialService) client(creds *model.Credentials) (*minio.Client, error) {
+func (service *credentialService) client(creds *model.Credentials) (*minio.Client, error) {
 	endpoint := string(creds.Endpoint)
 	endpoint = strings.Replace(endpoint, "http://", "", 1)
 	endpoint = strings.Replace(endpoint, "https://", "", 1)
@@ -172,9 +172,9 @@ func (this *credentialService) client(creds *model.Credentials) (*minio.Client, 
 	return minio.New(
 		endpoint,
 		&minio.Options{
-			Creds:     credentials.NewStaticV4(creds.AccessKey, this.decrypt(creds.SecretKey), ""),
+			Creds:     credentials.NewStaticV4(creds.AccessKey, service.decrypt(creds.SecretKey), ""),
 			Secure:    creds.IsSecure,
-			Transport: this.transport,
+			Transport: service.transport,
 		},
 	)
 }

@@ -28,16 +28,16 @@ type Session struct {
 	CodeChallenge       string     `json:"codeChallenge"`
 }
 
-func (this Session) TableName() string {
+func (Session) TableName() string {
 	return "access_session"
 }
 
-func (this Session) Verify(codeVerifier string) bool {
-	switch this.CodeChallengeMethod {
+func (session Session) Verify(codeVerifier string) bool {
+	switch session.CodeChallengeMethod {
 	case "S256":
 		actual := fmt.Sprintf("%x", sha256.Sum256([]byte(codeVerifier)))
 
-		return this.CodeChallenge == actual
+		return session.CodeChallenge == actual
 
 	default:
 		return false
@@ -46,17 +46,17 @@ func (this Session) Verify(codeVerifier string) bool {
 
 type ScopeList []*AccessScope
 
-func (this ScopeList) Value() (driver.Value, error) {
-	bytes, err := json.Marshal(this)
+func (list ScopeList) Value() (driver.Value, error) {
+	bytes, err := json.Marshal(list)
 	return string(bytes), err
 }
 
-func (this *ScopeList) Scan(in interface{}) error {
+func (list *ScopeList) Scan(in interface{}) error {
 	switch value := in.(type) {
 	case string:
-		return json.Unmarshal([]byte(value), this)
+		return json.Unmarshal([]byte(value), list)
 	case []byte:
-		return json.Unmarshal(value, this)
+		return json.Unmarshal(value, list)
 	default:
 		return errors.New("not supported")
 	}

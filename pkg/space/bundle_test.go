@@ -12,8 +12,8 @@ import (
 	"bean/components/claim"
 	"bean/components/conf"
 	"bean/components/scalar"
-	util2 "bean/components/util"
-	connect2 "bean/components/util/connect"
+	"bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/infra/api"
 	"bean/pkg/space/api/fixtures"
 	"bean/pkg/space/model"
@@ -35,10 +35,10 @@ func bundle() *SpaceBundle {
 		panic(err)
 	}
 
-	db := util2.MockDatabase()
+	db := util.MockDatabase()
 	db.Logger.LogMode(log.Silent)
-	logger := util2.MockLogger()
-	id := util2.MockIdentifier()
+	logger := util.MockLogger()
+	id := util.MockIdentifier()
 	userBundle := user.NewUserBundle(db, logger, id)
 	this := NewSpaceBundle(db, logger, id, userBundle, config.Bundles.Space)
 
@@ -47,13 +47,13 @@ func bundle() *SpaceBundle {
 
 func tearDown(bundle *SpaceBundle) {
 	bundle.db.Model(model.DomainName{}).Where("id != ?", "").Delete(&model.DomainName{})
-	bundle.db.Table(connect2.TableUserEmail).Where("id != ?", "").Delete(&mUser.UserEmail{})
+	bundle.db.Table(connect.TableUserEmail).Where("id != ?", "").Delete(&mUser.UserEmail{})
 }
 
 func Test_Space(t *testing.T) {
 	ass := assert.New(t)
 	this := bundle()
-	util2.MockInstall(this, this.db)
+	util.MockInstall(this, this.db)
 	iCreate := fixtures.SpaceCreateInputFixture(false)
 
 	t.Run("Create", func(t *testing.T) {
@@ -68,7 +68,7 @@ func Test_Space(t *testing.T) {
 				},
 				Kind: claim.KindAuthenticated,
 			}
-			ctx := context.WithValue(context.Background(), claim.ContextKey, claims)
+			ctx := context.WithValue(context.Background(), claim.ClaimsContextKey, claims)
 			out, err := this.Service.Create(this.db.WithContext(ctx), iCreate)
 
 			ass.NoError(err)
@@ -192,7 +192,7 @@ func Test_Space(t *testing.T) {
 				},
 			})
 
-			ass.Equal(err, util2.ErrorVersionConflict)
+			ass.Equal(err, util.ErrorVersionConflict)
 		})
 	})
 }
@@ -200,7 +200,7 @@ func Test_Space(t *testing.T) {
 func Test_Membership(t *testing.T) {
 	ass := assert.New(t)
 	this := bundle()
-	util2.MockInstall(this, this.db)
+	util.MockInstall(this, this.db)
 
 	// setup data for query
 	// -------
@@ -282,7 +282,7 @@ func Test_Membership(t *testing.T) {
 			outcome, err := resolver(context.Background(), input)
 
 			// check error
-			ass.Contains(err.Error(), util2.ErrorConfig.Error())
+			ass.Contains(err.Error(), util.ErrorConfig.Error())
 			ass.Contains(err.Error(), "register is off")
 			ass.Nil(outcome)
 		})
@@ -317,7 +317,7 @@ func Test_Membership(t *testing.T) {
 
 		t.Run("update membership", func(t *testing.T) {
 			resolver := this.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Update"].(func(context.Context, dto.SpaceMembershipUpdateInput) (*dto.SpaceMembershipCreateOutcome, error))
-			membership := &model.Membership{}
+			var membership *model.Membership
 
 			// create a membership with status OFF.
 			{
@@ -354,7 +354,7 @@ func Test_Membership(t *testing.T) {
 				{
 					obj, err := resolver(context.Background(), membership.ID, scalar.NilString("InvalidVersion"))
 					ass.Error(err)
-					ass.Equal(err.Error(), util2.ErrorVersionConflict.Error())
+					ass.Equal(err.Error(), util.ErrorVersionConflict.Error())
 					ass.Nil(obj)
 				}
 			}

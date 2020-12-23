@@ -1,4 +1,6 @@
 package claim
 
+type ContextKey string
+
 // string -> *util.Payload
-const ContextKey string = "bean.claims"
+const ClaimsContextKey ContextKey = "bean.claims"

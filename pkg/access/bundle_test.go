@@ -10,7 +10,7 @@ import (
 
 	"bean/components/claim"
 	"bean/components/conf"
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/pkg/access/api/fixtures"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
@@ -33,13 +33,13 @@ func accessBundle() *AccessBundle {
 		panic(err)
 	}
 
-	db := util2.MockDatabase()
-	logger := util2.MockLogger()
-	id := util2.MockIdentifier()
+	db := util.MockDatabase()
+	logger := util.MockLogger()
+	id := util.MockIdentifier()
 	userBundle := user.NewUserBundle(db, logger, id)
 	spaceBundle := space.NewSpaceBundle(db, logger, id, userBundle, config.Bundles.Space)
 	bundle := NewAccessBundle(db, id, logger, userBundle, spaceBundle, config.Bundles.Access)
-	util2.MockInstall(bundle, db)
+	util.MockInstall(bundle, db)
 
 	return bundle
 }
@@ -63,7 +63,7 @@ func Test_Create(t *testing.T) {
 	ass.NoError(err)
 
 	// create space
-	ctx = context.WithValue(ctx, claim.ContextKey, &claim.Payload{
+	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
 		Kind:           claim.KindAuthenticated,
 	})
@@ -85,7 +85,7 @@ func Test_Create(t *testing.T) {
 			outcome, err := this.sessionService.Create(this.db.WithContext(ctx), in)
 
 			ass.NoError(err)
-			ass.Equal(util2.ErrorCodeInput, *outcome.Errors[0].Code)
+			ass.Equal(util.ErrorCodeInput, *outcome.Errors[0].Code)
 			ass.Equal(outcome.Errors[0].Message, "invalid password")
 			ass.Equal(outcome.Errors[0].Fields, []string{"input.spaceId"})
 		})
@@ -193,7 +193,7 @@ func Test_Query(t *testing.T) {
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := this.userBundle.Service.Create(this.db, iUser)
 
-	ctx = context.WithValue(ctx, claim.ContextKey, &claim.Payload{
+	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
 		Kind:           claim.KindAuthenticated,
 	})
@@ -235,7 +235,7 @@ func Test_Archive(t *testing.T) {
 
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := this.userBundle.Service.Create(this.db, iUser)
-	ctx = context.WithValue(ctx, claim.ContextKey, &claim.Payload{
+	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
 		Kind:           claim.KindAuthenticated,
 	})
@@ -249,7 +249,7 @@ func Test_Archive(t *testing.T) {
 	{
 		resolver := this.resolvers["AccessSessionMutation"].(map[string]interface{})["Archive"].(func(context.Context) (*dto.SessionArchiveOutcome, error))
 
-		ctx = context.WithValue(context.Background(), claim.ContextKey, &claim.Payload{
+		ctx = context.WithValue(context.Background(), claim.ClaimsContextKey, &claim.Payload{
 			StandardClaims: jwt.StandardClaims{Id: sessionOutcome.Session.ID, Subject: oUser.User.ID},
 			Kind:           claim.KindAuthenticated,
 		})

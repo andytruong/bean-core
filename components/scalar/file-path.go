@@ -8,8 +8,8 @@ import (
 
 type FilePath string
 
-func (this FilePath) String() string {
-	out := string(this)
+func (fp FilePath) String() string {
+	out := string(fp)
 	if strings.HasPrefix(out, "/") {
 		return out
 	}

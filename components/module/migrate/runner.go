@@ -18,13 +18,13 @@ type Runner struct {
 	Dir    string
 }
 
-func (this Runner) Run() error {
+func (runner Runner) Run() error {
 	return filepath.Walk(
-		this.Dir,
+		runner.Dir,
 		func(path string, info os.FileInfo, err error) error {
 			if !info.IsDir() {
 				if strings.HasSuffix(path, ".sql") {
-					return this.installFile(path)
+					return runner.installFile(path)
 				}
 			}
 
@@ -33,12 +33,12 @@ func (this Runner) Run() error {
 	)
 }
 
-func (this Runner) installFile(file string) error {
-	migration := NewMigration(this.Bean, file)
+func (runner Runner) installFile(file string) error {
+	migration := NewMigration(runner.Bean, file)
 	path := migration.RealPath()
 
-	if !migration.DriverMatch(this.Driver) {
-		this.Logger.Debug(
+	if !migration.DriverMatch(runner.Driver) {
+		runner.Logger.Debug(
 			"👉 driver unmatched",
 			zap.String("bean", migration.Bundle),
 			zap.String("path", path),
@@ -47,17 +47,17 @@ func (this Runner) installFile(file string) error {
 		return nil
 	}
 
-	if can, err := migration.IsExecuted(this.Tx); nil != err {
+	if can, err := migration.IsExecuted(runner.Tx); nil != err {
 		return err
 	} else if can {
-		if migration.DriverMatch(this.Driver) {
+		if migration.DriverMatch(runner.Driver) {
 			content, err := ioutil.ReadFile(path)
 			if nil != err {
 				return err
 			}
 
-			if err := this.Tx.Exec(string(content)).Error; nil != err {
-				this.Logger.Info(
+			if err := runner.Tx.Exec(string(content)).Error; nil != err {
+				runner.Logger.Info(
 					"⚡️ executed migration",
 					zap.String("bean", migration.Bundle),
 					zap.String("path", path),
@@ -65,7 +65,7 @@ func (this Runner) installFile(file string) error {
 
 				return err
 			} else {
-				return migration.Save(this.Tx)
+				return migration.Save(runner.Tx)
 			}
 		}
 	}

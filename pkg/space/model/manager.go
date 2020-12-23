@@ -12,6 +12,7 @@ type ManagerRelationship struct {
 	UpdatedAt       time.Time `json:"updatedAt"`
 }
 
-func (this ManagerRelationship) TableName() string {
+// TODO: Review this
+func (ManagerRelationship) TableName() string {
 	return "TableManagerEdge"
 }

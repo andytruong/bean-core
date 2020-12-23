@@ -2,7 +2,7 @@ package dto
 
 import (
 	"bean/components/scalar"
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/pkg/access/model"
 )
 
@@ -40,7 +40,7 @@ type SessionCreateContextInput struct {
 }
 
 type SessionCreateOutcome struct {
-	Errors  []*util2.Error `json:"errors"`
+	Errors  []*util.Error  `json:"errors"`
 	Token   *string        `json:"token"`
 	Session *model.Session `json:"session"`
 }

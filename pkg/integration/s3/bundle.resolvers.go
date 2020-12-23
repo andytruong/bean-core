@@ -7,7 +7,7 @@ import (
 	"bean/pkg/integration/s3/model/dto"
 )
 
-func newResolvers(this *S3IntegrationBundle) map[string]interface{} {
+func newResolvers(this *S3Bundle) map[string]interface{} {
 	return map[string]interface{}{
 		"Mutation": map[string]interface{}{
 			"S3Mutation": func(ctx context.Context) (*dto.S3Mutation, error) {

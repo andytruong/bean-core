@@ -8,22 +8,22 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 
-	util2 "bean/components/util"
-	connect2 "bean/components/util/connect"
+	"bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/user/api/fixtures"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
 )
 
 func tearDown(this *UserBundle) {
-	this.db.Table(connect2.TableUserEmail).Where("1").Delete(&model.UserEmail{})
+	this.db.Table(connect.TableUserEmail).Where("1").Delete(&model.UserEmail{})
 }
 
 func Test(t *testing.T) {
 	ass := assert.New(t)
-	db := util2.MockDatabase()
-	this := NewUserBundle(db, util2.MockLogger(), util2.MockIdentifier())
-	util2.MockInstall(this, db)
+	db := util.MockDatabase()
+	this := NewUserBundle(db, util.MockLogger(), util.MockIdentifier())
+	util.MockInstall(this, db)
 	iCreate := fixtures.NewUserCreateInputFixture()
 
 	t.Run("Create", func(t *testing.T) {
@@ -61,9 +61,9 @@ func Test(t *testing.T) {
 
 func Test_Update(t *testing.T) {
 	ass := assert.New(t)
-	db := util2.MockDatabase()
-	this := NewUserBundle(db, util2.MockLogger(), util2.MockIdentifier())
-	util2.MockInstall(this, db)
+	db := util.MockDatabase()
+	this := NewUserBundle(db, util.MockLogger(), util.MockIdentifier())
+	util.MockInstall(this, db)
 	iCreate := fixtures.NewUserCreateInputFixture()
 
 	t.Run("Update", func(t *testing.T) {
@@ -83,7 +83,7 @@ func Test_Update(t *testing.T) {
 			})
 
 			ass.NoError(err)
-			ass.Equal(oUpdate.Errors[0].Code.String(), util2.ErrorCodeConflict.String())
+			ass.Equal(oUpdate.Errors[0].Code.String(), util.ErrorCodeConflict.String())
 		})
 
 		t.Run("update password", func(t *testing.T) {

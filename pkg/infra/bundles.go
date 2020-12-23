@@ -14,103 +14,103 @@ type (
 		user      *user.UserBundle
 		space     *space.SpaceBundle
 		access    *access.AccessBundle
-		s3        *s3.S3IntegrationBundle
-		mailer    *mailer.MailerIntegrationBundle
+		s3        *s3.S3Bundle
+		mailer    *mailer.MailerBundle
 	}
 )
 
-func (this *bundles) User() (*user.UserBundle, error) {
+func (list *bundles) User() (*user.UserBundle, error) {
 	var err error
 
-	if nil == this.user {
-		db, err := this.container.dbs.master()
+	if nil == list.user {
+		db, err := list.container.dbs.master()
 		if nil != err {
 			return nil, err
 		}
 
-		this.user = user.NewUserBundle(
+		list.user = user.NewUserBundle(
 			db,
-			this.container.logger,
-			this.container.Identifier(),
+			list.container.logger,
+			list.container.Identifier(),
 		)
 	}
 
-	return this.user, err
+	return list.user, err
 }
 
-func (this *bundles) Space() (*space.SpaceBundle, error) {
+func (list *bundles) Space() (*space.SpaceBundle, error) {
 	var err error
 
-	if nil == this.space {
-		db, err := this.container.dbs.master()
+	if nil == list.space {
+		db, err := list.container.dbs.master()
 		if nil != err {
 			return nil, err
 		}
 
-		mUser, err := this.User()
+		mUser, err := list.User()
 		if nil != err {
 			return nil, err
 		}
 
-		this.space = space.NewSpaceBundle(
+		list.space = space.NewSpaceBundle(
 			db,
-			this.container.logger,
-			this.container.Identifier(),
+			list.container.logger,
+			list.container.Identifier(),
 			mUser,
-			this.container.Bundles.Space,
+			list.container.Bundles.Space,
 		)
 	}
 
-	return this.space, err
+	return list.space, err
 }
 
-func (this *bundles) Access() (*access.AccessBundle, error) {
-	if nil == this.access {
-		db, err := this.container.dbs.master()
+func (list *bundles) Access() (*access.AccessBundle, error) {
+	if nil == list.access {
+		db, err := list.container.dbs.master()
 		if nil != err {
 			return nil, err
 		}
 
-		mUser, err := this.User()
+		mUser, err := list.User()
 		if nil != err {
 			return nil, err
 		}
 
-		mSpace, err := this.Space()
+		mSpace, err := list.Space()
 		if nil != err {
 			return nil, err
 		}
 
-		this.access = access.NewAccessBundle(
+		list.access = access.NewAccessBundle(
 			db,
-			this.container.Identifier(),
-			this.container.logger,
+			list.container.Identifier(),
+			list.container.logger,
 			mUser,
 			mSpace,
-			this.container.Bundles.Access,
+			list.container.Bundles.Access,
 		)
 	}
 
-	return this.access, nil
+	return list.access, nil
 }
 
-func (this *bundles) Mailer() (*mailer.MailerIntegrationBundle, error) {
-	if nil == this.mailer {
-		this.mailer = mailer.NewMailerIntegration(this.container.Bundles.Integration.Mailer, this.container.logger)
+func (list *bundles) Mailer() (*mailer.MailerBundle, error) {
+	if nil == list.mailer {
+		list.mailer = mailer.NewMailerBundle(list.container.Bundles.Integration.Mailer, list.container.logger)
 	}
 
-	return this.mailer, nil
+	return list.mailer, nil
 }
 
-func (this *bundles) S3() (*s3.S3IntegrationBundle, error) {
-	if nil == this.s3 {
-		db, err := this.container.dbs.master()
+func (list *bundles) S3() (*s3.S3Bundle, error) {
+	if nil == list.s3 {
+		db, err := list.container.dbs.master()
 		if nil != err {
 			return nil, err
 		}
 
-		this.s3 = s3.NewS3Integration(db, this.container.Identifier(), this.container.logger, this.container.Bundles.Integration.S3)
+		list.s3 = s3.NewS3Integration(db, list.container.Identifier(), list.container.logger, list.container.Bundles.Integration.S3)
 	}
 
-	return this.s3, nil
+	return list.s3, nil
 }

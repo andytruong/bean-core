@@ -19,6 +19,9 @@ server:
 migrate:
 	@CONFIG="config.yaml" go run -mod=vendor cmd/main.go migrate
 
+# ---------------------
+# Dev commands
+# ---------------------
 dev.test:
 	@go test -mod=vendor -race -count=1 ./... -v
 
@@ -35,6 +38,9 @@ dev.clean:
 	@go mod tidy
 	@git fetch --prune origin
 	@rm -rf ./pkg/infra/gql/__tmp__*
+
+dev.staticCheck:
+	@staticcheck ./...
 
 dev.check-size:
 	@go build -mod=vendor -o /tmp/go-bean cmd/main.go

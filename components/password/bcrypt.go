@@ -7,7 +7,7 @@ import (
 type BCryptAlgorithm struct {
 }
 
-func (this BCryptAlgorithm) Encrypt(rawPassword string) (string, error) {
+func (algo BCryptAlgorithm) Encrypt(rawPassword string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(rawPassword), 3)
 
 	if nil != err {
@@ -17,6 +17,6 @@ func (this BCryptAlgorithm) Encrypt(rawPassword string) (string, error) {
 	return string(hash), nil
 }
 
-func (this BCryptAlgorithm) Name() string {
+func (algo BCryptAlgorithm) Name() string {
 	return "bcrypt"
 }

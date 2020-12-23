@@ -16,16 +16,16 @@ type Body struct {
 	Attachments []string `json:"attachments"`
 }
 
-func (this Message) Send(dialer *gomail.Dialer) error {
-	m := gomail.NewMessage()
-	m.SetHeader("From", this.From)
-	m.SetHeader("To", this.Recipient)
-	m.SetHeader("Subject", this.Body.Subject)
-	m.SetBody("text/html", this.Body.HTML)
+func (m Message) Send(dialer *gomail.Dialer) error {
+	msg := gomail.NewMessage()
+	msg.SetHeader("From", m.From)
+	msg.SetHeader("To", m.Recipient)
+	msg.SetHeader("Subject", m.Body.Subject)
+	msg.SetBody("text/html", m.Body.HTML)
 
-	for _, path := range this.Body.Attachments {
-		m.Attach(path)
+	for _, path := range m.Body.Attachments {
+		msg.Attach(path)
 	}
 
-	return dialer.DialAndSend(m)
+	return dialer.DialAndSend(msg)
 }

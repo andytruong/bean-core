@@ -18,6 +18,6 @@ type Space struct {
 	Language  api.Language `json:"language"`
 }
 
-func (this Space) TableName() string {
+func (Space) TableName() string {
 	return "spaces"
 }

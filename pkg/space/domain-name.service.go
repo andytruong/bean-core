@@ -13,9 +13,9 @@ type DomainNameService struct {
 	bundle *SpaceBundle
 }
 
-func (this *DomainNameService) createMultiple(tx *gorm.DB, space *model.Space, in dto.SpaceCreateInput) error {
+func (service *DomainNameService) createMultiple(tx *gorm.DB, space *model.Space, in dto.SpaceCreateInput) error {
 	if nil != in.Object.DomainNames.Primary {
-		err := this.create(tx, space, in.Object.DomainNames.Primary, true)
+		err := service.create(tx, space, in.Object.DomainNames.Primary, true)
 		if nil != err {
 			return err
 		}
@@ -23,7 +23,7 @@ func (this *DomainNameService) createMultiple(tx *gorm.DB, space *model.Space, i
 
 	if nil != in.Object.DomainNames.Secondary {
 		for _, in := range in.Object.DomainNames.Secondary {
-			err := this.create(tx, space, in, false)
+			err := service.create(tx, space, in, false)
 			if nil != err {
 				return err
 			}
@@ -33,9 +33,9 @@ func (this *DomainNameService) createMultiple(tx *gorm.DB, space *model.Space, i
 	return nil
 }
 
-func (this *DomainNameService) create(tx *gorm.DB, space *model.Space, in *dto.DomainNameInput, isPrimary bool) error {
+func (service *DomainNameService) create(tx *gorm.DB, space *model.Space, in *dto.DomainNameInput, isPrimary bool) error {
 	domain := model.DomainName{
-		ID:         this.bundle.id.MustULID(),
+		ID:         service.bundle.id.MustULID(),
 		SpaceId:    space.ID,
 		IsVerified: *in.Verified,
 		Value:      *in.Value,
@@ -48,14 +48,14 @@ func (this *DomainNameService) create(tx *gorm.DB, space *model.Space, in *dto.D
 	return tx.Table("space_domains").Create(&domain).Error
 }
 
-func (this *DomainNameService) Find(space *model.Space) (*model.DomainNames, error) {
+func (service *DomainNameService) Find(space *model.Space) (*model.DomainNames, error) {
 	out := &model.DomainNames{
 		Primary:   nil,
 		Secondary: nil,
 	}
 
 	var domainNames []*model.DomainName
-	err := this.bundle.db.
+	err := service.bundle.db.
 		Where("space_id = ?", space.ID).
 		Find(&domainNames).
 		Error

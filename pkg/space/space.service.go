@@ -9,7 +9,7 @@ import (
 
 	"bean/components/claim"
 	"bean/components/scalar"
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/pkg/infra/api"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
@@ -19,9 +19,9 @@ type SpaceService struct {
 	bundle *SpaceBundle
 }
 
-func (this SpaceService) Load(ctx context.Context, id string) (*model.Space, error) {
+func (service SpaceService) Load(ctx context.Context, id string) (*model.Space, error) {
 	obj := &model.Space{}
-	err := this.bundle.db.WithContext(ctx).First(&obj, "id = ?", id).Error
+	err := service.bundle.db.WithContext(ctx).First(&obj, "id = ?", id).Error
 	if nil != err {
 		return nil, err
 	}
@@ -29,30 +29,30 @@ func (this SpaceService) Load(ctx context.Context, id string) (*model.Space, err
 	return obj, nil
 }
 
-func (this SpaceService) FindOne(ctx context.Context, filters dto.SpaceFilters) (*model.Space, error) {
+func (service SpaceService) FindOne(ctx context.Context, filters dto.SpaceFilters) (*model.Space, error) {
 	if nil != filters.ID {
-		return this.Load(ctx, *filters.ID)
+		return service.Load(ctx, *filters.ID)
 	} else if nil != filters.Domain {
 		domain := &model.DomainName{}
-		err := this.bundle.db.WithContext(ctx).Where("value = ?", filters.Domain).First(&domain).Error
+		err := service.bundle.db.WithContext(ctx).Where("value = ?", filters.Domain).First(&domain).Error
 		if nil != err {
 			return nil, err
 		} else if !domain.IsActive {
 			return nil, errors.New("domain name is not active")
 		}
 
-		return this.Load(ctx, domain.SpaceId)
+		return service.Load(ctx, domain.SpaceId)
 	}
 
 	return nil, nil
 }
 
-func (this *SpaceService) Create(tx *gorm.DB, in dto.SpaceCreateInput) (*dto.SpaceCreateOutcome, error) {
-	space, err := this.create(tx, in)
+func (service *SpaceService) Create(tx *gorm.DB, in dto.SpaceCreateInput) (*dto.SpaceCreateOutcome, error) {
+	space, err := service.create(tx, in)
 	if nil != err {
 		return nil, err
 	} else {
-		err := this.createRelationships(tx, space, in)
+		err := service.createRelationships(tx, space, in)
 		if nil != err {
 			return nil, err
 		}
@@ -61,10 +61,10 @@ func (this *SpaceService) Create(tx *gorm.DB, in dto.SpaceCreateInput) (*dto.Spa
 	}
 }
 
-func (this *SpaceService) create(tx *gorm.DB, in dto.SpaceCreateInput) (*model.Space, error) {
+func (service *SpaceService) create(tx *gorm.DB, in dto.SpaceCreateInput) (*model.Space, error) {
 	space := &model.Space{
-		ID:        this.bundle.id.MustULID(),
-		Version:   this.bundle.id.MustULID(),
+		ID:        service.bundle.id.MustULID(),
+		Version:   service.bundle.id.MustULID(),
 		Kind:      in.Object.Kind,
 		Title:     *in.Object.Title,
 		Language:  in.Object.Language,
@@ -90,14 +90,14 @@ func (this *SpaceService) create(tx *gorm.DB, in dto.SpaceCreateInput) (*model.S
 	return space, nil
 }
 
-func (this *SpaceService) createRelationships(tx *gorm.DB, space *model.Space, in dto.SpaceCreateInput) error {
-	if err := this.bundle.domainNameService.createMultiple(tx, space, in); nil != err {
+func (service *SpaceService) createRelationships(tx *gorm.DB, space *model.Space, in dto.SpaceCreateInput) error {
+	if err := service.bundle.domainNameService.createMultiple(tx, space, in); nil != err {
 		return err
 	}
 
 	// space configuration
 	{
-		if err := this.bundle.configService.CreateFeatures(tx, space, in); nil != err {
+		if err := service.bundle.configService.CreateFeatures(tx, space, in); nil != err {
 			return err
 		}
 	}
@@ -117,17 +117,17 @@ func (this *SpaceService) createRelationships(tx *gorm.DB, space *model.Space, i
 			},
 		}
 
-		if ownerRole, err := this.create(tx, ownerRoleInput); nil != err {
+		if ownerRole, err := service.create(tx, ownerRoleInput); nil != err {
 			return err
 		} else {
 			// membership of user -> organisation
-			_, err = this.bundle.MemberService.doCreate(tx, space.ID, claims.UserId(), true)
+			_, err = service.bundle.MemberService.doCreate(tx, space.ID, claims.UserId(), true)
 			if nil != err {
 				return err
 			}
 
 			// membership of user -> owner role
-			_, err = this.bundle.MemberService.doCreate(tx, ownerRole.ID, claims.UserId(), true)
+			_, err = service.bundle.MemberService.doCreate(tx, ownerRole.ID, claims.UserId(), true)
 			if nil != err {
 				return err
 			}
@@ -137,10 +137,10 @@ func (this *SpaceService) createRelationships(tx *gorm.DB, space *model.Space, i
 	return nil
 }
 
-func (this SpaceService) Update(tx *gorm.DB, obj model.Space, in dto.SpaceUpdateInput) (*dto.SpaceCreateOutcome, error) {
+func (service SpaceService) Update(tx *gorm.DB, obj model.Space, in dto.SpaceUpdateInput) (*dto.SpaceCreateOutcome, error) {
 	// check version for conflict
 	if in.SpaceVersion != obj.Version {
-		return nil, util2.ErrorVersionConflict
+		return nil, util.ErrorVersionConflict
 	}
 
 	if nil != in.Object.Language {
@@ -148,12 +148,12 @@ func (this SpaceService) Update(tx *gorm.DB, obj model.Space, in dto.SpaceUpdate
 	}
 
 	// change version
-	obj.Version = this.bundle.id.MustULID()
+	obj.Version = service.bundle.id.MustULID()
 	if err := tx.Save(obj).Error; nil != err {
 		return nil, err
 	}
 
-	err := this.bundle.configService.updateFeatures(tx, &obj, in)
+	err := service.bundle.configService.updateFeatures(tx, &obj, in)
 	if nil != err {
 		return nil, err
 	}

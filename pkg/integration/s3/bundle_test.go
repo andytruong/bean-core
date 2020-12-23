@@ -13,18 +13,18 @@ import (
 
 	"bean/components/claim"
 	"bean/components/scalar"
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/components/util/connect"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
 
-func bean() *S3IntegrationBundle {
-	db := util2.MockDatabase()
-	id := util2.MockIdentifier()
-	logger := util2.MockLogger()
+func bean() *S3Bundle {
+	db := util.MockDatabase()
+	id := util.MockIdentifier()
+	logger := util.MockLogger()
 	bundle := NewS3Integration(db, id, logger, &S3Configuration{Key: "01EBWB516AP6BQD7"})
-	util2.MockInstall(bundle, db)
+	util.MockInstall(bundle, db)
 
 	return bundle
 }
@@ -127,7 +127,7 @@ func Test(t *testing.T) {
 					})
 
 					ass.Error(err)
-					ass.Equal(err, util2.ErrorUselessInput)
+					ass.Equal(err, util.ErrorUselessInput)
 					ass.Nil(oUpdate)
 				})
 
@@ -255,7 +255,7 @@ func Test_UploadToken(t *testing.T) {
 		},
 	}
 
-	ctx := context.WithValue(context.Background(), claim.ContextKey, &claim.Payload{
+	ctx := context.WithValue(context.Background(), claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{
 			Audience: this.id.MustULID(),
 			Id:       this.id.MustULID(),

@@ -22,6 +22,6 @@ type ConfigBucket struct {
 	IsPublished bool              `json:"isPublished"`
 }
 
-func (this ConfigBucket) TableName() string {
+func (ConfigBucket) TableName() string {
 	return "config_buckets"
 }

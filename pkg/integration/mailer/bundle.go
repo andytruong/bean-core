@@ -13,8 +13,8 @@ import (
 	"bean/pkg/integration/mailer/model"
 )
 
-func NewMailerIntegration(genetic *MailerConfiguration, logger *zap.Logger) *MailerIntegrationBundle {
-	this := &MailerIntegrationBundle{
+func NewMailerBundle(genetic *MailerConfiguration, logger *zap.Logger) *MailerBundle {
+	this := &MailerBundle{
 		config: genetic,
 		logger: logger,
 	}
@@ -24,7 +24,7 @@ func NewMailerIntegration(genetic *MailerConfiguration, logger *zap.Logger) *Mai
 	return this
 }
 
-type MailerIntegrationBundle struct {
+type MailerBundle struct {
 	module.AbstractBundle
 
 	config    *MailerConfiguration
@@ -32,7 +32,7 @@ type MailerIntegrationBundle struct {
 	resolvers map[string]interface{}
 }
 
-func (this MailerIntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
+func (bundle MailerBundle) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -40,7 +40,7 @@ func (this MailerIntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
 
 	runner := migrate.Runner{
 		Tx:     tx,
-		Logger: this.logger,
+		Logger: bundle.logger,
 		Driver: driver,
 		Bean:   "integration.mailer",
 		Dir:    path.Dir(filename) + "/model/migration/",
@@ -49,18 +49,18 @@ func (this MailerIntegrationBundle) Migrate(tx *gorm.DB, driver string) error {
 	return runner.Run()
 }
 
-func (this MailerIntegrationBundle) Dependencies() []module.Bundle {
+func (bundle MailerBundle) Dependencies() []module.Bundle {
 	panic("implement me")
 }
 
-func (this MailerIntegrationBundle) Send(message model.Message) error {
+func (bundle MailerBundle) Send(message model.Message) error {
 	if true {
 		return nil
 	}
 
-	if this.config.Reroute.Enabled {
+	if bundle.config.Reroute.Enabled {
 		// TODO: check matching
-		message.Recipient = this.config.Reroute.Recipient
+		message.Recipient = bundle.config.Reroute.Recipient
 	}
 
 	dialer := &gomail.Dialer{} // gomail.NewDialer(host, port, username, password)
@@ -68,6 +68,6 @@ func (this MailerIntegrationBundle) Send(message model.Message) error {
 	return message.Send(dialer)
 }
 
-func (this *MailerIntegrationBundle) GraphqlResolver() map[string]interface{} {
-	return this.resolvers
+func (bundle *MailerBundle) GraphqlResolver() map[string]interface{} {
+	return bundle.resolvers
 }
