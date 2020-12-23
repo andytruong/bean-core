@@ -9,6 +9,7 @@ import (
 
 	"bean/components/claim"
 	"bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	mSpace "bean/pkg/space/model"
@@ -19,23 +20,25 @@ type SessionService struct {
 	bundle *AccessBundle
 }
 
-func (service *SessionService) Create(tx *gorm.DB, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+func (service *SessionService) Create(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 	if nil != in.UseCredentials {
-		return service.createUseCredentials(tx, in.UseCredentials)
+		return service.createUseCredentials(ctx, in.UseCredentials)
 	}
 
 	if nil != in.GenerateOTLT {
-		return service.generateOTLT(tx, in.GenerateOTLT)
+		return service.generateOTLT(ctx, in.GenerateOTLT)
 	}
 
 	if nil != in.UseOTLT {
-		return service.useOTLT(tx, in.UseOTLT)
+		return service.useOTLT(ctx, in.UseOTLT)
 	}
 
 	return nil, nil
 }
 
-func (service *SessionService) createUseCredentials(tx *gorm.DB, in *dto.SessionCreateUseCredentialsInput) (*dto.SessionCreateOutcome, error) {
+func (service *SessionService) createUseCredentials(ctx context.Context, in *dto.SessionCreateUseCredentialsInput) (*dto.SessionCreateOutcome, error) {
+	tx := connect.ContextToDB(ctx)
+
 	// load email object, so we have userID
 	email := mUser.UserEmail{}
 	{
@@ -64,18 +67,18 @@ func (service *SessionService) createUseCredentials(tx *gorm.DB, in *dto.Session
 		}
 	}
 
-	return service.create(tx, claim.KindCredentials, email.UserId, in.SpaceID, func(session *model.Session) {
+	return service.create(ctx, claim.KindCredentials, email.UserId, in.SpaceID, func(session *model.Session) {
 		session.CodeChallengeMethod = in.CodeChallengeMethod
 		session.CodeChallenge = in.CodeChallenge
 	})
 }
 
-func (service *SessionService) generateOTLT(tx *gorm.DB, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
-	return service.create(tx, claim.KindOTLT, in.UserID, in.SpaceID, nil)
+func (service *SessionService) generateOTLT(ctx context.Context, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
+	return service.create(ctx, claim.KindOTLT, in.UserID, in.SpaceID, nil)
 }
 
-func (service *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
-	oneTimeSession, err := service.LoadByToken(tx, in.Token)
+func (service *SessionService) useOTLT(ctx context.Context, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
+	oneTimeSession, err := service.LoadByToken(ctx, in.Token)
 	if nil != err {
 		return nil, err
 	}
@@ -84,7 +87,7 @@ func (service *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT
 		return nil, util.ErrorInvalidArgument
 	}
 
-	out, err := service.create(tx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.SpaceId, func(session *model.Session) {
+	out, err := service.create(ctx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.SpaceId, func(session *model.Session) {
 		session.CodeChallengeMethod = in.CodeChallengeMethod
 		session.CodeChallenge = in.CodeChallenge
 	})
@@ -94,7 +97,7 @@ func (service *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT
 
 	// delete OTLT session
 	{
-		_, err := service.Delete(tx, oneTimeSession)
+		_, err := service.Delete(ctx, oneTimeSession)
 		if nil != err {
 			return nil, err
 		}
@@ -104,10 +107,11 @@ func (service *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT
 }
 
 func (service SessionService) create(
-	tx *gorm.DB,
+	ctx context.Context,
 	kind claim.Kind, userId string, spaceId string,
 	create func(*model.Session),
 ) (*dto.SessionCreateOutcome, error) {
+	tx := connect.ContextToDB(ctx)
 	membership := &mSpace.Membership{}
 
 	// validate membership
@@ -159,12 +163,10 @@ func (service SessionService) create(
 	}, nil
 }
 
-func (service SessionService) load(ctx context.Context, db *gorm.DB, id string) (*model.Session, error) {
+func (service SessionService) load(ctx context.Context, id string) (*model.Session, error) {
 	session := &model.Session{}
-	err := db.
-		WithContext(ctx).
-		First(&session, "id = ?", id).
-		Error
+	db := connect.ContextToDB(ctx)
+	err := db.WithContext(ctx).First(&session, "id = ?", id).Error
 
 	if err == gorm.ErrRecordNotFound {
 		return nil, errors.New("session not found: " + id)
@@ -181,12 +183,10 @@ func (service SessionService) load(ctx context.Context, db *gorm.DB, id string) 
 	return session, nil
 }
 
-func (service SessionService) LoadByToken(db *gorm.DB, token string) (*model.Session, error) {
+func (service SessionService) LoadByToken(ctx context.Context, token string) (*model.Session, error) {
+	db := connect.ContextToDB(ctx)
 	session := &model.Session{}
-	err := db.
-		First(&session, "hashed_token = ?", service.bundle.idr.Encode(token)).
-		Error
-
+	err := db.First(&session, "hashed_token = ?", service.bundle.idr.Encode(token)).Error
 	if err == gorm.ErrRecordNotFound {
 		return nil, errors.New("session not found: " + service.bundle.idr.Encode(token))
 	}
@@ -202,7 +202,8 @@ func (service SessionService) LoadByToken(db *gorm.DB, token string) (*model.Ses
 	return session, nil
 }
 
-func (service SessionService) Delete(tx *gorm.DB, session *model.Session) (*dto.SessionArchiveOutcome, error) {
+func (service SessionService) Delete(ctx context.Context, session *model.Session) (*dto.SessionArchiveOutcome, error) {
+	tx := connect.ContextToDB(ctx)
 	session.IsActive = false
 	session.Version = service.bundle.idr.MustULID()
 	session.UpdatedAt = time.Now()

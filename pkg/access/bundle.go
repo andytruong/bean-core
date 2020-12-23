@@ -15,18 +15,16 @@ import (
 )
 
 func NewAccessBundle(
-	db *gorm.DB,
-	id *unique.Identifier,
+	idr *unique.Identifier,
 	logger *zap.Logger,
 	userBundle *user.UserBundle,
 	spaceBundle *space.SpaceBundle,
-	config *AccessConfiguration,
+	cnf *AccessConfiguration,
 ) *AccessBundle {
 	this := &AccessBundle{
-		cnf:         config.init(),
+		cnf:         cnf.init(),
 		logger:      logger,
-		con:         db,
-		idr:         id,
+		idr:         idr,
 		userBundle:  userBundle,
 		spaceBundle: spaceBundle,
 	}
@@ -44,7 +42,6 @@ type (
 
 		cnf            *AccessConfiguration
 		logger         *zap.Logger
-		con            *gorm.DB
 		idr            *unique.Identifier
 		sessionService *SessionService
 		JwtService     *JwtService
