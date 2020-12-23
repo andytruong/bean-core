@@ -10,7 +10,6 @@ import (
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/unique"
-	"bean/pkg/config"
 	"bean/pkg/user"
 )
 
@@ -48,7 +47,6 @@ type SpaceBundle struct {
 	db                *gorm.DB
 	id                *unique.Identifier
 	userBundle        *user.UserBundle
-	configBundle      *config.ConfigBundle
 	resolvers         map[string]interface{}
 	configService     *ConfigService
 	domainNameService *DomainNameService
