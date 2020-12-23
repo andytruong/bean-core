@@ -218,13 +218,10 @@ func (this MemberService) Update(tx *gorm.DB, in dto.SpaceMembershipUpdateInput,
 	err := tx.Save(&obj).Error
 	if nil != err {
 		return nil, err
-	} else {
-		// TODO: remove manager
-		// …
-
-		// TODO: add manager
-		// …
 	}
+
+	// TODO: remove manager
+	// TODO: add manager
 
 	return &dto.SpaceMembershipCreateOutcome{Errors: nil, Membership: obj}, nil
 }

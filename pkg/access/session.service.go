@@ -209,17 +209,16 @@ func (this SessionService) Delete(tx *gorm.DB, session *model.Session) (*dto.Ses
 	err := tx.Save(&session).Error
 	if nil != err {
 		return nil, err
-	} else {
-		// If session.kind is … also archive parent sessions
-		if session.Kind == claim.KindOTLT {
-
-		}
-
-		// If session.kind is KindCredentials/KindAuthenticated also archive child sessions
-		if session.Kind == claim.KindCredentials || session.Kind == claim.KindAuthenticated {
-			// find & archive all child sessions
-		}
 	}
+
+	// TODO
+	// If session.kind is … also archive parent sessions
+	// if session.Kind == claim.KindOTLT {}
+
+	// TODO
+	// If session.kind is KindCredentials/KindAuthenticated also archive child sessions
+	// find & archive all child sessions
+	// if session.Kind == claim.KindCredentials || session.Kind == claim.KindAuthenticated {}
 
 	return &dto.SessionArchiveOutcome{Errors: nil, Result: true}, nil
 }
