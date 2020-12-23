@@ -1,9 +1,43 @@
-extend type Query {
-    accessQuery: AccessQuery!
+# =====================
+# Entites
+# =====================
+enum AccessScope { Anonymous Authenticated }
+
+type Session {
+    id:        ID!
+    version:   ID!
+    user:      User
+    space:     Space!
+    scopes:    [AccessScope]
+    context:   SessionContext
+    isActive:  Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+    expiredAt: Time!
+    jwt(codeVerifier: String!): JWT!
 }
 
-extend type Mutation {
-    accessMutation: AccessMutation!
+type SessionContext {
+    ipAddress: IP
+    country: CountryCode
+    deviceType: DeviceType
+    deviceName: String
+}
+
+enum DeviceType {
+    Desktop
+    Laptop
+    SmartPhone
+    Tablet
+    TV
+}
+
+
+# =====================
+# Query
+# =====================
+extend type Query {
+    accessQuery: AccessQuery!
 }
 
 type AccessQuery {
@@ -14,11 +48,71 @@ type AccessSessionQuery {
     load(token: ID!): Session
 }
 
+# =====================
+# Mutation
+# =====================
+extend type Mutation {
+    accessMutation: AccessMutation!
+}
+
 type AccessMutation {
     session: AccessSessionMutation!
 }
 
+# ---------------------
+# Mutation.accessMutation.create()
+# ---------------------
 type AccessSessionMutation {
     create(input: SessionCreateInput): SessionCreateOutcome!
+}
+
+input SessionCreateInput {
+    useCredentials:  SessionCreateUseCredentialsInput
+    generateOTLT: SessionCreateGenerateOTLT
+    useOTLT: SessionCreateUseOTLT
+    context: SessionCreateContextInput
+}
+
+input SessionCreateUseCredentialsInput {
+    spaceId: ID!
+    email: EmailAddress!
+    hashedPassword: String!
+    codeChallengeMethod: String!
+    codeChallenge: String!
+}
+
+input SessionCreateGenerateOTLT {
+    spaceId: String!
+    userId: String!
+}
+
+input SessionCreateUseOTLT {
+    token: String!
+    codeChallengeMethod: String!
+    codeChallenge: String!
+}
+
+input SessionCreateContextInput {
+    ipAddress: IP
+    country: CountryCode
+    deviceType: DeviceType
+    deviceName: String
+}
+
+type SessionCreateOutcome {
+    errors: [Error!]
+    session: Session
+    token: String
+}
+
+# ---------------------
+# Mutation.accessMutation.archive()
+# ---------------------
+extend type AccessSessionMutation {
     archive: SessionArchiveOutcome! @requireAuth
+}
+
+type SessionArchiveOutcome {
+    errors: [Error!]
+    result: Boolean!
 }

@@ -1,8 +1,0 @@
-input ValidationInput {
-    hashedToken: String!
-}
-
-type ValidationOutcome {
-    status: Boolean!
-    errors: [Error!]
-}

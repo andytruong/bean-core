@@ -8,23 +8,24 @@ Using credentials to get refresh token (`outcome.token`) to access system:
 
 ```graphql
 mutation ($spaceId: ID!, $email: EmailAddress!) {
-    sessionCreate(
+  accessMutation {
+    session {
+      create(
         input: {
-            credentials: {
-                spaceId: $spaceId,
-                email: $email
-                hashedPassword: String!
-                codeChallengeMethod: "S256",
-                codeChallenge: "SHA256($codeVerifier)"
-            }
+          useCredentials: {
+            spaceId: $spaceId,
+            email: $email,
+            hashedPassword: "$hashedPassword",
+            codeChallengeMethod: "S256",
+            codeChallenge: "SHA256($codeVerifier)"
+          }
         }
-    ) {
-        errors  { code fields message }
-
-        # Token can be used to refresh the token.
-        # -------
+      ) {
+        errors { code fields message }
         token
+      }
     }
+  }
 }
 ```
 
@@ -36,9 +37,14 @@ and `$codeVerifier` to get it:
 
 ```graphql
 query ($refreshToken: String!, $codeVerifier: String!) {
-    session(token: $refreshToken) {
-        accessToken: jwt($codeVerifier)
+  accessQuery {
+    session {
+      load(token: $refreshToken) {
+        id
+        accessToken: jwt(codeVerifier: $codeVerifier)
+      }
     }
+  }
 }
 ```
 
@@ -53,29 +59,36 @@ curl http://path/to/endpoint -H "Authorization: Bearer ${accessToken}"
 ====
 
 ```graphql
-mutation (token: String!) {
-    sessionCreate(
+mutation ($token: String!, $codeVerifier: String!) {
+  accessMutation {
+    session {
+      create (
         input: {
-            oneTimeLogin: { token: $token }
-            codeChallengeMethod: "S256",
-            codeChallenge: "SHA256(…)"
+          useOTLT: {
+            token: $token
+            codeChallengeMethod: "S256"
+            codeChallenge: "SH256(…)"
+          }
         }
-    ) {
-        errors  { code fields message }
-        session { jwt }
+      ) {
+        errors { code fields message }
+        session { jwt(codeVerifier: $codeVerifier) }
         token
+      }
     }
+  }
 }
+
 ```
 
 4. Terminate the session
 ====
 
-Related sessions will be also terminated.
+Related sessions will be also terminated (request with auth header).
 
 ```graphql
 mutation {
-    sessionArchive(token: $accessToken) {
+    sessionArchive {
         errors  { code fields message }
         result
     }

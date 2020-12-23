@@ -471,11 +471,6 @@ type ComplexityRoot struct {
 	UserQuery struct {
 		Load func(childComplexity int, id string) int
 	}
-
-	ValidationOutcome struct {
-		Errors func(childComplexity int) int
-		Status func(childComplexity int) int
-	}
 }
 
 type AccessMutationResolver interface {
@@ -2227,20 +2222,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UserQuery.Load(childComplexity, args["id"].(string)), true
 
-	case "ValidationOutcome.errors":
-		if e.complexity.ValidationOutcome.Errors == nil {
-			break
-		}
-
-		return e.complexity.ValidationOutcome.Errors(childComplexity), true
-
-	case "ValidationOutcome.status":
-		if e.complexity.ValidationOutcome.Status == nil {
-			break
-		}
-
-		return e.complexity.ValidationOutcome.Status(childComplexity), true
-
 	}
 	return 0, false
 }
@@ -2395,7 +2376,10 @@ type ConfigVariable {
     isLocked: Boolean!
 }
 `, BuiltIn: false},
-	{Name: "pkg/access/api/entity.graphql", Input: `enum AccessScope { Anonymous Authenticated }
+	{Name: "pkg/access/api/schema.graphql", Input: `# =====================
+# Entites
+# =====================
+enum AccessScope { Anonymous Authenticated }
 
 type Session {
     id:        ID!
@@ -2425,13 +2409,42 @@ enum DeviceType {
     Tablet
     TV
 }
-`, BuiltIn: false},
-	{Name: "pkg/access/api/mut.session.archive.graphql", Input: `type SessionArchiveOutcome {
-    errors: [Error!]
-    result: Boolean!
+
+
+# =====================
+# Query
+# =====================
+extend type Query {
+    accessQuery: AccessQuery!
 }
-`, BuiltIn: false},
-	{Name: "pkg/access/api/mut.session.create.graphql", Input: `input SessionCreateInput {
+
+type AccessQuery {
+    session: AccessSessionQuery!
+}
+
+type AccessSessionQuery {
+    load(token: ID!): Session
+}
+
+# =====================
+# Mutation
+# =====================
+extend type Mutation {
+    accessMutation: AccessMutation!
+}
+
+type AccessMutation {
+    session: AccessSessionMutation!
+}
+
+# ---------------------
+# Mutation.accessMutation.create()
+# ---------------------
+type AccessSessionMutation {
+    create(input: SessionCreateInput): SessionCreateOutcome!
+}
+
+input SessionCreateInput {
     useCredentials:  SessionCreateUseCredentialsInput
     generateOTLT: SessionCreateGenerateOTLT
     useOTLT: SessionCreateUseOTLT
@@ -2439,7 +2452,7 @@ enum DeviceType {
 }
 
 input SessionCreateUseCredentialsInput {
-    spaceId: String!
+    spaceId: ID!
     email: EmailAddress!
     hashedPassword: String!
     codeChallengeMethod: String!
@@ -2464,44 +2477,23 @@ input SessionCreateContextInput {
     deviceName: String
 }
 
+
 type SessionCreateOutcome {
     errors: [Error!]
     session: Session
     token: String
 }
-`, BuiltIn: false},
-	{Name: "pkg/access/api/query.graphql", Input: `input ValidationInput {
-    hashedToken: String!
-}
 
-type ValidationOutcome {
-    status: Boolean!
-    errors: [Error!]
-}
-`, BuiltIn: false},
-	{Name: "pkg/access/api/schema.graphql", Input: `extend type Query {
-    accessQuery: AccessQuery!
-}
-
-extend type Mutation {
-    accessMutation: AccessMutation!
-}
-
-type AccessQuery {
-    session: AccessSessionQuery!
-}
-
-type AccessSessionQuery {
-    load(token: ID!): Session
-}
-
-type AccessMutation {
-    session: AccessSessionMutation!
-}
-
-type AccessSessionMutation {
-    create(input: SessionCreateInput): SessionCreateOutcome!
+# ---------------------
+# Mutation.accessMutation.archive()
+# ---------------------
+extend type AccessSessionMutation {
     archive: SessionArchiveOutcome! @requireAuth
+}
+
+type SessionArchiveOutcome {
+    errors: [Error!]
+    result: Boolean!
 }
 `, BuiltIn: false},
 	{Name: "pkg/space/api/_mutation.graphql", Input: `extend type Mutation {
@@ -11362,73 +11354,6 @@ func (ec *executionContext) _UserQuery_load(ctx context.Context, field graphql.C
 	return ec.marshalOUser2ᚖbeanᚋpkgᚋuserᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ValidationOutcome_status(ctx context.Context, field graphql.CollectedField, obj *dto.ValidationOutcome) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ValidationOutcome",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Status, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ValidationOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.ValidationOutcome) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ValidationOutcome",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Errors, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*util.Error)
-	fc.Result = res
-	return ec.marshalOError2ᚕᚖbeanᚋcomponentsᚋutilᚐErrorᚄ(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -13490,7 +13415,7 @@ func (ec *executionContext) unmarshalInputSessionCreateUseCredentialsInput(ctx c
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("spaceId"))
-			it.SpaceID, err = ec.unmarshalNString2string(ctx, v)
+			it.SpaceID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14079,26 +14004,6 @@ func (ec *executionContext) unmarshalInputUserUpdateValuesInput(ctx context.Cont
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
 			it.Password, err = ec.unmarshalNUserPasswordInput2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserPasswordInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputValidationInput(ctx context.Context, obj interface{}) (dto.ValidationInput, error) {
-	var it dto.ValidationInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "hashedToken":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hashedToken"))
-			it.HashedToken, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -16732,35 +16637,6 @@ func (ec *executionContext) _UserQuery(ctx context.Context, sel ast.SelectionSet
 				res = ec._UserQuery_load(ctx, field, obj)
 				return res
 			})
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var validationOutcomeImplementors = []string{"ValidationOutcome"}
-
-func (ec *executionContext) _ValidationOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.ValidationOutcome) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, validationOutcomeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ValidationOutcome")
-		case "status":
-			out.Values[i] = ec._ValidationOutcome_status(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "errors":
-			out.Values[i] = ec._ValidationOutcome_errors(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
