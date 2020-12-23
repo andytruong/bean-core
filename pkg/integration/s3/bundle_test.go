@@ -255,7 +255,7 @@ func Test_UploadToken(t *testing.T) {
 		},
 	}
 
-	ctx := context.WithValue(context.Background(), claim.ContextKey, &claim.Payload{
+	ctx := context.WithValue(context.Background(), claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{
 			Audience: this.id.MustULID(),
 			Id:       this.id.MustULID(),

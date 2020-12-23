@@ -9,7 +9,7 @@ import (
 )
 
 func ContextToPayload(ctx context.Context) *Payload {
-	if claims, ok := ctx.Value("bean.claims").(*Payload); ok {
+	if claims, ok := ctx.Value(ClaimsContextKey).(*Payload); ok {
 		return claims
 	}
 

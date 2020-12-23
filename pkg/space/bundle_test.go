@@ -68,7 +68,7 @@ func Test_Space(t *testing.T) {
 				},
 				Kind: claim.KindAuthenticated,
 			}
-			ctx := context.WithValue(context.Background(), claim.ContextKey, claims)
+			ctx := context.WithValue(context.Background(), claim.ClaimsContextKey, claims)
 			out, err := this.Service.Create(this.db.WithContext(ctx), iCreate)
 
 			ass.NoError(err)

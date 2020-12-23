@@ -63,7 +63,7 @@ func Test_Create(t *testing.T) {
 	ass.NoError(err)
 
 	// create space
-	ctx = context.WithValue(ctx, claim.ContextKey, &claim.Payload{
+	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
 		Kind:           claim.KindAuthenticated,
 	})
@@ -193,7 +193,7 @@ func Test_Query(t *testing.T) {
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := this.userBundle.Service.Create(this.db, iUser)
 
-	ctx = context.WithValue(ctx, claim.ContextKey, &claim.Payload{
+	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
 		Kind:           claim.KindAuthenticated,
 	})
@@ -235,7 +235,7 @@ func Test_Archive(t *testing.T) {
 
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := this.userBundle.Service.Create(this.db, iUser)
-	ctx = context.WithValue(ctx, claim.ContextKey, &claim.Payload{
+	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
 		Kind:           claim.KindAuthenticated,
 	})
@@ -249,7 +249,7 @@ func Test_Archive(t *testing.T) {
 	{
 		resolver := this.resolvers["AccessSessionMutation"].(map[string]interface{})["Archive"].(func(context.Context) (*dto.SessionArchiveOutcome, error))
 
-		ctx = context.WithValue(context.Background(), claim.ContextKey, &claim.Payload{
+		ctx = context.WithValue(context.Background(), claim.ClaimsContextKey, &claim.Payload{
 			StandardClaims: jwt.StandardClaims{Id: sessionOutcome.Session.ID, Subject: oUser.User.ID},
 			Kind:           claim.KindAuthenticated,
 		})

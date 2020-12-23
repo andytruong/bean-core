@@ -88,7 +88,7 @@ func (service *ApplicationService) Update(ctx context.Context, in *dto.S3Applica
 		}
 	}
 
-	if deletedAt, ok := ctx.Value("bundle.integration-s3.delete").(time.Time); ok {
+	if deletedAt, ok := ctx.Value(model.DeleteContextKey).(time.Time); ok {
 		app.DeletedAt = &deletedAt
 		changed = true
 	}
@@ -128,7 +128,7 @@ func (service *ApplicationService) Update(ctx context.Context, in *dto.S3Applica
 }
 
 func (service *ApplicationService) Delete(ctx context.Context, in dto.S3ApplicationDeleteInput) (*dto.S3ApplicationMutationOutcome, error) {
-	ctx = context.WithValue(ctx, "bundle.integration-s3.delete", time.Now())
+	ctx = context.WithValue(ctx, model.DeleteContextKey, time.Now())
 
 	return service.Update(ctx, &dto.S3ApplicationUpdateInput{
 		Id:       in.Id,
@@ -139,7 +139,7 @@ func (service *ApplicationService) Delete(ctx context.Context, in dto.S3Applicat
 
 func (service *ApplicationService) S3UploadToken(ctx context.Context, in dto.S3UploadTokenInput) (map[string]interface{}, error) {
 	// get claims from context
-	claims, ok := ctx.Value(claim.ContextKey).(*claim.Payload)
+	claims, ok := ctx.Value(claim.ClaimsContextKey).(*claim.Payload)
 	if !ok {
 		return nil, util.ErrorAuthRequired
 	}

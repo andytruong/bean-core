@@ -204,7 +204,7 @@ func Test_Variable(t *testing.T) {
 
 		t.Run("on writable bucket", func(t *testing.T) {
 			userId := this.id.MustULID()
-			ctx := context.WithValue(context.Background(), claim.ContextKey, &claim.Payload{
+			ctx := context.WithValue(context.Background(), claim.ClaimsContextKey, &claim.Payload{
 				StandardClaims: jwt.StandardClaims{Subject: userId},
 			})
 			tx := db.Begin()
@@ -250,7 +250,7 @@ func Test_Variable(t *testing.T) {
 			authorId := this.id.MustULID()
 			authorClaims := &claim.Payload{}
 			authorClaims.Subject = authorId
-			authorCtx := context.WithValue(context.Background(), claim.ContextKey, authorClaims)
+			authorCtx := context.WithValue(context.Background(), claim.ClaimsContextKey, authorClaims)
 
 			// create private bucket
 			oBucketCreate, err := this.BucketService.Create(tx, dto.BucketCreateInput{

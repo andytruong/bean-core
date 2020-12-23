@@ -86,7 +86,7 @@ func (container *Container) beforeServeHTTP(r *http.Request) (context.Context, e
 		if err != nil {
 			return nil, err
 		} else if nil != claims {
-			ctx := context.WithValue(r.Context(), claim.ContextKey, claims)
+			ctx := context.WithValue(r.Context(), claim.ClaimsContextKey, claims)
 			return ctx, nil
 		}
 	}
