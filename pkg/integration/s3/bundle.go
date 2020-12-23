@@ -14,15 +14,15 @@ import (
 )
 
 func NewS3Integration(
-	db *gorm.DB,
-	id *unique.Identifier,
+	con *gorm.DB,
+	idr *unique.Identifier,
 	logger *zap.Logger,
 	conf *S3Configuration,
 	appBundle *app.AppBundle,
 ) *S3Bundle {
 	this := &S3Bundle{
-		db:     db,
-		id:     id,
+		con:    con,
+		idr:    idr,
 		logger: logger,
 		config: conf,
 	}
@@ -39,8 +39,8 @@ func NewS3Integration(
 type S3Bundle struct {
 	module.AbstractBundle
 
-	db     *gorm.DB
-	id     *unique.Identifier
+	con    *gorm.DB
+	idr    *unique.Identifier
 	logger *zap.Logger
 	config *S3Configuration
 

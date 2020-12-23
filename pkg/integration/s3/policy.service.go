@@ -31,7 +31,7 @@ func (service *policyService) load(tx *gorm.DB, appId string, id string) (*model
 
 func (service *policyService) create(tx *gorm.DB, appId string, kind model.PolicyKind, value string) (*model.Policy, error) {
 	policy := &model.Policy{
-		ID:            service.bundle.id.MustULID(),
+		ID:            service.bundle.idr.MustULID(),
 		ApplicationId: appId,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
@@ -50,7 +50,7 @@ func (service *policyService) create(tx *gorm.DB, appId string, kind model.Polic
 func (service *policyService) loadByApplicationId(ctx context.Context, appId string) ([]*model.Policy, error) {
 	policies := []*model.Policy{}
 
-	err := service.bundle.db.WithContext(ctx).
+	err := service.bundle.con.WithContext(ctx).
 		Where("application_id = ?", appId).
 		Find(&policies).
 		Error

@@ -10,6 +10,8 @@ import (
 	"bean/components/module"
 	"bean/components/unique"
 	"bean/pkg/access"
+	"bean/pkg/app"
+	"bean/pkg/config"
 	"bean/pkg/integration/mailer"
 	"bean/pkg/integration/s3"
 	"bean/pkg/space"
@@ -133,6 +135,12 @@ func (c *Container) Bundle(i int) module.Bundle {
 // TODO: Generate this code
 func (c *Container) BundlePath(bundle module.Bundle) string {
 	switch bundle.(type) {
+	case *config.ConfigBundle:
+		return "Config"
+
+	case *app.AppBundle:
+		return "App"
+
 	case *user.UserBundle:
 		return "User"
 

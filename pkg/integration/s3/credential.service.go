@@ -29,7 +29,7 @@ type credentialService struct {
 func (service *credentialService) loadByApplicationId(ctx context.Context, appId string) (*model.Credentials, error) {
 	cred := &model.Credentials{}
 
-	err := service.bundle.db.WithContext(ctx).
+	err := service.bundle.con.WithContext(ctx).
 		Where("application_id = ?", appId).
 		First(&cred).
 		Error
@@ -43,7 +43,7 @@ func (service *credentialService) loadByApplicationId(ctx context.Context, appId
 
 func (service *credentialService) onAppCreate(tx *gorm.DB, app *model2.Application, in dto.S3ApplicationCredentialsCreateInput) error {
 	cre := model.Credentials{
-		ID:            service.bundle.id.MustULID(),
+		ID:            service.bundle.idr.MustULID(),
 		ApplicationId: app.ID,
 		Endpoint:      in.Endpoint,
 		Bucket:        in.Bucket,
@@ -108,7 +108,7 @@ func (service *credentialService) onAppUpdate(tx *gorm.DB, app *model2.Applicati
 		if nil != in.Endpoint && nil != in.AccessKey && nil != in.SecretKey {
 			// if not found -> create
 			cre = &model.Credentials{
-				ID:            service.bundle.id.MustULID(),
+				ID:            service.bundle.idr.MustULID(),
 				ApplicationId: app.ID,
 				Endpoint:      *in.Endpoint,
 				AccessKey:     *in.AccessKey,
