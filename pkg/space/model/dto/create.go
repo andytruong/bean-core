@@ -1,7 +1,7 @@
 package dto
 
 import (
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/pkg/infra/api"
 	"bean/pkg/space/model"
 )
@@ -17,7 +17,7 @@ type SpaceCreateInputObject struct {
 	IsActive    bool               `json:"isActive"`
 	DomainNames *DomainNamesInput  `json:"domainNames"`
 	Features    SpaceFeaturesInput `json:"features"`
-
+	
 	// Internal field
 	ParentId *string `json:"parentId"`
 }
@@ -38,6 +38,6 @@ type SpaceFeaturesInput struct {
 }
 
 type SpaceCreateOutcome struct {
-	Errors []util2.Error `json:"errors"`
-	Space  *model.Space  `json:"space"`
+	Errors []util.Error `json:"errors"`
+	Space  *model.Space `json:"space"`
 }

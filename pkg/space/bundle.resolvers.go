@@ -2,11 +2,11 @@ package space
 
 import (
 	"context"
-
+	
 	"github.com/pkg/errors"
-
+	
 	"bean/components/scalar"
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
 	mUser "bean/pkg/user/model"
@@ -44,7 +44,7 @@ func (this *SpaceBundle) newResolvers() map[string]interface{} {
 			"Create": func(ctx context.Context, input dto.SpaceCreateInput) (*dto.SpaceCreateOutcome, error) {
 				txn := this.db.WithContext(ctx).Begin()
 				out, err := this.Service.Create(txn, input)
-
+				
 				if nil != err {
 					txn.Rollback()
 					return nil, err
@@ -57,10 +57,10 @@ func (this *SpaceBundle) newResolvers() map[string]interface{} {
 				if nil != err {
 					return nil, err
 				}
-
+				
 				txn := this.db.WithContext(ctx).Begin()
 				out, err := this.Service.Update(txn, *space, in)
-
+				
 				if nil != err {
 					txn.Rollback()
 					return nil, err
@@ -78,24 +78,24 @@ func (this *SpaceBundle) newResolvers() map[string]interface{} {
 				if nil != err {
 					return nil, err
 				}
-
+				
 				_, err = this.userBundle.Service.Load(this.db.WithContext(ctx), in.UserID)
 				if nil != err {
 					return nil, err
 				}
-
+				
 				features, err := this.configService.List(ctx, space)
 				if nil != err {
 					return nil, err
 				}
-
+				
 				if !features.Register {
-					return nil, errors.Wrap(util2.ErrorConfig, "register is off")
+					return nil, errors.Wrap(util.ErrorConfig, "register is off")
 				}
-
+				
 				tx := this.db.WithContext(ctx).Begin()
 				outcome, err := this.MemberService.Create(tx, in)
-
+				
 				if nil != err {
 					tx.Rollback()
 					return nil, err
@@ -105,14 +105,14 @@ func (this *SpaceBundle) newResolvers() map[string]interface{} {
 			},
 			"Update": func(ctx context.Context, in dto.SpaceMembershipUpdateInput) (*dto.SpaceMembershipCreateOutcome, error) {
 				membership, err := this.MemberService.load(ctx, in.Id, scalar.NilString(in.Version))
-
+				
 				if nil != err {
 					return nil, err
 				}
-
+				
 				tx := this.db.WithContext(ctx).Begin()
 				outcome, err := this.MemberService.Update(tx, in, membership)
-
+				
 				if nil != err {
 					tx.Rollback()
 					return nil, err
@@ -126,7 +126,7 @@ func (this *SpaceBundle) newResolvers() map[string]interface{} {
 				if nil == obj.ParentID {
 					return nil, nil
 				}
-
+				
 				return this.Service.Load(ctx, *obj.ParentID)
 			},
 			"DomainNames": func(ctx context.Context, space *model.Space) (*model.DomainNames, error) {
@@ -150,14 +150,14 @@ func (this *SpaceBundle) newResolvers() map[string]interface{} {
 		"MembershipConnection": map[string]interface{}{
 			"Edges": func(ctx context.Context, obj *model.MembershipConnection) ([]*model.MembershipEdge, error) {
 				var edges []*model.MembershipEdge
-
+				
 				for _, node := range obj.Nodes {
 					edges = append(edges, &model.MembershipEdge{
 						Cursor: model.MembershipNodeCursor(node),
 						Node:   node,
 					})
 				}
-
+				
 				return edges, nil
 			},
 		},

@@ -3,12 +3,12 @@ package config
 import (
 	"context"
 	"time"
-
+	
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
-
+	
 	"bean/components/scalar"
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
 )
@@ -51,7 +51,7 @@ func (this BucketService) Update(ctx context.Context, tx *gorm.DB, in dto.Bucket
 	}
 
 	if bucket.Version != in.Version {
-		return nil, util2.ErrorVersionConflict
+		return nil, util.ErrorVersionConflict
 	}
 
 	changed := false
@@ -79,7 +79,7 @@ func (this BucketService) Update(ctx context.Context, tx *gorm.DB, in dto.Bucket
 	if in.Schema != nil {
 		if bucket.Schema != *in.Schema {
 			if bucket.IsPublished {
-				return nil, util2.ErrorLocked
+				return nil, util.ErrorLocked
 			}
 
 			changed = true
@@ -90,7 +90,7 @@ func (this BucketService) Update(ctx context.Context, tx *gorm.DB, in dto.Bucket
 	if nil != in.IsPublished {
 		if *in.IsPublished != bucket.IsPublished {
 			if bucket.IsPublished {
-				return nil, errors.Wrap(util2.ErrorLocked, "change not un-publish a published bucket")
+				return nil, errors.Wrap(util.ErrorLocked, "change not un-publish a published bucket")
 			}
 
 			bucket.IsPublished = *in.IsPublished

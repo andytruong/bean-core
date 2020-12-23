@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
+	
 	"gorm.io/gorm"
-
+	
 	"bean/components/scalar"
-	util2 "bean/components/util"
-	connect2 "bean/components/util/connect"
+	"bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
 )
@@ -26,18 +26,18 @@ func (this MemberService) load(ctx context.Context, id string, version *string) 
 		return nil, err
 	} else if nil != version {
 		if obj.Version != *version {
-			return nil, util2.ErrorVersionConflict
+			return nil, util.ErrorVersionConflict
 		}
 	}
-
+	
 	return obj, nil
 }
 
 func (this MemberService) Find(first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {
 	if first > 100 {
-		return nil, errors.New(util2.ErrorQueryTooMuch.String())
+		return nil, errors.New(util.ErrorQueryTooMuch.String())
 	}
-
+	
 	con := &model.MembershipConnection{
 		Nodes: []model.Membership{},
 		PageInfo: model.MembershipInfo{
@@ -46,7 +46,7 @@ func (this MemberService) Find(first int, after *string, filters dto.Memberships
 			StartCursor: nil,
 		},
 	}
-
+	
 	query, err := this.findUnlimited(after, filters)
 	if nil != err {
 		return nil, err
@@ -55,19 +55,19 @@ func (this MemberService) Find(first int, after *string, filters dto.Memberships
 		if nil != err {
 			return nil, err
 		}
-
+		
 		var counter int64
 		if err := query.Count(&counter).Error; nil != err {
 			return nil, err
 		} else {
 			con.PageInfo.HasNextPage = int(counter) > len(con.Nodes)
-
+			
 			if len(con.Nodes) > 0 {
 				startEntity := con.Nodes[0]
 				if startEntity.LoggedInAt != nil {
 					con.PageInfo.StartCursor = scalar.NilString(startEntity.LoggedInAt.String())
 				}
-
+				
 				endEntity := con.Nodes[len(con.Nodes)-1]
 				if nil != endEntity.LoggedInAt {
 					con.PageInfo.EndCursor = scalar.NilString(endEntity.LoggedInAt.String())
@@ -75,7 +75,7 @@ func (this MemberService) Find(first int, after *string, filters dto.Memberships
 			}
 		}
 	}
-
+	
 	return con, nil
 }
 
@@ -84,61 +84,61 @@ func (this MemberService) findUnlimited(afterRaw *string, filters dto.Membership
 		Where("space_memberships.user_id = ?", filters.UserID).
 		Where("space_memberships.is_active = ?", filters.IsActive).
 		Order("space_memberships.logged_in_at DESC")
-
+	
 	if nil != filters.Space {
 		if nil != filters.Space.Title {
 			query = query.
 				Joins("INNER JOIN spaces ON space_memberships.space_id = spaces.id").
 				Where("spaces.title LIKE ?", "%"+*filters.Space.Title+"%")
 		}
-
+		
 		if nil != filters.Space.DomainName {
 			query = query.
 				Joins("INNER JOIN space_domains ON space_domains.space_id = spaces.id").
 				Where("spaces.title value ?", "%"+*filters.Space.DomainName+"%")
 		}
 	}
-
+	
 	if nil != filters.ManagerId {
 		query = query.
 			Joins("INNER JOIN space_manager_edge ON space_manager_edge.user_member_id = space_memberships.id").
 			Where("space_manager_edge.manager_member_id = ?", *filters.ManagerId)
 	}
-
+	
 	// Pagination -> after
 	if nil != afterRaw {
-		after, err := connect2.DecodeCursor(*afterRaw)
-
+		after, err := connect.DecodeCursor(*afterRaw)
+		
 		if nil != err {
 			return nil, err
 		}
-
+		
 		if after.Entity != "Membership" {
 			return nil, errors.New("unsupported sorting entity")
 		}
-
+		
 		if after.Property != "logged_in_at" {
 			return nil, errors.New("unsupported sorting property")
 		}
-
+		
 		query = query.Where("space_memberships.logged_in_at > ?", after.Value)
 	}
-
+	
 	return query, nil
 }
 
 func (this MemberService) Create(tx *gorm.DB, in dto.SpaceMembershipCreateInput) (*dto.SpaceMembershipCreateOutcome, error) {
 	membership, err := this.doCreate(tx, in.SpaceID, in.UserID, in.IsActive)
-
+	
 	if nil != err {
 		return nil, err
 	}
-
+	
 	errorList, err := this.createRelationships(tx, membership, in.ManagerMemberIds)
 	if nil != err {
 		return nil, err
 	}
-
+	
 	return &dto.SpaceMembershipCreateOutcome{
 		Errors:     errorList,
 		Membership: membership,
@@ -155,19 +155,19 @@ func (this MemberService) doCreate(tx *gorm.DB, spaceId string, userId string, i
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-
+	
 	if err := tx.Create(&membership).Error; nil != err {
 		return nil, err
 	}
-
+	
 	return membership, nil
 }
 
-func (this MemberService) createRelationships(tx *gorm.DB, obj *model.Membership, managerMemberIds []string) ([]*util2.Error, error) {
+func (this MemberService) createRelationships(tx *gorm.DB, obj *model.Membership, managerMemberIds []string) ([]*util.Error, error) {
 	if len(managerMemberIds) > this.bundle.config.Manager.MaxNumberOfManager {
-		return util2.NewErrors(util2.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "exceeded limitation"), nil
+		return util.NewErrors(util.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "exceeded limitation"), nil
 	}
-
+	
 	// validate manager in same space
 	{
 		var counter int64
@@ -178,14 +178,14 @@ func (this MemberService) createRelationships(tx *gorm.DB, obj *model.Membership
 			Where("is_active = ?", true).
 			Count(&counter).
 			Error
-
+		
 		if nil != err {
 			return nil, err
 		} else if int(counter) != len(managerMemberIds) {
-			return util2.NewErrors(util2.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "one ore more IDs are invalid"), nil
+			return util.NewErrors(util.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "one ore more IDs are invalid"), nil
 		}
 	}
-
+	
 	// create relationship with managers
 	for _, managerMemberId := range managerMemberIds {
 		err := this.createRelationship(tx, obj, managerMemberId)
@@ -193,7 +193,7 @@ func (this MemberService) createRelationships(tx *gorm.DB, obj *model.Membership
 			return nil, err
 		}
 	}
-
+	
 	return nil, nil
 }
 
@@ -207,40 +207,40 @@ func (this MemberService) createRelationship(tx *gorm.DB, obj *model.Membership,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
 	}
-
+	
 	return tx.Save(&relationship).Error
 }
 
 func (this MemberService) Update(tx *gorm.DB, in dto.SpaceMembershipUpdateInput, obj *model.Membership) (*dto.SpaceMembershipCreateOutcome, error) {
 	obj.Version = this.bundle.id.MustULID()
 	obj.IsActive = in.IsActive
-
+	
 	err := tx.Save(&obj).Error
 	if nil != err {
 		return nil, err
 	} else {
 		// TODO: remove manager
 		// …
-
+		
 		// TODO: add manager
 		// …
 	}
-
+	
 	return &dto.SpaceMembershipCreateOutcome{Errors: nil, Membership: obj}, nil
 }
 
 func (this MemberService) FindRoles(ctx context.Context, userId string, spaceId string) ([]*model.Space, error) {
 	var roles []*model.Space
-
+	
 	err := this.bundle.db.
 		WithContext(ctx).
 		Joins(
 			fmt.Sprintf(
 				"INNER JOIN %s ON %s.space_id = %s.id AND %s.user_id = ?",
-				connect2.TableSpaceMemberships,
-				connect2.TableSpaceMemberships,
-				connect2.TableSpace,
-				connect2.TableSpaceMemberships,
+				connect.TableSpaceMemberships,
+				connect.TableSpaceMemberships,
+				connect.TableSpace,
+				connect.TableSpaceMemberships,
 			),
 			userId,
 		).
@@ -248,16 +248,16 @@ func (this MemberService) FindRoles(ctx context.Context, userId string, spaceId 
 		Where("parent_id = ?", spaceId).
 		Find(&roles).
 		Error
-
+	
 	if nil != err {
 		return nil, err
 	}
-
+	
 	return roles, nil
 }
 
 func (this MemberService) UpdateLastLoginTime(db *gorm.DB, membership *model.Membership) error {
 	membership.LoggedInAt = scalar.NilTime(time.Now())
-
+	
 	return db.Save(&membership).Error
 }

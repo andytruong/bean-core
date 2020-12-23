@@ -3,10 +3,10 @@ package s3
 import (
 	"context"
 	"time"
-
+	
 	"gorm.io/gorm"
-
-	util2 "bean/components/util"
+	
+	"bean/components/util"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
@@ -24,7 +24,7 @@ func (this *policyService) load(tx *gorm.DB, appId string, id string) (*model.Po
 	if nil != err {
 		return nil, err
 	}
-
+	
 	return policy, nil
 }
 
@@ -37,18 +37,18 @@ func (this *policyService) create(tx *gorm.DB, appId string, kind model.PolicyKi
 		Kind:          kind,
 		Value:         value,
 	}
-
+	
 	err := tx.Create(&policy).Error
 	if nil != err {
 		return nil, err
 	}
-
+	
 	return policy, nil
 }
 
 func (this *policyService) loadByApplicationId(ctx context.Context, appId string) ([]*model.Policy, error) {
 	policies := []*model.Policy{}
-
+	
 	err := this.bundle.db.WithContext(ctx).
 		Where("application_id = ?", appId).
 		Find(&policies).
@@ -56,7 +56,7 @@ func (this *policyService) loadByApplicationId(ctx context.Context, appId string
 	if nil != err {
 		return nil, err
 	}
-
+	
 	return policies, nil
 }
 
@@ -67,7 +67,7 @@ func (this *policyService) onAppCreate(tx *gorm.DB, app *model.Application, in [
 			return err
 		}
 	}
-
+	
 	return nil
 }
 
@@ -75,20 +75,20 @@ func (this *policyService) onAppUpdate(tx *gorm.DB, app *model.Application, in *
 	if nil == in {
 		return nil
 	}
-
+	
 	useless := true
-
+	
 	if nil != in.Create {
 		for _, input := range in.Create {
 			_, err := this.create(tx, app.ID, input.Kind, input.Value)
 			if nil != err {
 				return err
 			}
-
+			
 			useless = false
 		}
 	}
-
+	
 	if nil != in.Update {
 		for _, input := range in.Update {
 			if policy, err := this.load(tx, app.ID, input.Id); nil != err {
@@ -100,12 +100,12 @@ func (this *policyService) onAppUpdate(tx *gorm.DB, app *model.Application, in *
 				if nil != err {
 					return err
 				}
-
+				
 				useless = false
 			}
 		}
 	}
-
+	
 	if nil != in.Delete {
 		for _, input := range in.Delete {
 			if policy, err := this.load(tx, app.ID, input.Id); nil != err {
@@ -115,15 +115,15 @@ func (this *policyService) onAppUpdate(tx *gorm.DB, app *model.Application, in *
 				if nil != err {
 					return err
 				}
-
+				
 				useless = false
 			}
 		}
 	}
-
+	
 	if useless {
-		return util2.ErrorUselessInput
+		return util.ErrorUselessInput
 	}
-
+	
 	return nil
 }

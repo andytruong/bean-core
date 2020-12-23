@@ -3,12 +3,12 @@ package config
 import (
 	"context"
 	"time"
-
+	
 	"gorm.io/gorm"
-
+	
 	"bean/components/claim"
 	"bean/components/scalar"
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
 )
@@ -56,7 +56,7 @@ func (this VariableService) Load(ctx context.Context, db *gorm.DB, id string) (*
 	if access, err := this.access(ctx, db, variable.BucketId, "read"); nil != err {
 		return nil, err
 	} else if !access {
-		return nil, util2.ErrorAccessDenied
+		return nil, util.ErrorAccessDenied
 	}
 
 	return variable, nil
@@ -66,7 +66,7 @@ func (this VariableService) Create(ctx context.Context, tx *gorm.DB, in dto.Vari
 	if access, err := this.access(ctx, tx, in.BucketId, "write"); nil != err {
 		return nil, err
 	} else if !access {
-		return nil, util2.ErrorAccessDenied
+		return nil, util.ErrorAccessDenied
 	}
 
 	variable := &model.ConfigVariable{
@@ -101,11 +101,11 @@ func (this VariableService) Update(ctx context.Context, tx *gorm.DB, in dto.Vari
 	if access, err := this.access(ctx, tx, variable.BucketId, "write"); nil != err {
 		return nil, err
 	} else if !access {
-		return nil, util2.ErrorAccessDenied
+		return nil, util.ErrorAccessDenied
 	}
 
 	if variable.Version != in.Version {
-		return nil, util2.ErrorVersionConflict
+		return nil, util.ErrorVersionConflict
 	} else {
 		changed := false
 
@@ -125,7 +125,7 @@ func (this VariableService) Update(ctx context.Context, tx *gorm.DB, in dto.Vari
 
 		if variable.IsLocked {
 			if changed {
-				return nil, util2.ErrorLocked
+				return nil, util.ErrorLocked
 			}
 		}
 
@@ -160,12 +160,12 @@ func (this VariableService) Delete(ctx context.Context, tx *gorm.DB, in dto.Vari
 	if nil != err {
 		return nil, err
 	} else if variable.IsLocked {
-		return nil, util2.ErrorLocked
+		return nil, util.ErrorLocked
 	} else {
 		if access, err := this.access(ctx, tx, variable.BucketId, "delete"); nil != err {
 			return nil, err
 		} else if !access {
-			return nil, util2.ErrorAccessDenied
+			return nil, util.ErrorAccessDenied
 		}
 
 		err := tx.Delete(variable, "id = ?", variable.Id).Error

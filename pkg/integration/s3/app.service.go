@@ -3,14 +3,14 @@ package s3
 import (
 	"context"
 	"time"
-
+	
 	"github.com/minio/minio-go/v7"
 	"gorm.io/gorm"
-
+	
 	"bean/components/claim"
 	"bean/components/scalar"
-	util2 "bean/components/util"
-	connect2 "bean/components/util/connect"
+	"bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
@@ -38,7 +38,7 @@ func (this *ApplicationService) Load(ctx context.Context, id string) (*model.App
 func (this *ApplicationService) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
 	var app *model.Application
 
-	err := connect2.Transaction(
+	err := connect.Transaction(
 		ctx,
 		this.bundle.db,
 		func(tx *gorm.DB) error {
@@ -77,7 +77,7 @@ func (this *ApplicationService) Update(ctx context.Context, in *dto.S3Applicatio
 	if nil != err {
 		return nil, err
 	} else if app.Version != in.Version {
-		return nil, util2.ErrorVersionConflict
+		return nil, util.ErrorVersionConflict
 	}
 
 	changed := false
@@ -95,13 +95,13 @@ func (this *ApplicationService) Update(ctx context.Context, in *dto.S3Applicatio
 
 	if !changed {
 		if nil == in.Credentials && nil == in.Policies {
-			return nil, util2.ErrorUselessInput
+			return nil, util.ErrorUselessInput
 		}
 	}
 
 	app.Version = this.bundle.id.MustULID()
 	app.UpdatedAt = time.Now()
-	err = connect2.Transaction(
+	err = connect.Transaction(
 		ctx,
 		this.bundle.db,
 		func(tx *gorm.DB) error {
@@ -141,7 +141,7 @@ func (this *ApplicationService) S3UploadToken(ctx context.Context, in dto.S3Uplo
 	// get claims from context
 	claims, ok := ctx.Value(claim.ContextKey).(*claim.Payload)
 	if !ok {
-		return nil, util2.ErrorAuthRequired
+		return nil, util.ErrorAuthRequired
 	}
 
 	// load application

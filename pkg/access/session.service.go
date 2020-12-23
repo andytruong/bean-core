@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"time"
-
+	
 	"gorm.io/gorm"
-
+	
 	"bean/components/claim"
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	mSpace "bean/pkg/space/model"
@@ -23,15 +23,15 @@ func (this *SessionService) Create(tx *gorm.DB, in *dto.SessionCreateInput) (*dt
 	if nil != in.UseCredentials {
 		return this.createUseCredentials(tx, in.UseCredentials)
 	}
-
+	
 	if nil != in.GenerateOTLT {
 		return this.generateOTLT(tx, in.GenerateOTLT)
 	}
-
+	
 	if nil != in.UseOTLT {
 		return this.useOTLT(tx, in.UseOTLT)
 	}
-
+	
 	return nil, nil
 }
 
@@ -43,14 +43,14 @@ func (this *SessionService) createUseCredentials(tx *gorm.DB, in *dto.SessionCre
 		if nil != err {
 			return nil, errors.New("userBundle not found")
 		}
-
+		
 		if !email.IsActive {
 			return &dto.SessionCreateOutcome{
-				Errors: util2.NewErrors(util2.ErrorCodeInput, []string{"input.email"}, "email address is not active"),
+				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.email"}, "email address is not active"),
 			}, nil
 		}
 	}
-
+	
 	// password validation
 	{
 		pass := mUser.UserPassword{}
@@ -58,12 +58,12 @@ func (this *SessionService) createUseCredentials(tx *gorm.DB, in *dto.SessionCre
 		if nil != err {
 			if err == gorm.ErrRecordNotFound {
 				return &dto.SessionCreateOutcome{
-					Errors: util2.NewErrors(util2.ErrorCodeInput, []string{"input.spaceId"}, "invalid password"),
+					Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "invalid password"),
 				}, nil
 			}
 		}
 	}
-
+	
 	return this.create(tx, claim.KindCredentials, email.UserId, in.SpaceID, func(session *model.Session) {
 		session.CodeChallengeMethod = in.CodeChallengeMethod
 		session.CodeChallenge = in.CodeChallenge
@@ -79,11 +79,11 @@ func (this *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (
 	if nil != err {
 		return nil, err
 	}
-
+	
 	if oneTimeSession.Kind != claim.KindOTLT {
-		return nil, util2.ErrorInvalidArgument
+		return nil, util.ErrorInvalidArgument
 	}
-
+	
 	out, err := this.create(tx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.SpaceId, func(session *model.Session) {
 		session.CodeChallengeMethod = in.CodeChallengeMethod
 		session.CodeChallenge = in.CodeChallenge
@@ -91,7 +91,7 @@ func (this *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (
 	if nil != err {
 		return nil, err
 	}
-
+	
 	// delete OTLT session
 	{
 		_, err := this.Delete(tx, oneTimeSession)
@@ -99,7 +99,7 @@ func (this *SessionService) useOTLT(tx *gorm.DB, in *dto.SessionCreateUseOTLT) (
 			return nil, err
 		}
 	}
-
+	
 	return out, err
 }
 
@@ -109,20 +109,20 @@ func (this SessionService) create(
 	create func(*model.Session),
 ) (*dto.SessionCreateOutcome, error) {
 	membership := &mSpace.Membership{}
-
+	
 	// validate membership
 	{
 		err := tx.
 			First(&membership, "space_id = ? AND user_id = ?", spaceId, userId).
 			Error
-
+		
 		if err == gorm.ErrRecordNotFound {
 			return &dto.SessionCreateOutcome{
-				Errors: util2.NewErrors(util2.ErrorCodeInput, []string{"input.spaceId"}, "membership not found"),
+				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "membership not found"),
 			}, nil
 		}
 	}
-
+	
 	token := this.bundle.id.MustULID()
 	session := &model.Session{
 		ID:          this.bundle.id.MustULID(),
@@ -137,11 +137,11 @@ func (this SessionService) create(
 		UpdatedAt:   time.Now(),
 		ExpiredAt:   time.Now().Add(this.bundle.config.SessionTimeout),
 	}
-
+	
 	if nil != create {
 		create(session)
 	}
-
+	
 	if err := tx.Create(&session).Error; nil != err {
 		return nil, err
 	} else {
@@ -151,7 +151,7 @@ func (this SessionService) create(
 			return nil, err
 		}
 	}
-
+	
 	return &dto.SessionCreateOutcome{
 		Errors:  nil,
 		Token:   &token,
@@ -165,19 +165,19 @@ func (this SessionService) load(ctx context.Context, db *gorm.DB, id string) (*m
 		WithContext(ctx).
 		First(&session, "id = ?", id).
 		Error
-
+	
 	if err == gorm.ErrRecordNotFound {
 		return nil, errors.New("session not found: " + id)
 	}
-
+	
 	if session.ExpiredAt.Unix() <= time.Now().Unix() {
 		return nil, errors.New("session expired")
 	}
-
+	
 	if !session.IsActive {
 		return nil, errors.New("session archived")
 	}
-
+	
 	return session, nil
 }
 
@@ -186,19 +186,19 @@ func (this SessionService) LoadByToken(db *gorm.DB, token string) (*model.Sessio
 	err := db.
 		First(&session, "hashed_token = ?", this.bundle.id.Encode(token)).
 		Error
-
+	
 	if err == gorm.ErrRecordNotFound {
 		return nil, errors.New("session not found: " + this.bundle.id.Encode(token))
 	}
-
+	
 	if session.ExpiredAt.Unix() <= time.Now().Unix() {
 		return nil, errors.New("session expired")
 	}
-
+	
 	if !session.IsActive {
 		return nil, errors.New("session archived")
 	}
-
+	
 	return session, nil
 }
 
@@ -212,14 +212,14 @@ func (this SessionService) Delete(tx *gorm.DB, session *model.Session) (*dto.Ses
 	} else {
 		// If session.kind is … also archive parent sessions
 		if session.Kind == claim.KindOTLT {
-
+		
 		}
-
+		
 		// If session.kind is KindCredentials/KindAuthenticated also archive child sessions
 		if session.Kind == claim.KindCredentials || session.Kind == claim.KindAuthenticated {
 			// find & archive all child sessions
 		}
 	}
-
+	
 	return &dto.SessionArchiveOutcome{Errors: nil, Result: true}, nil
 }

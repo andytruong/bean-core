@@ -1,7 +1,7 @@
 package dto
 
 import (
-	util2 "bean/components/util"
+	"bean/components/util"
 )
 
 type LogoutInput struct {
@@ -9,6 +9,6 @@ type LogoutInput struct {
 }
 
 type SessionArchiveOutcome struct {
-	Errors []*util2.Error `json:"errors"`
-	Result bool           `json:"result"`
+	Errors []*util.Error `json:"errors"`
+	Result bool          `json:"result"`
 }

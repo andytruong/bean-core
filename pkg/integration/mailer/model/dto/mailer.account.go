@@ -2,9 +2,9 @@ package dto
 
 import (
 	"time"
-
+	
 	"bean/components/scalar"
-	util2 "bean/components/util"
+	"bean/components/util"
 	"bean/pkg/infra/api"
 	"bean/pkg/space/model"
 )
@@ -62,7 +62,7 @@ type MailerAccountMutation struct {
 
 type MailerAccountMutationOutcome struct {
 	Account *MailerAccount `json:"account"`
-	Errors  []*util2.Error `json:"errors"`
+	Errors  []*util.Error  `json:"errors"`
 }
 
 type MailerAccountPageInfo struct {
