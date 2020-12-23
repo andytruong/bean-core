@@ -18,10 +18,10 @@ type GraphqlResolver interface {
 type AbstractBundle struct {
 }
 
-func (this AbstractBundle) Dependencies() []Bundle {
+func (AbstractBundle) Dependencies() []Bundle {
 	return nil
 }
 
-func (this AbstractBundle) GraphqlResolver() map[string]interface{} {
+func (AbstractBundle) GraphqlResolver() map[string]interface{} {
 	return nil
 }

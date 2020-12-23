@@ -20,14 +20,14 @@ func (this *Uri) UnmarshalGQL(v interface{}) error {
 		if nil != err {
 			return fmt.Errorf("invalid URI for request")
 		}
-		
+
 		if uri.RequestURI() == "" {
 			return fmt.Errorf("missing request URI")
 		}
-		
+
 		*this = Uri(in)
 	}
-	
+
 	return nil
 }
 

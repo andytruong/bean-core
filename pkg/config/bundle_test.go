@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"testing"
-	
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
-	
+
 	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/components/util"

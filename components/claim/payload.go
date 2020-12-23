@@ -22,25 +22,25 @@ type Payload struct {
 	Roles []string `json:"roles"`
 }
 
-func (this Payload) UserId() string {
-	return this.Subject
+func (payload Payload) UserId() string {
+	return payload.Subject
 }
 
-func (this Payload) SessionId() string {
-	return this.Id
+func (payload Payload) SessionId() string {
+	return payload.Id
 }
 
-func (this Payload) SpaceId() string {
-	return this.Audience
+func (payload Payload) SpaceId() string {
+	return payload.Audience
 }
 
-func (this *Payload) UnmarshalGQL(v interface{}) error {
+func (payload *Payload) UnmarshalGQL(v interface{}) error {
 	if in, ok := v.(string); !ok {
 		return fmt.Errorf("JWT must be strings")
 	} else {
 		token, err := jwt.ParseWithClaims(
 			in,
-			this,
+			payload,
 			func(token *jwt.Token) (interface{}, error) {
 				return []byte("AllYourBase"), nil
 			},
@@ -56,7 +56,7 @@ func (this *Payload) UnmarshalGQL(v interface{}) error {
 	return nil
 }
 
-func (this Payload) MarshalGQL(w io.Writer) {
+func (payload Payload) MarshalGQL(w io.Writer) {
 	mySigningKey := []byte("AllYourBase")
 
 	type MyCustomClaims struct {
@@ -65,7 +65,7 @@ func (this Payload) MarshalGQL(w io.Writer) {
 	}
 
 	// Create the Payload
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, this)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
 	ss, err := token.SignedString(mySigningKey)
 	fmt.Fprintf(w, "%v %v", ss, err)
 }

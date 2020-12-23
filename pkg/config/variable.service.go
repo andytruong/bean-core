@@ -3,9 +3,9 @@ package config
 import (
 	"context"
 	"time"
-	
+
 	"gorm.io/gorm"
-	
+
 	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/components/util"

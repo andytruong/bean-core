@@ -17,7 +17,7 @@ type SpaceCreateInputObject struct {
 	IsActive    bool               `json:"isActive"`
 	DomainNames *DomainNamesInput  `json:"domainNames"`
 	Features    SpaceFeaturesInput `json:"features"`
-	
+
 	// Internal field
 	ParentId *string `json:"parentId"`
 }

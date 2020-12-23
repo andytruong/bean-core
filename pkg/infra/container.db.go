@@ -2,14 +2,14 @@ package infra
 
 import (
 	"sync"
-	
+
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	
+
 	"bean/components/util"
 )
 
@@ -34,7 +34,7 @@ func (this *databases) get(name string) (*gorm.DB, error) {
 			return nil, err
 		} else {
 			this.connections.Store(name, con)
-			
+
 			return con, nil
 		}
 	}
@@ -44,10 +44,10 @@ func (this *databases) dialector(cnf DatabaseConfig) gorm.Dialector {
 	switch cnf.Driver {
 	case "sqlite3":
 		return sqlite.Open(cnf.Url)
-	
+
 	case "postgres":
 		return postgres.Open(cnf.Url)
-	
+
 	default:
 		panic("unsupported driver: " + cnf.Driver)
 	}

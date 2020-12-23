@@ -3,10 +3,10 @@ package config
 import (
 	"context"
 	"time"
-	
+
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
-	
+
 	"bean/components/scalar"
 	"bean/components/util"
 	"bean/pkg/config/model"

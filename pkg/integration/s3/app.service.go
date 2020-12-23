@@ -3,10 +3,10 @@ package s3
 import (
 	"context"
 	"time"
-	
+
 	"github.com/minio/minio-go/v7"
 	"gorm.io/gorm"
-	
+
 	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/components/util"
