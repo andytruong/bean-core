@@ -12,7 +12,7 @@ import (
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/codegen/config"
 	"github.com/99designs/gqlgen/codegen/templates"
-	. "github.com/99designs/gqlgen/plugin/resolvergen"
+	"github.com/99designs/gqlgen/plugin/resolvergen"
 	"github.com/pkg/errors"
 
 	"bean/components/util"
@@ -53,8 +53,8 @@ func (p plugin) Name() string {
 }
 
 func (p plugin) GenerateCode(data *codegen.Data) error {
-	build := &ResolverBuild{
-		File:         &File{},
+	build := &resolvergen.ResolverBuild{
+		File:         &resolvergen.File{},
 		PackageName:  data.Config.Resolver.Package,
 		ResolverType: data.Config.Resolver.Type,
 		HasRoot:      true,
@@ -89,8 +89,8 @@ func (p plugin) GenerateCode(data *codegen.Data) error {
 	return templates.Render(options)
 }
 
-func (p plugin) newResolver(data *codegen.Data, o *codegen.Object, f *codegen.Field) *Resolver {
-	resolver := &Resolver{
+func (p plugin) newResolver(data *codegen.Data, o *codegen.Object, f *codegen.Field) *resolvergen.Resolver {
+	resolver := &resolvergen.Resolver{
 		Object:         o,
 		Field:          f,
 		Implementation: p.resolverBody(data, o, f),
