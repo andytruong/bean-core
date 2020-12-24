@@ -1,0 +1,191 @@
+# =====================
+# Entity
+# =====================
+enum SpaceKind { Organisation, Role }
+
+type Space {
+    id: ID!
+    version: ID!
+    kind: SpaceKind!
+    title: String
+    createdAt: Time!
+    updatedAt: Time!
+    isActive: Boolean!
+    domainNames: DomainNames
+    features: SpaceFeatures
+    language: Language!
+    parent: Space
+}
+
+type DomainNames {
+    primary: DomainName!
+    secondary: [DomainName]
+}
+
+type DomainName {
+    id: ID!
+    value: String!
+    createdAt: Time!
+    updatedAt: Time!
+    isActive: Boolean!
+    isVerified: Boolean!
+}
+
+type SpaceFeatures {
+    register: Boolean!
+}
+
+type Membership {
+    id: ID!
+    version: ID!
+    space: Space!
+    user: User!
+    isActive: Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+    roles: [Space!]!
+}
+
+# =====================
+# Query
+# =====================
+extend type Query {
+    spaceQuery: SpaceQuery!
+}
+
+type SpaceQuery {
+    findOne(filters: SpaceFilters!): Space
+    membership: SpaceMembershipQuery!
+}
+
+input SpaceFilters {
+    id: ID
+    domain: Uri
+}
+
+# ---------------------
+# Query -> Membership
+# ---------------------
+type SpaceMembershipQuery {
+    load(id: ID!, version: ID): Membership
+    find(first: Int!, after: String, filters: MembershipsFilter!): MembershipConnection!
+}
+
+input MembershipsFilter {
+    space: MembershipsFilterSpace
+    userId: ID!
+    isActive: Boolean!
+    managerId: ID
+}
+
+input MembershipsFilterSpace {
+    title: String
+    domainName: String
+}
+
+type MembershipConnection {
+    edges: [MembershipEdge!]!
+    nodes: [Membership!]!
+    pageInfo: MembershipInfo!
+}
+
+type MembershipEdge {
+    cursor: String!
+    node: Membership!
+}
+
+type MembershipInfo {
+    endCursor: String
+    hasNextPage: Boolean!
+    startCursor: String
+}
+
+# =====================
+# Mutation
+# =====================
+extend type Mutation {
+    spaceMutation: SpaceMutation!
+}
+
+type SpaceMutation {
+    create(input: SpaceCreateInput!): SpaceCreateOutcome!
+    update(input: SpaceUpdateInput!): SpaceCreateOutcome!
+    membership: SpaceMembershipMutation!
+}
+
+# ---------------------
+# Mutation -> Space
+# ---------------------
+input SpaceCreateInput {
+    object: SpaceCreateInputObject!
+}
+
+input SpaceCreateInputObject {
+    kind: SpaceKind!
+    title: String
+    language: Language!
+    isActive: Boolean!
+    domainNames: DomainNamesInput
+    features: SpaceFeaturesInput!
+}
+
+input SpaceFeaturesInput {
+    register: Boolean!
+}
+
+input DomainNamesInput {
+    primary: DomainNameInput!
+    secondary: [DomainNameInput]
+}
+
+input DomainNameInput {
+    verified: Boolean
+    value: String
+    isActive: Boolean
+}
+
+type SpaceCreateOutcome {
+    errors: [Error!]
+    space: Space
+}
+
+input SpaceUpdateInput {
+    spaceId: ID!
+    spaceVersion: ID!
+    object: SpaceUpdateInputObject
+}
+
+input SpaceUpdateInputObject {
+    features: SpaceUpdateInputFeatures
+}
+
+input SpaceUpdateInputFeatures {
+    register: Boolean
+}
+
+# ---------------------
+# Mutation -> Membership
+# ---------------------
+type SpaceMembershipMutation {
+    create(input: SpaceMembershipCreateInput!): SpaceMembershipCreateOutcome!
+    update(input: SpaceMembershipUpdateInput!): SpaceMembershipCreateOutcome!
+}
+
+input SpaceMembershipCreateInput {
+    spaceId: ID!
+    userId: ID!
+    isActive: Boolean!
+    managerMemberIds: [ID!]!
+}
+
+type SpaceMembershipCreateOutcome {
+    errors: [Error!]
+    membership: Membership
+}
+
+input SpaceMembershipUpdateInput {
+    id: ID!
+    version: ID!
+    Language: Language
+    isActive: Boolean!
+}
