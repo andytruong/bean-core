@@ -49,7 +49,7 @@ func Test(t *testing.T) {
 			})
 			
 			ass.Error(err)
-			ass.Nil(oUpdate)
+			ass.Equal(oUpdate.App.Version, oCreate.App.Version)
 		})
 		
 		t.Run("status", func(t *testing.T) {

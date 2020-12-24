@@ -8,5 +8,3 @@ CREATE TABLE applications
     updated_at timestamp             NOT NULL,
     deleted_at timestamp
 );
-
--- TODO: Missing indexes

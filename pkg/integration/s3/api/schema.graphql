@@ -28,11 +28,6 @@ type Credentials {
 }
 
 # =====================
-# Query
-# =====================
-# No query?
-
-# =====================
 # Mutation
 # =====================
 extend type Mutation  {
