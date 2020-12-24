@@ -1,24 +1,16 @@
 query {
-    space(id: "01E8RRCRNJ384XV2W7D4TDKZWN") {
-        id
-        version
-        createdAt
-        updatedAt
-        isActive
-        domainNames {
-            primary {
-                id
-                value
-                createdAt
-                updatedAt
-                isActive
-                isVerified
+    spaceQuery {
+        findOne(
+            filters: {
+                id: "01ET9W3YFNH4Y7H0PJSEQSP5Q7"
             }
-            secondary {
-                id
-                createdAt
-                updatedAt
-                value
+        ) {
+            id version
+            createdAt updatedAt
+            isActive
+            domainNames {
+                primary   { id value createdAt updatedAt isActive isVerified }
+                secondary { id value createdAt updatedAt isActive isVerified }
             }
         }
     }

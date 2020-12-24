@@ -1,33 +1,40 @@
 mutation {
-    spaceCreate(
-        input: {
-            object: {
-                title: "Testing",
-                isActive: true,
-                domainNames: {
-                    primary: {
-                        verified: true,
-                        value: "local:8484",
-                        isActive: true
+    spaceMutation {
+        create(
+            input: {
+                object: {
+                    kind: Organisation
+                    title: "WIP"
+                    isActive: true
+                    language: AU
+                    domainNames: {
+                        primary: {
+                            verified: true,
+                            value: "local:8484",
+                            isActive: true
+                        }
+                    }
+                    features: {
+                        register: true
                     }
                 }
-            },
-            context: {
-                userId: "xxxxxxx"
+                context: {
+                    userId: "xxxxxxx"
+                }
             }
-        },
-    ) {
-        errors { code fields}
-        space {
-            id
-            version
-            title
-            createdAt
-            updatedAt
-            isActive
-            domainNames {
-                primary    { isActive isVerified value createdAt }
-                secondary  { isActive isVerified value createdAt }
+        ) {
+            errors { code fields message }
+            space {
+                id
+                version
+                title
+                createdAt
+                updatedAt
+                isActive
+                domainNames {
+                    primary    { isActive isVerified value createdAt }
+                    secondary  { isActive isVerified value createdAt }
+                }
             }
         }
     }

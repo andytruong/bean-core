@@ -14,6 +14,10 @@ type DomainNameService struct {
 }
 
 func (service *DomainNameService) createMultiple(tx *gorm.DB, space *model.Space, in dto.SpaceCreateInput) error {
+	if nil == in.Object.DomainNames {
+		return nil
+	}
+
 	if nil != in.Object.DomainNames.Primary {
 		err := service.create(tx, space, in.Object.DomainNames.Primary, true)
 		if nil != err {
