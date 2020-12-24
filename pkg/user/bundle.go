@@ -3,17 +3,17 @@ package user
 import (
 	"path"
 	"runtime"
-
+	
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-
+	
 	"bean/components/module"
 	"bean/components/module/migrate"
-	"bean/components/unique"
+	"bean/components/scalar"
 	"bean/components/util"
 )
 
-func NewUserBundle(db *gorm.DB, logger *zap.Logger, idr *unique.Identifier) *UserBundle {
+func NewUserBundle(db *gorm.DB, logger *zap.Logger, idr *scalar.Identifier) *UserBundle {
 	if err := util.NilPointerErrorValidate(db, logger, idr); nil != err {
 		panic(err)
 	}
@@ -42,7 +42,7 @@ type UserBundle struct {
 	// Internal services
 	logger                   *zap.Logger
 	db                       *gorm.DB
-	idr                      *unique.Identifier
+	idr                      *scalar.Identifier
 	maxSecondaryEmailPerUser uint8
 	resolvers                map[string]interface{}
 	nameService              *NameService

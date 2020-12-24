@@ -3,12 +3,12 @@ package infra
 import (
 	"sync"
 	"time"
-
+	
 	"go.uber.org/zap"
-
+	
 	"bean/components/conf"
 	"bean/components/module"
-	"bean/components/unique"
+	"bean/components/scalar"
 	"bean/pkg/access"
 	"bean/pkg/app"
 	"bean/pkg/config"
@@ -64,7 +64,7 @@ type (
 		Bundles    BundlesConfig             `json:"bundles"`
 
 		mutex   *sync.Mutex
-		id      *unique.Identifier
+		id      *scalar.Identifier
 		dbs     databases
 		bundles bundles
 		logger  *zap.Logger
@@ -112,10 +112,10 @@ func (c *Container) Logger() *zap.Logger {
 	return c.logger
 }
 
-func (c *Container) Identifier() *unique.Identifier {
+func (c *Container) Identifier() *scalar.Identifier {
 	if c.id == nil {
 		c.mutex.Lock()
-		c.id = &unique.Identifier{}
+		c.id = &scalar.Identifier{}
 		c.mutex.Unlock()
 	}
 

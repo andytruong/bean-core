@@ -3,19 +3,19 @@ package app
 import (
 	"path"
 	"runtime"
-
+	
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-
+	
 	"bean/components/module"
 	"bean/components/module/migrate"
-	"bean/components/unique"
+	"bean/components/scalar"
 	"bean/pkg/config"
 	"bean/pkg/space"
 )
 
 func NewApplicationBundle(
-	idr *unique.Identifier,
+	idr *scalar.Identifier,
 	logger *zap.Logger,
 	spaceBundle *space.SpaceBundle,
 	configBundle *config.ConfigBundle,
@@ -39,7 +39,7 @@ type AppBundle struct {
 	Service      *AppService
 	spaceBundle  *space.SpaceBundle
 	configBundle *config.ConfigBundle
-	idr          *unique.Identifier
+	idr          *scalar.Identifier
 	logger       *zap.Logger
 	resolvers    map[string]interface{}
 }

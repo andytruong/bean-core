@@ -3,19 +3,19 @@ package access
 import (
 	"path"
 	"runtime"
-
+	
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-
+	
 	"bean/components/module"
 	"bean/components/module/migrate"
-	"bean/components/unique"
+	"bean/components/scalar"
 	"bean/pkg/space"
 	"bean/pkg/user"
 )
 
 func NewAccessBundle(
-	idr *unique.Identifier,
+	idr *scalar.Identifier,
 	logger *zap.Logger,
 	userBundle *user.UserBundle,
 	spaceBundle *space.SpaceBundle,
@@ -42,7 +42,7 @@ type (
 
 		cnf            *AccessConfiguration
 		logger         *zap.Logger
-		idr            *unique.Identifier
+		idr            *scalar.Identifier
 		sessionService *SessionService
 		JwtService     *JwtService
 

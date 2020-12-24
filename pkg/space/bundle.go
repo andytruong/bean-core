@@ -3,18 +3,18 @@ package space
 import (
 	"path"
 	"runtime"
-
+	
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-
+	
 	"bean/components/module"
 	"bean/components/module/migrate"
-	"bean/components/unique"
+	"bean/components/scalar"
 	"bean/pkg/user"
 )
 
 func NewSpaceBundle(
-	db *gorm.DB, logger *zap.Logger, idr *unique.Identifier,
+	db *gorm.DB, logger *zap.Logger, idr *scalar.Identifier,
 	userBundle *user.UserBundle,
 	config *SpaceConfiguration,
 ) *SpaceBundle {
@@ -45,7 +45,7 @@ type SpaceBundle struct {
 	config            *SpaceConfiguration
 	logger            *zap.Logger
 	db                *gorm.DB
-	idr               *unique.Identifier
+	idr               *scalar.Identifier
 	userBundle        *user.UserBundle
 	resolvers         map[string]interface{}
 	configService     *ConfigService

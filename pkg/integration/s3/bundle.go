@@ -3,28 +3,26 @@ package s3
 import (
 	"path"
 	"runtime"
-
+	
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-
+	
 	"bean/components/module"
 	"bean/components/module/migrate"
-	"bean/components/unique"
+	"bean/components/scalar"
 	"bean/pkg/app"
 )
 
 func NewS3Integration(
-	con *gorm.DB,
-	idr *unique.Identifier,
+	idr *scalar.Identifier,
 	logger *zap.Logger,
 	conf *S3Configuration,
 	appBundle *app.AppBundle,
 ) *S3Bundle {
 	this := &S3Bundle{
-		con:    con,
 		idr:    idr,
 		logger: logger,
-		config: conf,
+		cnf:    conf,
 	}
 
 	this.appBundle = appBundle
@@ -39,11 +37,9 @@ func NewS3Integration(
 type S3Bundle struct {
 	module.AbstractBundle
 
-	con    *gorm.DB
-	idr    *unique.Identifier
-	logger *zap.Logger
-	config *S3Configuration
-
+	idr               *scalar.Identifier
+	logger            *zap.Logger
+	cnf               *S3Configuration
 	appBundle         *app.AppBundle
 	AppService        *ApplicationService
 	credentialService *credentialService
