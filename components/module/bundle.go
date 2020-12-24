@@ -10,6 +10,7 @@ type Bundle interface {
 	Migrate(tx *gorm.DB, driver string) error
 	Dependencies() []Bundle
 	GraphqlResolver() map[string]interface{}
+	// TODO: Scopes
 }
 
 type GraphqlResolver interface {

@@ -66,7 +66,7 @@ func (service *ApplicationService) Update(ctx context.Context, in *dto.S3Applica
 		}
 	}
 
-	if nil != out && nil != out.App {
+	if nil == out || nil == out.App {
 		return &dto.S3ApplicationMutationOutcome{App: nil, Errors: out.Errors}, nil
 	}
 

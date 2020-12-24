@@ -57,7 +57,7 @@ func Test_Space(t *testing.T) {
 	ctx := connect.DBToContext(context.Background(), bundle.db)
 	iCreate := fixtures.SpaceCreateInputFixture(false)
 
-	t.Run("Create", func(t *testing.T) {
+	t.Run("create", func(t *testing.T) {
 		defer tearDown(bundle)
 		t.Run("happy case", func(t *testing.T) {
 			now := time.Now()
@@ -115,7 +115,7 @@ func Test_Space(t *testing.T) {
 		})
 	})
 
-	t.Run("Query", func(t *testing.T) {
+	t.Run("query", func(t *testing.T) {
 		defer tearDown(bundle)
 
 		// setup data for query
@@ -151,7 +151,7 @@ func Test_Space(t *testing.T) {
 		})
 	})
 
-	t.Run("Update", func(t *testing.T) {
+	t.Run("update", func(t *testing.T) {
 		defer tearDown(bundle)
 
 		// create space so we have something to update
@@ -217,7 +217,7 @@ func Test_Membership(t *testing.T) {
 
 	ass.NoError(err)
 
-	t.Run("Create", func(t *testing.T) {
+	t.Run("create", func(t *testing.T) {
 		defer tearDown(bundle)
 
 		t.Run("create membership", func(t *testing.T) {
@@ -280,8 +280,8 @@ func Test_Membership(t *testing.T) {
 				IsActive: false,
 			}
 
-			resolver := bundle.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Create"].(func(context.Context, dto.SpaceMembershipCreateInput) (*dto.SpaceMembershipCreateOutcome, error))
-			outcome, err := resolver(context.Background(), input)
+			resolver := bundle.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Create"].(func(context.Context, *dto.SpaceMembershipMutation, dto.SpaceMembershipCreateInput) (*dto.SpaceMembershipCreateOutcome, error))
+			outcome, err := resolver(context.Background(), nil, input)
 
 			// check error
 			ass.Contains(err.Error(), util.ErrorConfig.Error())
@@ -290,7 +290,7 @@ func Test_Membership(t *testing.T) {
 		})
 	})
 
-	t.Run("Update", func(t *testing.T) {
+	t.Run("update", func(t *testing.T) {
 		defer tearDown(bundle)
 
 		// setup data for query
@@ -318,7 +318,7 @@ func Test_Membership(t *testing.T) {
 		})
 
 		t.Run("update membership", func(t *testing.T) {
-			resolver := bundle.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Update"].(func(context.Context, dto.SpaceMembershipUpdateInput) (*dto.SpaceMembershipCreateOutcome, error))
+			resolver := bundle.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Update"].(func(context.Context, *dto.SpaceMembershipMutation, dto.SpaceMembershipUpdateInput) (*dto.SpaceMembershipCreateOutcome, error))
 			var membership *model.Membership
 
 			// create a membership with status OFF.
@@ -336,25 +336,25 @@ func Test_Membership(t *testing.T) {
 
 			// load membership
 			{
-				resolver := bundle.resolvers["SpaceMembershipQuery"].(map[string]interface{})["Load"].(func(context.Context, string, *string) (*model.Membership, error))
+				resolver := bundle.resolvers["SpaceMembershipQuery"].(map[string]interface{})["Load"].(func(context.Context, *dto.SpaceMembershipQuery, string, *string) (*model.Membership, error))
 
 				// without version
 				{
-					obj, err := resolver(context.Background(), membership.ID, nil)
+					obj, err := resolver(context.Background(), nil, membership.ID, nil)
 					ass.NoError(err)
 					ass.False(obj.IsActive)
 				}
 
 				// with version
 				{
-					obj, err := resolver(context.Background(), membership.ID, &membership.Version)
+					obj, err := resolver(context.Background(), nil, membership.ID, &membership.Version)
 					ass.NoError(err)
 					ass.False(obj.IsActive)
 				}
 
 				// with invalid version
 				{
-					obj, err := resolver(context.Background(), membership.ID, scalar.NilString("InvalidVersion"))
+					obj, err := resolver(context.Background(), nil, membership.ID, scalar.NilString("InvalidVersion"))
 					ass.Error(err)
 					ass.Equal(err.Error(), util.ErrorVersionConflict.Error())
 					ass.Nil(obj)
@@ -365,6 +365,7 @@ func Test_Membership(t *testing.T) {
 			{
 				outcome, err := resolver(
 					context.Background(),
+					nil,
 					dto.SpaceMembershipUpdateInput{
 						Id:       membership.ID,
 						Version:  membership.Version,

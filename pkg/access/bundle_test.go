@@ -256,7 +256,7 @@ func Test_Archive(t *testing.T) {
 	ass.NoError(err)
 
 	{
-		resolver := bundle.resolvers["AccessSessionMutation"].(map[string]interface{})["Archive"].(func(context.Context) (*dto.SessionArchiveOutcome, error))
+		resolver := bundle.resolvers["AccessSessionMutation"].(map[string]interface{})["Archive"].(func(context.Context, *dto.AccessSessionMutation) (*dto.SessionArchiveOutcome, error))
 
 		ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
 			StandardClaims: jwt.StandardClaims{Id: sessionOutcome.Session.ID, Subject: oUser.User.ID},
@@ -265,14 +265,14 @@ func Test_Archive(t *testing.T) {
 
 		// can archive session without issue
 		{
-			out, err := resolver(ctx)
+			out, err := resolver(ctx, nil)
 			ass.NoError(err)
 			ass.Equal(out.Result, true)
 		}
 
 		// archive again -> should have error
 		{
-			out, err := resolver(ctx)
+			out, err := resolver(ctx, nil)
 			ass.NoError(err)
 			ass.Equal(out.Result, false)
 		}
