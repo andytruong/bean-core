@@ -80,7 +80,7 @@ func (service *AppService) Update(ctx context.Context, in *dto.ApplicationUpdate
 	}
 	
 	if nil != in.Title {
-		if app.Title != in.Title {
+		if *app.Title != *in.Title {
 			app.Title = in.Title
 			changed = true
 		}

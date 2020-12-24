@@ -46,6 +46,7 @@ func Test(t *testing.T) {
 			oUpdate, err := bun.Service.Update(ctx, &dto.ApplicationUpdateInput{
 				Id:      oCreate.App.ID,
 				Version: oCreate.App.Version,
+				Title:   scalar.NilString("QA app"),
 			})
 			
 			ass.Error(err)
@@ -62,7 +63,22 @@ func Test(t *testing.T) {
 			
 			ass.NoError(err)
 			ass.NotNil(oUpdate)
+			ass.NotEqual(oUpdate.App.Version, app.Version)
 			ass.Equal(true, oUpdate.App.IsActive)
+		})
+		
+		t.Run("title", func(t *testing.T) {
+			app, _ := bun.Service.Load(ctx, oCreate.App.ID)
+			oUpdate, err := bun.Service.Update(ctx, &dto.ApplicationUpdateInput{
+				Id:      app.ID,
+				Version: app.Version,
+				Title:   scalar.NilString("Quality Assurance application"),
+			})
+			
+			ass.NoError(err)
+			ass.NotNil(oUpdate)
+			ass.NotEqual(oUpdate.App.Version, app.Version)
+			ass.Equal(*oUpdate.App.Title, "Quality Assurance application")
 		})
 	})
 	
