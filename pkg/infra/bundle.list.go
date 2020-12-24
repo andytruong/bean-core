@@ -4,6 +4,7 @@ import (
 	"bean/components/module"
 	"bean/pkg/access"
 	"bean/pkg/app"
+	"bean/pkg/config"
 	"bean/pkg/integration/mailer"
 	"bean/pkg/integration/s3"
 	"bean/pkg/space"
@@ -11,116 +12,130 @@ import (
 )
 
 // TODO: Generate this code
-func (list *bundles) List() []module.Bundle {
-	userBundle, _ := list.User()
-	spaceBundle, _ := list.Space()
-	appBundle, _ := list.App()
-	accessBundle, _ := list.Access()
-	s3Bundle, _ := list.S3()
-	mailerBundle, _ := list.Mailer()
+func (bundles *BundleList) Get() []module.Bundle {
+	userBundle, _ := bundles.User()
+	spaceBundle, _ := bundles.Space()
+	appBundle, _ := bundles.App()
+	accessBundle, _ := bundles.Access()
+	s3Bundle, _ := bundles.S3()
+	mailerBundle, _ := bundles.Mailer()
 
 	return []module.Bundle{userBundle, spaceBundle, appBundle, accessBundle, s3Bundle, mailerBundle}
 }
 
 // TODO: Generate this code
-func (list *bundles) User() (*user.UserBundle, error) {
+func (bundles *BundleList) User() (*user.UserBundle, error) {
 	var err error
 
-	if nil == list.user {
-		db, err := list.container.dbs.master()
+	if nil == bundles.user {
+		db, err := bundles.container.dbs.master()
 		if nil != err {
 			return nil, err
 		}
 
-		list.user = user.NewUserBundle(
+		bundles.user = user.NewUserBundle(
 			db,
-			list.container.logger,
-			list.container.Identifier(),
+			bundles.container.logger,
+			bundles.container.Identifier(),
 		)
 	}
 
-	return list.user, err
+	return bundles.user, err
 }
 
 // TODO: Generate this code
-func (list *bundles) Space() (*space.SpaceBundle, error) {
+func (bundles *BundleList) Space() (*space.SpaceBundle, error) {
 	var err error
 
-	if nil == list.space {
-		db, err := list.container.dbs.master()
+	if nil == bundles.space {
+		db, err := bundles.container.dbs.master()
 		if nil != err {
 			return nil, err
 		}
 
-		mUser, err := list.User()
+		mUser, err := bundles.User()
 		if nil != err {
 			return nil, err
 		}
 
-		list.space = space.NewSpaceBundle(
+		bundles.space = space.NewSpaceBundle(
 			db,
-			list.container.logger,
-			list.container.Identifier(),
+			bundles.container.logger,
+			bundles.container.Identifier(),
 			mUser,
-			list.container.Bundles.Space,
+			bundles.container.Bundles.Space,
 		)
 	}
 
-	return list.space, err
+	return bundles.space, err
 }
 
 // TODO: Generate this code
-func (list *bundles) Access() (*access.AccessBundle, error) {
-	if nil == list.access {
-		db, err := list.container.dbs.master()
+func (bundles *BundleList) Config() (*config.ConfigBundle, error) {
+	var err error
+
+	if nil == bundles.config {
+		bundles.config = config.NewConfigBundle(
+			bundles.container.Identifier(),
+			bundles.container.logger,
+		)
+	}
+
+	return bundles.config, err
+}
+
+// TODO: Generate this code
+func (bundles *BundleList) Access() (*access.AccessBundle, error) {
+	if nil == bundles.access {
+		userBundle, err := bundles.User()
 		if nil != err {
 			return nil, err
 		}
 
-		userBundle, err := list.User()
+		spaceBundle, err := bundles.Space()
 		if nil != err {
 			return nil, err
 		}
 
-		spaceBundle, err := list.Space()
-		if nil != err {
-			return nil, err
-		}
-
-		list.access = access.NewAccessBundle(
-			db,
-			list.container.Identifier(),
-			list.container.logger,
+		bundles.access = access.NewAccessBundle(
+			bundles.container.Identifier(),
+			bundles.container.logger,
 			userBundle,
 			spaceBundle,
-			list.container.Bundles.Access,
+			bundles.container.Bundles.Access,
 		)
 	}
 
-	return list.access, nil
+	return bundles.access, nil
 }
 
 // TODO: Generate this code
-func (list *bundles) Mailer() (*mailer.MailerBundle, error) {
-	if nil == list.mailer {
-		list.mailer = mailer.NewMailerBundle(list.container.Bundles.Integration.Mailer, list.container.logger)
+func (bundles *BundleList) Mailer() (*mailer.MailerBundle, error) {
+	if nil == bundles.mailer {
+		bundles.mailer = mailer.NewMailerBundle(bundles.container.Bundles.Integration.Mailer, bundles.container.logger)
 	}
 
-	return list.mailer, nil
+	return bundles.mailer, nil
 }
 
 // TODO: Generate this code
-func (list *bundles) App() (*app.AppBundle, error) {
-	if nil == list.app {
-		db, err := list.container.dbs.master()
+func (bundles *BundleList) App() (*app.AppBundle, error) {
+	if nil == bundles.app {
+		spaceBundle, err := bundles.Space()
 		if nil != err {
 			return nil, err
 		}
 
-		list.app, err = app.NewApplicationBundle(
-			db,
-			list.container.Identifier(),
-			list.container.logger,
+		configBundle, err := bundles.Config()
+		if nil != err {
+			return nil, err
+		}
+
+		bundles.app, err = app.NewApplicationBundle(
+			bundles.container.Identifier(),
+			bundles.container.logger,
+			spaceBundle,
+			configBundle,
 		)
 
 		if nil != err {
@@ -128,30 +143,24 @@ func (list *bundles) App() (*app.AppBundle, error) {
 		}
 	}
 
-	return list.app, nil
+	return bundles.app, nil
 }
 
 // TODO: Generate this code
-func (list *bundles) S3() (*s3.S3Bundle, error) {
-	if nil == list.s3 {
-		con, err := list.container.dbs.master()
+func (bundles *BundleList) S3() (*s3.S3Bundle, error) {
+	if nil == bundles.s3 {
+		appBundle, err := bundles.App()
 		if nil != err {
 			return nil, err
 		}
 
-		appBundle, err := list.App()
-		if nil != err {
-			return nil, err
-		}
-
-		list.s3 = s3.NewS3Integration(
-			con,
-			list.container.Identifier(),
-			list.container.logger,
-			list.container.Bundles.Integration.S3,
+		bundles.s3 = s3.NewS3Integration(
+			bundles.container.Identifier(),
+			bundles.container.logger,
+			bundles.container.Bundles.Integration.S3,
 			appBundle,
 		)
 	}
 
-	return list.s3, nil
+	return bundles.s3, nil
 }

@@ -7,6 +7,7 @@ import (
 
 	"bean/components/scalar"
 	"bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
 	mUser "bean/pkg/user/model"
@@ -20,18 +21,18 @@ func (bundle *SpaceBundle) newResolvers() map[string]interface{} {
 			},
 		},
 		"SpaceQuery": map[string]interface{}{
-			"FindOne": func(ctx context.Context, filters dto.SpaceFilters) (*model.Space, error) {
+			"FindOne": func(ctx context.Context, _ *dto.SpaceQuery, filters dto.SpaceFilters) (*model.Space, error) {
 				return bundle.Service.FindOne(ctx, filters)
 			},
-			"Membership": func(ctx context.Context) (*dto.SpaceMembershipQuery, error) {
+			"Membership": func(ctx context.Context, _ *dto.SpaceQuery) (*dto.SpaceMembershipQuery, error) {
 				return &dto.SpaceMembershipQuery{}, nil
 			},
 		},
 		"SpaceMembershipQuery": map[string]interface{}{
-			"Find": func(ctx context.Context, first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {
+			"Find": func(ctx context.Context, _ *dto.SpaceMembershipQuery, first int, after *string, filters dto.MembershipsFilter) (*model.MembershipConnection, error) {
 				return bundle.MemberService.Find(first, after, filters)
 			},
-			"Load": func(ctx context.Context, id string, version *string) (*model.Membership, error) {
+			"Load": func(ctx context.Context, _ *dto.SpaceMembershipQuery, id string, version *string) (*model.Membership, error) {
 				return bundle.MemberService.load(ctx, id, version)
 			},
 		},
@@ -41,18 +42,18 @@ func (bundle *SpaceBundle) newResolvers() map[string]interface{} {
 			},
 		},
 		"SpaceMutation": map[string]interface{}{
-			"Create": func(ctx context.Context, input dto.SpaceCreateInput) (*dto.SpaceCreateOutcome, error) {
-				txn := bundle.db.WithContext(ctx).Begin()
-				out, err := bundle.Service.Create(txn, input)
+			"Create": func(ctx context.Context, _ *dto.SpaceMutation, input dto.SpaceCreateInput) (*dto.SpaceCreateOutcome, error) {
+				tx := bundle.db.WithContext(ctx).Begin()
+				out, err := bundle.Service.Create(connect.DBToContext(ctx, tx), input)
 
 				if nil != err {
-					txn.Rollback()
+					tx.Rollback()
 					return nil, err
 				} else {
-					return out, txn.Commit().Error
+					return out, tx.Commit().Error
 				}
 			},
-			"Update": func(ctx context.Context, in dto.SpaceUpdateInput) (*dto.SpaceCreateOutcome, error) {
+			"Update": func(ctx context.Context, _ *dto.SpaceMutation, in dto.SpaceUpdateInput) (*dto.SpaceCreateOutcome, error) {
 				space, err := bundle.Service.Load(ctx, in.SpaceID)
 				if nil != err {
 					return nil, err
@@ -68,18 +69,18 @@ func (bundle *SpaceBundle) newResolvers() map[string]interface{} {
 					return out, txn.Commit().Error
 				}
 			},
-			"Membership": func(ctx context.Context) (*dto.SpaceMembershipMutation, error) {
+			"Membership": func(ctx context.Context, _ *dto.SpaceMutation) (*dto.SpaceMembershipMutation, error) {
 				return &dto.SpaceMembershipMutation{}, nil
 			},
 		},
 		"SpaceMembershipMutation": map[string]interface{}{
-			"Create": func(ctx context.Context, in dto.SpaceMembershipCreateInput) (*dto.SpaceMembershipCreateOutcome, error) {
+			"Create": func(ctx context.Context, _ *dto.SpaceMembershipMutation, in dto.SpaceMembershipCreateInput) (*dto.SpaceMembershipCreateOutcome, error) {
 				space, err := bundle.Service.Load(ctx, in.SpaceID)
 				if nil != err {
 					return nil, err
 				}
 
-				_, err = bundle.userBundle.Service.Load(bundle.db.WithContext(ctx), in.UserID)
+				_, err = bundle.userBundle.Service.Load(connect.DBToContext(ctx, bundle.db), in.UserID)
 				if nil != err {
 					return nil, err
 				}
@@ -103,7 +104,7 @@ func (bundle *SpaceBundle) newResolvers() map[string]interface{} {
 					return outcome, tx.Commit().Error
 				}
 			},
-			"Update": func(ctx context.Context, in dto.SpaceMembershipUpdateInput) (*dto.SpaceMembershipCreateOutcome, error) {
+			"Update": func(ctx context.Context, _ *dto.SpaceMembershipMutation, in dto.SpaceMembershipUpdateInput) (*dto.SpaceMembershipCreateOutcome, error) {
 				membership, err := bundle.MemberService.load(ctx, in.Id, scalar.NilString(in.Version))
 
 				if nil != err {
@@ -141,7 +142,7 @@ func (bundle *SpaceBundle) newResolvers() map[string]interface{} {
 				return bundle.Service.Load(ctx, obj.SpaceID)
 			},
 			"User": func(ctx context.Context, obj *model.Membership) (*mUser.User, error) {
-				return bundle.userBundle.Service.Load(bundle.db.WithContext(ctx), obj.UserID)
+				return bundle.userBundle.Service.Load(connect.DBToContext(ctx, bundle.db), obj.UserID)
 			},
 			"Roles": func(ctx context.Context, obj *model.Membership) ([]*model.Space, error) {
 				return bundle.MemberService.FindRoles(ctx, obj.UserID, obj.SpaceID)

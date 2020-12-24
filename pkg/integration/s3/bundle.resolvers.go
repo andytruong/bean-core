@@ -19,7 +19,7 @@ func newResolvers(this *S3Bundle) map[string]interface{} {
 			"Application": func(ctx context.Context) (*dto.S3ApplicationMutation, error) {
 				return &dto.S3ApplicationMutation{}, nil
 			},
-			"Upload": func(ctx context.Context) (*dto.S3UploadMutation, error) {
+			"Upload": func(ctx context.Context, _ *dto.S3Mutation) (*dto.S3UploadMutation, error) {
 				return &dto.S3UploadMutation{}, nil
 			},
 		},
@@ -32,7 +32,7 @@ func newResolvers(this *S3Bundle) map[string]interface{} {
 			},
 		},
 		"S3UploadMutation": map[string]interface{}{
-			"Token": func(ctx context.Context, input dto.S3UploadTokenInput) (map[string]interface{}, error) {
+			"Token": func(ctx context.Context, _ *dto.S3UploadMutation, input dto.S3UploadTokenInput) (map[string]interface{}, error) {
 				return this.AppService.S3UploadToken(ctx, input)
 			},
 		},

@@ -9,19 +9,19 @@ import (
 
 	"bean/components/module"
 	"bean/components/module/migrate"
-	"bean/components/unique"
+	"bean/components/scalar"
 	"bean/components/util"
 )
 
-func NewUserBundle(db *gorm.DB, logger *zap.Logger, id *unique.Identifier) *UserBundle {
-	if err := util.NilPointerErrorValidate(db, logger, id); nil != err {
+func NewUserBundle(db *gorm.DB, logger *zap.Logger, idr *scalar.Identifier) *UserBundle {
+	if err := util.NilPointerErrorValidate(db, logger, idr); nil != err {
 		panic(err)
 	}
 
 	this := &UserBundle{
 		logger:                   logger,
 		db:                       db,
-		id:                       id,
+		idr:                      idr,
 		maxSecondaryEmailPerUser: 20,
 	}
 
@@ -42,12 +42,16 @@ type UserBundle struct {
 	// Internal services
 	logger                   *zap.Logger
 	db                       *gorm.DB
-	id                       *unique.Identifier
+	idr                      *scalar.Identifier
 	maxSecondaryEmailPerUser uint8
 	resolvers                map[string]interface{}
 	nameService              *NameService
 	emailService             *EmailService
 	passwordService          *PasswordService
+}
+
+func (UserBundle) Name() string {
+	return "User"
 }
 
 func (bundle UserBundle) Migrate(tx *gorm.DB, driver string) error {

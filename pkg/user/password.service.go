@@ -19,7 +19,7 @@ func (service *PasswordService) create(tx *gorm.DB, user *model.User, in *dto.Us
 	}
 
 	pass := &model.UserPassword{
-		ID:          service.bundle.id.MustULID(),
+		ID:          service.bundle.idr.MustULID(),
 		UserId:      user.ID,
 		HashedValue: in.HashedValue,
 		CreatedAt:   time.Now(),

@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"bean/components/scalar"
 	"bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
 )
@@ -17,11 +17,13 @@ type BucketService struct {
 	bundle *ConfigBundle
 }
 
-func (service BucketService) Create(tx *gorm.DB, in dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
+func (srv BucketService) Create(ctx context.Context, in dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
+	tx := connect.ContextToDB(ctx)
+
 	bucket := &model.ConfigBucket{
-		Id:          service.bundle.id.MustULID(),
-		Version:     service.bundle.id.MustULID(),
-		Slug:        scalar.NotNilString(in.Slug, service.bundle.id.MustULID()),
+		Id:          srv.bundle.idr.MustULID(),
+		Version:     srv.bundle.idr.MustULID(),
+		Slug:        scalar.NotNilString(in.Slug, srv.bundle.idr.MustULID()),
 		Title:       scalar.NotNilString(in.Title, ""),
 		Description: in.Description,
 		Access:      "777",
@@ -44,8 +46,9 @@ func (service BucketService) Create(tx *gorm.DB, in dto.BucketCreateInput) (*dto
 	return &dto.BucketMutationOutcome{Errors: nil, Bucket: bucket}, nil
 }
 
-func (service BucketService) Update(ctx context.Context, tx *gorm.DB, in dto.BucketUpdateInput) (*dto.BucketMutationOutcome, error) {
-	bucket, err := service.Load(ctx, tx, in.Id)
+func (srv BucketService) Update(ctx context.Context, in dto.BucketUpdateInput) (*dto.BucketMutationOutcome, error) {
+	tx := connect.ContextToDB(ctx)
+	bucket, err := srv.Load(ctx, in.Id)
 	if nil != err {
 		return nil, err
 	}
@@ -98,7 +101,7 @@ func (service BucketService) Update(ctx context.Context, tx *gorm.DB, in dto.Buc
 	}
 
 	if changed {
-		bucket.Version = service.bundle.id.MustULID()
+		bucket.Version = srv.bundle.idr.MustULID()
 		err = tx.Save(&bucket).Error
 		if nil != err {
 			return nil, err
@@ -112,9 +115,9 @@ func (service BucketService) Update(ctx context.Context, tx *gorm.DB, in dto.Buc
 }
 
 // TODO: need data-loader
-func (service BucketService) Load(ctx context.Context, db *gorm.DB, id string) (*model.ConfigBucket, error) {
+func (srv BucketService) Load(ctx context.Context, id string) (*model.ConfigBucket, error) {
 	bucket := &model.ConfigBucket{}
-
+	db := connect.ContextToDB(ctx)
 	err := db.WithContext(ctx).Where("id = ?", id).First(&bucket).Error
 	if nil != err {
 		return nil, err

@@ -74,7 +74,7 @@ func (p plugin) GenerateCode(data *codegen.Data) error {
 	}
 
 	options := templates.Options{
-		Filename:    "pkg/infra/graphql-resolvers.go",
+		Filename:    "pkg/infra/graphql.resolvers.go",
 		PackageName: "infra",
 		FileNotice:  `// THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.`,
 		Data:        build,
@@ -101,15 +101,16 @@ func (p plugin) newResolver(data *codegen.Data, o *codegen.Object, f *codegen.Fi
 
 func (p plugin) resolverBody(data *codegen.Data, o *codegen.Object, f *codegen.Field) string {
 	implementation := fmt.Sprintf(`panic("no implementation found in resolvers[%s][%s]")`, o.Name, f.GoFieldName)
+	bundles := p.container.BundleList()
 
-	for _, bundle := range p.container.BundleList() {
+	for _, bundle := range bundles.Get() {
 		resolvers := bundle.GraphqlResolver()
 		if nil == resolvers {
 			continue
 		}
 
 		if objResolver, ok := resolvers[o.Name]; ok {
-			if _, ok := objResolver.(map[string]interface{})[f.GoFieldName]; ok {
+			if fieldResolver, ok := objResolver.(map[string]interface{})[f.GoFieldName]; ok {
 				fieldResolverType := reflect.TypeOf(objResolver)
 				arguments := []string{"ctx"}
 
@@ -134,13 +135,23 @@ func (p plugin) resolverBody(data *codegen.Data, o *codegen.Object, f *codegen.F
 						},
 						"\n",
 					),
-					p.container.BundlePath(bundle),
+					bundle.Name(),
 					o.Name,
 					fieldResolverType,
 					f.GoFieldName,
 					"%tempType%",
 					strings.Join(arguments, ", "),
 				)
+
+				// Warning wrong number of receiving arguments.
+				callbackType := reflect.ValueOf(fieldResolver).Type()
+				if nil != callbackType {
+					if callbackType.Kind().String() == "func" {
+						if len(arguments) != callbackType.NumIn() {
+							fmt.Printf("[error] %s.%s.%s: wrong # arguments \n          %s\n", bundle.Name(), o.Name, f.GoFieldName, callbackType.String())
+						}
+					}
+				}
 			}
 		}
 	}

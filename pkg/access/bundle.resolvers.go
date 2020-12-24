@@ -28,33 +28,33 @@ func (bundle *AccessBundle) newResolves() map[string]interface{} {
 			},
 		},
 		"AccessQuery": map[string]interface{}{
-			"Session": func(ctx context.Context) (*dto.AccessSessionQuery, error) {
+			"Session": func(ctx context.Context, _ *dto.AccessQuery) (*dto.AccessSessionQuery, error) {
 				return &dto.AccessSessionQuery{}, nil
 			},
 		},
 		"AccessSessionQuery": map[string]interface{}{
-			"Load": func(ctx context.Context, id string) (*model.Session, error) {
-				return bundle.sessionService.load(ctx, bundle.con, id)
+			"Load": func(ctx context.Context, _ *dto.AccessSessionQuery, id string) (*model.Session, error) {
+				return bundle.sessionService.load(ctx, id)
 			},
 		},
 		"AccessMutation": map[string]interface{}{
-			"Session": func(ctx context.Context) (*dto.AccessSessionMutation, error) {
+			"Session": func(ctx context.Context, _ *dto.AccessMutation) (*dto.AccessSessionMutation, error) {
 				return &dto.AccessSessionMutation{}, nil
 			},
 		},
 		"AccessSessionMutation": map[string]interface{}{
-			"Create": func(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
-				return bundle.sessionService.Create(bundle.con, in)
+			"Create": func(ctx context.Context, _ *dto.AccessSessionMutation, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+				return bundle.sessionService.Create(ctx, in)
 			},
-			"Archive": func(ctx context.Context) (*dto.SessionArchiveOutcome, error) {
+			"Archive": func(ctx context.Context, _ *dto.AccessSessionMutation) (*dto.SessionArchiveOutcome, error) {
 				claims := claim.ContextToPayload(ctx)
 				if nil == claims {
 					return nil, util.ErrorAuthRequired
 				}
 
-				sess, _ := bundle.sessionService.load(ctx, bundle.con.WithContext(ctx), claims.SessionId())
+				sess, _ := bundle.sessionService.load(ctx, claims.SessionId())
 				if sess != nil {
-					out, err := bundle.sessionService.Delete(bundle.con.WithContext(ctx), sess)
+					out, err := bundle.sessionService.Delete(ctx, sess)
 
 					return out, err
 				}
@@ -67,7 +67,7 @@ func (bundle *AccessBundle) newResolves() map[string]interface{} {
 		},
 		"Session": map[string]interface{}{
 			"User": func(ctx context.Context, obj *model.Session) (*user_model.User, error) {
-				return bundle.userBundle.Service.Load(bundle.con.WithContext(ctx), obj.UserId)
+				return bundle.userBundle.Service.Load(ctx, obj.UserId)
 			},
 			"Context": func(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
 				panic("implement me")

@@ -35,7 +35,7 @@ func (service JwtService) Validate(authHeader string) (*claim.Payload, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("ivnalid authentication header")
+	return nil, fmt.Errorf("invalid authentication header")
 }
 
 func (service JwtService) Sign(claims jwt.Claims) (string, error) {

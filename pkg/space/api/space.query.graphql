@@ -1,4 +1,0 @@
-input SpaceFilters {
-    id: ID
-    domain: Uri
-}

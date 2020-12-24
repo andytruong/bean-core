@@ -1,0 +1,61 @@
+# =====================
+# Entity
+# =====================
+type Application {
+    id: ID!
+    version: ID!
+    isActive: Boolean!
+    title: String
+    createdAt: Time!
+    updatedAt: Time!
+    deletedAt: Time!
+}
+
+# =====================
+# Query
+# =====================
+extend type Query {
+    applicationQuery: ApplicationQuery!
+}
+
+type ApplicationQuery {
+    load(id: ID!, version: ID): Application
+}
+
+# =====================
+# Mutation
+# =====================
+extend type Mutation {
+    applicationMutation: ApplicationMutation!
+}
+
+type ApplicationOutcome {
+    errors: [Error!]
+    app: Application
+}
+
+# ---------------------
+# Mutatation -> Create
+# ---------------------
+type ApplicationMutation {
+    create(input: ApplicationCreateInput): ApplicationOutcome!
+}
+
+input ApplicationCreateInput {
+    isActive: Boolean!
+    title: String
+}
+
+# ---------------------
+# Mutatation -> Update
+# ---------------------
+extend type ApplicationMutation {
+    update(input: ApplicationUpdateInput): ApplicationOutcome!
+}
+
+input ApplicationUpdateInput {
+    id: ID!
+    version: ID!
+    isActive: Boolean
+    title: String
+}

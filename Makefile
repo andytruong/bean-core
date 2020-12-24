@@ -70,8 +70,11 @@ local.config:
 local.migrate: dev.config
 	env
 
-local.docker.db.start:
+local.docker.db.init:
 	docker run --rm -d --name=hi-pg -p 5432:5432 -e "POSTGRES_PASSWORD=and1bean" postgres:12-alpine
+
+local.docker.db.start:
+	docker start hi-pg
 
 local.docker.db.stop:
 	@docker stop hi-pg

@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"bean/components/util"
+	"bean/components/util/connect"
 	model2 "bean/pkg/app/model"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
@@ -28,12 +29,8 @@ type credentialService struct {
 
 func (service *credentialService) loadByApplicationId(ctx context.Context, appId string) (*model.Credentials, error) {
 	cred := &model.Credentials{}
-
-	err := service.bundle.db.WithContext(ctx).
-		Where("application_id = ?", appId).
-		First(&cred).
-		Error
-
+	db := connect.ContextToDB(ctx)
+	err := db.WithContext(ctx).Where("application_id = ?", appId).First(&cred).Error
 	if nil != err {
 		return nil, err
 	}
@@ -41,9 +38,10 @@ func (service *credentialService) loadByApplicationId(ctx context.Context, appId
 	return cred, nil
 }
 
-func (service *credentialService) onAppCreate(tx *gorm.DB, app *model2.Application, in dto.S3ApplicationCredentialsCreateInput) error {
+func (service *credentialService) onAppCreate(ctx context.Context, app *model2.Application, in dto.S3ApplicationCredentialsCreateInput) error {
+	db := connect.ContextToDB(ctx)
 	cre := model.Credentials{
-		ID:            service.bundle.id.MustULID(),
+		ID:            service.bundle.idr.MustULID(),
 		ApplicationId: app.ID,
 		Endpoint:      in.Endpoint,
 		Bucket:        in.Bucket,
@@ -52,7 +50,7 @@ func (service *credentialService) onAppCreate(tx *gorm.DB, app *model2.Applicati
 		IsSecure:      in.IsSecure,
 	}
 
-	return tx.Create(&cre).Error
+	return db.Create(&cre).Error
 }
 
 func (service *credentialService) onAppUpdate(tx *gorm.DB, app *model2.Application, in *dto.S3ApplicationCredentialsUpdateInput) error {
@@ -108,7 +106,7 @@ func (service *credentialService) onAppUpdate(tx *gorm.DB, app *model2.Applicati
 		if nil != in.Endpoint && nil != in.AccessKey && nil != in.SecretKey {
 			// if not found -> create
 			cre = &model.Credentials{
-				ID:            service.bundle.id.MustULID(),
+				ID:            service.bundle.idr.MustULID(),
 				ApplicationId: app.ID,
 				Endpoint:      *in.Endpoint,
 				AccessKey:     *in.AccessKey,
@@ -129,7 +127,7 @@ func (service *credentialService) onAppUpdate(tx *gorm.DB, app *model2.Applicati
 func (service credentialService) encrypt(text string) string {
 	plaintext := []byte(text)
 
-	block, err := aes.NewCipher([]byte(service.bundle.config.Key))
+	block, err := aes.NewCipher([]byte(service.bundle.cnf.Key))
 	if err != nil {
 		panic(err)
 	}
@@ -148,7 +146,7 @@ func (service credentialService) encrypt(text string) string {
 
 func (service credentialService) decrypt(cryptoText string) string {
 	cipherText, _ := base64.URLEncoding.DecodeString(cryptoText)
-	block, err := aes.NewCipher([]byte(service.bundle.config.Key))
+	block, err := aes.NewCipher([]byte(service.bundle.cnf.Key))
 	if err != nil {
 		panic(err)
 	}

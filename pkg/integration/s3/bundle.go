@@ -9,22 +9,20 @@ import (
 
 	"bean/components/module"
 	"bean/components/module/migrate"
-	"bean/components/unique"
+	"bean/components/scalar"
 	"bean/pkg/app"
 )
 
 func NewS3Integration(
-	db *gorm.DB,
-	id *unique.Identifier,
+	idr *scalar.Identifier,
 	logger *zap.Logger,
 	conf *S3Configuration,
 	appBundle *app.AppBundle,
 ) *S3Bundle {
 	this := &S3Bundle{
-		db:     db,
-		id:     id,
+		idr:    idr,
 		logger: logger,
-		config: conf,
+		cnf:    conf,
 	}
 
 	this.appBundle = appBundle
@@ -39,16 +37,18 @@ func NewS3Integration(
 type S3Bundle struct {
 	module.AbstractBundle
 
-	db     *gorm.DB
-	id     *unique.Identifier
-	logger *zap.Logger
-	config *S3Configuration
-
+	idr               *scalar.Identifier
+	logger            *zap.Logger
+	cnf               *S3Configuration
 	appBundle         *app.AppBundle
 	AppService        *ApplicationService
 	credentialService *credentialService
 	policyService     *policyService
 	resolvers         map[string]interface{}
+}
+
+func (S3Bundle) Name() string {
+	return "S3"
 }
 
 func (bundle S3Bundle) Dependencies() []module.Bundle {

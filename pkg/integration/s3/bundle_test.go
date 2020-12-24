@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
@@ -21,30 +20,30 @@ import (
 )
 
 func bundle() *S3Bundle {
-	con := util.MockDatabase()
 	idr := util.MockIdentifier()
 	log := util.MockLogger()
-	appBundle, _ := app.NewApplicationBundle(con, idr, log)
-	bun := NewS3Integration(con, idr, log, &S3Configuration{Key: "01EBWB516AP6BQD7"}, appBundle)
-	util.MockInstall(bun, con)
+	appBundle, _ := app.NewApplicationBundle(idr, log, nil, nil)
+	bun := NewS3Integration(idr, log, &S3Configuration{Key: "01EBWB516AP6BQD7"}, appBundle)
 
 	return bun
 }
 
 func Test(t *testing.T) {
 	ass := assert.New(t)
-	this := bundle()
-	ctx := context.Background()
+	bundle := bundle()
+	db := util.MockDatabase()
+	ctx := connect.DBToContext(context.Background(), db)
+	util.MockInstall(bundle, db)
 
 	t.Run("DB schema", func(t *testing.T) {
-		ass.True(this.db.Migrator().HasTable("s3_application_policy"))
+		ass.True(db.Migrator().HasTable("s3_application_policy"))
 	})
 
 	t.Run("Service", func(t *testing.T) {
 		t.Run("Credentials", func(t *testing.T) {
 			t.Run("Encrypt", func(t *testing.T) {
-				encrypted := this.credentialService.encrypt("xxxxxxxxxxxxxxxxxxxxx")
-				decrypted := this.credentialService.decrypt(encrypted)
+				encrypted := bundle.credentialService.encrypt("xxxxxxxxxxxxxxxxxxxxx")
+				decrypted := bundle.credentialService.decrypt(encrypted)
 
 				ass.Equal("xxxxxxxxxxxxxxxxxxxxx", decrypted)
 				ass.True(len(encrypted)*2 <= 256)
@@ -52,7 +51,7 @@ func Test(t *testing.T) {
 		})
 
 		t.Run("CRUD", func(t *testing.T) {
-			oCreate, err := this.AppService.Create(ctx, &dto.S3ApplicationCreateInput{
+			oCreate, err := bundle.AppService.Create(ctx, &dto.S3ApplicationCreateInput{
 				IsActive: false,
 				Credentials: dto.S3ApplicationCredentialsCreateInput{
 					Endpoint:  "http://localhost:9000",
@@ -83,10 +82,7 @@ func Test(t *testing.T) {
 
 			t.Run("policies", func(t *testing.T) {
 				policies := []model.Policy{}
-				err := this.db.
-					Where("application_id = ?", oCreate.App.ID).
-					Find(&policies).
-					Error
+				err := db.Where("application_id = ?", oCreate.App.ID).Find(&policies).Error
 				ass.NoError(err)
 				ass.Equal(3, len(policies))
 				ass.Equal(policies[0].Kind, model.PolicyKindFileExtensions)
@@ -97,45 +93,10 @@ func Test(t *testing.T) {
 				ass.Equal(policies[2].Value, "1GB/space/hour")
 			})
 
-			t.Run("Update", func(t *testing.T) {
-				t.Run("Useless input", func(t *testing.T) {
-					oUpdate, err := this.AppService.Update(ctx, &dto.S3ApplicationUpdateInput{
-						Id:      oCreate.App.ID,
-						Version: oCreate.App.Version,
-					})
-
-					ass.Error(err)
-					ass.Nil(oUpdate)
-				})
-
-				t.Run("Status", func(t *testing.T) {
-					app, _ := this.AppService.Load(ctx, oCreate.App.ID)
-					oUpdate, err := this.AppService.Update(ctx, &dto.S3ApplicationUpdateInput{
-						Id:       app.ID,
-						Version:  app.Version,
-						IsActive: scalar.NilBool(true),
-					})
-
-					ass.NoError(err)
-					ass.NotNil(oUpdate)
-					ass.Equal(true, oUpdate.App.IsActive)
-				})
-
-				t.Run("Bucket", func(t *testing.T) {
-					app, _ := this.AppService.Load(ctx, oCreate.App.ID)
-					oUpdate, err := this.AppService.Update(ctx, &dto.S3ApplicationUpdateInput{
-						Id:      app.ID,
-						Version: app.Version,
-					})
-
-					ass.Error(err)
-					ass.Equal(err, util.ErrorUselessInput)
-					ass.Nil(oUpdate)
-				})
-
-				t.Run("Credentials", func(t *testing.T) {
-					app, _ := this.AppService.Load(ctx, oCreate.App.ID)
-					oUpdate, err := this.AppService.Update(ctx, &dto.S3ApplicationUpdateInput{
+			t.Run("update", func(t *testing.T) {
+				t.Run("credentials", func(t *testing.T) {
+					app, _ := bundle.appBundle.Service.Load(ctx, oCreate.App.ID)
+					oUpdate, err := bundle.AppService.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
 						Credentials: &dto.S3ApplicationCredentialsUpdateInput{
@@ -152,7 +113,7 @@ func Test(t *testing.T) {
 
 					// reload & assert
 					{
-						cred, err := this.credentialService.loadByApplicationId(ctx, app.ID)
+						cred, err := bundle.credentialService.loadByApplicationId(ctx, app.ID)
 						ass.NoError(err)
 						ass.Equal("http://localhost:9191", string(cred.Endpoint))
 						ass.Equal("test", cred.Bucket)
@@ -162,10 +123,10 @@ func Test(t *testing.T) {
 					}
 				})
 
-				t.Run("Policies", func(t *testing.T) {
-					app, _ := this.AppService.Load(ctx, oCreate.App.ID)
+				t.Run("policies", func(t *testing.T) {
+					app, _ := bundle.appBundle.Service.Load(ctx, oCreate.App.ID)
 					policies := []model.Policy{}
-					err := this.db.Where("application_id = ?", oCreate.App.ID).Find(&policies).Error
+					err := db.Where("application_id = ?", oCreate.App.ID).Find(&policies).Error
 					ass.NoError(err)
 
 					// before update
@@ -179,7 +140,7 @@ func Test(t *testing.T) {
 						ass.Equal(policies[2].Value, "1GB/space/hour")
 					}
 
-					oUpdate, err := this.AppService.Update(ctx, &dto.S3ApplicationUpdateInput{
+					oUpdate, err := bundle.AppService.Update(ctx, &dto.S3ApplicationUpdateInput{
 						Id:      app.ID,
 						Version: app.Version,
 						Policies: &dto.S3ApplicationPolicyMutationInput{
@@ -208,7 +169,7 @@ func Test(t *testing.T) {
 
 					// after update: add 1, update 1, remove 1
 					{
-						policies, err := this.policyService.loadByApplicationId(ctx, app.ID)
+						policies, err := bundle.policyService.loadByApplicationId(ctx, app.ID)
 						ass.NoError(err)
 						ass.Equal(3, len(policies))
 						ass.Equal(policies[0].Kind, model.PolicyKindFileExtensions)
@@ -220,28 +181,14 @@ func Test(t *testing.T) {
 					}
 				})
 			})
-
-			t.Run("delete", func(t *testing.T) {
-				app, _ := this.AppService.Load(ctx, oCreate.App.ID)
-				now := time.Now()
-				oDelete, err := this.AppService.Delete(ctx, dto.S3ApplicationDeleteInput{
-					Id:      app.ID,
-					Version: app.Version,
-				})
-
-				ass.NoError(err)
-				ass.NotNil(oDelete)
-				ass.True(now.UnixNano() <= oDelete.App.DeletedAt.UnixNano())
-			})
 		})
 	})
 }
 
 func Test_UploadToken(t *testing.T) {
 	ass := assert.New(t)
-	this := bundle()
-
-	this.credentialService.transport = connect.MockRoundTrip{
+	bundle := bundle()
+	bundle.credentialService.transport = connect.MockRoundTrip{
 		Callback: func(request *http.Request) (*http.Response, error) {
 			response := &http.Response{
 				Status:     "OK",
@@ -256,17 +203,20 @@ func Test_UploadToken(t *testing.T) {
 			return response, nil
 		},
 	}
+	db := util.MockDatabase()
+	ctx := connect.DBToContext(context.Background(), db)
+	util.MockInstall(bundle, db)
 
-	ctx := context.WithValue(context.Background(), claim.ClaimsContextKey, &claim.Payload{
+	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{
-			Audience: this.id.MustULID(),
-			Id:       this.id.MustULID(),
-			Subject:  this.id.MustULID(),
+			Audience: bundle.idr.MustULID(),
+			Id:       bundle.idr.MustULID(),
+			Subject:  bundle.idr.MustULID(),
 		},
 		Kind: claim.KindAuthenticated,
 	})
 
-	oCreate, err := this.AppService.Create(ctx, &dto.S3ApplicationCreateInput{
+	oCreate, err := bundle.AppService.Create(ctx, &dto.S3ApplicationCreateInput{
 		IsActive: false,
 		Credentials: dto.S3ApplicationCredentialsCreateInput{
 			Endpoint:  "http://localhost:9000",
@@ -294,7 +244,7 @@ func Test_UploadToken(t *testing.T) {
 	ass.NoError(err)
 	ass.NotNil(oCreate)
 
-	formData, err := this.AppService.S3UploadToken(ctx, dto.S3UploadTokenInput{
+	formData, err := bundle.AppService.S3UploadToken(ctx, dto.S3UploadTokenInput{
 		ApplicationId: oCreate.App.ID,
 		FilePath:      "/path/to/image.png",
 		ContentType:   scalar.ImagePNG,

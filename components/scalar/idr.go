@@ -1,11 +1,10 @@
-package unique
+package scalar
 
 import (
 	"encoding/base64"
 	"math/rand"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/oklog/ulid"
 	"github.com/speps/go-hashids"
 )
@@ -39,18 +38,6 @@ func (idr *Identifier) MustULID() string {
 func (idr *Identifier) ULID() (string, error) {
 	entropy := ulid.Monotonic(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
 	id, err := ulid.New(ulid.Now(), entropy)
-
-	if nil != err {
-		return "", err
-	}
-
-	return id.String(), nil
-}
-
-func (idr *Identifier) UUID() (string, error) {
-	entropy := ulid.Monotonic(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
-	uid := ulid.MustNew(ulid.Now(), entropy)
-	id, err := uuid.FromBytes(uid[:])
 
 	if nil != err {
 		return "", err

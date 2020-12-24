@@ -147,8 +147,8 @@ func (service MemberService) Create(tx *gorm.DB, in dto.SpaceMembershipCreateInp
 
 func (service MemberService) doCreate(tx *gorm.DB, spaceId string, userId string, isActive bool) (*model.Membership, error) {
 	membership := &model.Membership{
-		ID:        service.bundle.id.MustULID(),
-		Version:   service.bundle.id.MustULID(),
+		ID:        service.bundle.idr.MustULID(),
+		Version:   service.bundle.idr.MustULID(),
 		SpaceID:   spaceId,
 		UserID:    userId,
 		IsActive:  isActive,
@@ -199,8 +199,8 @@ func (service MemberService) createRelationships(tx *gorm.DB, obj *model.Members
 
 func (service MemberService) createRelationship(tx *gorm.DB, obj *model.Membership, managerMemberId string) error {
 	relationship := model.ManagerRelationship{
-		ID:              service.bundle.id.MustULID(),
-		Version:         service.bundle.id.MustULID(),
+		ID:              service.bundle.idr.MustULID(),
+		Version:         service.bundle.idr.MustULID(),
 		UserMemberId:    obj.ID,
 		ManagerMemberId: managerMemberId,
 		IsActive:        true,
@@ -212,7 +212,7 @@ func (service MemberService) createRelationship(tx *gorm.DB, obj *model.Membersh
 }
 
 func (service MemberService) Update(tx *gorm.DB, in dto.SpaceMembershipUpdateInput, obj *model.Membership) (*dto.SpaceMembershipCreateOutcome, error) {
-	obj.Version = service.bundle.id.MustULID()
+	obj.Version = service.bundle.idr.MustULID()
 	obj.IsActive = in.IsActive
 
 	err := tx.Save(&obj).Error
@@ -228,9 +228,9 @@ func (service MemberService) Update(tx *gorm.DB, in dto.SpaceMembershipUpdateInp
 
 func (service MemberService) FindRoles(ctx context.Context, userId string, spaceId string) ([]*model.Space, error) {
 	var roles []*model.Space
+	db := connect.ContextToDB(ctx)
 
-	err := service.bundle.db.
-		WithContext(ctx).
+	err := db.
 		Joins(
 			fmt.Sprintf(
 				"INNER JOIN %s ON %s.space_id = %s.id AND %s.user_id = ?",

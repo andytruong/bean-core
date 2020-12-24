@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"bean/components/util"
+	"bean/components/util/connect"
 	model2 "bean/pkg/app/model"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
@@ -31,7 +32,7 @@ func (service *policyService) load(tx *gorm.DB, appId string, id string) (*model
 
 func (service *policyService) create(tx *gorm.DB, appId string, kind model.PolicyKind, value string) (*model.Policy, error) {
 	policy := &model.Policy{
-		ID:            service.bundle.id.MustULID(),
+		ID:            service.bundle.idr.MustULID(),
 		ApplicationId: appId,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
@@ -48,12 +49,9 @@ func (service *policyService) create(tx *gorm.DB, appId string, kind model.Polic
 }
 
 func (service *policyService) loadByApplicationId(ctx context.Context, appId string) ([]*model.Policy, error) {
+	db := connect.ContextToDB(ctx)
 	policies := []*model.Policy{}
-
-	err := service.bundle.db.WithContext(ctx).
-		Where("application_id = ?", appId).
-		Find(&policies).
-		Error
+	err := db.Where("application_id = ?", appId).Find(&policies).Error
 	if nil != err {
 		return nil, err
 	}
@@ -61,9 +59,11 @@ func (service *policyService) loadByApplicationId(ctx context.Context, appId str
 	return policies, nil
 }
 
-func (service *policyService) onAppCreate(tx *gorm.DB, app *model2.Application, in []dto.S3ApplicationPolicyCreateInput) error {
+func (service *policyService) onAppCreate(ctx context.Context, app *model2.Application, in []dto.S3ApplicationPolicyCreateInput) error {
+	db := connect.ContextToDB(ctx)
+
 	for _, input := range in {
-		_, err := service.create(tx, app.ID, input.Kind, input.Value)
+		_, err := service.create(db, app.ID, input.Kind, input.Value)
 		if nil != err {
 			return err
 		}

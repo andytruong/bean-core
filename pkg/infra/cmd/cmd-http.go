@@ -10,22 +10,24 @@ import (
 	"bean/pkg/infra"
 )
 
-func HttpServerCommand(can *infra.Container) *cli.Command {
+func HttpServerCommand(container *infra.Container) *cli.Command {
 	router := mux.NewRouter()
 
 	return &cli.Command{
 		Name: "http-server",
 		Action: func(ctx *cli.Context) error {
+			r := infra.GraphqlHttpRouter{Container: container}
+
 			server := http.Server{
-				Addr:              can.HttpServer.Address,
-				Handler:           can.HttpRouter(router),
-				ReadTimeout:       can.HttpServer.ReadTimeout,
-				ReadHeaderTimeout: can.HttpServer.ReadTimeout,
-				WriteTimeout:      can.HttpServer.WriteTimeout,
-				IdleTimeout:       can.HttpServer.ReadTimeout,
+				Addr:              container.HttpServer.Address,
+				Handler:           r.Handler(router),
+				ReadTimeout:       container.HttpServer.ReadTimeout,
+				ReadHeaderTimeout: container.HttpServer.ReadTimeout,
+				WriteTimeout:      container.HttpServer.WriteTimeout,
+				IdleTimeout:       container.HttpServer.ReadTimeout,
 			}
 
-			can.Logger().Info("🚀 HTTP server is running", zap.String("address", can.HttpServer.Address))
+			container.Logger().Info("🚀 HTTP server is running", zap.String("address", container.HttpServer.Address))
 
 			return server.ListenAndServe()
 		},

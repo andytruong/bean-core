@@ -10,6 +10,7 @@ import (
 	"bean/components/claim"
 	"bean/components/scalar"
 	"bean/components/util"
+	"bean/components/util/connect"
 	"bean/pkg/infra/api"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
@@ -47,12 +48,12 @@ func (service SpaceService) FindOne(ctx context.Context, filters dto.SpaceFilter
 	return nil, nil
 }
 
-func (service *SpaceService) Create(tx *gorm.DB, in dto.SpaceCreateInput) (*dto.SpaceCreateOutcome, error) {
-	space, err := service.create(tx, in)
+func (service *SpaceService) Create(ctx context.Context, in dto.SpaceCreateInput) (*dto.SpaceCreateOutcome, error) {
+	space, err := service.create(ctx, in)
 	if nil != err {
 		return nil, err
 	} else {
-		err := service.createRelationships(tx, space, in)
+		err := service.createRelationships(ctx, space, in)
 		if nil != err {
 			return nil, err
 		}
@@ -61,10 +62,11 @@ func (service *SpaceService) Create(tx *gorm.DB, in dto.SpaceCreateInput) (*dto.
 	}
 }
 
-func (service *SpaceService) create(tx *gorm.DB, in dto.SpaceCreateInput) (*model.Space, error) {
+func (service *SpaceService) create(ctx context.Context, in dto.SpaceCreateInput) (*model.Space, error) {
+	tx := connect.ContextToDB(ctx)
 	space := &model.Space{
-		ID:        service.bundle.id.MustULID(),
-		Version:   service.bundle.id.MustULID(),
+		ID:        service.bundle.idr.MustULID(),
+		Version:   service.bundle.idr.MustULID(),
 		Kind:      in.Object.Kind,
 		Title:     *in.Object.Title,
 		Language:  in.Object.Language,
@@ -90,7 +92,8 @@ func (service *SpaceService) create(tx *gorm.DB, in dto.SpaceCreateInput) (*mode
 	return space, nil
 }
 
-func (service *SpaceService) createRelationships(tx *gorm.DB, space *model.Space, in dto.SpaceCreateInput) error {
+func (service *SpaceService) createRelationships(ctx context.Context, space *model.Space, in dto.SpaceCreateInput) error {
+	tx := connect.ContextToDB(ctx)
 	if err := service.bundle.domainNameService.createMultiple(tx, space, in); nil != err {
 		return err
 	}
@@ -102,7 +105,7 @@ func (service *SpaceService) createRelationships(tx *gorm.DB, space *model.Space
 		}
 	}
 
-	claims := claim.ContextToPayload(tx.Statement.Context)
+	claims := claim.ContextToPayload(ctx)
 	if nil != claims {
 		// setup roles
 		//  - create 'owner' role for the new space
@@ -117,7 +120,7 @@ func (service *SpaceService) createRelationships(tx *gorm.DB, space *model.Space
 			},
 		}
 
-		if ownerRole, err := service.create(tx, ownerRoleInput); nil != err {
+		if ownerRole, err := service.create(ctx, ownerRoleInput); nil != err {
 			return err
 		} else {
 			// membership of user -> organisation
@@ -148,7 +151,7 @@ func (service SpaceService) Update(tx *gorm.DB, obj model.Space, in dto.SpaceUpd
 	}
 
 	// change version
-	obj.Version = service.bundle.id.MustULID()
+	obj.Version = service.bundle.idr.MustULID()
 	if err := tx.Save(obj).Error; nil != err {
 		return nil, err
 	}

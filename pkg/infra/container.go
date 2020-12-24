@@ -8,12 +8,11 @@ import (
 
 	"bean/components/conf"
 	"bean/components/module"
-	"bean/components/unique"
+	"bean/components/scalar"
 	"bean/pkg/access"
 	"bean/pkg/integration/mailer"
 	"bean/pkg/integration/s3"
 	"bean/pkg/space"
-	"bean/pkg/user"
 )
 
 func NewContainer(path string) (*Container, error) {
@@ -21,7 +20,7 @@ func NewContainer(path string) (*Container, error) {
 
 	this := &Container{
 		mutex:   &sync.Mutex{},
-		bundles: bundles{},
+		bundles: BundleList{},
 		dbs: databases{
 			connections: &sync.Map{},
 		},
@@ -59,12 +58,12 @@ type (
 		Env        string                    `yaml:"env"`
 		Databases  map[string]DatabaseConfig `yaml:"databases"`
 		HttpServer HttpServerConfig          `yaml:"http-server"`
-		Bundles    BundlesConfig             `json:"bundles"`
+		Bundles    BundlesConfig             `json:"BundleList"`
 
 		mutex   *sync.Mutex
-		id      *unique.Identifier
+		id      *scalar.Identifier
 		dbs     databases
-		bundles bundles
+		bundles BundleList
 		logger  *zap.Logger
 	}
 
@@ -106,48 +105,27 @@ type (
 	}
 )
 
-func (container *Container) Logger() *zap.Logger {
-	return container.logger
+func (c *Container) Logger() *zap.Logger {
+	return c.logger
 }
 
-func (container *Container) Identifier() *unique.Identifier {
-	if container.id == nil {
-		container.mutex.Lock()
-		container.id = &unique.Identifier{}
-		container.mutex.Unlock()
+func (c *Container) Identifier() *scalar.Identifier {
+	if c.id == nil {
+		c.mutex.Lock()
+		c.id = &scalar.Identifier{}
+		c.mutex.Unlock()
 	}
 
-	return container.id
+	return c.id
 }
 
-func (container *Container) BundleList() []module.Bundle {
-	return container.bundles.List()
+func (c *Container) BundleList() BundleList {
+	return c.bundles
 }
 
-func (container *Container) Bundle(i int) module.Bundle {
-	bundles := container.BundleList()
+func (c *Container) Bundle(i int) module.Bundle {
+	list := c.BundleList()
+	bundles := list.Get()
 
 	return bundles[i]
-}
-
-// TODO: Generate this code
-func (container *Container) BundlePath(bundle module.Bundle) string {
-	switch bundle.(type) {
-	case *user.UserBundle:
-		return "User"
-
-	case *space.SpaceBundle:
-		return "Space"
-
-	case *access.AccessBundle:
-		return "Access"
-
-	case *s3.S3Bundle:
-		return "S3"
-
-	case *mailer.MailerBundle:
-		return "Mailer"
-	}
-
-	panic("unknown bundle")
 }

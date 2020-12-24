@@ -11,8 +11,7 @@ import (
 	"bean/components/scalar"
 	"bean/components/util"
 	"bean/components/util/connect"
-	model2 "bean/pkg/app/model"
-	"bean/pkg/integration/s3/model"
+	dto2 "bean/pkg/app/model/dto"
 	"bean/pkg/integration/s3/model/dto"
 )
 
@@ -20,44 +19,24 @@ type ApplicationService struct {
 	bundle *S3Bundle
 }
 
-func (service *ApplicationService) Load(ctx context.Context, id string) (*model2.Application, error) {
-	app := &model2.Application{}
-
-	// TODO: don't allow to load pending deleted S3 applications.
-	err := service.bundle.db.
-		WithContext(ctx).
-		Where("id = ?", id).
-		First(&app).
-		Error
+func (service *ApplicationService) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
+	out, err := service.bundle.appBundle.Service.Create(ctx, &dto2.ApplicationCreateInput{IsActive: in.IsActive})
 	if nil != err {
 		return nil, err
 	}
 
-	return app, nil
-}
+	if nil == out.App {
+		return &dto.S3ApplicationMutationOutcome{App: nil, Errors: out.Errors}, nil
+	}
 
-func (service *ApplicationService) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
-	var app *model2.Application
-
-	err := connect.Transaction(
+	err = connect.Transaction(
 		ctx,
-		service.bundle.db,
+		connect.ContextToDB(ctx),
 		func(tx *gorm.DB) error {
-			app = &model2.Application{
-				ID:        service.bundle.id.MustULID(),
-				Version:   service.bundle.id.MustULID(),
-				IsActive:  in.IsActive,
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-				DeletedAt: nil,
-			}
-
-			err := tx.Create(&app).Error
-			if nil != err {
+			ctx := connect.DBToContext(ctx, tx)
+			if err := service.bundle.credentialService.onAppCreate(ctx, out.App, in.Credentials); nil != err {
 				return err
-			} else if err := service.bundle.credentialService.onAppCreate(tx, app, in.Credentials); nil != err {
-				return err
-			} else if err = service.bundle.policyService.onAppCreate(tx, app, in.Policies); nil != err {
+			} else if err = service.bundle.policyService.onAppCreate(ctx, out.App, in.Policies); nil != err {
 				return err
 			}
 
@@ -69,54 +48,38 @@ func (service *ApplicationService) Create(ctx context.Context, in *dto.S3Applica
 		return nil, err
 	}
 
-	return &dto.S3ApplicationMutationOutcome{App: app, Errors: nil}, nil
+	return &dto.S3ApplicationMutationOutcome{App: out.App, Errors: nil}, nil
 }
 
 func (service *ApplicationService) Update(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
-	app, err := service.Load(ctx, in.Id)
+	out, err := service.bundle.appBundle.Service.Update(ctx, &dto2.ApplicationUpdateInput{
+		Id:       in.Id,
+		Version:  in.Version,
+		IsActive: in.IsActive,
+	})
 
 	if nil != err {
-		return nil, err
-	} else if app.Version != in.Version {
-		return nil, util.ErrorVersionConflict
-	}
-
-	changed := false
-	if nil != in.IsActive {
-		if app.IsActive != *in.IsActive {
-			app.IsActive = *in.IsActive
-			changed = true
+		if err == util.ErrorUselessInput {
+			if nil == in.Credentials && nil == in.Policies {
+				return nil, err
+			}
 		}
 	}
 
-	if deletedAt, ok := ctx.Value(model.DeleteContextKey).(time.Time); ok {
-		app.DeletedAt = &deletedAt
-		changed = true
+	if nil == out || nil == out.App {
+		return &dto.S3ApplicationMutationOutcome{App: nil, Errors: out.Errors}, nil
 	}
 
-	if !changed {
-		if nil == in.Credentials && nil == in.Policies {
-			return nil, util.ErrorUselessInput
-		}
-	}
-
-	app.Version = service.bundle.id.MustULID()
-	app.UpdatedAt = time.Now()
 	err = connect.Transaction(
 		ctx,
-		service.bundle.db,
+		connect.ContextToDB(ctx),
 		func(tx *gorm.DB) error {
-			err := tx.Save(&app).Error
+			err = service.bundle.credentialService.onAppUpdate(tx, out.App, in.Credentials)
 			if nil != err {
 				return err
 			}
 
-			err = service.bundle.credentialService.onAppUpdate(tx, app, in.Credentials)
-			if nil != err {
-				return err
-			}
-
-			err = service.bundle.policyService.onAppUpdate(tx, app, in.Policies)
+			err = service.bundle.policyService.onAppUpdate(tx, out.App, in.Policies)
 			if nil != err {
 				return err
 			}
@@ -125,17 +88,7 @@ func (service *ApplicationService) Update(ctx context.Context, in *dto.S3Applica
 		},
 	)
 
-	return &dto.S3ApplicationMutationOutcome{App: app, Errors: nil}, err
-}
-
-func (service *ApplicationService) Delete(ctx context.Context, in dto.S3ApplicationDeleteInput) (*dto.S3ApplicationMutationOutcome, error) {
-	ctx = context.WithValue(ctx, model.DeleteContextKey, time.Now())
-
-	return service.Update(ctx, &dto.S3ApplicationUpdateInput{
-		Id:       in.Id,
-		Version:  in.Version,
-		IsActive: scalar.NilBool(true),
-	})
+	return &dto.S3ApplicationMutationOutcome{App: out.App, Errors: out.Errors}, err
 }
 
 func (service *ApplicationService) S3UploadToken(ctx context.Context, in dto.S3UploadTokenInput) (map[string]interface{}, error) {
@@ -146,7 +99,7 @@ func (service *ApplicationService) S3UploadToken(ctx context.Context, in dto.S3U
 	}
 
 	// load application
-	app, err := service.bundle.AppService.Load(ctx, in.ApplicationId)
+	app, err := service.bundle.appBundle.Service.Load(ctx, in.ApplicationId)
 	if nil != err {
 		return nil, err
 	} else {

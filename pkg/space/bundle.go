@@ -9,19 +9,19 @@ import (
 
 	"bean/components/module"
 	"bean/components/module/migrate"
-	"bean/components/unique"
+	"bean/components/scalar"
 	"bean/pkg/user"
 )
 
 func NewSpaceBundle(
-	db *gorm.DB, logger *zap.Logger, id *unique.Identifier,
+	db *gorm.DB, logger *zap.Logger, idr *scalar.Identifier,
 	userBundle *user.UserBundle,
 	config *SpaceConfiguration,
 ) *SpaceBundle {
 	this := &SpaceBundle{
 		logger:     logger,
 		db:         db,
-		id:         id,
+		idr:        idr,
 		userBundle: userBundle,
 		config:     config,
 	}
@@ -45,11 +45,15 @@ type SpaceBundle struct {
 	config            *SpaceConfiguration
 	logger            *zap.Logger
 	db                *gorm.DB
-	id                *unique.Identifier
+	idr               *scalar.Identifier
 	userBundle        *user.UserBundle
 	resolvers         map[string]interface{}
 	configService     *ConfigService
 	domainNameService *DomainNameService
+}
+
+func (SpaceBundle) Name() string {
+	return "Space"
 }
 
 func (bundle *SpaceBundle) Dependencies() []module.Bundle {

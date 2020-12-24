@@ -9,7 +9,7 @@ import (
 
 	"bean/components/module"
 	"bean/components/module/migrate"
-	"bean/components/unique"
+	"bean/components/scalar"
 	connect2 "bean/components/util/connect"
 )
 
@@ -29,8 +29,8 @@ func MockLogger() *zap.Logger {
 	return zap.NewNop()
 }
 
-func MockIdentifier() *unique.Identifier {
-	return &unique.Identifier{}
+func MockIdentifier() *scalar.Identifier {
+	return &scalar.Identifier{}
 }
 
 func MockInstall(bean module.Bundle, db *gorm.DB) {

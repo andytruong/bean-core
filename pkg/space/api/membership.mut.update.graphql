@@ -1,6 +1,0 @@
-input SpaceMembershipUpdateInput {
-    id: ID!
-    version: ID!
-    Language: Language
-    isActive: Boolean!
-}

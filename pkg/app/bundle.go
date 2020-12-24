@@ -9,23 +9,26 @@ import (
 
 	"bean/components/module"
 	"bean/components/module/migrate"
-	"bean/components/unique"
+	"bean/components/scalar"
+	"bean/pkg/config"
 	"bean/pkg/space"
 )
 
 func NewApplicationBundle(
-	con *gorm.DB,
-	idr *unique.Identifier,
+	idr *scalar.Identifier,
 	logger *zap.Logger,
+	spaceBundle *space.SpaceBundle,
+	configBundle *config.ConfigBundle,
 ) (*AppBundle, error) {
 	bundle := &AppBundle{
-		con:         con,
-		idr:         idr,
-		logger:      logger,
-		spaceBundle: nil,
+		idr:          idr,
+		logger:       logger,
+		spaceBundle:  spaceBundle,
+		configBundle: configBundle,
 	}
 
 	bundle.resolvers = bundle.newResolvers()
+	bundle.Service = &AppService{bundle: bundle}
 
 	return bundle, nil
 }
@@ -33,11 +36,16 @@ func NewApplicationBundle(
 type AppBundle struct {
 	module.AbstractBundle
 
-	spaceBundle *space.SpaceBundle
-	con         *gorm.DB
-	idr         *unique.Identifier
-	logger      *zap.Logger
-	resolvers   map[string]interface{}
+	Service      *AppService
+	spaceBundle  *space.SpaceBundle
+	configBundle *config.ConfigBundle
+	idr          *scalar.Identifier
+	logger       *zap.Logger
+	resolvers    map[string]interface{}
+}
+
+func (AppBundle) Name() string {
+	return "App"
 }
 
 func (bundle AppBundle) Dependencies() []module.Bundle {
