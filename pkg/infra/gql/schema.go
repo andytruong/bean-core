@@ -111,6 +111,7 @@ type ComplexityRoot struct {
 		ID          func(childComplexity int) int
 		IsActive    func(childComplexity int) int
 		Polices     func(childComplexity int) int
+		Title       func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
 		Version     func(childComplexity int) int
 	}
@@ -696,6 +697,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Polices(childComplexity), true
+
+	case "Application.title":
+		if e.complexity.Application.Title == nil {
+			break
+		}
+
+		return e.complexity.Application.Title(childComplexity), true
 
 	case "Application.updatedAt":
 		if e.complexity.Application.UpdatedAt == nil {
@@ -2443,6 +2451,7 @@ type Application {
     id: ID!
     version: ID!
     isActive: Boolean!
+    title: String
     createdAt: Time!
     updatedAt: Time!
     deletedAt: Time!
@@ -2471,16 +2480,21 @@ type ApplicationOutcome {
     app: Application
 }
 
+# ---------------------
 # Mutatation -> Create
+# ---------------------
 type ApplicationMutation {
     create(input: ApplicationCreateInput): ApplicationOutcome!
 }
 
 input ApplicationCreateInput {
     isActive: Boolean!
+    title: String
 }
 
+# ---------------------
 # Mutatation -> Update
+# ---------------------
 extend type ApplicationMutation {
     update(input: ApplicationUpdateInput): ApplicationOutcome!
 }
@@ -2489,6 +2503,7 @@ input ApplicationUpdateInput {
     id: ID!
     version: ID!
     isActive: Boolean
+    title: String
 }
 `, BuiltIn: false},
 	{Name: "pkg/config/api/entity.graphql", Input: `type ConfigBucket {
@@ -2789,11 +2804,6 @@ type Credentials {
 }
 
 # =====================
-# Query
-# =====================
-# No query?
-
-# =====================
 # Mutation
 # =====================
 extend type Mutation  {
@@ -2872,36 +2882,10 @@ input S3UploadTokenInput {
     contentType:   ContentType!
 }
 `, BuiltIn: false},
-	{Name: "pkg/space/api/_mutation.graphql", Input: `extend type Mutation {
-    spaceMutation: SpaceMutation!
-}
-
-type SpaceMutation {
-    create(input: SpaceCreateInput!): SpaceCreateOutcome!
-    update(input: SpaceUpdateInput!): SpaceCreateOutcome!
-    membership: SpaceMembershipMutation!
-}
-
-type SpaceMembershipMutation {
-    create(input: SpaceMembershipCreateInput!): SpaceMembershipCreateOutcome!
-    update(input: SpaceMembershipUpdateInput!): SpaceMembershipCreateOutcome!
-}
-`, BuiltIn: false},
-	{Name: "pkg/space/api/_query.graphql", Input: `extend type Query {
-    spaceQuery: SpaceQuery!
-}
-
-type SpaceQuery {
-    findOne(filters: SpaceFilters!): Space
-    membership: SpaceMembershipQuery!
-}
-
-type SpaceMembershipQuery {
-    load(id: ID!, version: ID): Membership
-    find(first: Int!, after: String, filters: MembershipsFilter!): MembershipConnection!
-}
-`, BuiltIn: false},
-	{Name: "pkg/space/api/entity.graphql", Input: `enum SpaceKind { Organisation, Role }
+	{Name: "pkg/space/api/schema.graphql", Input: `# =====================
+# Entity
+# =====================
+enum SpaceKind { Organisation, Role }
 
 type Space {
     id: ID!
@@ -2934,38 +2918,44 @@ type DomainName {
 type SpaceFeatures {
     register: Boolean!
 }
-`, BuiltIn: false},
-	{Name: "pkg/space/api/membership.graphql", Input: `type Membership {
-	id: ID!
-	version: ID!
-	space: Space!
-	user: User!
-	isActive: Boolean!
-	createdAt: Time!
-	updatedAt: Time!
-	roles: [Space!]!
-}
-`, BuiltIn: false},
-	{Name: "pkg/space/api/membership.mut.create.graphql", Input: `input SpaceMembershipCreateInput {
-    spaceId: ID!
-    userId: ID!
-    isActive: Boolean!
-    managerMemberIds: [ID!]!
-}
 
-type SpaceMembershipCreateOutcome {
-    errors: [Error!]
-    membership: Membership
-}
-`, BuiltIn: false},
-	{Name: "pkg/space/api/membership.mut.update.graphql", Input: `input SpaceMembershipUpdateInput {
+type Membership {
     id: ID!
     version: ID!
-    Language: Language
+    space: Space!
+    user: User!
     isActive: Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+    roles: [Space!]!
 }
-`, BuiltIn: false},
-	{Name: "pkg/space/api/membership.query.get.graphql", Input: `input MembershipsFilter {
+
+# =====================
+# Query
+# =====================
+extend type Query {
+    spaceQuery: SpaceQuery!
+}
+
+type SpaceQuery {
+    findOne(filters: SpaceFilters!): Space
+    membership: SpaceMembershipQuery!
+}
+
+input SpaceFilters {
+    id: ID
+    domain: Uri
+}
+
+# ---------------------
+# Query -> Membership
+# ---------------------
+type SpaceMembershipQuery {
+    load(id: ID!, version: ID): Membership
+    find(first: Int!, after: String, filters: MembershipsFilter!): MembershipConnection!
+}
+
+input MembershipsFilter {
     space: MembershipsFilterSpace
     userId: ID!
     isActive: Boolean!
@@ -2993,8 +2983,24 @@ type MembershipInfo {
     hasNextPage: Boolean!
     startCursor: String
 }
-`, BuiltIn: false},
-	{Name: "pkg/space/api/space.mut.create.graphql", Input: `input SpaceCreateInput {
+
+# =====================
+# Mutation
+# =====================
+extend type Mutation {
+    spaceMutation: SpaceMutation!
+}
+
+type SpaceMutation {
+    create(input: SpaceCreateInput!): SpaceCreateOutcome!
+    update(input: SpaceUpdateInput!): SpaceCreateOutcome!
+    membership: SpaceMembershipMutation!
+}
+
+# ---------------------
+# Mutation -> Space
+# ---------------------
+input SpaceCreateInput {
     object: SpaceCreateInputObject!
 }
 
@@ -3026,8 +3032,8 @@ type SpaceCreateOutcome {
     errors: [Error!]
     space: Space
 }
-`, BuiltIn: false},
-	{Name: "pkg/space/api/space.mut.update.graphql", Input: `input SpaceUpdateInput {
+
+input SpaceUpdateInput {
     spaceId: ID!
     spaceVersion: ID!
     object: SpaceUpdateInputObject
@@ -3040,10 +3046,32 @@ input SpaceUpdateInputObject {
 input SpaceUpdateInputFeatures {
     register: Boolean
 }
-`, BuiltIn: false},
-	{Name: "pkg/space/api/space.query.graphql", Input: `input SpaceFilters {
-    id: ID
-    domain: Uri
+
+# ---------------------
+# Mutation -> Membership
+# ---------------------
+type SpaceMembershipMutation {
+    create(input: SpaceMembershipCreateInput!): SpaceMembershipCreateOutcome!
+    update(input: SpaceMembershipUpdateInput!): SpaceMembershipCreateOutcome!
+}
+
+input SpaceMembershipCreateInput {
+    spaceId: ID!
+    userId: ID!
+    isActive: Boolean!
+    managerMemberIds: [ID!]!
+}
+
+type SpaceMembershipCreateOutcome {
+    errors: [Error!]
+    membership: Membership
+}
+
+input SpaceMembershipUpdateInput {
+    id: ID!
+    version: ID!
+    Language: Language
+    isActive: Boolean!
 }
 `, BuiltIn: false},
 	{Name: "pkg/user/api/entity.graphql", Input: `type User {
@@ -3964,6 +3992,38 @@ func (ec *executionContext) _Application_isActive(ctx context.Context, field gra
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_title(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_createdAt(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
@@ -12640,6 +12700,14 @@ func (ec *executionContext) unmarshalInputApplicationCreateInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
+		case "title":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -12673,6 +12741,14 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isActive"))
 			it.IsActive, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "title":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14407,6 +14483,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "title":
+			out.Values[i] = ec._Application_title(ctx, field, obj)
 		case "createdAt":
 			out.Values[i] = ec._Application_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

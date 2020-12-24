@@ -3,9 +3,9 @@ package config
 import (
 	"context"
 	"time"
-	
+
 	"github.com/pkg/errors"
-	
+
 	"bean/components/scalar"
 	"bean/components/util"
 	"bean/components/util/connect"
@@ -19,7 +19,7 @@ type BucketService struct {
 
 func (srv BucketService) Create(ctx context.Context, in dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
 	tx := connect.ContextToDB(ctx)
-	
+
 	bucket := &model.ConfigBucket{
 		Id:          srv.bundle.idr.MustULID(),
 		Version:     srv.bundle.idr.MustULID(),
@@ -33,16 +33,16 @@ func (srv BucketService) Create(ctx context.Context, in dto.BucketCreateInput) (
 		UpdatedAt:   time.Now(),
 		IsPublished: in.IsPublished,
 	}
-	
+
 	if nil != in.Access {
 		bucket.Access = *in.Access
 	}
-	
+
 	err := tx.Create(&bucket).Error
 	if nil != err {
 		return nil, err
 	}
-	
+
 	return &dto.BucketMutationOutcome{Errors: nil, Bucket: bucket}, nil
 }
 
@@ -52,11 +52,11 @@ func (srv BucketService) Update(ctx context.Context, in dto.BucketUpdateInput) (
 	if nil != err {
 		return nil, err
 	}
-	
+
 	if bucket.Version != in.Version {
 		return nil, util.ErrorVersionConflict
 	}
-	
+
 	changed := false
 	if in.Title != nil {
 		if bucket.Title != *in.Title {
@@ -64,42 +64,42 @@ func (srv BucketService) Update(ctx context.Context, in dto.BucketUpdateInput) (
 			bucket.Title = *in.Title
 		}
 	}
-	
+
 	if in.Description != nil {
 		if bucket.Description != in.Description {
 			changed = true
 			bucket.Description = in.Description
 		}
 	}
-	
+
 	if in.Access != nil {
 		if bucket.Access != *in.Access {
 			changed = true
 			bucket.Access = *in.Access
 		}
 	}
-	
+
 	if in.Schema != nil {
 		if bucket.Schema != *in.Schema {
 			if bucket.IsPublished {
 				return nil, util.ErrorLocked
 			}
-			
+
 			changed = true
 			bucket.Schema = *in.Schema
 		}
 	}
-	
+
 	if nil != in.IsPublished {
 		if *in.IsPublished != bucket.IsPublished {
 			if bucket.IsPublished {
 				return nil, errors.Wrap(util.ErrorLocked, "change not un-publish a published bucket")
 			}
-			
+
 			bucket.IsPublished = *in.IsPublished
 		}
 	}
-	
+
 	if changed {
 		bucket.Version = srv.bundle.idr.MustULID()
 		err = tx.Save(&bucket).Error
@@ -107,7 +107,7 @@ func (srv BucketService) Update(ctx context.Context, in dto.BucketUpdateInput) (
 			return nil, err
 		}
 	}
-	
+
 	return &dto.BucketMutationOutcome{
 		Errors: nil,
 		Bucket: bucket,
@@ -122,6 +122,6 @@ func (srv BucketService) Load(ctx context.Context, id string) (*model.ConfigBuck
 	if nil != err {
 		return nil, err
 	}
-	
+
 	return bucket, nil
 }

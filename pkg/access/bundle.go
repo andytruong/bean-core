@@ -3,10 +3,10 @@ package access
 import (
 	"path"
 	"runtime"
-	
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	
+
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/scalar"

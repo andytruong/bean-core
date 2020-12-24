@@ -6,7 +6,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	
+
 	"bean/components/module"
 	"bean/components/module/migrate"
 	"bean/components/scalar"
