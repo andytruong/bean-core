@@ -88,7 +88,7 @@ func (r *GraphqlHttpRouter) handleFunc(srv *handler.Server) func(http.ResponseWr
 		if nil != err {
 			r.respondError(w, err, "failed to make DB connection", http.StatusInternalServerError)
 		} else {
-			context.WithValue(ctx, connect.DatabaseContextKey, con.WithContext(ctx))
+			ctx = context.WithValue(ctx, connect.DatabaseContextKey, con.WithContext(ctx))
 		}
 
 		srv.ServeHTTP(w, req.WithContext(ctx))

@@ -76,7 +76,7 @@ func Test_Update(t *testing.T) {
 		ass.NoError(err)
 		ass.NotNil(oCreate)
 		rUpdate := this.resolvers["UserMutation"].(map[string]interface{})["Update"].(func(context.Context, *dto.UserMutation, dto.UserUpdateInput) (*dto.UserMutationOutcome, error))
-		
+
 		t.Run("version conflict", func(t *testing.T) {
 			oUpdate, err := rUpdate(context.Background(), nil, dto.UserUpdateInput{
 				ID:      oCreate.User.ID,
