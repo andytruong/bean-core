@@ -31,11 +31,12 @@ func (service *ApplicationService) Create(ctx context.Context, in *dto.S3Applica
 
 	err = connect.Transaction(
 		ctx,
-		service.bundle.con,
+		connect.ContextToDB(ctx),
 		func(tx *gorm.DB) error {
-			if err := service.bundle.credentialService.onAppCreate(tx, out.App, in.Credentials); nil != err {
+			ctx := connect.DBToContext(ctx, tx)
+			if err := service.bundle.credentialService.onAppCreate(ctx, out.App, in.Credentials); nil != err {
 				return err
-			} else if err = service.bundle.policyService.onAppCreate(tx, out.App, in.Policies); nil != err {
+			} else if err = service.bundle.policyService.onAppCreate(ctx, out.App, in.Policies); nil != err {
 				return err
 			}
 
@@ -65,13 +66,13 @@ func (service *ApplicationService) Update(ctx context.Context, in *dto.S3Applica
 		}
 	}
 
-	if nil == out.App {
+	if nil != out && nil != out.App {
 		return &dto.S3ApplicationMutationOutcome{App: nil, Errors: out.Errors}, nil
 	}
 
 	err = connect.Transaction(
 		ctx,
-		service.bundle.con,
+		connect.ContextToDB(ctx),
 		func(tx *gorm.DB) error {
 			err = service.bundle.credentialService.onAppUpdate(tx, out.App, in.Credentials)
 			if nil != err {

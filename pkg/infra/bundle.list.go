@@ -149,18 +149,12 @@ func (list *bundles) App() (*app.AppBundle, error) {
 // TODO: Generate this code
 func (list *bundles) S3() (*s3.S3Bundle, error) {
 	if nil == list.s3 {
-		con, err := list.container.dbs.master()
-		if nil != err {
-			return nil, err
-		}
-
 		appBundle, err := list.App()
 		if nil != err {
 			return nil, err
 		}
 
 		list.s3 = s3.NewS3Integration(
-			con,
 			list.container.Identifier(),
 			list.container.logger,
 			list.container.Bundles.Integration.S3,
