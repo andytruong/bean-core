@@ -50,6 +50,10 @@ type UserBundle struct {
 	passwordService          *PasswordService
 }
 
+func (UserBundle) Name() string {
+	return "User"
+}
+
 func (bundle UserBundle) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {

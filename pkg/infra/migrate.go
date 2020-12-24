@@ -26,7 +26,8 @@ func (c *Container) Migrate(ctx context.Context) error {
 		}
 
 		// loop through bundles
-		for _, bundle := range c.BundleList() {
+		bundles := c.BundleList()
+		for _, bundle := range bundles.Get() {
 			if err := bundle.Migrate(tx, driver); nil != err {
 				tx.Rollback()
 				return err

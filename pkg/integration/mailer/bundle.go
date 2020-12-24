@@ -32,6 +32,10 @@ type MailerBundle struct {
 	resolvers map[string]interface{}
 }
 
+func (MailerBundle) Name() string {
+	return "Mailer"
+}
+
 func (bundle MailerBundle) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {

@@ -44,6 +44,10 @@ type AppBundle struct {
 	resolvers    map[string]interface{}
 }
 
+func (AppBundle) Name() string {
+	return "App"
+}
+
 func (bundle AppBundle) Dependencies() []module.Bundle {
 	if nil != bundle.spaceBundle {
 		return []module.Bundle{bundle.spaceBundle}

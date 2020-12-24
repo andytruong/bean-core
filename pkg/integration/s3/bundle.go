@@ -47,6 +47,10 @@ type S3Bundle struct {
 	resolvers         map[string]interface{}
 }
 
+func (S3Bundle) Name() string {
+	return "S3"
+}
+
 func (bundle S3Bundle) Dependencies() []module.Bundle {
 	return []module.Bundle{bundle.appBundle}
 }

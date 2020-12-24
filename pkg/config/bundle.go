@@ -33,6 +33,10 @@ type ConfigBundle struct {
 	VariableService *VariableService
 }
 
+func (ConfigBundle) Name() string {
+	return "Config"
+}
+
 func (bundle ConfigBundle) Migrate(tx *gorm.DB, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {

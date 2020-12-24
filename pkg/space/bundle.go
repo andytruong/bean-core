@@ -52,6 +52,10 @@ type SpaceBundle struct {
 	domainNameService *DomainNameService
 }
 
+func (SpaceBundle) Name() string {
+	return "Space"
+}
+
 func (bundle *SpaceBundle) Dependencies() []module.Bundle {
 	return []module.Bundle{bundle.userBundle}
 }

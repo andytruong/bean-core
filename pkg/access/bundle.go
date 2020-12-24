@@ -53,6 +53,10 @@ type (
 	}
 )
 
+func (AccessBundle) Name() string {
+	return "Access"
+}
+
 func (bundle AccessBundle) Dependencies() []module.Bundle {
 	return []module.Bundle{
 		bundle.userBundle,

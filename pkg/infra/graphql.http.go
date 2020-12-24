@@ -25,7 +25,7 @@ type GraphqlHttpRouter struct {
 	Container *Container
 }
 
-func (r *GraphqlHttpRouter) Handler(router *mux.Router) *mux.Router {
+func (r *GraphqlHttpRouter) config() gql.Config {
 	cnf := gql.Config{
 		Resolvers: &Resolver{container: r.Container},
 		Directives: gql.DirectiveRoot{
@@ -42,21 +42,26 @@ func (r *GraphqlHttpRouter) Handler(router *mux.Router) *mux.Router {
 		},
 	}
 
-	schema := gql.NewExecutableSchema(cnf)
-	srv := handler.New(schema)
+	return cnf
+}
+
+func (r *GraphqlHttpRouter) Handler(router *mux.Router) *mux.Router {
+	config := r.config()
+	schema := gql.NewExecutableSchema(config)
+	server := handler.New(schema)
 	if r.Container.HttpServer.GraphQL.Transports.Post {
-		srv.AddTransport(transport.POST{})
+		server.AddTransport(transport.POST{})
 	}
 
 	if r.Container.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval != 0 {
-		srv.AddTransport(transport.Websocket{KeepAlivePingInterval: r.Container.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval})
+		server.AddTransport(transport.Websocket{KeepAlivePingInterval: r.Container.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval})
 	}
 
 	if r.Container.HttpServer.GraphQL.Introspection {
-		srv.Use(extension.Introspection{})
+		server.Use(extension.Introspection{})
 	}
 
-	router.HandleFunc("/query", r.handleFunc(srv))
+	router.HandleFunc("/query", r.handleFunc(server))
 
 	if r.Container.HttpServer.GraphQL.Playround.Enabled {
 		hdl := playground.Handler(r.Container.HttpServer.GraphQL.Playround.Title, "/query")
