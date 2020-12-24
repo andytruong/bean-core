@@ -6,13 +6,15 @@ import (
 )
 
 type ApplicationCreateInput struct {
-	IsActive bool `json:"isActive"`
+	IsActive bool    `json:"isActive"`
+	Title    *string `json:"title"`
 }
 
 type ApplicationUpdateInput struct {
-	Id       string `json:"id"`
-	Version  string `json:"version"`
-	IsActive *bool  `json:"isActive"`
+	Id       string  `json:"id"`
+	Version  string  `json:"version"`
+	IsActive *bool   `json:"isActive"`
+	Title    *string `json:"title"`
 }
 
 type ApplicationOutcome struct {
