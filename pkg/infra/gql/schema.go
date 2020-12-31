@@ -2506,7 +2506,7 @@ input ApplicationUpdateInput {
     title: String
 }
 `, BuiltIn: false},
-	{Name: "pkg/config/api/entity.graphql", Input: `type ConfigBucket {
+	{Name: "pkg/config/api/schema.graphql", Input: `type ConfigBucket {
     id: ID!
     version: ID!
     slug: ID!
@@ -2596,36 +2596,10 @@ enum FileType {
     GZIP       @value(string: "application/gzip")
 }
 `, BuiltIn: false},
-	{Name: "pkg/integration/mailer/api/schema.graphql", Input: `extend type Query  {
-    mailerQuery: MailerQuery!
-}
-
-extend type Mutation {
-    mailerMutation: MailerMutation!
-}
-
-type MailerQuery    {
-    account: MailerQueryAccount!
-}
-
-type MailerMutation {
-    account: MailerAccountMutation!
-}
-
-type MailerAuditLog {
-    id: ID!
-    account: MailerAccount!
-    spanId: ID!
-    template: MailerTemplate,
-    createdAt: Time!
-    recipientHash: String!
-    contextHash: String!
-    errorCode: Int
-    errorMessage: String
-    warningMessagse: String
-}
-`, BuiltIn: false},
-	{Name: "pkg/integration/mailer/api/account/entity.graphql", Input: `type MailerAccount {
+	{Name: "pkg/integration/mailer/api/schema.account.graphql", Input: `# =====================
+# Entity
+# =====================
+type MailerAccount {
     id:            ID!
     version:       ID!
     space:         Space!
@@ -2655,8 +2629,49 @@ type MailerSender {
     name:  String!
     email: EmailAddress! @comment(value: "For data dependency, we can not change this value once verified.")
 }
-`, BuiltIn: false},
-	{Name: "pkg/integration/mailer/api/account/mut-create.graphql", Input: `input MailerAccountCreateInput {
+
+# =====================
+# Query
+# =====================
+type MailerQueryAccount {
+    get(id: ID!): MailerAccount
+    getMultiple(first: Int!, after: String): [MailerAccount!]! @requireAuth
+}
+
+type MailerAccountConnection {
+    pageInfo: MailerAccountPageInfo
+    edges: [MailerAccountEdge!]!
+}
+
+type MailerAccountPageInfo {
+    endCursor: String
+    hasNextPage: Boolean!
+    startCursor: String
+}
+
+type MailerAccountEdge {
+    cursor: String!
+    node: MailerAccount!
+}
+
+# =====================
+# Mutation
+# =====================
+type MailerAccountMutation {
+    create(input: MailerAccountCreateInput!): MailerAccountMutationOutcome!
+    update(input: MailerAccountUpdateInput!): MailerAccountMutationOutcome!
+    verify(id: ID!, version: ID!): MailerAccountMutationOutcome!
+}
+
+type MailerAccountMutationOutcome {
+    account: MailerAccount
+    errors: [Error!]
+}
+
+# ---------------------
+# Create
+# ---------------------
+input MailerAccountCreateInput {
     spaceId:       ID!
     isActive:      Boolean!
     sender:        MailerAccountSenderInput!
@@ -2674,8 +2689,11 @@ input MailerAccountAttachmentInput {
     sizeLimitEach: Int
     fileTypes: [FileType!]!
 }
-`, BuiltIn: false},
-	{Name: "pkg/integration/mailer/api/account/mut-update.graphql", Input: `input MailerAccountUpdateInput {
+
+# ---------------------
+# Update
+# ---------------------
+input MailerAccountUpdateInput {
     id:      ID!
     version: ID!
     values:  MailerAccountUpdateValueInput!
@@ -2702,41 +2720,39 @@ input MailerAccountUpdateAttachmentInput {
     fileTypes: [FileType!]
 }
 `, BuiltIn: false},
-	{Name: "pkg/integration/mailer/api/account/mut-verify.graphql", Input: ``, BuiltIn: false},
-	{Name: "pkg/integration/mailer/api/account/mut.graphql", Input: `type MailerAccountMutation {
-    create(input: MailerAccountCreateInput!): MailerAccountMutationOutcome!
-    update(input: MailerAccountUpdateInput!): MailerAccountMutationOutcome!
-    verify(id: ID!, version: ID!): MailerAccountMutationOutcome!
+	{Name: "pkg/integration/mailer/api/schema.graphql", Input: `extend type Query  {
+    mailerQuery: MailerQuery!
 }
 
-type MailerAccountMutationOutcome {
-    account: MailerAccount
-    errors: [Error!]
+extend type Mutation {
+    mailerMutation: MailerMutation!
+}
+
+type MailerQuery    {
+    account: MailerQueryAccount!
+}
+
+type MailerMutation {
+    account: MailerAccountMutation!
+}
+
+type MailerAuditLog {
+    id: ID!
+    account: MailerAccount!
+    spanId: ID!
+    template: MailerTemplate,
+    createdAt: Time!
+    recipientHash: String!
+    contextHash: String!
+    errorCode: Int
+    errorMessage: String
+    warningMessagse: String
 }
 `, BuiltIn: false},
-	{Name: "pkg/integration/mailer/api/account/query.graphql", Input: `type MailerQueryAccount {
-    get(id: ID!): MailerAccount
-    getMultiple(first: Int!, after: String): [MailerAccount!]! @requireAuth
-}
-
-type MailerAccountConnection {
-    pageInfo: MailerAccountPageInfo
-    edges: [MailerAccountEdge!]!
-}
-
-type MailerAccountPageInfo {
-    endCursor: String
-    hasNextPage: Boolean!
-    startCursor: String
-}
-
-type MailerAccountEdge {
-    cursor: String!
-    node: MailerAccount!
-}
-`, BuiltIn: false},
-	{Name: "pkg/integration/mailer/api/audit/entity.graphql", Input: ``, BuiltIn: false},
-	{Name: "pkg/integration/mailer/api/template/entity.graphql", Input: `type MailerTemplate {
+	{Name: "pkg/integration/mailer/api/schema.template.graphql", Input: `# =====================
+# Entity
+# =====================
+type MailerTemplate {
     id: ID!
     version: ID!
     space: Space!
@@ -2763,8 +2779,11 @@ type MailerTemplateEvent {
 }
 
 enum MailerTemplateEventKey { CREATE UPDATE DELETE }
-`, BuiltIn: false},
-	{Name: "pkg/integration/mailer/api/template/mut.graphql", Input: `extend type MailerMutation {
+
+# =====================
+# Mutation
+# =====================
+extend type MailerMutation {
     template: MailerTemplateMutation!
 }
 

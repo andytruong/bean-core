@@ -1,9 +1,0 @@
-extend type MailerMutation {
-    template: MailerTemplateMutation!
-}
-
-type MailerTemplateMutation {
-    create: Boolean
-    update: Boolean
-    delete: Boolean
-}

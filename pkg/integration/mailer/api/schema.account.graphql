@@ -1,0 +1,123 @@
+# =====================
+# Entity
+# =====================
+type MailerAccount {
+    id:            ID!
+    version:       ID!
+    space:         Space!
+    status:        MailerAccountStatus!
+    createdAt:     Time!
+    updatedAt:     Time!
+    deletedAt:     Time
+    sender:        MailerSender!
+    connectionUrl: String! @comment(value: "encrypted value -- algo('smtp.sendgrid.net:587?username=test@bean.qa&password=bean') ")
+    attachment:    MailerAccountAttachment!
+}
+
+type MailerAccountAttachment {
+    sizeLimit:     Int @comment(value: "Number of bytes. If not provided, use system configuration.")
+    sizeLimitEach: Int @comment(value: "Number of bytes. If not provided, use system configuration.")
+    fileTypes:     [FileType!]!
+}
+
+enum MailerAccountStatus {
+    INACTIVE_UNVERIFIED @value(int: 0)
+    INACTIVE_VERIFIED   @value(int: 1)
+    ACTIVE_UNVERIFIED   @value(int: 2)
+    ACTIVE_VERIFIED     @value(int: 3)
+}
+
+type MailerSender {
+    name:  String!
+    email: EmailAddress! @comment(value: "For data dependency, we can not change this value once verified.")
+}
+
+# =====================
+# Query
+# =====================
+type MailerQueryAccount {
+    get(id: ID!): MailerAccount
+    getMultiple(first: Int!, after: String): [MailerAccount!]! @requireAuth
+}
+
+type MailerAccountConnection {
+    pageInfo: MailerAccountPageInfo
+    edges: [MailerAccountEdge!]!
+}
+
+type MailerAccountPageInfo {
+    endCursor: String
+    hasNextPage: Boolean!
+    startCursor: String
+}
+
+type MailerAccountEdge {
+    cursor: String!
+    node: MailerAccount!
+}
+
+# =====================
+# Mutation
+# =====================
+type MailerAccountMutation {
+    create(input: MailerAccountCreateInput!): MailerAccountMutationOutcome!
+    update(input: MailerAccountUpdateInput!): MailerAccountMutationOutcome!
+    verify(id: ID!, version: ID!): MailerAccountMutationOutcome!
+}
+
+type MailerAccountMutationOutcome {
+    account: MailerAccount
+    errors: [Error!]
+}
+
+# ---------------------
+# Create
+# ---------------------
+input MailerAccountCreateInput {
+    spaceId:       ID!
+    isActive:      Boolean!
+    sender:        MailerAccountSenderInput!
+    connectionUrl: String!
+    attachment:    MailerAccountAttachmentInput
+}
+
+input MailerAccountSenderInput {
+    name:  String!
+    email: EmailAddress!
+}
+
+input MailerAccountAttachmentInput {
+    sizeLimit: Int
+    sizeLimitEach: Int
+    fileTypes: [FileType!]!
+}
+
+# ---------------------
+# Update
+# ---------------------
+input MailerAccountUpdateInput {
+    id:      ID!
+    version: ID!
+    values:  MailerAccountUpdateValueInput!
+}
+
+input MailerAccountUpdateValueInput {
+    status:        MailerAccountStatus @comment(values: [
+        "Can not change to ACTIVE_VERIFIED   using this mutation.",
+        "Can not change to INACTIVE_VERIFIED using this mutation unless from ACTIVE_VERIFIED.",
+    ])
+    connectionUrl: String @comment(value: "Account will become unverified if this value is provided.")
+    sender:        MailerAccountUpdateSenderInput
+    attachment:    MailerAccountUpdateSenderInput
+}
+
+input MailerAccountUpdateSenderInput {
+    name: String        @constraint(maxLength: 128, minLength: 7)
+    email: EmailAddress @comment(value: "Can only change when account is not verified.")
+}
+
+input MailerAccountUpdateAttachmentInput {
+    sizeLimit: Int
+    sizeLimitEach: Int
+    fileTypes: [FileType!]
+}
