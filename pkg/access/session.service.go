@@ -8,8 +8,8 @@ import (
 	"gorm.io/gorm"
 
 	"bean/components/claim"
+	"bean/components/connect"
 	"bean/components/util"
-	"bean/components/util/connect"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	mSpace "bean/pkg/space/model"
@@ -150,7 +150,7 @@ func (service SessionService) create(
 		return nil, err
 	} else {
 		// update membership -> last-time-login
-		err := service.bundle.spaceBundle.MemberService.UpdateLastLoginTime(tx, membership)
+		err := service.bundle.spaceBundle.MemberService.UpdateLastLoginTime(ctx, membership)
 		if nil != err {
 			return nil, err
 		}

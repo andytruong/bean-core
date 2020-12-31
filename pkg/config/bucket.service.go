@@ -6,9 +6,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"bean/components/connect"
 	"bean/components/scalar"
 	"bean/components/util"
-	"bean/components/util/connect"
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
 )

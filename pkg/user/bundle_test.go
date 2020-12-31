@@ -7,34 +7,35 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 
+	"bean/components/connect"
 	"bean/components/util"
-	"bean/components/util/connect"
 	"bean/pkg/user/api/fixtures"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
 )
 
-func tearDown(this *UserBundle) {
-	this.db.Table(connect.TableUserEmail).Where("1").Delete(&model.UserEmail{})
+func tearDown(db *gorm.DB) {
+	db.Table(connect.TableUserEmail).Where("1").Delete(&model.UserEmail{})
 }
 
 func Test(t *testing.T) {
 	ass := assert.New(t)
 	db := connect.MockDatabase()
-	this := NewUserBundle(db, util.MockLogger(), util.MockIdentifier())
+	this := NewUserBundle(util.MockLogger(), util.MockIdentifier())
 	connect.MockInstall(this, db)
 	iCreate := fixtures.NewUserCreateInputFixture()
 	ctx := connect.DBToContext(context.Background(), db)
 
 	t.Run("Create", func(t *testing.T) {
-		defer tearDown(this)
+		defer tearDown(db)
 
 		t.Run("test happy case, no error", func(t *testing.T) {
 			now := time.Now()
 
 			resolver := this.resolvers["UserMutation"].(map[string]interface{})["Create"].(func(context.Context, *dto.UserMutation, *dto.UserCreateInput) (*dto.UserMutationOutcome, error))
-			out, err := resolver(context.Background(), nil, iCreate)
+			out, err := resolver(ctx, nil, iCreate)
 			ass.NoError(err)
 			ass.Empty(out.Errors)
 			ass.Equal("https://foo.bar", string(*out.User.AvatarURI))
@@ -63,22 +64,23 @@ func Test(t *testing.T) {
 func Test_Update(t *testing.T) {
 	ass := assert.New(t)
 	db := connect.MockDatabase()
-	this := NewUserBundle(db, util.MockLogger(), util.MockIdentifier())
+	this := NewUserBundle(util.MockLogger(), util.MockIdentifier())
 	connect.MockInstall(this, db)
+	ctx := connect.DBToContext(context.Background(), db)
 	iCreate := fixtures.NewUserCreateInputFixture()
 
 	t.Run("Update", func(t *testing.T) {
-		defer tearDown(this)
+		defer tearDown(db)
 
 		// create user so we can edit
 		rCreate := this.resolvers["UserMutation"].(map[string]interface{})["Create"].(func(context.Context, *dto.UserMutation, *dto.UserCreateInput) (*dto.UserMutationOutcome, error))
-		oCreate, err := rCreate(context.Background(), nil, iCreate)
+		oCreate, err := rCreate(ctx, nil, iCreate)
 		ass.NoError(err)
 		ass.NotNil(oCreate)
 		rUpdate := this.resolvers["UserMutation"].(map[string]interface{})["Update"].(func(context.Context, *dto.UserMutation, dto.UserUpdateInput) (*dto.UserMutationOutcome, error))
 
 		t.Run("version conflict", func(t *testing.T) {
-			oUpdate, err := rUpdate(context.Background(), nil, dto.UserUpdateInput{
+			oUpdate, err := rUpdate(ctx, nil, dto.UserUpdateInput{
 				ID:      oCreate.User.ID,
 				Version: this.idr.MustULID(), // some other version
 			})
@@ -88,7 +90,7 @@ func Test_Update(t *testing.T) {
 		})
 
 		t.Run("update password", func(t *testing.T) {
-			oUpdate, err := rUpdate(context.Background(), nil, dto.UserUpdateInput{
+			oUpdate, err := rUpdate(ctx, nil, dto.UserUpdateInput{
 				ID:      oCreate.User.ID,
 				Version: oCreate.User.Version,
 				Values: &dto.UserUpdateValuesInput{

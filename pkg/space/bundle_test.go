@@ -7,13 +7,13 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
-	log "gorm.io/gorm/logger"
+	"gorm.io/gorm"
 
 	"bean/components/claim"
 	"bean/components/conf"
+	"bean/components/connect"
 	"bean/components/scalar"
 	"bean/components/util"
-	"bean/components/util/connect"
 	"bean/pkg/infra/api"
 	"bean/pkg/space/api/fixtures"
 	"bean/pkg/space/model"
@@ -35,30 +35,29 @@ func bundle() *SpaceBundle {
 		panic(err)
 	}
 
-	db := connect.MockDatabase()
-	db.Logger.LogMode(log.Silent)
-	logger := util.MockLogger()
-	id := util.MockIdentifier()
-	userBundle := user.NewUserBundle(db, logger, id)
-	this := NewSpaceBundle(db, logger, id, userBundle, config.Bundles.Space)
+	lgr := util.MockLogger()
+	idr := util.MockIdentifier()
+	userBundle := user.NewUserBundle(lgr, idr)
+	bundle := NewSpaceBundle(lgr, idr, userBundle, config.Bundles.Space)
 
-	return this
+	return bundle
 }
 
-func tearDown(bundle *SpaceBundle) {
-	bundle.db.Model(model.DomainName{}).Where("id != ?", "").Delete(&model.DomainName{})
-	bundle.db.Table(connect.TableUserEmail).Where("id != ?", "").Delete(&mUser.UserEmail{})
+func tearDown(db *gorm.DB) {
+	db.Model(model.DomainName{}).Where("id != ?", "").Delete(&model.DomainName{})
+	db.Table(connect.TableUserEmail).Where("id != ?", "").Delete(&mUser.UserEmail{})
 }
 
 func Test_Space(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
-	connect.MockInstall(bundle, bundle.db)
-	ctx := connect.DBToContext(context.Background(), bundle.db)
+	db := connect.MockDatabase()
+	connect.MockInstall(bundle, db)
+	ctx := connect.DBToContext(context.Background(), db)
 	iCreate := fixtures.SpaceCreateInputFixture(false)
 
 	t.Run("create", func(t *testing.T) {
-		defer tearDown(bundle)
+		defer tearDown(db)
 		t.Run("happy case", func(t *testing.T) {
 			now := time.Now()
 
@@ -84,7 +83,7 @@ func Test_Space(t *testing.T) {
 			// check that owner role is created
 			// -------
 			ownerNS := &model.Space{}
-			err = bundle.db.First(&ownerNS, "parent_id = ?", out.Space.ID).Error
+			err = db.First(&ownerNS, "parent_id = ?", out.Space.ID).Error
 			ass.NoError(err)
 			ass.Equal(ownerNS.Title, "owner")
 			ass.Equal(ownerNS.Kind, model.SpaceKindRole)
@@ -92,13 +91,13 @@ func Test_Space(t *testing.T) {
 
 			// check that memberships are setup correctly.
 			var counter int64
-			bundle.db.
+			db.
 				Model(&model.Membership{}).
 				Where("user_id = ? AND space_id = ?", claims.UserId(), out.Space.ID).
 				Count(&counter)
 			ass.Equal(int64(1), counter)
 
-			bundle.db.
+			db.
 				Model(&model.Membership{}).
 				Where("user_id = ? AND space_id = ?", claims.UserId(), ownerNS.ID).
 				Count(&counter)
@@ -116,7 +115,7 @@ func Test_Space(t *testing.T) {
 	})
 
 	t.Run("query", func(t *testing.T) {
-		defer tearDown(bundle)
+		defer tearDown(db)
 
 		// setup data for query
 		oCreate, err := bundle.Service.Create(ctx, iCreate)
@@ -124,7 +123,7 @@ func Test_Space(t *testing.T) {
 		id := oCreate.Space.ID
 
 		t.Run("load by ID", func(t *testing.T) {
-			obj, err := bundle.Service.Load(context.Background(), id)
+			obj, err := bundle.Service.Load(ctx, id)
 			ass.NoError(err)
 			ass.Equal(obj.ID, id)
 			ass.Equal(obj.Title, *iCreate.Object.Title)
@@ -133,7 +132,7 @@ func Test_Space(t *testing.T) {
 
 		t.Run("load by domain name -> inactive domain name", func(t *testing.T) {
 			domainName := scalar.Uri(*iCreate.Object.DomainNames.Secondary[1].Value)
-			obj, err := bundle.Service.FindOne(context.Background(), dto.SpaceFilters{Domain: &domainName})
+			obj, err := bundle.Service.FindOne(ctx, dto.SpaceFilters{Domain: &domainName})
 
 			ass.Error(err)
 			ass.Equal(err.Error(), "domain name is not active")
@@ -142,7 +141,7 @@ func Test_Space(t *testing.T) {
 
 		t.Run("load by domain name -> verified", func(t *testing.T) {
 			domainName := scalar.Uri(*iCreate.Object.DomainNames.Primary.Value)
-			obj, err := bundle.Service.FindOne(context.Background(), dto.SpaceFilters{Domain: &domainName})
+			obj, err := bundle.Service.FindOne(ctx, dto.SpaceFilters{Domain: &domainName})
 
 			ass.NoError(err)
 			ass.Equal(obj.ID, id)
@@ -152,7 +151,7 @@ func Test_Space(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		defer tearDown(bundle)
+		defer tearDown(db)
 
 		// create space so we have something to update
 		out, err := bundle.Service.Create(ctx, iCreate)
@@ -160,7 +159,7 @@ func Test_Space(t *testing.T) {
 		ass.Nil(out.Errors)
 
 		t.Run("happy case", func(t *testing.T) {
-			_, err = bundle.Service.Update(bundle.db, *out.Space, dto.SpaceUpdateInput{
+			_, err = bundle.Service.Update(ctx, *out.Space, dto.SpaceUpdateInput{
 				SpaceID:      out.Space.ID,
 				SpaceVersion: out.Space.Version,
 				Object: &dto.SpaceUpdateInputObject{
@@ -172,18 +171,18 @@ func Test_Space(t *testing.T) {
 			})
 
 			{
-				obj, err := bundle.Service.Load(context.Background(), out.Space.ID)
+				obj, err := bundle.Service.Load(ctx, out.Space.ID)
 				ass.NoError(err)
 				ass.Equal(obj.Language, api.LanguageUS)
 			}
 
-			features, err := bundle.configService.List(context.Background(), out.Space)
+			features, err := bundle.configService.List(ctx, out.Space)
 			ass.NoError(err)
 			ass.True(features.Register)
 		})
 
 		t.Run("version conflict", func(t *testing.T) {
-			_, err = bundle.Service.Update(bundle.db, *out.Space, dto.SpaceUpdateInput{
+			_, err = bundle.Service.Update(ctx, *out.Space, dto.SpaceUpdateInput{
 				SpaceID:      out.Space.ID,
 				SpaceVersion: "invalid-version",
 				Object: &dto.SpaceUpdateInputObject{
@@ -201,8 +200,9 @@ func Test_Space(t *testing.T) {
 func Test_Membership(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
-	connect.MockInstall(bundle, bundle.db)
-	ctx := connect.DBToContext(context.Background(), bundle.db)
+	db := connect.MockDatabase()
+	ctx := connect.DBToContext(context.Background(), db)
+	connect.MockInstall(bundle, db)
 
 	// setup data for query
 	// -------
@@ -218,12 +218,12 @@ func Test_Membership(t *testing.T) {
 	ass.NoError(err)
 
 	t.Run("create", func(t *testing.T) {
-		defer tearDown(bundle)
+		defer tearDown(db)
 
 		t.Run("create membership", func(t *testing.T) {
 			// change feature ON
 			{
-				oUpdate, err := bundle.Service.Update(bundle.db, *oSpace.Space, dto.SpaceUpdateInput{
+				oUpdate, err := bundle.Service.Update(ctx, *oSpace.Space, dto.SpaceUpdateInput{
 					SpaceID:      oSpace.Space.ID,
 					SpaceVersion: oSpace.Space.Version,
 					Object: &dto.SpaceUpdateInputObject{
@@ -244,7 +244,7 @@ func Test_Membership(t *testing.T) {
 				IsActive: false,
 			}
 
-			out, err := bundle.MemberService.Create(bundle.db, in)
+			out, err := bundle.MemberService.Create(ctx, in)
 			ass.NoError(err)
 			ass.Len(out.Errors, 0)
 			ass.Equal(out.Membership.SpaceID, oSpace.Space.ID)
@@ -252,12 +252,12 @@ func Test_Membership(t *testing.T) {
 		})
 
 		t.Run("create failed of feature is off", func(t *testing.T) {
-			space, err := bundle.Service.Load(context.Background(), oSpace.Space.ID)
+			space, err := bundle.Service.Load(ctx, oSpace.Space.ID)
 			ass.NoError(err)
 
 			// change feature off
 			{
-				oUpdate, err := bundle.Service.Update(bundle.db, *space, dto.SpaceUpdateInput{
+				oUpdate, err := bundle.Service.Update(ctx, *space, dto.SpaceUpdateInput{
 					SpaceID:      space.ID,
 					SpaceVersion: space.Version,
 					Object: &dto.SpaceUpdateInputObject{
@@ -281,7 +281,7 @@ func Test_Membership(t *testing.T) {
 			}
 
 			resolver := bundle.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Create"].(func(context.Context, *dto.SpaceMembershipMutation, dto.SpaceMembershipCreateInput) (*dto.SpaceMembershipCreateOutcome, error))
-			outcome, err := resolver(context.Background(), nil, input)
+			outcome, err := resolver(ctx, nil, input)
 
 			// check error
 			ass.Contains(err.Error(), util.ErrorConfig.Error())
@@ -291,7 +291,7 @@ func Test_Membership(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		defer tearDown(bundle)
+		defer tearDown(db)
 
 		// setup data for query
 		// -------
@@ -313,7 +313,7 @@ func Test_Membership(t *testing.T) {
 				IsActive: false,
 			}
 
-			_, err := bundle.MemberService.Create(bundle.db, in)
+			_, err := bundle.MemberService.Create(ctx, in)
 			ass.NoError(err)
 		})
 
@@ -329,7 +329,7 @@ func Test_Membership(t *testing.T) {
 					IsActive: false,
 				}
 
-				out, err := bundle.MemberService.Create(bundle.db, in)
+				out, err := bundle.MemberService.Create(ctx, in)
 				ass.NoError(err)
 				membership = out.Membership
 			}
@@ -340,21 +340,21 @@ func Test_Membership(t *testing.T) {
 
 				// without version
 				{
-					obj, err := resolver(context.Background(), nil, membership.ID, nil)
+					obj, err := resolver(ctx, nil, membership.ID, nil)
 					ass.NoError(err)
 					ass.False(obj.IsActive)
 				}
 
 				// with version
 				{
-					obj, err := resolver(context.Background(), nil, membership.ID, &membership.Version)
+					obj, err := resolver(ctx, nil, membership.ID, &membership.Version)
 					ass.NoError(err)
 					ass.False(obj.IsActive)
 				}
 
 				// with invalid version
 				{
-					obj, err := resolver(context.Background(), nil, membership.ID, scalar.NilString("InvalidVersion"))
+					obj, err := resolver(ctx, nil, membership.ID, scalar.NilString("InvalidVersion"))
 					ass.Error(err)
 					ass.Equal(err.Error(), util.ErrorVersionConflict.Error())
 					ass.Nil(obj)
@@ -364,7 +364,7 @@ func Test_Membership(t *testing.T) {
 			// change status to ON
 			{
 				outcome, err := resolver(
-					context.Background(),
+					ctx,
 					nil,
 					dto.SpaceMembershipUpdateInput{
 						Id:       membership.ID,

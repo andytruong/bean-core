@@ -5,12 +5,10 @@ import (
 	"errors"
 	"time"
 
-	"gorm.io/gorm"
-
 	"bean/components/claim"
+	"bean/components/connect"
 	"bean/components/scalar"
 	"bean/components/util"
-	"bean/components/util/connect"
 	"bean/pkg/infra/api"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
@@ -22,7 +20,7 @@ type SpaceService struct {
 
 func (service SpaceService) Load(ctx context.Context, id string) (*model.Space, error) {
 	obj := &model.Space{}
-	err := service.bundle.db.WithContext(ctx).First(&obj, "id = ?", id).Error
+	err := connect.ContextToDB(ctx).First(&obj, "id = ?", id).Error
 	if nil != err {
 		return nil, err
 	}
@@ -35,7 +33,7 @@ func (service SpaceService) FindOne(ctx context.Context, filters dto.SpaceFilter
 		return service.Load(ctx, *filters.ID)
 	} else if nil != filters.Domain {
 		domain := &model.DomainName{}
-		err := service.bundle.db.WithContext(ctx).Where("value = ?", filters.Domain).First(&domain).Error
+		err := connect.ContextToDB(ctx).Where("value = ?", filters.Domain).First(&domain).Error
 		if nil != err {
 			return nil, err
 		} else if !domain.IsActive {
@@ -63,7 +61,7 @@ func (service *SpaceService) Create(ctx context.Context, in dto.SpaceCreateInput
 }
 
 func (service *SpaceService) create(ctx context.Context, in dto.SpaceCreateInput) (*model.Space, error) {
-	tx := connect.ContextToDB(ctx)
+	db := connect.ContextToDB(ctx)
 	space := &model.Space{
 		ID:        service.bundle.idr.MustULID(),
 		Version:   service.bundle.idr.MustULID(),
@@ -78,14 +76,14 @@ func (service *SpaceService) create(ctx context.Context, in dto.SpaceCreateInput
 	if nil != in.Object.ParentId {
 		space.ParentID = in.Object.ParentId
 	} else {
-		claims := claim.ContextToPayload(tx.Statement.Context)
+		claims := claim.ContextToPayload(db.Statement.Context)
 		if nil != claims {
 			parentSpaceId := claims.SpaceId()
 			space.ParentID = &parentSpaceId
 		}
 	}
 
-	if err := tx.Table("spaces").Create(&space).Error; nil != err {
+	if err := db.Create(&space).Error; nil != err {
 		return nil, err
 	}
 
@@ -93,14 +91,13 @@ func (service *SpaceService) create(ctx context.Context, in dto.SpaceCreateInput
 }
 
 func (service *SpaceService) createRelationships(ctx context.Context, space *model.Space, in dto.SpaceCreateInput) error {
-	tx := connect.ContextToDB(ctx)
-	if err := service.bundle.domainNameService.createMultiple(tx, space, in); nil != err {
+	if err := service.bundle.domainNameService.createMultiple(ctx, space, in); nil != err {
 		return err
 	}
 
 	// space configuration
 	{
-		if err := service.bundle.configService.CreateFeatures(tx, space, in); nil != err {
+		if err := service.bundle.configService.CreateFeatures(ctx, space, in); nil != err {
 			return err
 		}
 	}
@@ -124,13 +121,13 @@ func (service *SpaceService) createRelationships(ctx context.Context, space *mod
 			return err
 		} else {
 			// membership of user -> organisation
-			_, err = service.bundle.MemberService.doCreate(tx, space.ID, claims.UserId(), true)
+			_, err = service.bundle.MemberService.doCreate(ctx, space.ID, claims.UserId(), true)
 			if nil != err {
 				return err
 			}
 
 			// membership of user -> owner role
-			_, err = service.bundle.MemberService.doCreate(tx, ownerRole.ID, claims.UserId(), true)
+			_, err = service.bundle.MemberService.doCreate(ctx, ownerRole.ID, claims.UserId(), true)
 			if nil != err {
 				return err
 			}
@@ -140,7 +137,9 @@ func (service *SpaceService) createRelationships(ctx context.Context, space *mod
 	return nil
 }
 
-func (service SpaceService) Update(tx *gorm.DB, obj model.Space, in dto.SpaceUpdateInput) (*dto.SpaceCreateOutcome, error) {
+func (service SpaceService) Update(ctx context.Context, obj model.Space, in dto.SpaceUpdateInput) (*dto.SpaceCreateOutcome, error) {
+	tx := connect.ContextToDB(ctx)
+
 	// check version for conflict
 	if in.SpaceVersion != obj.Version {
 		return nil, util.ErrorVersionConflict

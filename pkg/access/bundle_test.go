@@ -10,8 +10,8 @@ import (
 
 	"bean/components/claim"
 	"bean/components/conf"
+	"bean/components/connect"
 	"bean/components/util"
-	"bean/components/util/connect"
 	"bean/pkg/access/api/fixtures"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
@@ -34,11 +34,10 @@ func bundle() *AccessBundle {
 		panic(err)
 	}
 
-	db := connect.MockDatabase()
 	lgr := util.MockLogger()
 	id := util.MockIdentifier()
-	userBundle := user.NewUserBundle(db, lgr, id)
-	spaceBundle := space.NewSpaceBundle(db, lgr, id, userBundle, config.Bundles.Space)
+	userBundle := user.NewUserBundle(lgr, id)
+	spaceBundle := space.NewSpaceBundle(lgr, id, userBundle, config.Bundles.Space)
 	bundle := NewAccessBundle(id, lgr, userBundle, spaceBundle, config.Bundles.Access)
 
 	return bundle

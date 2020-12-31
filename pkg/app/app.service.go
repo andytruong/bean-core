@@ -6,9 +6,9 @@ import (
 
 	"gorm.io/gorm"
 
+	"bean/components/connect"
 	"bean/components/scalar"
 	"bean/components/util"
-	"bean/components/util/connect"
 	"bean/pkg/app/model"
 	"bean/pkg/app/model/dto"
 )
@@ -35,7 +35,7 @@ func (service *AppService) Create(ctx context.Context, in *dto.ApplicationCreate
 
 	tx := connect.ContextToDB(ctx)
 
-	err := connect.Transaction(ctx, tx, func(tx *gorm.DB) error {
+	err := connect.Transaction(tx, func(tx *gorm.DB) error {
 		app = &model.Application{
 			ID:        service.bundle.idr.MustULID(),
 			Version:   service.bundle.idr.MustULID(),

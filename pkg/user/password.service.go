@@ -1,10 +1,10 @@
 package user
 
 import (
+	"context"
 	"time"
 
-	"gorm.io/gorm"
-
+	"bean/components/connect"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
 )
@@ -13,11 +13,12 @@ type PasswordService struct {
 	bundle *UserBundle
 }
 
-func (service *PasswordService) create(tx *gorm.DB, user *model.User, in *dto.UserPasswordInput) error {
+func (service *PasswordService) create(ctx context.Context, user *model.User, in *dto.UserPasswordInput) error {
 	if nil == in {
 		return nil
 	}
 
+	db := connect.ContextToDB(ctx)
 	pass := &model.UserPassword{
 		ID:          service.bundle.idr.MustULID(),
 		UserId:      user.ID,
@@ -28,14 +29,14 @@ func (service *PasswordService) create(tx *gorm.DB, user *model.User, in *dto.Us
 	}
 
 	{
-		err := tx.Create(pass).Error
+		err := db.Create(pass).Error
 		if nil != err {
 			return err
 		}
 	}
 
 	// set other passwords to inactive
-	return tx.
+	return db.
 		Where("user_id == ?", pass.UserId).
 		Where("id != ?", pass.ID).
 		Updates(model.UserPassword{IsActive: false}).

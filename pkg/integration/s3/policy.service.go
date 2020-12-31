@@ -4,11 +4,9 @@ import (
 	"context"
 	"time"
 
-	"gorm.io/gorm"
-
+	"bean/components/connect"
 	"bean/components/util"
-	"bean/components/util/connect"
-	model2 "bean/pkg/app/model"
+	appModel "bean/pkg/app/model"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
@@ -17,9 +15,9 @@ type policyService struct {
 	bundle *S3Bundle
 }
 
-func (service *policyService) load(tx *gorm.DB, appId string, id string) (*model.Policy, error) {
+func (srv *policyService) load(ctx context.Context, appId string, id string) (*model.Policy, error) {
 	policy := &model.Policy{}
-	err := tx.
+	err := connect.ContextToDB(ctx).
 		Where("application_id = ?", appId).
 		Where("id = ?", id).
 		First(policy).Error
@@ -30,9 +28,9 @@ func (service *policyService) load(tx *gorm.DB, appId string, id string) (*model
 	return policy, nil
 }
 
-func (service *policyService) create(tx *gorm.DB, appId string, kind model.PolicyKind, value string) (*model.Policy, error) {
+func (srv *policyService) create(ctx context.Context, appId string, kind model.PolicyKind, value string) (*model.Policy, error) {
 	policy := &model.Policy{
-		ID:            service.bundle.idr.MustULID(),
+		ID:            srv.bundle.idr.MustULID(),
 		ApplicationId: appId,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
@@ -40,7 +38,7 @@ func (service *policyService) create(tx *gorm.DB, appId string, kind model.Polic
 		Value:         value,
 	}
 
-	err := tx.Create(&policy).Error
+	err := connect.ContextToDB(ctx).Create(&policy).Error
 	if nil != err {
 		return nil, err
 	}
@@ -48,7 +46,7 @@ func (service *policyService) create(tx *gorm.DB, appId string, kind model.Polic
 	return policy, nil
 }
 
-func (service *policyService) loadByApplicationId(ctx context.Context, appId string) ([]*model.Policy, error) {
+func (srv *policyService) loadByApplicationId(ctx context.Context, appId string) ([]*model.Policy, error) {
 	db := connect.ContextToDB(ctx)
 	policies := []*model.Policy{}
 	err := db.Where("application_id = ?", appId).Find(&policies).Error
@@ -59,11 +57,9 @@ func (service *policyService) loadByApplicationId(ctx context.Context, appId str
 	return policies, nil
 }
 
-func (service *policyService) onAppCreate(ctx context.Context, app *model2.Application, in []dto.S3ApplicationPolicyCreateInput) error {
-	db := connect.ContextToDB(ctx)
-
+func (srv *policyService) onAppCreate(ctx context.Context, app *appModel.Application, in []dto.S3ApplicationPolicyCreateInput) error {
 	for _, input := range in {
-		_, err := service.create(db, app.ID, input.Kind, input.Value)
+		_, err := srv.create(ctx, app.ID, input.Kind, input.Value)
 		if nil != err {
 			return err
 		}
@@ -72,16 +68,17 @@ func (service *policyService) onAppCreate(ctx context.Context, app *model2.Appli
 	return nil
 }
 
-func (service *policyService) onAppUpdate(tx *gorm.DB, app *model2.Application, in *dto.S3ApplicationPolicyMutationInput) error {
+func (srv *policyService) onAppUpdate(ctx context.Context, app *appModel.Application, in *dto.S3ApplicationPolicyMutationInput) error {
 	if nil == in {
 		return nil
 	}
 
+	db := connect.ContextToDB(ctx)
 	useless := true
 
 	if nil != in.Create {
 		for _, input := range in.Create {
-			_, err := service.create(tx, app.ID, input.Kind, input.Value)
+			_, err := srv.create(ctx, app.ID, input.Kind, input.Value)
 			if nil != err {
 				return err
 			}
@@ -92,12 +89,12 @@ func (service *policyService) onAppUpdate(tx *gorm.DB, app *model2.Application, 
 
 	if nil != in.Update {
 		for _, input := range in.Update {
-			if policy, err := service.load(tx, app.ID, input.Id); nil != err {
+			if policy, err := srv.load(ctx, app.ID, input.Id); nil != err {
 				return err
 			} else {
 				policy.Value = input.Value
 				policy.UpdatedAt = time.Now()
-				err := tx.Save(policy).Error
+				err := db.Save(policy).Error
 				if nil != err {
 					return err
 				}
@@ -109,10 +106,10 @@ func (service *policyService) onAppUpdate(tx *gorm.DB, app *model2.Application, 
 
 	if nil != in.Delete {
 		for _, input := range in.Delete {
-			if policy, err := service.load(tx, app.ID, input.Id); nil != err {
+			if policy, err := srv.load(ctx, app.ID, input.Id); nil != err {
 				return err
 			} else {
-				err := tx.Delete(policy).Error
+				err := db.Delete(policy).Error
 				if nil != err {
 					return err
 				}

@@ -14,13 +14,12 @@ import (
 )
 
 func NewSpaceBundle(
-	db *gorm.DB, logger *zap.Logger, idr *scalar.Identifier,
+	lgr *zap.Logger, idr *scalar.Identifier,
 	userBundle *user.UserBundle,
 	config *SpaceConfiguration,
 ) *SpaceBundle {
 	this := &SpaceBundle{
-		logger:     logger,
-		db:         db,
+		lgr:        lgr,
 		idr:        idr,
 		userBundle: userBundle,
 		config:     config,
@@ -43,8 +42,7 @@ type SpaceBundle struct {
 
 	// Internal services
 	config            *SpaceConfiguration
-	logger            *zap.Logger
-	db                *gorm.DB
+	lgr               *zap.Logger
 	idr               *scalar.Identifier
 	userBundle        *user.UserBundle
 	resolvers         map[string]interface{}
@@ -68,7 +66,7 @@ func (bundle SpaceBundle) Migrate(tx *gorm.DB, driver string) error {
 
 	runner := migrate.Runner{
 		Tx:     tx,
-		Logger: bundle.logger,
+		Logger: bundle.lgr,
 		Driver: driver,
 		Bundle: "space",
 		Dir:    path.Dir(filename) + "/model/migration/",

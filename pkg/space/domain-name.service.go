@@ -1,10 +1,10 @@
 package space
 
 import (
+	"context"
 	"time"
 
-	"gorm.io/gorm"
-
+	"bean/components/connect"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
 )
@@ -13,13 +13,13 @@ type DomainNameService struct {
 	bundle *SpaceBundle
 }
 
-func (service *DomainNameService) createMultiple(tx *gorm.DB, space *model.Space, in dto.SpaceCreateInput) error {
+func (service *DomainNameService) createMultiple(ctx context.Context, space *model.Space, in dto.SpaceCreateInput) error {
 	if nil == in.Object.DomainNames {
 		return nil
 	}
 
 	if nil != in.Object.DomainNames.Primary {
-		err := service.create(tx, space, in.Object.DomainNames.Primary, true)
+		err := service.create(ctx, space, in.Object.DomainNames.Primary, true)
 		if nil != err {
 			return err
 		}
@@ -27,7 +27,7 @@ func (service *DomainNameService) createMultiple(tx *gorm.DB, space *model.Space
 
 	if nil != in.Object.DomainNames.Secondary {
 		for _, in := range in.Object.DomainNames.Secondary {
-			err := service.create(tx, space, in, false)
+			err := service.create(ctx, space, in, false)
 			if nil != err {
 				return err
 			}
@@ -37,7 +37,7 @@ func (service *DomainNameService) createMultiple(tx *gorm.DB, space *model.Space
 	return nil
 }
 
-func (service *DomainNameService) create(tx *gorm.DB, space *model.Space, in *dto.DomainNameInput, isPrimary bool) error {
+func (service *DomainNameService) create(ctx context.Context, space *model.Space, in *dto.DomainNameInput, isPrimary bool) error {
 	domain := model.DomainName{
 		ID:         service.bundle.idr.MustULID(),
 		SpaceId:    space.ID,
@@ -49,17 +49,18 @@ func (service *DomainNameService) create(tx *gorm.DB, space *model.Space, in *dt
 		IsActive:   *in.IsActive,
 	}
 
-	return tx.Table("space_domains").Create(&domain).Error
+	return connect.ContextToDB(ctx).Create(&domain).Error
 }
 
-func (service *DomainNameService) Find(space *model.Space) (*model.DomainNames, error) {
+func (service *DomainNameService) Find(ctx context.Context, space *model.Space) (*model.DomainNames, error) {
 	out := &model.DomainNames{
 		Primary:   nil,
 		Secondary: nil,
 	}
 
 	var domainNames []*model.DomainName
-	err := service.bundle.db.
+
+	err := connect.ContextToDB(ctx).
 		Where("space_id = ?", space.ID).
 		Find(&domainNames).
 		Error

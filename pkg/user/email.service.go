@@ -4,9 +4,7 @@ import (
 	"context"
 	"time"
 
-	"gorm.io/gorm"
-
-	connect2 "bean/components/util/connect"
+	"bean/components/connect"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
 )
@@ -15,13 +13,13 @@ type EmailService struct {
 	bundle *UserBundle
 }
 
-func (service EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.UserEmailsInput) error {
+func (srv EmailService) CreateBulk(ctx context.Context, user *model.User, in *dto.UserEmailsInput) error {
 	if nil == in {
 		return nil
 	}
 
 	if nil != in.Primary {
-		err := service.bundle.emailService.Create(tx, user, *in.Primary, true)
+		err := srv.bundle.emailService.Create(ctx, user, *in.Primary, true)
 		if nil != err {
 			return err
 		}
@@ -29,7 +27,7 @@ func (service EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.Us
 
 	if nil != in.Secondary {
 		for _, secondaryInput := range in.Secondary {
-			err := service.bundle.emailService.Create(tx, user, *secondaryInput, false)
+			err := srv.bundle.emailService.Create(ctx, user, *secondaryInput, false)
 			if nil != err {
 				return err
 			}
@@ -39,14 +37,14 @@ func (service EmailService) CreateBulk(tx *gorm.DB, user *model.User, in *dto.Us
 	return nil
 }
 
-func (service EmailService) Create(tx *gorm.DB, user *model.User, in dto.UserEmailInput, isPrimary bool) error {
-	table := connect2.TableUserEmail
+func (srv EmailService) Create(ctx context.Context, user *model.User, in dto.UserEmailInput, isPrimary bool) error {
+	table := connect.TableUserEmail
 	if !in.Verified {
-		table = connect2.TableUserEmailUnverified
+		table = connect.TableUserEmailUnverified
 	}
 
 	email := model.UserEmail{
-		ID:        service.bundle.idr.MustULID(),
+		ID:        srv.bundle.idr.MustULID(),
 		UserId:    user.ID,
 		Value:     in.Value.LowerCaseValue(),
 		IsActive:  in.Verified,
@@ -55,18 +53,16 @@ func (service EmailService) Create(tx *gorm.DB, user *model.User, in dto.UserEma
 		IsPrimary: isPrimary,
 	}
 
-	err := tx.Table(table).Create(&email).Error
-
-	return err
+	return connect.ContextToDB(ctx).Table(table).Create(&email).Error
 }
 
 // TODO: need a better resolver, we not always load secondary emails.
 //       see: https://gqlgen.com/reference/field-collection/
-func (service EmailService) List(ctx context.Context, user *model.User) (*model.UserEmails, error) {
+func (srv EmailService) List(ctx context.Context, user *model.User) (*model.UserEmails, error) {
 	emails := &model.UserEmails{}
 
 	var rows []*model.UserEmail
-	err := service.bundle.db.
+	err := connect.ContextToDB(ctx).
 		WithContext(ctx).
 		Raw(`
 			     SELECT *, 1 AS is_verified FROM user_emails            WHERE user_id = ?

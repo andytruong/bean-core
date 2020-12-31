@@ -28,13 +28,7 @@ func (bundles *BundleList) User() (*user.UserBundle, error) {
 	var err error
 
 	if nil == bundles.user {
-		db, err := bundles.container.dbs.Master()
-		if nil != err {
-			return nil, err
-		}
-
 		bundles.user = user.NewUserBundle(
-			db,
 			bundles.container.logger,
 			bundles.container.Identifier(),
 		)
@@ -48,18 +42,12 @@ func (bundles *BundleList) Space() (*space.SpaceBundle, error) {
 	var err error
 
 	if nil == bundles.space {
-		db, err := bundles.container.dbs.Master()
-		if nil != err {
-			return nil, err
-		}
-
 		mUser, err := bundles.User()
 		if nil != err {
 			return nil, err
 		}
 
 		bundles.space = space.NewSpaceBundle(
-			db,
 			bundles.container.logger,
 			bundles.container.Identifier(),
 			mUser,

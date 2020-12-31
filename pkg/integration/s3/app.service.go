@@ -8,10 +8,10 @@ import (
 	"gorm.io/gorm"
 
 	"bean/components/claim"
+	"bean/components/connect"
 	"bean/components/scalar"
 	"bean/components/util"
-	"bean/components/util/connect"
-	dto2 "bean/pkg/app/model/dto"
+	appDto "bean/pkg/app/model/dto"
 	"bean/pkg/integration/s3/model/dto"
 )
 
@@ -20,7 +20,7 @@ type ApplicationService struct {
 }
 
 func (service *ApplicationService) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
-	out, err := service.bundle.appBundle.Service.Create(ctx, &dto2.ApplicationCreateInput{IsActive: in.IsActive})
+	out, err := service.bundle.appBundle.Service.Create(ctx, &appDto.ApplicationCreateInput{IsActive: in.IsActive})
 	if nil != err {
 		return nil, err
 	}
@@ -30,7 +30,6 @@ func (service *ApplicationService) Create(ctx context.Context, in *dto.S3Applica
 	}
 
 	err = connect.Transaction(
-		ctx,
 		connect.ContextToDB(ctx),
 		func(tx *gorm.DB) error {
 			ctx := connect.DBToContext(ctx, tx)
@@ -52,7 +51,7 @@ func (service *ApplicationService) Create(ctx context.Context, in *dto.S3Applica
 }
 
 func (service *ApplicationService) Update(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
-	out, err := service.bundle.appBundle.Service.Update(ctx, &dto2.ApplicationUpdateInput{
+	out, err := service.bundle.appBundle.Service.Update(ctx, &appDto.ApplicationUpdateInput{
 		Id:       in.Id,
 		Version:  in.Version,
 		IsActive: in.IsActive,
@@ -71,15 +70,15 @@ func (service *ApplicationService) Update(ctx context.Context, in *dto.S3Applica
 	}
 
 	err = connect.Transaction(
-		ctx,
 		connect.ContextToDB(ctx),
 		func(tx *gorm.DB) error {
-			err = service.bundle.credentialService.onAppUpdate(tx, out.App, in.Credentials)
+			ctx = connect.DBToContext(ctx, tx)
+			err = service.bundle.credentialService.onAppUpdate(ctx, out.App, in.Credentials)
 			if nil != err {
 				return err
 			}
 
-			err = service.bundle.policyService.onAppUpdate(tx, out.App, in.Policies)
+			err = service.bundle.policyService.onAppUpdate(ctx, out.App, in.Policies)
 			if nil != err {
 				return err
 			}

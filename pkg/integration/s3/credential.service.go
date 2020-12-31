@@ -15,9 +15,9 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"gorm.io/gorm"
 
+	"bean/components/connect"
 	"bean/components/util"
-	"bean/components/util/connect"
-	model2 "bean/pkg/app/model"
+	appModel "bean/pkg/app/model"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
@@ -38,7 +38,7 @@ func (service *credentialService) loadByApplicationId(ctx context.Context, appId
 	return cred, nil
 }
 
-func (service *credentialService) onAppCreate(ctx context.Context, app *model2.Application, in dto.S3ApplicationCredentialsCreateInput) error {
+func (service *credentialService) onAppCreate(ctx context.Context, app *appModel.Application, in dto.S3ApplicationCredentialsCreateInput) error {
 	db := connect.ContextToDB(ctx)
 	cre := model.Credentials{
 		ID:            service.bundle.idr.MustULID(),
@@ -53,14 +53,15 @@ func (service *credentialService) onAppCreate(ctx context.Context, app *model2.A
 	return db.Create(&cre).Error
 }
 
-func (service *credentialService) onAppUpdate(tx *gorm.DB, app *model2.Application, in *dto.S3ApplicationCredentialsUpdateInput) error {
+func (service *credentialService) onAppUpdate(ctx context.Context, app *appModel.Application, in *dto.S3ApplicationCredentialsUpdateInput) error {
 	if nil == in {
 		return nil
 	}
 
 	// load
+	db := connect.ContextToDB(ctx)
 	cre := &model.Credentials{}
-	err := tx.Where("application_id = ?", app.ID).First(&cre).Error
+	err := db.Where("application_id = ?", app.ID).First(&cre).Error
 
 	if nil == err {
 		// if found -> update
@@ -94,7 +95,7 @@ func (service *credentialService) onAppUpdate(tx *gorm.DB, app *model2.Applicati
 		}
 
 		if changed {
-			return tx.Save(&cre).Error
+			return db.Save(&cre).Error
 		}
 
 		return util.ErrorUselessInput
@@ -114,7 +115,7 @@ func (service *credentialService) onAppUpdate(tx *gorm.DB, app *model2.Applicati
 				IsSecure:      false,
 			}
 
-			err := tx.Create(&cre).Error
+			err := db.Create(&cre).Error
 			if nil != err {
 				return err
 			}

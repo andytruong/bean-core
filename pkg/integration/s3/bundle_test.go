@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"bean/components/claim"
+	"bean/components/connect"
 	"bean/components/scalar"
 	"bean/components/util"
-	"bean/components/util/connect"
 	"bean/pkg/app"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"

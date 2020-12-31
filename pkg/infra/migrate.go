@@ -3,8 +3,8 @@ package infra
 import (
 	"context"
 
+	"bean/components/connect"
 	"bean/components/module/migrate"
-	connect2 "bean/components/util/connect"
 )
 
 func (c *Container) Migrate(ctx context.Context) error {
@@ -14,7 +14,7 @@ func (c *Container) Migrate(ctx context.Context) error {
 		return err
 	} else {
 		// start transaction
-		driver := connect2.Driver(con)
+		driver := connect.Driver(con)
 		tx := db.WithContext(ctx).Begin()
 
 		// create migration table if not existing

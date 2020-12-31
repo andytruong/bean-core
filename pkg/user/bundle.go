@@ -13,13 +13,12 @@ import (
 	"bean/components/util"
 )
 
-func NewUserBundle(db *gorm.DB, lgr *zap.Logger, idr *scalar.Identifier) *UserBundle {
-	if err := util.NilPointerErrorValidate(db, lgr, idr); nil != err {
+func NewUserBundle(lgr *zap.Logger, idr *scalar.Identifier) *UserBundle {
+	if err := util.NilPointerErrorValidate(lgr, idr); nil != err {
 		panic(err)
 	}
 
 	this := &UserBundle{
-		db:                       db,
 		lgr:                      lgr,
 		idr:                      idr,
 		maxSecondaryEmailPerUser: 20,
@@ -41,7 +40,6 @@ type UserBundle struct {
 
 	// Internal services
 	lgr                      *zap.Logger
-	db                       *gorm.DB
 	idr                      *scalar.Identifier
 	maxSecondaryEmailPerUser uint8
 	resolvers                map[string]interface{}

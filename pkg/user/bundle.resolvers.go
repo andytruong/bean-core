@@ -5,8 +5,8 @@ import (
 
 	"gorm.io/gorm"
 
-	connect2 "bean/components/util/connect"
-	model2 "bean/pkg/space/model"
+	"bean/components/connect"
+	spaceModel "bean/pkg/space/model"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
 )
@@ -17,7 +17,7 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 			"UserQuery": func(ctx context.Context) (*dto.UserQuery, error) {
 				return &dto.UserQuery{}, nil
 			},
-			"Membership": func(ctx context.Context, id string, version *string) (*model2.Membership, error) {
+			"Membership": func(ctx context.Context, id string, version *string) (*spaceModel.Membership, error) {
 				panic("TODO")
 			},
 		},
@@ -36,11 +36,14 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 				var err error
 				var out *dto.UserMutationOutcome
 
-				err = connect2.Transaction(ctx, bundle.db, func(tx *gorm.DB) error {
-					out, err = bundle.Service.Create(connect2.DBToContext(ctx, tx), in)
+				err = connect.Transaction(
+					connect.ContextToDB(ctx),
+					func(tx *gorm.DB) error {
+						out, err = bundle.Service.Create(connect.DBToContext(ctx, tx), in)
 
-					return err
-				})
+						return err
+					},
+				)
 
 				return out, err
 			},
@@ -48,18 +51,21 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 				var err error
 				var out *dto.UserMutationOutcome
 
-				err = connect2.Transaction(ctx, bundle.db, func(tx *gorm.DB) error {
-					out, err = bundle.Service.Update(connect2.DBToContext(ctx, tx), input)
+				err = connect.Transaction(
+					connect.ContextToDB(ctx),
+					func(tx *gorm.DB) error {
+						out, err = bundle.Service.Update(connect.DBToContext(ctx, tx), input)
 
-					return err
-				})
+						return err
+					},
+				)
 
 				return out, err
 			},
 		},
 		"User": map[string]interface{}{
 			"Name": func(ctx context.Context, user *model.User) (*model.UserName, error) {
-				return bundle.nameService.load(bundle.db.WithContext(ctx), user.ID)
+				return bundle.nameService.load(ctx, user.ID)
 			},
 			"Verified": func(ctx context.Context, obj *model.UserEmail) (bool, error) {
 				return obj.IsVerified, nil

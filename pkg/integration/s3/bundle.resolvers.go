@@ -3,7 +3,7 @@ package s3
 import (
 	"context"
 
-	model2 "bean/pkg/app/model"
+	appModel "bean/pkg/app/model"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
@@ -37,10 +37,10 @@ func newResolvers(this *S3Bundle) map[string]interface{} {
 			},
 		},
 		"Application": map[string]interface{}{
-			"Polices": func(ctx context.Context, obj *model2.Application) ([]*model.Policy, error) {
+			"Polices": func(ctx context.Context, obj *appModel.Application) ([]*model.Policy, error) {
 				return this.policyService.loadByApplicationId(ctx, obj.ID)
 			},
-			"Credentials": func(ctx context.Context, obj *model2.Application) (*model.Credentials, error) {
+			"Credentials": func(ctx context.Context, obj *appModel.Application) (*model.Credentials, error) {
 				return this.credentialService.loadByApplicationId(ctx, obj.ID)
 			},
 		},

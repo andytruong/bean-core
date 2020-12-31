@@ -16,8 +16,8 @@ import (
 	"go.uber.org/zap"
 
 	"bean/components/claim"
+	"bean/components/connect"
 	"bean/components/util"
-	"bean/components/util/connect"
 	"bean/pkg/infra/gql"
 )
 
@@ -84,12 +84,7 @@ func (r *GraphqlHttpRouter) handleFunc(srv *handler.Server) func(http.ResponseWr
 		}
 
 		// Inject DB connection to context
-		con, err := r.Container.dbs.Master()
-		if nil != err {
-			r.respondError(w, err, "failed to make DB connection", http.StatusInternalServerError)
-		} else {
-			ctx = context.WithValue(ctx, connect.DatabaseContextKey, con.WithContext(ctx))
-		}
+		ctx = connect.WithContextValue(ctx, r.Container.dbs)
 
 		srv.ServeHTTP(w, req.WithContext(ctx))
 	}

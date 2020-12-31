@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"bean/components/connect"
 	"bean/pkg/space/model"
 	"bean/pkg/space/model/dto"
 )
@@ -14,16 +15,17 @@ type ConfigService struct {
 	bundle *SpaceBundle
 }
 
-func (service *ConfigService) CreateFeatures(tx *gorm.DB, space *model.Space, in dto.SpaceCreateInput) error {
+func (service *ConfigService) CreateFeatures(ctx context.Context, space *model.Space, in dto.SpaceCreateInput) error {
+	value := []byte("false")
 	if in.Object.Features.Register {
-		return service.CreateFeature(tx, space, "default", "register", []byte("true"))
-	} else {
-		return service.CreateFeature(tx, space, "default", "register", []byte("false"))
+		value = []byte("true")
 	}
+
+	return service.CreateFeature(ctx, space, "default", "register", value)
 }
 
 func (service *ConfigService) CreateFeature(
-	tx *gorm.DB,
+	ctx context.Context,
 	space *model.Space, bucket string, key string, value []byte,
 ) error {
 	config := model.SpaceConfig{
@@ -37,16 +39,15 @@ func (service *ConfigService) CreateFeature(
 		UpdatedAt: time.Now(),
 	}
 
-	return tx.Create(&config).Error
+	return connect.ContextToDB(ctx).Create(&config).Error
 }
 
 func (service *ConfigService) List(ctx context.Context, space *model.Space) (*model.SpaceFeatures, error) {
-	features := &model.SpaceFeatures{
-		Register: false,
-	}
-
+	db := connect.ContextToDB(ctx)
+	features := &model.SpaceFeatures{Register: false}
 	var configList []model.SpaceConfig
-	err := service.bundle.db.Find(&configList, "space_id = ?", space.ID).Error
+
+	err := db.Find(&configList, "space_id = ?", space.ID).Error
 	if nil != err {
 		return nil, err
 	}

@@ -10,9 +10,9 @@ import (
 	"gorm.io/gorm"
 
 	"bean/components/claim"
+	"bean/components/connect"
 	"bean/components/scalar"
 	"bean/components/util"
-	"bean/components/util/connect"
 	"bean/pkg/config/model"
 	"bean/pkg/config/model/dto"
 )
@@ -36,7 +36,6 @@ func Test_Bucket(t *testing.T) {
 
 	t.Run("create", func(t *testing.T) {
 		err := connect.Transaction(
-			context.Background(),
 			db,
 			func(tx *gorm.DB) error {
 				hostId := this.idr.MustULID()

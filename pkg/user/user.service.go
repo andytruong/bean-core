@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"bean/components/connect"
 	"bean/components/util"
-	"bean/components/util/connect"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
 )
@@ -17,7 +17,7 @@ type UserService struct {
 	bundle *UserBundle
 }
 
-func (service *UserService) Load(ctx context.Context, id string) (*model.User, error) {
+func (srv *UserService) Load(ctx context.Context, id string) (*model.User, error) {
 	user := &model.User{}
 	db := connect.ContextToDB(ctx)
 	err := db.Where(&model.User{ID: id}).First(user).Error
@@ -29,51 +29,51 @@ func (service *UserService) Load(ctx context.Context, id string) (*model.User, e
 	return user, nil
 }
 
-func (service *UserService) Create(ctx context.Context, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
-	tx := connect.ContextToDB(ctx)
+func (srv *UserService) Create(ctx context.Context, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
+	db := connect.ContextToDB(ctx)
 
-	if uint8(len(in.Emails.Secondary)) > service.bundle.maxSecondaryEmailPerUser {
+	if uint8(len(in.Emails.Secondary)) > srv.bundle.maxSecondaryEmailPerUser {
 		return nil, errors.Wrap(
 			util.ErrorInvalidArgument,
-			fmt.Sprintf("too many secondary emails, limit is %d", service.bundle.maxSecondaryEmailPerUser),
+			fmt.Sprintf("too many secondary emails, limit is %d", srv.bundle.maxSecondaryEmailPerUser),
 		)
 	}
 
 	// create base record
 	obj := &model.User{
-		ID:        service.bundle.idr.MustULID(),
-		Version:   service.bundle.idr.MustULID(),
+		ID:        srv.bundle.idr.MustULID(),
+		Version:   srv.bundle.idr.MustULID(),
 		AvatarURI: in.AvatarURI,
 		IsActive:  in.IsActive,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
 
-	if err := tx.Create(&obj).Error; nil != err {
+	if err := db.Create(&obj).Error; nil != err {
 		return nil, err
 	}
 
 	// create emails
-	if err := service.bundle.emailService.CreateBulk(tx, obj, in.Emails); nil != err {
+	if err := srv.bundle.emailService.CreateBulk(ctx, obj, in.Emails); nil != err {
 		return nil, err
 	}
 
 	// save name object
-	if err := service.bundle.nameService.create(tx, obj, in); nil != err {
+	if err := srv.bundle.nameService.create(ctx, obj, in); nil != err {
 		return nil, err
 	}
 
 	// save password
-	if err := service.bundle.passwordService.create(tx, obj, in.Password); nil != err {
+	if err := srv.bundle.passwordService.create(ctx, obj, in.Password); nil != err {
 		return nil, err
 	}
 
 	return &dto.UserMutationOutcome{User: obj}, nil
 }
 
-func (service *UserService) Update(ctx context.Context, in dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
+func (srv *UserService) Update(ctx context.Context, in dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
 	tx := connect.ContextToDB(ctx)
-	obj, err := service.bundle.Service.Load(ctx, in.ID)
+	obj, err := srv.bundle.Service.Load(ctx, in.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,12 +85,12 @@ func (service *UserService) Update(ctx context.Context, in dto.UserUpdateInput) 
 		return &dto.UserMutationOutcome{Errors: errList, User: nil}, nil
 	}
 
-	if err := service.bundle.passwordService.create(tx, obj, in.Values.Password); nil != err {
+	if err := srv.bundle.passwordService.create(ctx, obj, in.Values.Password); nil != err {
 		return nil, err
 	}
 
 	// bump new version
-	obj.Version = service.bundle.idr.MustULID()
+	obj.Version = srv.bundle.idr.MustULID()
 	if err := tx.Save(obj).Error; nil != err {
 		return nil, err
 	}

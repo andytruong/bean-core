@@ -7,9 +7,9 @@ import (
 	"go.uber.org/zap"
 
 	"bean/components/conf"
+	"bean/components/connect"
 	"bean/components/module"
 	"bean/components/scalar"
-	"bean/components/util/connect"
 	"bean/pkg/access"
 	"bean/pkg/integration/mailer"
 	"bean/pkg/integration/s3"
@@ -60,7 +60,7 @@ type (
 
 		mutex   *sync.Mutex
 		id      *scalar.Identifier
-		dbs     connect.Wrapper
+		dbs     *connect.Wrapper
 		bundles BundleList
 		logger  *zap.Logger
 	}
