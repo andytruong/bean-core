@@ -35,7 +35,7 @@ func bundle() *SpaceBundle {
 		panic(err)
 	}
 
-	db := util.MockDatabase()
+	db := connect.MockDatabase()
 	db.Logger.LogMode(log.Silent)
 	logger := util.MockLogger()
 	id := util.MockIdentifier()
@@ -53,7 +53,7 @@ func tearDown(bundle *SpaceBundle) {
 func Test_Space(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
-	util.MockInstall(bundle, bundle.db)
+	connect.MockInstall(bundle, bundle.db)
 	ctx := connect.DBToContext(context.Background(), bundle.db)
 	iCreate := fixtures.SpaceCreateInputFixture(false)
 
@@ -201,7 +201,7 @@ func Test_Space(t *testing.T) {
 func Test_Membership(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
-	util.MockInstall(bundle, bundle.db)
+	connect.MockInstall(bundle, bundle.db)
 	ctx := connect.DBToContext(context.Background(), bundle.db)
 
 	// setup data for query

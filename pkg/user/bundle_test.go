@@ -21,9 +21,9 @@ func tearDown(this *UserBundle) {
 
 func Test(t *testing.T) {
 	ass := assert.New(t)
-	db := util.MockDatabase()
+	db := connect.MockDatabase()
 	this := NewUserBundle(db, util.MockLogger(), util.MockIdentifier())
-	util.MockInstall(this, db)
+	connect.MockInstall(this, db)
 	iCreate := fixtures.NewUserCreateInputFixture()
 	ctx := connect.DBToContext(context.Background(), db)
 
@@ -62,9 +62,9 @@ func Test(t *testing.T) {
 
 func Test_Update(t *testing.T) {
 	ass := assert.New(t)
-	db := util.MockDatabase()
+	db := connect.MockDatabase()
 	this := NewUserBundle(db, util.MockLogger(), util.MockIdentifier())
-	util.MockInstall(this, db)
+	connect.MockInstall(this, db)
 	iCreate := fixtures.NewUserCreateInputFixture()
 
 	t.Run("Update", func(t *testing.T) {

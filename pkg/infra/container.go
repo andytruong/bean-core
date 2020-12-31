@@ -9,6 +9,7 @@ import (
 	"bean/components/conf"
 	"bean/components/module"
 	"bean/components/scalar"
+	"bean/components/util/connect"
 	"bean/pkg/access"
 	"bean/pkg/integration/mailer"
 	"bean/pkg/integration/s3"
@@ -21,9 +22,6 @@ func NewContainer(path string) (*Container, error) {
 	this := &Container{
 		mutex:   &sync.Mutex{},
 		bundles: BundleList{},
-		dbs: databases{
-			connections: &sync.Map{},
-		},
 	}
 
 	// parse configuration from YAML configuration file & env variables.
@@ -32,7 +30,7 @@ func NewContainer(path string) (*Container, error) {
 	}
 
 	this.bundles.container = this
-	this.dbs.config = this.Databases
+	this.dbs = connect.NewWrapper(this.Databases)
 
 	// setup logger
 	if this.Env == "dev" {
@@ -54,22 +52,17 @@ type (
 	//  - Database connections
 	//  - HTTP server (GraphQL query interface)
 	Container struct {
-		Version    string                    `yaml:"version"`
-		Env        string                    `yaml:"env"`
-		Databases  map[string]DatabaseConfig `yaml:"databases"`
-		HttpServer HttpServerConfig          `yaml:"http-server"`
-		Bundles    BundlesConfig             `json:"BundleList"`
+		Version    string                            `yaml:"version"`
+		Env        string                            `yaml:"env"`
+		Databases  map[string]connect.DatabaseConfig `yaml:"databases"`
+		HttpServer HttpServerConfig                  `yaml:"http-server"`
+		Bundles    BundlesConfig                     `json:"BundleList"`
 
 		mutex   *sync.Mutex
 		id      *scalar.Identifier
-		dbs     databases
+		dbs     connect.Wrapper
 		bundles BundleList
 		logger  *zap.Logger
-	}
-
-	DatabaseConfig struct {
-		Driver string `yaml:"driver"`
-		Url    string `yaml:"url"`
 	}
 
 	HttpServerConfig struct {

@@ -31,9 +31,9 @@ func bundle() *S3Bundle {
 func Test(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
-	db := util.MockDatabase()
+	db := connect.MockDatabase()
 	ctx := connect.DBToContext(context.Background(), db)
-	util.MockInstall(bundle, db)
+	connect.MockInstall(bundle, db)
 
 	t.Run("DB schema", func(t *testing.T) {
 		ass.True(db.Migrator().HasTable("s3_application_policy"))
@@ -203,9 +203,9 @@ func Test_UploadToken(t *testing.T) {
 			return response, nil
 		},
 	}
-	db := util.MockDatabase()
+	db := connect.MockDatabase()
 	ctx := connect.DBToContext(context.Background(), db)
-	util.MockInstall(bundle, db)
+	connect.MockInstall(bundle, db)
 
 	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{

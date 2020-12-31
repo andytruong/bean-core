@@ -16,13 +16,13 @@ import (
 
 func NewApplicationBundle(
 	idr *scalar.Identifier,
-	logger *zap.Logger,
+	lgr *zap.Logger,
 	spaceBundle *space.SpaceBundle,
 	configBundle *config.ConfigBundle,
 ) (*AppBundle, error) {
 	bundle := &AppBundle{
 		idr:          idr,
-		logger:       logger,
+		lgr:          lgr,
 		spaceBundle:  spaceBundle,
 		configBundle: configBundle,
 	}
@@ -40,7 +40,7 @@ type AppBundle struct {
 	spaceBundle  *space.SpaceBundle
 	configBundle *config.ConfigBundle
 	idr          *scalar.Identifier
-	logger       *zap.Logger
+	lgr          *zap.Logger
 	resolvers    map[string]interface{}
 }
 
@@ -64,7 +64,7 @@ func (bundle AppBundle) Migrate(tx *gorm.DB, driver string) error {
 
 	runner := migrate.Runner{
 		Tx:     tx,
-		Logger: bundle.logger,
+		Logger: bundle.lgr,
 		Driver: driver,
 		Bundle: "bundle",
 		Dir:    path.Dir(filename) + "/model/migration/",

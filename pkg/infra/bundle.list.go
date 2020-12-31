@@ -28,7 +28,7 @@ func (bundles *BundleList) User() (*user.UserBundle, error) {
 	var err error
 
 	if nil == bundles.user {
-		db, err := bundles.container.dbs.master()
+		db, err := bundles.container.dbs.Master()
 		if nil != err {
 			return nil, err
 		}
@@ -48,7 +48,7 @@ func (bundles *BundleList) Space() (*space.SpaceBundle, error) {
 	var err error
 
 	if nil == bundles.space {
-		db, err := bundles.container.dbs.master()
+		db, err := bundles.container.dbs.Master()
 		if nil != err {
 			return nil, err
 		}

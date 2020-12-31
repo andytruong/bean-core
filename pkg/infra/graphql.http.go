@@ -84,7 +84,7 @@ func (r *GraphqlHttpRouter) handleFunc(srv *handler.Server) func(http.ResponseWr
 		}
 
 		// Inject DB connection to context
-		con, err := r.Container.dbs.master()
+		con, err := r.Container.dbs.Master()
 		if nil != err {
 			r.respondError(w, err, "failed to make DB connection", http.StatusInternalServerError)
 		} else {

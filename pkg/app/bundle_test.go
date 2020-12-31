@@ -24,9 +24,9 @@ func bundle() *AppBundle {
 func Test(t *testing.T) {
 	ass := assert.New(t)
 	bun := bundle()
-	con := util.MockDatabase().WithContext(context.Background())
+	con := connect.MockDatabase().WithContext(context.Background())
 	ctx := connect.DBToContext(context.Background(), con)
-	util.MockInstall(bun, con)
+	connect.MockInstall(bun, con)
 
 	t.Run("database schema", func(t *testing.T) {
 		ass.True(

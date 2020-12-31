@@ -16,14 +16,14 @@ import (
 
 func NewAccessBundle(
 	idr *scalar.Identifier,
-	logger *zap.Logger,
+	lgr *zap.Logger,
 	userBundle *user.UserBundle,
 	spaceBundle *space.SpaceBundle,
 	cnf *AccessConfiguration,
 ) *AccessBundle {
 	this := &AccessBundle{
 		cnf:         cnf.init(),
-		logger:      logger,
+		lgr:         lgr,
 		idr:         idr,
 		userBundle:  userBundle,
 		spaceBundle: spaceBundle,
@@ -41,7 +41,7 @@ type (
 		module.AbstractBundle
 
 		cnf            *AccessConfiguration
-		logger         *zap.Logger
+		lgr            *zap.Logger
 		idr            *scalar.Identifier
 		sessionService *SessionService
 		JwtService     *JwtService
@@ -72,7 +72,7 @@ func (bundle AccessBundle) Migrate(tx *gorm.DB, driver string) error {
 
 	runner := migrate.Runner{
 		Tx:     tx,
-		Logger: bundle.logger,
+		Logger: bundle.lgr,
 		Driver: driver,
 		Bundle: "access",
 		Dir:    path.Dir(filename) + "/model/migration/",

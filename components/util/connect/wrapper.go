@@ -1,4 +1,4 @@
-package infra
+package connect
 
 import (
 	"sync"
@@ -13,19 +13,25 @@ import (
 	"bean/components/util"
 )
 
-type databases struct {
+func NewWrapper(config map[string]DatabaseConfig) Wrapper {
+	return Wrapper{
+		config:      config,
+		connections: &sync.Map{},
+	}
+}
+
+type Wrapper struct {
 	config      map[string]DatabaseConfig
 	connections *sync.Map
 }
 
-func (dbs *databases) master() (*gorm.DB, error) {
+func (dbs *Wrapper) Master() (*gorm.DB, error) {
 	return dbs.get("master")
 }
 
-func (dbs *databases) get(name string) (*gorm.DB, error) {
+func (dbs *Wrapper) get(name string) (*gorm.DB, error) {
 	if db, ok := dbs.connections.Load(name); ok {
-		// Connection already established
-		return db.(*gorm.DB), nil
+		return db.(*gorm.DB), nil // Connection already established
 	} else if cnf, ok := dbs.config[name]; !ok {
 		// No configuration found for requested-DB
 		return nil, errors.Wrap(util.ErrorConfig, "database config not provided: "+name)
@@ -40,7 +46,7 @@ func (dbs *databases) get(name string) (*gorm.DB, error) {
 	}
 }
 
-func (dbs *databases) dialector(cnf DatabaseConfig) gorm.Dialector {
+func (dbs *Wrapper) dialector(cnf DatabaseConfig) gorm.Dialector {
 	switch cnf.Driver {
 	case "sqlite3":
 		return sqlite.Open(cnf.Url)

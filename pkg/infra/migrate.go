@@ -8,7 +8,7 @@ import (
 )
 
 func (c *Container) Migrate(ctx context.Context) error {
-	if db, err := c.dbs.master(); nil != err {
+	if db, err := c.dbs.Master(); nil != err {
 		return err
 	} else if con, err := db.DB(); nil != err {
 		return err

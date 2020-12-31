@@ -114,11 +114,10 @@ func (srv BucketService) Update(ctx context.Context, in dto.BucketUpdateInput) (
 	}, nil
 }
 
-// TODO: need data-loader
 func (srv BucketService) Load(ctx context.Context, id string) (*model.ConfigBucket, error) {
 	bucket := &model.ConfigBucket{}
 	db := connect.ContextToDB(ctx)
-	err := db.WithContext(ctx).Where("id = ?", id).First(&bucket).Error
+	err := db.Where("id = ?", id).First(&bucket).Error
 	if nil != err {
 		return nil, err
 	}

@@ -34,12 +34,12 @@ func bundle() *AccessBundle {
 		panic(err)
 	}
 
-	db := util.MockDatabase()
-	logger := util.MockLogger()
+	db := connect.MockDatabase()
+	lgr := util.MockLogger()
 	id := util.MockIdentifier()
-	userBundle := user.NewUserBundle(db, logger, id)
-	spaceBundle := space.NewSpaceBundle(db, logger, id, userBundle, config.Bundles.Space)
-	bundle := NewAccessBundle(id, logger, userBundle, spaceBundle, config.Bundles.Access)
+	userBundle := user.NewUserBundle(db, lgr, id)
+	spaceBundle := space.NewSpaceBundle(db, lgr, id, userBundle, config.Bundles.Space)
+	bundle := NewAccessBundle(id, lgr, userBundle, spaceBundle, config.Bundles.Access)
 
 	return bundle
 }
@@ -55,8 +55,8 @@ func Test_Config(t *testing.T) {
 func Test_Create(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
-	db := util.MockDatabase()
-	util.MockInstall(bundle, db)
+	db := connect.MockDatabase()
+	connect.MockInstall(bundle, db)
 	ctx := connect.DBToContext(context.Background(), db)
 
 	// create userBundle
@@ -168,8 +168,8 @@ func Test_Create(t *testing.T) {
 func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
-	db := util.MockDatabase()
-	util.MockInstall(bundle, db)
+	db := connect.MockDatabase()
+	connect.MockInstall(bundle, db)
 	ctx := connect.DBToContext(context.Background(), db)
 
 	// create userBundle
@@ -192,8 +192,8 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 func Test_Query(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
-	db := util.MockDatabase()
-	util.MockInstall(bundle, db)
+	db := connect.MockDatabase()
+	connect.MockInstall(bundle, db)
 	ctx := connect.DBToContext(context.Background(), db)
 
 	iUser := fUser.NewUserCreateInputFixture()
@@ -237,8 +237,8 @@ func Test_Query(t *testing.T) {
 func Test_Archive(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
-	db := util.MockDatabase()
-	util.MockInstall(bundle, db)
+	db := connect.MockDatabase()
+	connect.MockInstall(bundle, db)
 	ctx := connect.DBToContext(context.Background(), db)
 
 	iUser := fUser.NewUserCreateInputFixture()

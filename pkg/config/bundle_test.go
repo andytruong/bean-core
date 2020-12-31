@@ -31,8 +31,8 @@ func Test_Bucket(t *testing.T) {
 	ass := assert.New(t)
 	ctx := context.Background()
 	this := bundle()
-	db := util.MockDatabase()
-	util.MockInstall(this, db)
+	db := connect.MockDatabase()
+	connect.MockInstall(this, db)
 
 	t.Run("create", func(t *testing.T) {
 		err := connect.Transaction(
@@ -162,9 +162,9 @@ func Test_Bucket(t *testing.T) {
 func Test_Variable(t *testing.T) {
 	ass := assert.New(t)
 	this := bundle()
-	db := util.MockDatabase()
+	db := connect.MockDatabase()
 	ctx := connect.DBToContext(context.Background(), db)
-	util.MockInstall(this, db)
+	connect.MockInstall(this, db)
 
 	t.Run("create", func(t *testing.T) {
 		t.Run("read-only bucket", func(t *testing.T) {

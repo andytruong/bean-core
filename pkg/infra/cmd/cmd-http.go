@@ -11,11 +11,10 @@ import (
 )
 
 func HttpServerCommand(container *infra.Container) *cli.Command {
-	router := mux.NewRouter()
-
 	return &cli.Command{
 		Name: "http-server",
 		Action: func(ctx *cli.Context) error {
+			router := mux.NewRouter()
 			r := infra.GraphqlHttpRouter{Container: container}
 
 			server := http.Server{
