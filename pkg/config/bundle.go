@@ -12,12 +12,8 @@ import (
 	"bean/components/scalar"
 )
 
-func NewConfigBundle(idr *scalar.Identifier, logger *zap.Logger) *ConfigBundle {
-	bundle := &ConfigBundle{
-		idr:    idr,
-		logger: logger,
-	}
-
+func NewConfigBundle(idr *scalar.Identifier, lgr *zap.Logger) *ConfigBundle {
+	bundle := &ConfigBundle{idr: idr, lgr: lgr}
 	bundle.BucketService = &BucketService{bundle: bundle}
 	bundle.VariableService = &VariableService{bundle: bundle}
 
@@ -28,7 +24,7 @@ type ConfigBundle struct {
 	module.AbstractBundle
 
 	idr             *scalar.Identifier
-	logger          *zap.Logger
+	lgr             *zap.Logger
 	BucketService   *BucketService
 	VariableService *VariableService
 }
@@ -45,7 +41,7 @@ func (bundle ConfigBundle) Migrate(tx *gorm.DB, driver string) error {
 
 	runner := migrate.Runner{
 		Tx:     tx,
-		Logger: bundle.logger,
+		Logger: bundle.lgr,
 		Driver: driver,
 		Bundle: "config",
 		Dir:    path.Dir(filename) + "/model/migration/",

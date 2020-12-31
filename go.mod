@@ -14,6 +14,7 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/oklog/ulid v1.3.1
 	github.com/pkg/errors v0.9.1
+	github.com/qri-io/jsonschema v0.2.0
 	github.com/speps/go-hashids v2.0.0+incompatible
 	github.com/stretchr/testify v1.6.1
 	github.com/urfave/cli/v2 v2.3.0
