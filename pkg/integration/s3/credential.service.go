@@ -6,7 +6,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -161,7 +160,7 @@ func (service credentialService) decrypt(cryptoText string) string {
 	stream := cipher.NewCFBDecrypter(block, iv)
 	stream.XORKeyStream(cipherText, cipherText)
 
-	return fmt.Sprintf("%s", cipherText)
+	return string(cipherText)
 }
 
 func (service *credentialService) client(creds *model.Credentials) (*minio.Client, error) {
