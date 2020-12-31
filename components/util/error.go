@@ -1,11 +1,12 @@
 package util
 
 func NewErrors(code ErrorCode, fields []string, message string) []*Error {
-	return []*Error{NewError(code, fields, message)}
+	err := NewError(code, fields, message)
+	return []*Error{&err}
 }
 
-func NewError(code ErrorCode, fields []string, message string) *Error {
-	return &Error{
+func NewError(code ErrorCode, fields []string, message string) Error {
+	return Error{
 		Code:    &code,
 		Fields:  fields,
 		Message: message,

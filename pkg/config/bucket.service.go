@@ -2,9 +2,11 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/qri-io/jsonschema"
 
 	"bean/components/connect"
 	"bean/components/scalar"
@@ -18,8 +20,18 @@ type BucketService struct {
 }
 
 func (srv BucketService) Create(ctx context.Context, in dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {
-	tx := connect.ContextToDB(ctx)
+	// make sure input schema is valid
+	{
+		rs := &jsonschema.Schema{}
+		err := json.Unmarshal([]byte(in.Schema), rs)
+		if nil != err {
+			err := util.NewError(util.ErrorCodeInput, []string{"BucketCreateInput.Schema"}, err.Error())
 
+			return &dto.BucketMutationOutcome{Errors: []util.Error{err}}, nil
+		}
+	}
+
+	tx := connect.ContextToDB(ctx)
 	bucket := &model.ConfigBucket{
 		Id:          srv.bundle.idr.MustULID(),
 		Version:     srv.bundle.idr.MustULID(),

@@ -27,6 +27,6 @@ type VariableDeleteInput struct {
 }
 
 type VariableMutationOutcome struct {
-	Errors   []*util.Error         `json:"errors"`
+	Errors   []util.Error          `json:"errors"`
 	Variable *model.ConfigVariable `json:"variable"`
 }

@@ -7,7 +7,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
 
 	"bean/components/claim"
 	"bean/components/connect"
@@ -29,39 +28,50 @@ func Test_Bucket(t *testing.T) {
 	t.Parallel()
 
 	ass := assert.New(t)
-	ctx := context.Background()
 	this := bundle()
 	db := connect.MockDatabase()
+	ctx := connect.DBToContext(context.Background(), db)
 	connect.MockInstall(this, db)
 
 	t.Run("create", func(t *testing.T) {
-		err := connect.Transaction(
-			db,
-			func(tx *gorm.DB) error {
-				hostId := this.idr.MustULID()
-				access := scalar.AccessMode("444")
-				out, err := this.BucketService.Create(connect.DBToContext(ctx, tx), dto.BucketCreateInput{
-					HostId:      hostId,
-					Slug:        scalar.NilString("doe"),
-					Title:       scalar.NilString("Doe"),
-					Description: scalar.NilString("Just for John Doe"),
-					Access:      &access,
-					Schema:      `{"type:"number"}`,
-				})
+		t.Run("invalid schema", func(t *testing.T) {
+			hostId := this.idr.MustULID()
+			access := scalar.AccessMode("444")
+			out, err := this.BucketService.Create(ctx, dto.BucketCreateInput{
+				HostId:      hostId,
+				Slug:        scalar.NilString("doe"),
+				Title:       scalar.NilString("Doe"),
+				Description: scalar.NilString("Just for John Doe"),
+				Access:      &access,
+				Schema:      `{"type":invalid}`,
+			})
 
-				ass.NoError(err)
-				ass.Empty(out.Errors)
-				ass.Equal(hostId, out.Bucket.HostId)
-				ass.Equal("doe", out.Bucket.Slug)
-				ass.Equal("Doe", out.Bucket.Title)
-				ass.Equal("Just for John Doe", *out.Bucket.Description)
-				ass.Equal(access, out.Bucket.Access)
+			ass.NoError(err)
+			ass.NotNil(out)
+			ass.Len(out.Errors, 1)
+			ass.Contains(out.Errors[0].Message, "invalid character 'i' looking for beginning of value")
+		})
 
-				return err
-			},
-		)
+		t.Run("valid schema", func(t *testing.T) {
+			hostId := this.idr.MustULID()
+			access := scalar.AccessMode("444")
+			out, err := this.BucketService.Create(ctx, dto.BucketCreateInput{
+				HostId:      hostId,
+				Slug:        scalar.NilString("doe"),
+				Title:       scalar.NilString("Doe"),
+				Description: scalar.NilString("Just for John Doe"),
+				Access:      &access,
+				Schema:      `{"type":"number"}`,
+			})
 
-		ass.NoError(err)
+			ass.NoError(err)
+			ass.Empty(out.Errors)
+			ass.Equal(hostId, out.Bucket.HostId)
+			ass.Equal("doe", out.Bucket.Slug)
+			ass.Equal("Doe", out.Bucket.Title)
+			ass.Equal("Just for John Doe", *out.Bucket.Description)
+			ass.Equal(access, out.Bucket.Access)
+		})
 	})
 
 	t.Run("update", func(t *testing.T) {
@@ -75,7 +85,7 @@ func Test_Bucket(t *testing.T) {
 			Title:       scalar.NilString("QA"),
 			Description: scalar.NilString("Just for QA"),
 			Access:      &privateAccess,
-			Schema:      `{"type:"number"}`,
+			Schema:      `{"type":"number"}`,
 			IsPublished: false,
 		})
 
@@ -140,7 +150,7 @@ func Test_Bucket(t *testing.T) {
 			Title:       scalar.NilString("Doe"),
 			Description: scalar.NilString("Just for John Doe"),
 			Access:      &access,
-			Schema:      `{"type:"number"}`,
+			Schema:      `{"type":"number"}`,
 			IsPublished: true,
 		})
 
@@ -180,7 +190,7 @@ func Test_Variable(t *testing.T) {
 				Title:       scalar.NilString("Doe"),
 				Description: scalar.NilString("Just for John Doe"),
 				Access:      &access,
-				Schema:      `{"type:"number"}`,
+				Schema:      `{"type":"number"}`,
 				IsPublished: true,
 			})
 
@@ -225,20 +235,40 @@ func Test_Variable(t *testing.T) {
 			ass.NoError(err, "no err on create read-only bucket")
 			ass.Empty(oCreate.Errors)
 
-			// create variable
-			out, err := this.VariableService.Create(connect.DBToContext(ctx, tx), dto.VariableCreateInput{
-				BucketId:    oCreate.Bucket.Id,
-				Name:        "foo",
-				Description: nil,
-				Value:       "1",
-				IsLocked:    scalar.NilBool(false),
+			t.Run("invalid schema", func(t *testing.T) {
+				// create variable
+				out, err := this.VariableService.Create(connect.DBToContext(ctx, tx), dto.VariableCreateInput{
+					BucketId:    oCreate.Bucket.Id,
+					Name:        "foo",
+					Description: nil,
+					Value:       `"Should be a number"`,
+					IsLocked:    scalar.NilBool(false),
+				})
+
+				// assert error
+				ass.NoError(err)
+				ass.NotNil(out)
+				ass.Nil(out.Variable)
+				ass.Len(out.Errors, 1)
+				ass.Contains(out.Errors[0].Message, `"Should be a number" type should be number, got string`)
 			})
 
-			// assert error
-			ass.NoError(err)
-			ass.NotNil(out)
-			ass.Empty(out.Errors)
-			ass.Equal("1", out.Variable.Value)
+			t.Run("valid schema", func(t *testing.T) {
+				// create variable
+				out, err := this.VariableService.Create(connect.DBToContext(ctx, tx), dto.VariableCreateInput{
+					BucketId:    oCreate.Bucket.Id,
+					Name:        "foo",
+					Description: nil,
+					Value:       "1",
+					IsLocked:    scalar.NilBool(false),
+				})
+
+				// assert error
+				ass.NoError(err)
+				ass.NotNil(out)
+				ass.Empty(out.Errors)
+				ass.Equal("1", out.Variable.Value)
+			})
 		})
 	})
 
@@ -259,7 +289,7 @@ func Test_Variable(t *testing.T) {
 				Title:       scalar.NilString("Doe"),
 				Description: scalar.NilString("Just for John Doe"),
 				Access:      &access,
-				Schema:      `{"type:"number"}`,
+				Schema:      `{"type":"number"}`,
 				IsPublished: true,
 			})
 

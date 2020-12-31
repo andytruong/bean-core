@@ -1,7 +1,11 @@
 package model
 
 import (
+	"context"
+	"encoding/json"
 	"time"
+
+	"github.com/qri-io/jsonschema"
 
 	"bean/components/scalar"
 )
@@ -24,4 +28,31 @@ type ConfigBucket struct {
 
 func (ConfigBucket) TableName() string {
 	return "config_buckets"
+}
+
+func (bucket ConfigBucket) Validate(ctx context.Context, value string) ([]string, error) {
+	var (
+		err     error
+		reasons []string
+	)
+
+	rs := &jsonschema.Schema{}
+	err = json.Unmarshal([]byte(bucket.Schema), rs)
+	if nil != err {
+		return nil, err
+	}
+
+	explanations, err := rs.ValidateBytes(ctx, []byte(value))
+	if nil != err {
+		return nil, err
+	}
+
+	if len(explanations) > 0 {
+		reasons = []string{}
+		for _, reason := range explanations {
+			reasons = append(reasons, reason.Error())
+		}
+	}
+
+	return reasons, nil
 }
