@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/oklog/ulid"
+	"github.com/oklog/ulid/v2"
 	"github.com/speps/go-hashids"
 )
 

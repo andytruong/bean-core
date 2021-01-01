@@ -12,7 +12,7 @@ require (
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/minio/minio-go/v7 v7.0.6
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
-	github.com/oklog/ulid v1.3.1
+	github.com/oklog/ulid/v2 v2.0.2
 	github.com/pkg/errors v0.9.1
 	github.com/qri-io/jsonschema v0.2.0
 	github.com/speps/go-hashids v2.0.0+incompatible
