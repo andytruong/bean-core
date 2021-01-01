@@ -21,6 +21,24 @@ import (
 	"bean/pkg/integration/s3/model/dto"
 )
 
+const (
+	credentialsConfigSlug   = `bean.s3.credentials.schema.v1`
+	credentialsConfigSchema = `{
+		"type":       "object",
+		"required":   ["kind", "value"],
+		"properties": {
+			"kind":      { "type": "string", "enum": ["file_extensions", "rate_limit"] },
+			"value":     {
+				"type":     "string",
+				"examples": [
+					"file extension: pdf txt zip gz",
+					"rate limit:     1MB/user/hour"
+				]
+			}
+		}
+	}`
+)
+
 type credentialService struct {
 	bundle    *S3Bundle
 	transport http.RoundTripper

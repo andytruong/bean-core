@@ -17,6 +17,7 @@ import (
 	"bean/components/util"
 	"bean/pkg/app"
 	"bean/pkg/config"
+	configDto "bean/pkg/config/model/dto"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
@@ -32,7 +33,7 @@ func bundle() *S3Bundle {
 	return bun
 }
 
-func Test(t *testing.T) {
+func Test_Install(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
 	db := connect.MockDatabase()
@@ -42,6 +43,28 @@ func Test(t *testing.T) {
 	t.Run("DB schema", func(t *testing.T) {
 		ass.True(db.Migrator().HasTable("s3_application_policy"))
 	})
+
+	t.Run("Config buckets", func(t *testing.T) {
+		t.Run("credentials", func(t *testing.T) {
+			bucket, err := bundle.configBundle.BucketService.Load(ctx, configDto.BucketKey{Slug: credentialsConfigSlug})
+			ass.NoError(err)
+			ass.Equal(bucket.Schema, credentialsConfigSchema)
+		})
+
+		t.Run("policy", func(t *testing.T) {
+			bucket, err := bundle.configBundle.BucketService.Load(ctx, configDto.BucketKey{Slug: policyConfigSlug})
+			ass.NoError(err)
+			ass.Equal(bucket.Schema, policyConfigSchema)
+		})
+	})
+}
+
+func Test(t *testing.T) {
+	ass := assert.New(t)
+	bundle := bundle()
+	db := connect.MockDatabase()
+	ctx := connect.DBToContext(context.Background(), db)
+	connect.MockInstall(ctx, bundle)
 
 	t.Run("Service", func(t *testing.T) {
 		t.Run("Credentials", func(t *testing.T) {

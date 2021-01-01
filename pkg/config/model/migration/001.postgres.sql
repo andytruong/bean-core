@@ -5,7 +5,11 @@ CREATE TABLE config_buckets
     slug         character varying(64) NOT NULL UNIQUE,
     title        character varying(256),
     description  text,
-    host_id      character varying(26) NOT NULL,
+
+    -- ---------------------
+    -- ID of host entity
+    -- Use null if it's owner is system.
+    host_id      character varying(26),
 
     -- ---------------------
     -- Access mode that apply to variables inside.

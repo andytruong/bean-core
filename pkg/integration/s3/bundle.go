@@ -12,6 +12,7 @@ import (
 	"bean/components/scalar"
 	"bean/pkg/app"
 	"bean/pkg/config"
+	"bean/pkg/config/model/dto"
 )
 
 func NewS3Integration(
@@ -77,7 +78,35 @@ func (bundle S3Bundle) Migrate(ctx context.Context, driver string) error {
 		return err
 	}
 
-	// srv.bundle.configBundle.BucketService.Create()
+	// create configuration buckets: credentials, policies
+	{
+		var err error
+		access := scalar.AccessModePrivate
+
+		// config bucket -> credentials
+		_, err = bundle.configBundle.BucketService.Create(ctx, dto.BucketCreateInput{
+			Slug:        scalar.NilString(credentialsConfigSlug),
+			Access:      &access,
+			Schema:      credentialsConfigSchema,
+			IsPublished: true,
+		})
+
+		if nil != err {
+			return err
+		}
+
+		// config bucket -> policies
+		_, err = bundle.configBundle.BucketService.Create(ctx, dto.BucketCreateInput{
+			Slug:        scalar.NilString(policyConfigSlug),
+			Access:      &access,
+			Schema:      policyConfigSchema,
+			IsPublished: true,
+		})
+
+		if nil != err {
+			return err
+		}
+	}
 
 	return nil
 }

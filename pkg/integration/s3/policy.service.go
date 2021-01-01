@@ -11,6 +11,21 @@ import (
 	"bean/pkg/integration/s3/model/dto"
 )
 
+const (
+	policyConfigSlug   = `bean.s3.policy.schema.v1`
+	policyConfigSchema = `{
+		"type":       "object",
+		"required":   ["endpoint", "bucket", "accessKey", "secretKey", "isSecure"],
+		"properties": {
+			"endpoint":  { "type": "string", "maxLength": 255, "format": "uri" },
+			"bucket":    { "type": "string", "maxLength": 64  },
+			"accessKey": { "type": "string", "maxLength": 64  },
+			"secretKey": { "type": "string", "maxLength": 128 },
+			"isSecure":  { "type": "boolean" }
+		}
+	}`
+)
+
 type policyService struct {
 	bundle *S3Bundle
 }
