@@ -20,7 +20,7 @@ type VariableService struct {
 
 func (srv VariableService) access(ctx context.Context, bucketId string, action string) (bool, error) {
 	db := connect.ContextToDB(ctx)
-	bucket, err := srv.bundle.BucketService.Load(connect.DBToContext(ctx, db), bucketId)
+	bucket, err := srv.bundle.BucketService.Load(connect.DBToContext(ctx, db), dto.BucketKey{Id: bucketId})
 	if nil != err {
 		return false, err
 	}
@@ -72,7 +72,7 @@ func (srv VariableService) Create(ctx context.Context, in dto.VariableCreateInpu
 		return nil, util.ErrorAccessDenied
 	}
 
-	bucket, err := srv.bundle.BucketService.Load(ctx, in.BucketId)
+	bucket, err := srv.bundle.BucketService.Load(ctx, dto.BucketKey{Id: in.BucketId})
 	if nil != err {
 		return nil, err
 	} else if nil == bucket {

@@ -23,3 +23,18 @@ type BucketMutationOutcome struct {
 	Errors []util.Error        `json:"errors"`
 	Bucket *model.ConfigBucket `json:"bucket"`
 }
+
+type BucketUpdateInput struct {
+	Id          string
+	Version     string
+	Title       *string            `json:"title"`
+	Description *string            `json:"description"`
+	Access      *scalar.AccessMode `json:"access"`
+	Schema      *string            `json:"schema"`
+	IsPublished *bool              `json:"isPublished"`
+}
+
+type BucketKey struct {
+	Id   string
+	Slug string
+}

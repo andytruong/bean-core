@@ -157,14 +157,27 @@ func Test_Bucket(t *testing.T) {
 		ass.NoError(err)
 		ass.NotNil(oCreate)
 
-		bucket, err = bundle.BucketService.Load(connect.DBToContext(context.Background(), tx), oCreate.Bucket.Id)
-		ass.NoError(err)
-		ass.Equal(hostId, bucket.HostId)
-		ass.Equal("load-doe", bucket.Slug)
-		ass.Equal("Doe", bucket.Title)
-		ass.Equal("Just for John Doe", *bucket.Description)
-		ass.Equal(access, bucket.Access)
-		ass.Equal(true, bucket.IsPublished)
+		t.Run("load by ID", func(t *testing.T) {
+			bucket, err = bundle.BucketService.Load(connect.DBToContext(context.Background(), tx), dto.BucketKey{Id: oCreate.Bucket.Id})
+			ass.NoError(err)
+			ass.Equal(hostId, bucket.HostId)
+			ass.Equal("load-doe", bucket.Slug)
+			ass.Equal("Doe", bucket.Title)
+			ass.Equal("Just for John Doe", *bucket.Description)
+			ass.Equal(access, bucket.Access)
+			ass.Equal(true, bucket.IsPublished)
+		})
+
+		t.Run("load by slug", func(t *testing.T) {
+			bucket, err = bundle.BucketService.Load(connect.DBToContext(context.Background(), tx), dto.BucketKey{Slug: oCreate.Bucket.Slug})
+			ass.NoError(err)
+			ass.Equal(hostId, bucket.HostId)
+			ass.Equal("load-doe", bucket.Slug)
+			ass.Equal("Doe", bucket.Title)
+			ass.Equal("Just for John Doe", *bucket.Description)
+			ass.Equal(access, bucket.Access)
+			ass.Equal(true, bucket.IsPublished)
+		})
 	})
 }
 
