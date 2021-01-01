@@ -12,7 +12,7 @@ type NameService struct {
 	bundle *UserBundle
 }
 
-func (service *NameService) load(ctx context.Context, userId string) (*model.UserName, error) {
+func (srv *NameService) load(ctx context.Context, userId string) (*model.UserName, error) {
 	name := &model.UserName{}
 	err := connect.ContextToDB(ctx).Where(model.UserName{UserId: userId}).First(&name).Error
 	if nil != err {
@@ -22,10 +22,10 @@ func (service *NameService) load(ctx context.Context, userId string) (*model.Use
 	return name, nil
 }
 
-func (service *NameService) create(ctx context.Context, user *model.User, input *dto.UserCreateInput) error {
+func (srv *NameService) create(ctx context.Context, user *model.User, input *dto.UserCreateInput) error {
 	if nil != input.Name {
 		name := model.UserName{
-			ID:            service.bundle.idr.MustULID(),
+			ID:            srv.bundle.idr.MustULID(),
 			UserId:        user.ID,
 			FirstName:     input.Name.FirstName,
 			LastName:      input.Name.LastName,

@@ -15,22 +15,22 @@ type ConfigService struct {
 	bundle *SpaceBundle
 }
 
-func (service *ConfigService) CreateFeatures(ctx context.Context, space *model.Space, in dto.SpaceCreateInput) error {
+func (srv *ConfigService) CreateFeatures(ctx context.Context, space *model.Space, in dto.SpaceCreateInput) error {
 	value := []byte("false")
 	if in.Object.Features.Register {
 		value = []byte("true")
 	}
 
-	return service.CreateFeature(ctx, space, "default", "register", value)
+	return srv.CreateFeature(ctx, space, "default", "register", value)
 }
 
-func (service *ConfigService) CreateFeature(
+func (srv *ConfigService) CreateFeature(
 	ctx context.Context,
 	space *model.Space, bucket string, key string, value []byte,
 ) error {
 	config := model.SpaceConfig{
-		Id:        service.bundle.idr.MustULID(),
-		Version:   service.bundle.idr.MustULID(),
+		Id:        srv.bundle.idr.MustULID(),
+		Version:   srv.bundle.idr.MustULID(),
 		SpaceId:   space.ID,
 		Bucket:    bucket,
 		Key:       key,
@@ -42,7 +42,7 @@ func (service *ConfigService) CreateFeature(
 	return connect.ContextToDB(ctx).Create(&config).Error
 }
 
-func (service *ConfigService) List(ctx context.Context, space *model.Space) (*model.SpaceFeatures, error) {
+func (srv *ConfigService) List(ctx context.Context, space *model.Space) (*model.SpaceFeatures, error) {
 	db := connect.ContextToDB(ctx)
 	features := &model.SpaceFeatures{Register: false}
 	var configList []model.SpaceConfig
@@ -73,26 +73,26 @@ func (service *ConfigService) List(ctx context.Context, space *model.Space) (*mo
 	return features, nil
 }
 
-func (service *ConfigService) updateFeatures(tx *gorm.DB, obj *model.Space, in dto.SpaceUpdateInput) error {
+func (srv *ConfigService) updateFeatures(tx *gorm.DB, obj *model.Space, in dto.SpaceUpdateInput) error {
 	if nil != in.Object.Features.Register {
 		if *in.Object.Features.Register {
-			return service.updateFeature(tx, obj, "default", "register", []byte("true"))
+			return srv.updateFeature(tx, obj, "default", "register", []byte("true"))
 		} else {
-			return service.updateFeature(tx, obj, "default", "register", []byte("false"))
+			return srv.updateFeature(tx, obj, "default", "register", []byte("false"))
 		}
 	}
 
 	return nil
 }
 
-func (service *ConfigService) updateFeature(
+func (srv *ConfigService) updateFeature(
 	tx *gorm.DB,
 	obj *model.Space, bucket string, key string, value []byte,
 ) error {
 	return tx.
 		Where("space_id = ? AND bucket = ? AND key = ?", obj.ID, bucket, key).
 		Updates(&model.SpaceConfig{
-			Version:   service.bundle.idr.MustULID(),
+			Version:   srv.bundle.idr.MustULID(),
 			Value:     value,
 			UpdatedAt: time.Now(),
 		}).

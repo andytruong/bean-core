@@ -13,13 +13,13 @@ type DomainNameService struct {
 	bundle *SpaceBundle
 }
 
-func (service *DomainNameService) createMultiple(ctx context.Context, space *model.Space, in dto.SpaceCreateInput) error {
+func (srv *DomainNameService) createMultiple(ctx context.Context, space *model.Space, in dto.SpaceCreateInput) error {
 	if nil == in.Object.DomainNames {
 		return nil
 	}
 
 	if nil != in.Object.DomainNames.Primary {
-		err := service.create(ctx, space, in.Object.DomainNames.Primary, true)
+		err := srv.create(ctx, space, in.Object.DomainNames.Primary, true)
 		if nil != err {
 			return err
 		}
@@ -27,7 +27,7 @@ func (service *DomainNameService) createMultiple(ctx context.Context, space *mod
 
 	if nil != in.Object.DomainNames.Secondary {
 		for _, in := range in.Object.DomainNames.Secondary {
-			err := service.create(ctx, space, in, false)
+			err := srv.create(ctx, space, in, false)
 			if nil != err {
 				return err
 			}
@@ -37,9 +37,9 @@ func (service *DomainNameService) createMultiple(ctx context.Context, space *mod
 	return nil
 }
 
-func (service *DomainNameService) create(ctx context.Context, space *model.Space, in *dto.DomainNameInput, isPrimary bool) error {
+func (srv *DomainNameService) create(ctx context.Context, space *model.Space, in *dto.DomainNameInput, isPrimary bool) error {
 	domain := model.DomainName{
-		ID:         service.bundle.idr.MustULID(),
+		ID:         srv.bundle.idr.MustULID(),
 		SpaceId:    space.ID,
 		IsVerified: *in.Verified,
 		Value:      *in.Value,
@@ -52,7 +52,7 @@ func (service *DomainNameService) create(ctx context.Context, space *model.Space
 	return connect.ContextToDB(ctx).Create(&domain).Error
 }
 
-func (service *DomainNameService) Find(ctx context.Context, space *model.Space) (*model.DomainNames, error) {
+func (srv *DomainNameService) Find(ctx context.Context, space *model.Space) (*model.DomainNames, error) {
 	out := &model.DomainNames{
 		Primary:   nil,
 		Secondary: nil,

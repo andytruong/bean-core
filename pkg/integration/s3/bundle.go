@@ -1,16 +1,17 @@
 package s3
 
 import (
+	"context"
 	"path"
 	"runtime"
 
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
+	"bean/components/connect"
 	"bean/components/module"
-	"bean/components/module/migrate"
 	"bean/components/scalar"
 	"bean/pkg/app"
+	"bean/pkg/config"
 )
 
 func NewS3Integration(
@@ -18,6 +19,7 @@ func NewS3Integration(
 	logger *zap.Logger,
 	conf *S3Configuration,
 	appBundle *app.AppBundle,
+	configBundle *config.ConfigBundle,
 ) *S3Bundle {
 	this := &S3Bundle{
 		idr:    idr,
@@ -26,6 +28,7 @@ func NewS3Integration(
 	}
 
 	this.appBundle = appBundle
+	this.configBundle = configBundle
 	this.AppService = &ApplicationService{bundle: this}
 	this.credentialService = &credentialService{bundle: this}
 	this.policyService = &policyService{bundle: this}
@@ -37,10 +40,12 @@ func NewS3Integration(
 type S3Bundle struct {
 	module.AbstractBundle
 
+	appBundle    *app.AppBundle
+	configBundle *config.ConfigBundle
+
 	idr               *scalar.Identifier
 	logger            *zap.Logger
 	cnf               *S3Configuration
-	appBundle         *app.AppBundle
 	AppService        *ApplicationService
 	credentialService *credentialService
 	policyService     *policyService
@@ -52,24 +57,29 @@ func (S3Bundle) Name() string {
 }
 
 func (bundle S3Bundle) Dependencies() []module.Bundle {
-	return []module.Bundle{bundle.appBundle}
+	return []module.Bundle{bundle.configBundle, bundle.appBundle}
 }
 
-func (bundle S3Bundle) Migrate(tx *gorm.DB, driver string) error {
+func (bundle S3Bundle) Migrate(ctx context.Context, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
 	}
 
-	runner := migrate.Runner{
-		Tx:     tx,
+	runner := connect.Runner{
 		Logger: bundle.logger,
 		Driver: driver,
 		Bundle: "integration.s3",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 
-	return runner.Run()
+	if err := runner.Run(ctx); nil != err {
+		return err
+	}
+
+	// srv.bundle.configBundle.BucketService.Create()
+
+	return nil
 }
 
 func (bundle *S3Bundle) GraphqlResolver() map[string]interface{} {

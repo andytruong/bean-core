@@ -1,15 +1,15 @@
 package mailer
 
 import (
+	"context"
 	"path"
 	"runtime"
 
 	"go.uber.org/zap"
 	"gopkg.in/gomail.v2"
-	"gorm.io/gorm"
 
+	"bean/components/connect"
 	"bean/components/module"
-	"bean/components/module/migrate"
 	"bean/pkg/integration/mailer/model"
 )
 
@@ -36,21 +36,20 @@ func (MailerBundle) Name() string {
 	return "Mailer"
 }
 
-func (bundle MailerBundle) Migrate(tx *gorm.DB, driver string) error {
+func (bundle MailerBundle) Migrate(ctx context.Context, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
 	}
 
-	runner := migrate.Runner{
-		Tx:     tx,
+	runner := connect.Runner{
 		Logger: bundle.logger,
 		Driver: driver,
 		Bundle: "integration.mailer",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 
-	return runner.Run()
+	return runner.Run(ctx)
 }
 
 func (bundle MailerBundle) Dependencies() []module.Bundle {

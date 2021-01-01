@@ -18,7 +18,7 @@ type SpaceService struct {
 	bundle *SpaceBundle
 }
 
-func (service SpaceService) Load(ctx context.Context, id string) (*model.Space, error) {
+func (srv SpaceService) Load(ctx context.Context, id string) (*model.Space, error) {
 	obj := &model.Space{}
 	err := connect.ContextToDB(ctx).First(&obj, "id = ?", id).Error
 	if nil != err {
@@ -28,9 +28,9 @@ func (service SpaceService) Load(ctx context.Context, id string) (*model.Space, 
 	return obj, nil
 }
 
-func (service SpaceService) FindOne(ctx context.Context, filters dto.SpaceFilters) (*model.Space, error) {
+func (srv SpaceService) FindOne(ctx context.Context, filters dto.SpaceFilters) (*model.Space, error) {
 	if nil != filters.ID {
-		return service.Load(ctx, *filters.ID)
+		return srv.Load(ctx, *filters.ID)
 	} else if nil != filters.Domain {
 		domain := &model.DomainName{}
 		err := connect.ContextToDB(ctx).Where("value = ?", filters.Domain).First(&domain).Error
@@ -40,18 +40,18 @@ func (service SpaceService) FindOne(ctx context.Context, filters dto.SpaceFilter
 			return nil, errors.New("domain name is not active")
 		}
 
-		return service.Load(ctx, domain.SpaceId)
+		return srv.Load(ctx, domain.SpaceId)
 	}
 
 	return nil, nil
 }
 
-func (service *SpaceService) Create(ctx context.Context, in dto.SpaceCreateInput) (*dto.SpaceCreateOutcome, error) {
-	space, err := service.create(ctx, in)
+func (srv *SpaceService) Create(ctx context.Context, in dto.SpaceCreateInput) (*dto.SpaceCreateOutcome, error) {
+	space, err := srv.create(ctx, in)
 	if nil != err {
 		return nil, err
 	} else {
-		err := service.createRelationships(ctx, space, in)
+		err := srv.createRelationships(ctx, space, in)
 		if nil != err {
 			return nil, err
 		}
@@ -60,11 +60,11 @@ func (service *SpaceService) Create(ctx context.Context, in dto.SpaceCreateInput
 	}
 }
 
-func (service *SpaceService) create(ctx context.Context, in dto.SpaceCreateInput) (*model.Space, error) {
+func (srv *SpaceService) create(ctx context.Context, in dto.SpaceCreateInput) (*model.Space, error) {
 	db := connect.ContextToDB(ctx)
 	space := &model.Space{
-		ID:        service.bundle.idr.MustULID(),
-		Version:   service.bundle.idr.MustULID(),
+		ID:        srv.bundle.idr.MustULID(),
+		Version:   srv.bundle.idr.MustULID(),
 		Kind:      in.Object.Kind,
 		Title:     *in.Object.Title,
 		Language:  in.Object.Language,
@@ -90,14 +90,14 @@ func (service *SpaceService) create(ctx context.Context, in dto.SpaceCreateInput
 	return space, nil
 }
 
-func (service *SpaceService) createRelationships(ctx context.Context, space *model.Space, in dto.SpaceCreateInput) error {
-	if err := service.bundle.domainNameService.createMultiple(ctx, space, in); nil != err {
+func (srv *SpaceService) createRelationships(ctx context.Context, space *model.Space, in dto.SpaceCreateInput) error {
+	if err := srv.bundle.domainNameService.createMultiple(ctx, space, in); nil != err {
 		return err
 	}
 
 	// space configuration
 	{
-		if err := service.bundle.configService.CreateFeatures(ctx, space, in); nil != err {
+		if err := srv.bundle.configService.CreateFeatures(ctx, space, in); nil != err {
 			return err
 		}
 	}
@@ -117,17 +117,17 @@ func (service *SpaceService) createRelationships(ctx context.Context, space *mod
 			},
 		}
 
-		if ownerRole, err := service.create(ctx, ownerRoleInput); nil != err {
+		if ownerRole, err := srv.create(ctx, ownerRoleInput); nil != err {
 			return err
 		} else {
 			// membership of user -> organisation
-			_, err = service.bundle.MemberService.doCreate(ctx, space.ID, claims.UserId(), true)
+			_, err = srv.bundle.MemberService.doCreate(ctx, space.ID, claims.UserId(), true)
 			if nil != err {
 				return err
 			}
 
 			// membership of user -> owner role
-			_, err = service.bundle.MemberService.doCreate(ctx, ownerRole.ID, claims.UserId(), true)
+			_, err = srv.bundle.MemberService.doCreate(ctx, ownerRole.ID, claims.UserId(), true)
 			if nil != err {
 				return err
 			}
@@ -137,7 +137,7 @@ func (service *SpaceService) createRelationships(ctx context.Context, space *mod
 	return nil
 }
 
-func (service SpaceService) Update(ctx context.Context, obj model.Space, in dto.SpaceUpdateInput) (*dto.SpaceCreateOutcome, error) {
+func (srv SpaceService) Update(ctx context.Context, obj model.Space, in dto.SpaceUpdateInput) (*dto.SpaceCreateOutcome, error) {
 	tx := connect.ContextToDB(ctx)
 
 	// check version for conflict
@@ -150,12 +150,12 @@ func (service SpaceService) Update(ctx context.Context, obj model.Space, in dto.
 	}
 
 	// change version
-	obj.Version = service.bundle.idr.MustULID()
+	obj.Version = srv.bundle.idr.MustULID()
 	if err := tx.Save(obj).Error; nil != err {
 		return nil, err
 	}
 
-	err := service.bundle.configService.updateFeatures(tx, &obj, in)
+	err := srv.bundle.configService.updateFeatures(tx, &obj, in)
 	if nil != err {
 		return nil, err
 	}

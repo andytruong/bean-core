@@ -15,7 +15,7 @@ type JwtService struct {
 	bundle *AccessBundle
 }
 
-func (service JwtService) Validate(authHeader string) (*claim.Payload, error) {
+func (srv JwtService) Validate(authHeader string) (*claim.Payload, error) {
 	chunks := strings.Split(authHeader, " ")
 	authHeader = chunks[len(chunks)-1]
 
@@ -24,7 +24,7 @@ func (service JwtService) Validate(authHeader string) (*claim.Payload, error) {
 			authHeader,
 			&claim.Payload{},
 			func(token *jwt.Token) (interface{}, error) {
-				return service.bundle.cnf.GetParseKey()
+				return srv.bundle.cnf.GetParseKey()
 			},
 		)
 
@@ -38,13 +38,13 @@ func (service JwtService) Validate(authHeader string) (*claim.Payload, error) {
 	return nil, fmt.Errorf("invalid authentication header")
 }
 
-func (service JwtService) Sign(claims jwt.Claims) (string, error) {
-	key, err := service.bundle.cnf.GetSignKey()
+func (srv JwtService) Sign(claims jwt.Claims) (string, error) {
+	key, err := srv.bundle.cnf.GetSignKey()
 	if nil != err {
 		return "", errors.Wrap(util.ErrorConfig, err.Error())
 	}
 
 	return jwt.
-		NewWithClaims(service.bundle.cnf.signMethod(), claims).
+		NewWithClaims(srv.bundle.cnf.signMethod(), claims).
 		SignedString(key)
 }

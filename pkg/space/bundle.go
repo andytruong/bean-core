@@ -1,14 +1,14 @@
 package space
 
 import (
+	"context"
 	"path"
 	"runtime"
 
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
+	"bean/components/connect"
 	"bean/components/module"
-	"bean/components/module/migrate"
 	"bean/components/scalar"
 	"bean/pkg/user"
 )
@@ -58,21 +58,20 @@ func (bundle *SpaceBundle) Dependencies() []module.Bundle {
 	return []module.Bundle{bundle.userBundle}
 }
 
-func (bundle SpaceBundle) Migrate(tx *gorm.DB, driver string) error {
+func (bundle SpaceBundle) Migrate(ctx context.Context, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
 	}
 
-	runner := migrate.Runner{
-		Tx:     tx,
+	runner := connect.Runner{
 		Logger: bundle.lgr,
 		Driver: driver,
 		Bundle: "space",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 
-	return runner.Run()
+	return runner.Run(ctx)
 }
 
 func (bundle *SpaceBundle) GraphqlResolver() map[string]interface{} {

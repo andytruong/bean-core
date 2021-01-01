@@ -23,10 +23,17 @@ func tearDown(db *gorm.DB) {
 func Test(t *testing.T) {
 	ass := assert.New(t)
 	db := connect.MockDatabase()
-	this := NewUserBundle(util.MockLogger(), util.MockIdentifier())
-	connect.MockInstall(this, db)
-	iCreate := fixtures.NewUserCreateInputFixture()
+	bundle := NewUserBundle(util.MockLogger(), util.MockIdentifier())
 	ctx := connect.DBToContext(context.Background(), db)
+	connect.MockInstall(ctx, bundle)
+	iCreate := fixtures.NewUserCreateInputFixture()
+
+	t.Run("database schema", func(t *testing.T) {
+		ass.True(
+			db.Migrator().HasTable("users"),
+			"Table `users` was created",
+		)
+	})
 
 	t.Run("Create", func(t *testing.T) {
 		defer tearDown(db)
@@ -34,14 +41,14 @@ func Test(t *testing.T) {
 		t.Run("test happy case, no error", func(t *testing.T) {
 			now := time.Now()
 
-			resolver := this.resolvers["UserMutation"].(map[string]interface{})["Create"].(func(context.Context, *dto.UserMutation, *dto.UserCreateInput) (*dto.UserMutationOutcome, error))
+			resolver := bundle.resolvers["UserMutation"].(map[string]interface{})["Create"].(func(context.Context, *dto.UserMutation, *dto.UserCreateInput) (*dto.UserMutationOutcome, error))
 			out, err := resolver(ctx, nil, iCreate)
 			ass.NoError(err)
 			ass.Empty(out.Errors)
 			ass.Equal("https://foo.bar", string(*out.User.AvatarURI))
 
 			{
-				resolver := this.resolvers["UserQuery"].(map[string]interface{})["Load"].(func(ctx context.Context, query *dto.UserQuery, id string) (*model.User, error))
+				resolver := bundle.resolvers["UserQuery"].(map[string]interface{})["Load"].(func(context.Context, *dto.UserQuery, string) (*model.User, error))
 				theUser, err := resolver(ctx, nil, out.User.ID)
 				ass.NoError(err)
 				ass.True(theUser.CreatedAt.UnixNano() >= now.UnixNano())
@@ -64,25 +71,25 @@ func Test(t *testing.T) {
 func Test_Update(t *testing.T) {
 	ass := assert.New(t)
 	db := connect.MockDatabase()
-	this := NewUserBundle(util.MockLogger(), util.MockIdentifier())
-	connect.MockInstall(this, db)
+	bundle := NewUserBundle(util.MockLogger(), util.MockIdentifier())
 	ctx := connect.DBToContext(context.Background(), db)
+	connect.MockInstall(ctx, bundle)
 	iCreate := fixtures.NewUserCreateInputFixture()
 
 	t.Run("Update", func(t *testing.T) {
 		defer tearDown(db)
 
 		// create user so we can edit
-		rCreate := this.resolvers["UserMutation"].(map[string]interface{})["Create"].(func(context.Context, *dto.UserMutation, *dto.UserCreateInput) (*dto.UserMutationOutcome, error))
+		rCreate := bundle.resolvers["UserMutation"].(map[string]interface{})["Create"].(func(context.Context, *dto.UserMutation, *dto.UserCreateInput) (*dto.UserMutationOutcome, error))
 		oCreate, err := rCreate(ctx, nil, iCreate)
 		ass.NoError(err)
 		ass.NotNil(oCreate)
-		rUpdate := this.resolvers["UserMutation"].(map[string]interface{})["Update"].(func(context.Context, *dto.UserMutation, dto.UserUpdateInput) (*dto.UserMutationOutcome, error))
+		rUpdate := bundle.resolvers["UserMutation"].(map[string]interface{})["Update"].(func(context.Context, *dto.UserMutation, dto.UserUpdateInput) (*dto.UserMutationOutcome, error))
 
 		t.Run("version conflict", func(t *testing.T) {
 			oUpdate, err := rUpdate(ctx, nil, dto.UserUpdateInput{
 				ID:      oCreate.User.ID,
-				Version: this.idr.MustULID(), // some other version
+				Version: bundle.idr.MustULID(), // some other version
 			})
 
 			ass.NoError(err)
@@ -95,7 +102,7 @@ func Test_Update(t *testing.T) {
 				Version: oCreate.User.Version,
 				Values: &dto.UserUpdateValuesInput{
 					Password: &dto.UserPasswordInput{
-						HashedValue: this.idr.MustULID(),
+						HashedValue: bundle.idr.MustULID(),
 					},
 				},
 			})

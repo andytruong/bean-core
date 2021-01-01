@@ -13,14 +13,14 @@ type PasswordService struct {
 	bundle *UserBundle
 }
 
-func (service *PasswordService) create(ctx context.Context, user *model.User, in *dto.UserPasswordInput) error {
+func (srv *PasswordService) create(ctx context.Context, user *model.User, in *dto.UserPasswordInput) error {
 	if nil == in {
 		return nil
 	}
 
 	db := connect.ContextToDB(ctx)
 	pass := &model.UserPassword{
-		ID:          service.bundle.idr.MustULID(),
+		ID:          srv.bundle.idr.MustULID(),
 		UserId:      user.ID,
 		HashedValue: in.HashedValue,
 		CreatedAt:   time.Now(),

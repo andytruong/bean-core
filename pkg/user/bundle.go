@@ -1,14 +1,14 @@
 package user
 
 import (
+	"context"
 	"path"
 	"runtime"
 
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
+	"bean/components/connect"
 	"bean/components/module"
-	"bean/components/module/migrate"
 	"bean/components/scalar"
 	"bean/components/util"
 )
@@ -52,21 +52,20 @@ func (UserBundle) Name() string {
 	return "User"
 }
 
-func (bundle UserBundle) Migrate(tx *gorm.DB, driver string) error {
+func (bundle UserBundle) Migrate(ctx context.Context, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
 	}
 
-	runner := migrate.Runner{
-		Tx:     tx,
+	runner := connect.Runner{
 		Logger: bundle.lgr,
 		Driver: driver,
 		Bundle: "user",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 
-	return runner.Run()
+	return runner.Run(ctx)
 }
 
 func (bundle *UserBundle) GraphqlResolver() map[string]interface{} {

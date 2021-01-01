@@ -15,18 +15,12 @@ func Test_Config_Bucket(t *testing.T) {
 		t.Run("example", func(t *testing.T) {
 			bucket := ConfigBucket{
 				Schema: `{
-    "$id": "https://qri.io/schema/",
-    "$comment" : "sample comment",
     "title": "Person",
     "type": "object",
     "properties": {
         "firstName": { "type": "string" },
         "lastName":  { "type": "string" },
-        "age": {
-            "description": "Age in years",
-            "type": "integer",
-            "minimum": 0
-        },
+        "age":       { "type": "integer", "minimum": 0 },
         "friends": {
           "type" : "array",
           "items" : { "title" : "REFERENCE", "$ref" : "#" }

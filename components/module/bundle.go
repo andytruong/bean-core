@@ -1,13 +1,14 @@
 package module
 
 import (
+	"context"
+
 	"github.com/99designs/gqlgen/codegen"
-	"gorm.io/gorm"
 )
 
 type Bundle interface {
 	Name() string
-	Migrate(tx *gorm.DB, driver string) error
+	Migrate(ctx context.Context, driver string) error
 	Dependencies() []Bundle
 	GraphqlResolver() map[string]interface{}
 	// TODO: Scopes

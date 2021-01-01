@@ -1,16 +1,15 @@
 package connect
 
 import (
-	"gorm.io/gorm"
+	"context"
 
 	"bean/components/module"
-	"bean/components/module/migrate"
 )
 
-func MockInstall(bean module.Bundle, db *gorm.DB) {
+func MockInstall(ctx context.Context, bean module.Bundle) {
+	db := ContextToDB(ctx)
 	tx := db.Begin()
-
-	err := mockInstall(bean, tx)
+	err := mockInstall(DBToContext(ctx, tx), bean)
 	if nil != err {
 		tx.Rollback()
 	} else {
@@ -18,9 +17,10 @@ func MockInstall(bean module.Bundle, db *gorm.DB) {
 	}
 }
 
-func mockInstall(bean module.Bundle, tx *gorm.DB) error {
-	if !tx.Migrator().HasTable(migrate.Migration{}) {
-		if err := tx.Migrator().CreateTable(migrate.Migration{}); nil != err {
+func mockInstall(ctx context.Context, bean module.Bundle) error {
+	db := ContextToDB(ctx)
+	if !db.Migrator().HasTable(Migration{}) {
+		if err := db.Migrator().CreateTable(Migration{}); nil != err {
 			return err
 		}
 	}
@@ -28,15 +28,15 @@ func mockInstall(bean module.Bundle, tx *gorm.DB) error {
 	dependencies := bean.Dependencies()
 	if nil != dependencies {
 		for _, dependency := range dependencies {
-			err := mockInstall(dependency, tx)
+			err := mockInstall(ctx, dependency)
 			if nil != err {
 				return err
 			}
 		}
 	}
 
-	if err := bean.Migrate(tx, SQLite); nil != err {
-		tx.Rollback()
+	if err := bean.Migrate(ctx, SQLite); nil != err {
+		db.Rollback()
 		panic(err)
 	}
 

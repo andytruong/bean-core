@@ -24,13 +24,13 @@ func bundle() *AppBundle {
 func Test(t *testing.T) {
 	ass := assert.New(t)
 	bun := bundle()
-	con := connect.MockDatabase().WithContext(context.Background())
-	ctx := connect.DBToContext(context.Background(), con)
-	connect.MockInstall(bun, con)
+	db := connect.MockDatabase().WithContext(context.Background())
+	ctx := connect.DBToContext(context.Background(), db)
+	connect.MockInstall(ctx, bun)
 
 	t.Run("database schema", func(t *testing.T) {
 		ass.True(
-			con.Migrator().HasTable("applications"),
+			db.Migrator().HasTable("applications"),
 			"Table `applications` was created",
 		)
 	})

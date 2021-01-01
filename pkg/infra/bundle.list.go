@@ -60,8 +60,6 @@ func (bundles *BundleList) Space() (*space.SpaceBundle, error) {
 
 // TODO: Generate this code
 func (bundles *BundleList) Config() (*config.ConfigBundle, error) {
-	var err error
-
 	if nil == bundles.config {
 		bundles.config = config.NewConfigBundle(
 			bundles.container.Identifier(),
@@ -69,7 +67,7 @@ func (bundles *BundleList) Config() (*config.ConfigBundle, error) {
 		)
 	}
 
-	return bundles.config, err
+	return bundles.config, nil
 }
 
 // TODO: Generate this code
@@ -142,11 +140,14 @@ func (bundles *BundleList) S3() (*s3.S3Bundle, error) {
 			return nil, err
 		}
 
+		configBundle, _ := bundles.Config()
+
 		bundles.s3 = s3.NewS3Integration(
 			bundles.container.Identifier(),
 			bundles.container.logger,
 			bundles.container.Bundles.Integration.S3,
 			appBundle,
+			configBundle,
 		)
 	}
 

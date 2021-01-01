@@ -1,14 +1,14 @@
 package app
 
 import (
+	"context"
 	"path"
 	"runtime"
 
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
+	"bean/components/connect"
 	"bean/components/module"
-	"bean/components/module/migrate"
 	"bean/components/scalar"
 	"bean/pkg/config"
 	"bean/pkg/space"
@@ -56,21 +56,20 @@ func (bundle AppBundle) Dependencies() []module.Bundle {
 	return nil
 }
 
-func (bundle AppBundle) Migrate(tx *gorm.DB, driver string) error {
+func (bundle AppBundle) Migrate(ctx context.Context, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
 	}
 
-	runner := migrate.Runner{
-		Tx:     tx,
+	runner := connect.Runner{
 		Logger: bundle.lgr,
 		Driver: driver,
 		Bundle: "bundle",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
 
-	return runner.Run()
+	return runner.Run(ctx)
 }
 
 func (bundle *AppBundle) GraphqlResolver() map[string]interface{} {

@@ -15,6 +15,7 @@ import (
 	"bean/components/scalar"
 	"bean/components/util"
 	"bean/pkg/app"
+	"bean/pkg/config"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
@@ -23,7 +24,8 @@ func bundle() *S3Bundle {
 	idr := util.MockIdentifier()
 	log := util.MockLogger()
 	appBundle, _ := app.NewApplicationBundle(idr, log, nil, nil)
-	bun := NewS3Integration(idr, log, &S3Configuration{Key: "01EBWB516AP6BQD7"}, appBundle)
+	configBundle := config.NewConfigBundle(idr, log)
+	bun := NewS3Integration(idr, log, &S3Configuration{Key: "01EBWB516AP6BQD7"}, appBundle, configBundle)
 
 	return bun
 }
@@ -33,7 +35,7 @@ func Test(t *testing.T) {
 	bundle := bundle()
 	db := connect.MockDatabase()
 	ctx := connect.DBToContext(context.Background(), db)
-	connect.MockInstall(bundle, db)
+	connect.MockInstall(ctx, bundle)
 
 	t.Run("DB schema", func(t *testing.T) {
 		ass.True(db.Migrator().HasTable("s3_application_policy"))
@@ -205,7 +207,7 @@ func Test_UploadToken(t *testing.T) {
 	}
 	db := connect.MockDatabase()
 	ctx := connect.DBToContext(context.Background(), db)
-	connect.MockInstall(bundle, db)
+	connect.MockInstall(ctx, bundle)
 
 	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{

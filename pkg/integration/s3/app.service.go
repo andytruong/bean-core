@@ -19,8 +19,8 @@ type ApplicationService struct {
 	bundle *S3Bundle
 }
 
-func (service *ApplicationService) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
-	out, err := service.bundle.appBundle.Service.Create(ctx, &appDto.ApplicationCreateInput{IsActive: in.IsActive})
+func (srv *ApplicationService) Create(ctx context.Context, in *dto.S3ApplicationCreateInput) (*dto.S3ApplicationMutationOutcome, error) {
+	out, err := srv.bundle.appBundle.Service.Create(ctx, &appDto.ApplicationCreateInput{IsActive: in.IsActive})
 	if nil != err {
 		return nil, err
 	}
@@ -30,12 +30,12 @@ func (service *ApplicationService) Create(ctx context.Context, in *dto.S3Applica
 	}
 
 	err = connect.Transaction(
-		connect.ContextToDB(ctx),
+		ctx,
 		func(tx *gorm.DB) error {
 			ctx := connect.DBToContext(ctx, tx)
-			if err := service.bundle.credentialService.onAppCreate(ctx, out.App, in.Credentials); nil != err {
+			if err := srv.bundle.credentialService.onAppCreate(ctx, out.App, in.Credentials); nil != err {
 				return err
-			} else if err = service.bundle.policyService.onAppCreate(ctx, out.App, in.Policies); nil != err {
+			} else if err = srv.bundle.policyService.onAppCreate(ctx, out.App, in.Policies); nil != err {
 				return err
 			}
 
@@ -50,8 +50,8 @@ func (service *ApplicationService) Create(ctx context.Context, in *dto.S3Applica
 	return &dto.S3ApplicationMutationOutcome{App: out.App, Errors: nil}, nil
 }
 
-func (service *ApplicationService) Update(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
-	out, err := service.bundle.appBundle.Service.Update(ctx, &appDto.ApplicationUpdateInput{
+func (srv *ApplicationService) Update(ctx context.Context, in *dto.S3ApplicationUpdateInput) (*dto.S3ApplicationMutationOutcome, error) {
+	out, err := srv.bundle.appBundle.Service.Update(ctx, &appDto.ApplicationUpdateInput{
 		Id:       in.Id,
 		Version:  in.Version,
 		IsActive: in.IsActive,
@@ -70,15 +70,15 @@ func (service *ApplicationService) Update(ctx context.Context, in *dto.S3Applica
 	}
 
 	err = connect.Transaction(
-		connect.ContextToDB(ctx),
+		ctx,
 		func(tx *gorm.DB) error {
 			ctx = connect.DBToContext(ctx, tx)
-			err = service.bundle.credentialService.onAppUpdate(ctx, out.App, in.Credentials)
+			err = srv.bundle.credentialService.onAppUpdate(ctx, out.App, in.Credentials)
 			if nil != err {
 				return err
 			}
 
-			err = service.bundle.policyService.onAppUpdate(ctx, out.App, in.Policies)
+			err = srv.bundle.policyService.onAppUpdate(ctx, out.App, in.Policies)
 			if nil != err {
 				return err
 			}
@@ -90,7 +90,7 @@ func (service *ApplicationService) Update(ctx context.Context, in *dto.S3Applica
 	return &dto.S3ApplicationMutationOutcome{App: out.App, Errors: out.Errors}, err
 }
 
-func (service *ApplicationService) S3UploadToken(ctx context.Context, in dto.S3UploadTokenInput) (map[string]interface{}, error) {
+func (srv *ApplicationService) S3UploadToken(ctx context.Context, in dto.S3UploadTokenInput) (map[string]interface{}, error) {
 	// get claims from context
 	claims, ok := ctx.Value(claim.ClaimsContextKey).(*claim.Payload)
 	if !ok {
@@ -98,14 +98,14 @@ func (service *ApplicationService) S3UploadToken(ctx context.Context, in dto.S3U
 	}
 
 	// load application
-	app, err := service.bundle.appBundle.Service.Load(ctx, in.ApplicationId)
+	app, err := srv.bundle.appBundle.Service.Load(ctx, in.ApplicationId)
 	if nil != err {
 		return nil, err
 	} else {
-		cred, err := service.bundle.credentialService.loadByApplicationId(ctx, in.ApplicationId)
+		cred, err := srv.bundle.credentialService.loadByApplicationId(ctx, in.ApplicationId)
 		if nil != err {
 			return nil, err
-		} else if client, err := service.bundle.credentialService.client(cred); nil != err {
+		} else if client, err := srv.bundle.credentialService.client(cred); nil != err {
 			return nil, err
 		} else {
 			policy := minio.NewPostPolicy()

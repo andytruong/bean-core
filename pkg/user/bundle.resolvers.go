@@ -37,7 +37,7 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 				var out *dto.UserMutationOutcome
 
 				err = connect.Transaction(
-					connect.ContextToDB(ctx),
+					ctx,
 					func(tx *gorm.DB) error {
 						out, err = bundle.Service.Create(connect.DBToContext(ctx, tx), in)
 
@@ -52,7 +52,7 @@ func newResolvers(bundle *UserBundle) map[string]interface{} {
 				var out *dto.UserMutationOutcome
 
 				err = connect.Transaction(
-					connect.ContextToDB(ctx),
+					ctx,
 					func(tx *gorm.DB) error {
 						out, err = bundle.Service.Update(connect.DBToContext(ctx, tx), input)
 

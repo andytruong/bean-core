@@ -20,23 +20,23 @@ type SessionService struct {
 	bundle *AccessBundle
 }
 
-func (service *SessionService) Create(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+func (srv *SessionService) Create(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
 	if nil != in.UseCredentials {
-		return service.createUseCredentials(ctx, in.UseCredentials)
+		return srv.createUseCredentials(ctx, in.UseCredentials)
 	}
 
 	if nil != in.GenerateOTLT {
-		return service.generateOTLT(ctx, in.GenerateOTLT)
+		return srv.generateOTLT(ctx, in.GenerateOTLT)
 	}
 
 	if nil != in.UseOTLT {
-		return service.useOTLT(ctx, in.UseOTLT)
+		return srv.useOTLT(ctx, in.UseOTLT)
 	}
 
 	return nil, nil
 }
 
-func (service *SessionService) createUseCredentials(ctx context.Context, in *dto.SessionCreateUseCredentialsInput) (*dto.SessionCreateOutcome, error) {
+func (srv *SessionService) createUseCredentials(ctx context.Context, in *dto.SessionCreateUseCredentialsInput) (*dto.SessionCreateOutcome, error) {
 	tx := connect.ContextToDB(ctx)
 
 	// load email object, so we have userID
@@ -67,18 +67,18 @@ func (service *SessionService) createUseCredentials(ctx context.Context, in *dto
 		}
 	}
 
-	return service.create(ctx, claim.KindCredentials, email.UserId, in.SpaceID, func(session *model.Session) {
+	return srv.create(ctx, claim.KindCredentials, email.UserId, in.SpaceID, func(session *model.Session) {
 		session.CodeChallengeMethod = in.CodeChallengeMethod
 		session.CodeChallenge = in.CodeChallenge
 	})
 }
 
-func (service *SessionService) generateOTLT(ctx context.Context, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
-	return service.create(ctx, claim.KindOTLT, in.UserID, in.SpaceID, nil)
+func (srv *SessionService) generateOTLT(ctx context.Context, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
+	return srv.create(ctx, claim.KindOTLT, in.UserID, in.SpaceID, nil)
 }
 
-func (service *SessionService) useOTLT(ctx context.Context, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
-	oneTimeSession, err := service.LoadByToken(ctx, in.Token)
+func (srv *SessionService) useOTLT(ctx context.Context, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
+	oneTimeSession, err := srv.LoadByToken(ctx, in.Token)
 	if nil != err {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (service *SessionService) useOTLT(ctx context.Context, in *dto.SessionCreat
 		return nil, util.ErrorInvalidArgument
 	}
 
-	out, err := service.create(ctx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.SpaceId, func(session *model.Session) {
+	out, err := srv.create(ctx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.SpaceId, func(session *model.Session) {
 		session.CodeChallengeMethod = in.CodeChallengeMethod
 		session.CodeChallenge = in.CodeChallenge
 	})
@@ -97,7 +97,7 @@ func (service *SessionService) useOTLT(ctx context.Context, in *dto.SessionCreat
 
 	// delete OTLT session
 	{
-		_, err := service.Delete(ctx, oneTimeSession)
+		_, err := srv.Delete(ctx, oneTimeSession)
 		if nil != err {
 			return nil, err
 		}
@@ -106,7 +106,7 @@ func (service *SessionService) useOTLT(ctx context.Context, in *dto.SessionCreat
 	return out, err
 }
 
-func (service SessionService) create(
+func (srv SessionService) create(
 	ctx context.Context,
 	kind claim.Kind, userId string, spaceId string,
 	create func(*model.Session),
@@ -127,19 +127,19 @@ func (service SessionService) create(
 		}
 	}
 
-	token := service.bundle.idr.MustULID()
+	token := srv.bundle.idr.MustULID()
 	session := &model.Session{
-		ID:          service.bundle.idr.MustULID(),
-		Version:     service.bundle.idr.MustULID(),
+		ID:          srv.bundle.idr.MustULID(),
+		Version:     srv.bundle.idr.MustULID(),
 		Kind:        kind,
 		UserId:      userId,
 		SpaceId:     spaceId,
-		HashedToken: service.bundle.idr.Encode(token),
+		HashedToken: srv.bundle.idr.Encode(token),
 		Scopes:      nil, // TODO
 		IsActive:    true,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
-		ExpiredAt:   time.Now().Add(service.bundle.cnf.SessionTimeout),
+		ExpiredAt:   time.Now().Add(srv.bundle.cnf.SessionTimeout),
 	}
 
 	if nil != create {
@@ -150,7 +150,7 @@ func (service SessionService) create(
 		return nil, err
 	} else {
 		// update membership -> last-time-login
-		err := service.bundle.spaceBundle.MemberService.UpdateLastLoginTime(ctx, membership)
+		err := srv.bundle.spaceBundle.MemberService.UpdateLastLoginTime(ctx, membership)
 		if nil != err {
 			return nil, err
 		}
@@ -163,7 +163,7 @@ func (service SessionService) create(
 	}, nil
 }
 
-func (service SessionService) load(ctx context.Context, id string) (*model.Session, error) {
+func (srv SessionService) load(ctx context.Context, id string) (*model.Session, error) {
 	session := &model.Session{}
 	db := connect.ContextToDB(ctx)
 	err := db.WithContext(ctx).First(&session, "id = ?", id).Error
@@ -183,12 +183,12 @@ func (service SessionService) load(ctx context.Context, id string) (*model.Sessi
 	return session, nil
 }
 
-func (service SessionService) LoadByToken(ctx context.Context, token string) (*model.Session, error) {
+func (srv SessionService) LoadByToken(ctx context.Context, token string) (*model.Session, error) {
 	db := connect.ContextToDB(ctx)
 	session := &model.Session{}
-	err := db.First(&session, "hashed_token = ?", service.bundle.idr.Encode(token)).Error
+	err := db.First(&session, "hashed_token = ?", srv.bundle.idr.Encode(token)).Error
 	if err == gorm.ErrRecordNotFound {
-		return nil, errors.New("session not found: " + service.bundle.idr.Encode(token))
+		return nil, errors.New("session not found: " + srv.bundle.idr.Encode(token))
 	}
 
 	if session.ExpiredAt.Unix() <= time.Now().Unix() {
@@ -202,10 +202,10 @@ func (service SessionService) LoadByToken(ctx context.Context, token string) (*m
 	return session, nil
 }
 
-func (service SessionService) Delete(ctx context.Context, session *model.Session) (*dto.SessionArchiveOutcome, error) {
+func (srv SessionService) Delete(ctx context.Context, session *model.Session) (*dto.SessionArchiveOutcome, error) {
 	tx := connect.ContextToDB(ctx)
 	session.IsActive = false
-	session.Version = service.bundle.idr.MustULID()
+	session.Version = srv.bundle.idr.MustULID()
 	session.UpdatedAt = time.Now()
 	err := tx.Save(&session).Error
 	if nil != err {

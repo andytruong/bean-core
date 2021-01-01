@@ -55,8 +55,8 @@ func Test_Create(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
 	db := connect.MockDatabase()
-	connect.MockInstall(bundle, db)
 	ctx := connect.DBToContext(context.Background(), db)
+	connect.MockInstall(ctx, bundle)
 
 	// create userBundle
 	iUser := fUser.NewUserCreateInputFixture()
@@ -64,10 +64,11 @@ func Test_Create(t *testing.T) {
 	ass.NoError(err)
 
 	// create space
-	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
+	ctx = claim.ClaimPayloadToContext(ctx, &claim.Payload{
 		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
 		Kind:           claim.KindAuthenticated,
 	})
+
 	iSpace := fSpace.SpaceCreateInputFixture(false)
 	oSpace, err := bundle.spaceBundle.Service.Create(ctx, iSpace)
 	ass.NoError(err)
@@ -168,8 +169,8 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
 	db := connect.MockDatabase()
-	connect.MockInstall(bundle, db)
 	ctx := connect.DBToContext(context.Background(), db)
+	connect.MockInstall(ctx, bundle)
 
 	// create userBundle
 	iUser := fUser.NewUserCreateInputFixture()
@@ -192,8 +193,8 @@ func Test_Query(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
 	db := connect.MockDatabase()
-	connect.MockInstall(bundle, db)
 	ctx := connect.DBToContext(context.Background(), db)
+	connect.MockInstall(ctx, bundle)
 
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := bundle.userBundle.Service.Create(ctx, iUser)
@@ -237,8 +238,8 @@ func Test_Archive(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
 	db := connect.MockDatabase()
-	connect.MockInstall(bundle, db)
 	ctx := connect.DBToContext(context.Background(), db)
+	connect.MockInstall(ctx, bundle)
 
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := bundle.userBundle.Service.Create(ctx, iUser)

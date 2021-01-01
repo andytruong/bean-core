@@ -52,8 +52,8 @@ func Test_Space(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
 	db := connect.MockDatabase()
-	connect.MockInstall(bundle, db)
 	ctx := connect.DBToContext(context.Background(), db)
+	connect.MockInstall(ctx, bundle)
 	iCreate := fixtures.SpaceCreateInputFixture(false)
 
 	t.Run("create", func(t *testing.T) {
@@ -202,7 +202,7 @@ func Test_Membership(t *testing.T) {
 	bundle := bundle()
 	db := connect.MockDatabase()
 	ctx := connect.DBToContext(context.Background(), db)
-	connect.MockInstall(bundle, db)
+	connect.MockInstall(ctx, bundle)
 
 	// setup data for query
 	// -------

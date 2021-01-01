@@ -1,9 +1,9 @@
 package scalar
 
 import (
+	"path"
+	"runtime"
 	"strings"
-
-	"bean/components/module/migrate"
 )
 
 type FilePath string
@@ -14,5 +14,14 @@ func (fp FilePath) String() string {
 		return out
 	}
 
-	return migrate.RootDirectory() + "/" + out
+	return RootDirectory() + "/" + out
+}
+
+func RootDirectory() string {
+	_, filename, _, _ := runtime.Caller(0)
+	dir := path.Dir(filename)
+	dir = path.Dir(dir)
+	dir = path.Dir(dir)
+
+	return dir
 }
