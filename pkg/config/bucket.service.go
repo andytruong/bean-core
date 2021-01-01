@@ -60,7 +60,7 @@ func (srv BucketService) Create(ctx context.Context, in dto.BucketCreateInput) (
 
 func (srv BucketService) Update(ctx context.Context, in dto.BucketUpdateInput) (*dto.BucketMutationOutcome, error) {
 	tx := connect.ContextToDB(ctx)
-	bucket, err := srv.Load(ctx, in.Id)
+	bucket, err := srv.Load(ctx, dto.BucketKey{Id: in.Id})
 	if nil != err {
 		return nil, err
 	}
@@ -126,12 +126,22 @@ func (srv BucketService) Update(ctx context.Context, in dto.BucketUpdateInput) (
 	}, nil
 }
 
-func (srv BucketService) Load(ctx context.Context, id string) (*model.ConfigBucket, error) {
+func (srv BucketService) Load(ctx context.Context, key dto.BucketKey) (*model.ConfigBucket, error) {
 	bucket := &model.ConfigBucket{}
 	db := connect.ContextToDB(ctx)
-	err := db.Where("id = ?", id).First(&bucket).Error
-	if nil != err {
-		return nil, err
+
+	if key.Id != "" {
+		// load by ID
+		err := db.Where("id = ?", key.Id).Take(&bucket).Error
+		if nil != err {
+			return nil, err
+		}
+	} else if key.Slug != "" {
+		// load by slug
+		err := db.Where(dto.BucketKey{Slug: key.Slug}).Take(&bucket).Error
+		if nil != err {
+			return nil, err
+		}
 	}
 
 	return bucket, nil
