@@ -326,7 +326,7 @@ func Test_Variable(t *testing.T) {
 			_, _, variable := setup(scalar.AccessModePrivate)
 
 			// load & assert outcome
-			load, err := bundle.VariableService.Load(ctx, variable.Id)
+			load, err := bundle.VariableService.Load(ctx, dto.VariableKey{Id: variable.Id})
 			ass.Error(err)
 			ass.Nil(load)
 		})
@@ -334,11 +334,19 @@ func Test_Variable(t *testing.T) {
 		t.Run("read-only bucket", func(t *testing.T) {
 			ctx, bucket, variable := setup(scalar.AccessModePrivate)
 
-			// load & assert outcome
-			load, err := bundle.VariableService.Load(connect.DBToContext(ctx, tx), variable.Id)
-			ass.NoError(err)
-			ass.Equal(bucket.Id, load.BucketId)
-			ass.Equal("1", load.Value)
+			t.Run("by ID", func(t *testing.T) {
+				load, err := bundle.VariableService.Load(connect.DBToContext(ctx, tx), dto.VariableKey{Id: variable.Id})
+				ass.NoError(err)
+				ass.Equal(bucket.Id, load.BucketId)
+				ass.Equal("1", load.Value)
+			})
+
+			t.Run("by name", func(t *testing.T) {
+				load, err := bundle.VariableService.Load(connect.DBToContext(ctx, tx), dto.VariableKey{BucketId: bucket.Id, Name: variable.Name})
+				ass.NoError(err)
+				ass.Equal(bucket.Id, load.BucketId)
+				ass.Equal("1", load.Value)
+			})
 		})
 	})
 

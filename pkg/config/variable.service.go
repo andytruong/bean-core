@@ -47,13 +47,20 @@ func (srv VariableService) access(ctx context.Context, bucketId string, action s
 	return false, nil
 }
 
-func (srv VariableService) Load(ctx context.Context, id string) (*model.ConfigVariable, error) {
+func (srv VariableService) Load(ctx context.Context, key dto.VariableKey) (*model.ConfigVariable, error) {
 	db := connect.ContextToDB(ctx)
 	variable := &model.ConfigVariable{}
 
-	err := db.First(&variable, "id = ?", id).Error
-	if nil != err {
-		return nil, err
+	if key.Id != "" {
+		err := db.Take(&variable, "id = ?", key.Id).Error
+		if nil != err {
+			return nil, err
+		}
+	} else if key.BucketId != "" && key.Name != "" {
+		err := db.Take(&variable, "bucket_id = ? AND name = ?", key.BucketId, key.Name).Error
+		if nil != err {
+			return nil, err
+		}
 	}
 
 	if access, err := srv.access(ctx, variable.BucketId, "read"); nil != err {
@@ -111,7 +118,7 @@ func (srv VariableService) Create(ctx context.Context, in dto.VariableCreateInpu
 
 func (srv VariableService) Update(ctx context.Context, in dto.VariableUpdateInput) (*dto.VariableMutationOutcome, error) {
 	tx := connect.ContextToDB(ctx)
-	variable, err := srv.Load(ctx, in.Id)
+	variable, err := srv.Load(ctx, dto.VariableKey{Id: in.Id})
 	if nil != err {
 		return nil, err
 	}
@@ -175,7 +182,7 @@ func (srv VariableService) Update(ctx context.Context, in dto.VariableUpdateInpu
 
 func (srv VariableService) Delete(ctx context.Context, in dto.VariableDeleteInput) (*dto.VariableMutationOutcome, error) {
 	tx := connect.ContextToDB(ctx)
-	variable, err := srv.Load(ctx, in.Id)
+	variable, err := srv.Load(ctx, dto.VariableKey{Id: in.Id})
 	if nil != err {
 		return nil, err
 	} else if variable.IsLocked {
