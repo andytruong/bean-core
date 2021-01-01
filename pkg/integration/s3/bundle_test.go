@@ -12,6 +12,7 @@ import (
 
 	"bean/components/claim"
 	"bean/components/connect"
+	"bean/components/module"
 	"bean/components/scalar"
 	"bean/components/util"
 	"bean/pkg/app"
@@ -23,7 +24,8 @@ import (
 func bundle() *S3Bundle {
 	idr := util.MockIdentifier()
 	log := util.MockLogger()
-	appBundle, _ := app.NewApplicationBundle(idr, log, nil, nil)
+	hook := module.NewHook()
+	appBundle, _ := app.NewApplicationBundle(idr, log, hook, nil, nil)
 	configBundle := config.NewConfigBundle(idr, log)
 	bun := NewS3Integration(idr, log, &S3Configuration{Key: "01EBWB516AP6BQD7"}, appBundle, configBundle)
 
