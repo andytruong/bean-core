@@ -120,6 +120,7 @@ func (bundles *BundleList) App() (*app.AppBundle, error) {
 		bundles.app, err = app.NewApplicationBundle(
 			bundles.container.Identifier(),
 			bundles.container.logger,
+			bundles.container.hook,
 			spaceBundle,
 			configBundle,
 		)
