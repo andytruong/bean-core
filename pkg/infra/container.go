@@ -22,6 +22,7 @@ func NewContainer(path string) (*Container, error) {
 	this := &Container{
 		mutex:   &sync.Mutex{},
 		bundles: BundleList{},
+		hook:    module.NewHook(),
 	}
 
 	// parse configuration from YAML configuration file & env variables.
@@ -63,6 +64,7 @@ type (
 		dbs     *connect.Wrapper
 		bundles BundleList
 		logger  *zap.Logger
+		hook    *module.Hook
 	}
 
 	HttpServerConfig struct {

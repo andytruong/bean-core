@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"bean/components/connect"
+	"bean/components/module"
 	"bean/components/scalar"
 	"bean/components/util"
 	"bean/pkg/app/model/dto"
@@ -16,7 +17,8 @@ import (
 func bundle() *AppBundle {
 	idr := util.MockIdentifier()
 	log := util.MockLogger()
-	bun, _ := NewApplicationBundle(idr, log, nil, nil)
+	hook := module.NewHook()
+	bun, _ := NewApplicationBundle(idr, log, hook, nil, nil)
 
 	return bun
 }

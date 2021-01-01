@@ -3,15 +3,15 @@ package connect
 import (
 	"context"
 	"sync"
-	
+
 	"github.com/pkg/errors"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	
+
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
-	
+
 	"bean/components/util"
 )
 
@@ -19,7 +19,7 @@ const (
 	// Driver names
 	SQLite   = "sqlite3"
 	Postgres = "postgres"
-	
+
 	// Table names
 	TableSpace               = "spaces"
 	TableSpaceMemberships    = "space_memberships"
@@ -56,12 +56,12 @@ func (w *Wrapper) get(name string) (*gorm.DB, error) {
 			DisableForeignKeyConstraintWhenMigrating: true,
 			PrepareStmt:                              true,
 		}
-		
+
 		if con, err := gorm.Open(w.dialector(cnf), dbCnf); nil != err {
 			return nil, err
 		} else {
 			w.dbs.Store(name, con)
-			
+
 			return con, nil
 		}
 	}
@@ -71,10 +71,10 @@ func (w *Wrapper) dialector(cnf DatabaseConfig) gorm.Dialector {
 	switch cnf.Driver {
 	case "sqlite3":
 		return sqlite.Open(cnf.Url)
-	
+
 	case "postgres":
 		return postgres.Open(cnf.Url)
-	
+
 	default:
 		panic("unsupported driver: " + cnf.Driver)
 	}
@@ -84,13 +84,13 @@ func Transaction(ctx context.Context, callback func(tx *gorm.DB) error) error {
 	con := ContextToDB(ctx)
 	txn := con.Begin()
 	err := callback(txn)
-	
+
 	if nil != err {
 		rollbackErr := txn.Rollback().Error
 		if nil != rollbackErr {
 			return rollbackErr
 		}
-		
+
 		return err
 	} else {
 		return txn.Commit().Error

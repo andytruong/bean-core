@@ -17,12 +17,14 @@ import (
 func NewApplicationBundle(
 	idr *scalar.Identifier,
 	lgr *zap.Logger,
+	hook *module.Hook,
 	spaceBundle *space.SpaceBundle,
 	configBundle *config.ConfigBundle,
 ) (*AppBundle, error) {
 	bundle := &AppBundle{
 		idr:          idr,
 		lgr:          lgr,
+		hook:         hook,
 		spaceBundle:  spaceBundle,
 		configBundle: configBundle,
 	}
@@ -41,6 +43,7 @@ type AppBundle struct {
 	configBundle *config.ConfigBundle
 	idr          *scalar.Identifier
 	lgr          *zap.Logger
+	hook         *module.Hook
 	resolvers    map[string]interface{}
 }
 

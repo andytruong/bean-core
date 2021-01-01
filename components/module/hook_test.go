@@ -11,7 +11,7 @@ func Test_Dispatcher(t *testing.T) {
 	log := []string{}
 
 	hook := NewHook()
-	hook.Listen(
+	hook.Hook(
 		func(ctx context.Context, event interface{}) error {
 			log = append(log, "from listener 2: "+event.(string))
 
@@ -20,7 +20,7 @@ func Test_Dispatcher(t *testing.T) {
 		2,
 	)
 
-	hook.Listen(
+	hook.Hook(
 		func(ctx context.Context, event interface{}) error {
 			log = append(log, "from listener 1: "+event.(string))
 
@@ -30,7 +30,7 @@ func Test_Dispatcher(t *testing.T) {
 	)
 
 	ass := assert.New(t)
-	err := hook.Trigger(context.Background(), "hi")
+	err := hook.Invoke(context.Background(), "hi")
 	ass.NoError(err)
 	ass.Len(log, 2)
 	ass.Equal("from listener 1: hi", log[0])
