@@ -2840,7 +2840,7 @@ type S3Mutation {
     #     -> Should do in application.configuration with predefined schema?
 }
 
-input S3ApplicationCredentialsCreateInput {
+input S3ApplicationCredentialsInput {
     endpoint: Uri!
     bucket: String!
     isSecure: Boolean!
@@ -5081,7 +5081,7 @@ func (ec *executionContext) _Credentials_id(ctx context.Context, field graphql.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return obj.Version, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13261,8 +13261,8 @@ func (ec *executionContext) unmarshalInputMembershipsFilterSpace(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ctx context.Context, obj interface{}) (dto3.S3ApplicationCredentialsCreateInput, error) {
-	var it dto3.S3ApplicationCredentialsCreateInput
+func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ctx context.Context, obj interface{}) (dto3.S3ApplicationCredentialsInput, error) {
+	var it dto3.S3ApplicationCredentialsInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {

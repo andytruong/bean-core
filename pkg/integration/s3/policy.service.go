@@ -15,13 +15,16 @@ const (
 	policyConfigSlug   = `bean.s3.policy.schema.v1`
 	policyConfigSchema = `{
 		"type":       "object",
-		"required":   ["endpoint", "bucket", "accessKey", "secretKey", "isSecure"],
+		"required":   ["kind", "value"],
 		"properties": {
-			"endpoint":  { "type": "string", "maxLength": 255, "format": "uri" },
-			"bucket":    { "type": "string", "maxLength": 64  },
-			"accessKey": { "type": "string", "maxLength": 64  },
-			"secretKey": { "type": "string", "maxLength": 128 },
-			"isSecure":  { "type": "boolean" }
+			"kind":      { "type": "string", "enum": ["file_extensions", "rate_limit"] },
+			"value":     {
+				"type":     "string",
+				"examples": [
+					"file extension: pdf txt zip gz",
+					"rate limit:     1MB/user/hour"
+				]
+			}
 		}
 	}`
 )

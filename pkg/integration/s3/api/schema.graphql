@@ -2,8 +2,16 @@
 # Entity
 # =====================
 extend type Application {
-    polices: [Policy!]
     credentials: Credentials!
+    polices: [Policy!]
+}
+
+type Credentials {
+    version: ID!
+    endpoint: Uri!
+    bucket: String!
+    isSecure: Boolean!
+    accesskey: String! @comment(value: "no secret key")
 }
 
 enum PolicyKind  {
@@ -19,14 +27,6 @@ type Policy {
     value: String!
 }
 
-type Credentials {
-    id: ID!
-    endpoint: Uri!
-    bucket: String!
-    isSecure: Boolean!
-    accesskey: String! @comment(value: "no secret key")
-}
-
 # =====================
 # Mutation
 # =====================
@@ -35,17 +35,14 @@ extend type Mutation  {
 }
 
 type S3Mutation {
+    saveCredentials: S3ApplicationCredentialsInput!
+    savePolicies: S3ApplicationPolicyCreateInput!
     upload: S3UploadMutation!
-
-    # TODO: put credentials into application
-    #     -> do we need it?
-    #     -> Should do in application.configuration with predefined schema?
-    # TODO: put policy into application
-    #     -> do we need it?
-    #     -> Should do in application.configuration with predefined schema?
 }
 
-input S3ApplicationCredentialsCreateInput {
+input S3ApplicationCredentialsInput {
+    version: ID!
+    applicationId: ID!
     endpoint: Uri!
     bucket: String!
     isSecure: Boolean!
@@ -62,20 +59,9 @@ input S3ApplicationPolicyCreateInput {
 # Mutation -> Update
 # ---------------------
 
+# TODO: Remove
 input S3ApplicationUpdateInput {
-    id: ID!
-    version: ID!
-    isActive: Boolean
-    credentials: S3ApplicationCredentialsUpdateInput
     policies: S3ApplicationPolicyMutationInput
-}
-
-input S3ApplicationCredentialsUpdateInput {
-    endpoint: Uri
-    bucket: String
-    isSecure: Boolean
-    accessKey: String
-    secretKey: String
 }
 
 input S3ApplicationPolicyMutationInput {
