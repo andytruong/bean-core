@@ -7,6 +7,7 @@ import (
 type Application struct {
 	ID        string     `json:"id"`
 	Version   string     `json:"version"`
+	SpaceId   string     `json:"spaceId"`
 	IsActive  bool       `json:"isActive"`
 	Title     *string    `json:"title"`
 	CreatedAt time.Time  `json:"createdAt"`

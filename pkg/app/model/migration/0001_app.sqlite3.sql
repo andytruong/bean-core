@@ -2,9 +2,11 @@ CREATE TABLE applications
 (
     id         character varying(26) NOT NULL PRIMARY KEY,
     version    character varying(26) NOT NULL UNIQUE,
+    space_id   character varying(26) NOT NULL,
     is_active  boolean               NOT NULL,
     title      character varying(255),
     created_at timestamp             NOT NULL,
     updated_at timestamp             NOT NULL,
-    deleted_at timestamp
+    deleted_at timestamp,
+    FOREIGN KEY (space_id) REFERENCES spaces (id)
 );
