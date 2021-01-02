@@ -18,9 +18,8 @@ type VariableService struct {
 	bundle *ConfigBundle
 }
 
-func (srv VariableService) access(ctx context.Context, bucketId string, action string) (bool, error) {
-	db := connect.ContextToDB(ctx)
-	bucket, err := srv.bundle.BucketService.Load(connect.DBToContext(ctx, db), dto.BucketKey{Id: bucketId})
+func (srv VariableService) canAccess(ctx context.Context, bucketId string, action string) (bool, error) {
+	bucket, err := srv.bundle.BucketService.Load(ctx, dto.BucketKey{Id: bucketId})
 	if nil != err {
 		return false, err
 	}
@@ -29,6 +28,10 @@ func (srv VariableService) access(ctx context.Context, bucketId string, action s
 		return false, nil
 	}
 	
+	return srv.canAccessBucket(ctx, bucket, action)
+}
+
+func (srv VariableService) canAccessBucket(ctx context.Context, bucket *model.ConfigBucket, action string) (bool, error) {
 	claims := claim.ContextToPayload(ctx)
 	isOwner := (nil != claims) && claims.UserId() == bucket.HostId
 	isMember := (nil != claims) && claims.SpaceId() == bucket.HostId
@@ -66,7 +69,7 @@ func (srv VariableService) Load(ctx context.Context, key dto.VariableKey) (*mode
 		}
 	}
 	
-	if access, err := srv.access(ctx, variable.BucketId, "read"); nil != err {
+	if access, err := srv.canAccess(ctx, variable.BucketId, "read"); nil != err {
 		return nil, err
 	} else if !access {
 		return nil, util.ErrorAccessDenied
@@ -76,18 +79,20 @@ func (srv VariableService) Load(ctx context.Context, key dto.VariableKey) (*mode
 }
 
 func (srv VariableService) Create(ctx context.Context, in dto.VariableCreateInput) (*dto.VariableMutationOutcome, error) {
-	if access, err := srv.access(ctx, in.BucketId, "write"); nil != err {
-		return nil, err
-	} else if !access {
-		return nil, util.ErrorAccessDenied
-	}
-	
 	bucket, err := srv.bundle.BucketService.Load(ctx, dto.BucketKey{Id: in.BucketId})
 	if nil != err {
 		return nil, err
 	} else if nil == bucket {
 		return nil, errors.New("bucket not found")
-	} else if reasons, err := bucket.Validate(ctx, in.Value); nil != err {
+	}
+	
+	if access, err := srv.canAccessBucket(ctx, bucket, "write"); nil != err {
+		return nil, err
+	} else if !access {
+		return nil, util.ErrorAccessDenied
+	}
+	
+	if reasons, err := bucket.Validate(ctx, in.Value); nil != err {
 		return nil, err
 	} else if len(reasons) > 0 {
 		errList := []util.Error{}
@@ -126,7 +131,7 @@ func (srv VariableService) Update(ctx context.Context, in dto.VariableUpdateInpu
 		return nil, err
 	}
 	
-	if access, err := srv.access(ctx, variable.BucketId, "write"); nil != err {
+	if access, err := srv.canAccess(ctx, variable.BucketId, "write"); nil != err {
 		return nil, err
 	} else if !access {
 		return nil, util.ErrorAccessDenied
@@ -191,7 +196,7 @@ func (srv VariableService) Delete(ctx context.Context, in dto.VariableDeleteInpu
 	} else if variable.IsLocked {
 		return nil, util.ErrorLocked
 	} else {
-		if access, err := srv.access(ctx, variable.BucketId, "delete"); nil != err {
+		if access, err := srv.canAccess(ctx, variable.BucketId, "delete"); nil != err {
 			return nil, err
 		} else if !access {
 			return nil, util.ErrorAccessDenied
