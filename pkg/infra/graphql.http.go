@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-
+	
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"go.uber.org/zap"
-
+	
 	"bean/components/claim"
 	"bean/components/connect"
 	"bean/components/util"
@@ -31,17 +31,17 @@ func (r *GraphqlHttpRouter) config() gql.Config {
 		Directives: gql.DirectiveRoot{
 			Constraint: func(ctx context.Context, obj interface{}, next graphql.Resolver, maxLength *int, minLength *int) (res interface{}, err error) {
 				// TODO: implement me
-
+				
 				return next(ctx)
 			},
 			RequireAuth: func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
 				// TODO: implement me
-
+				
 				return next(ctx)
 			},
 		},
 	}
-
+	
 	return cnf
 }
 
@@ -52,29 +52,29 @@ func (r *GraphqlHttpRouter) Handler(router *mux.Router) *mux.Router {
 	if r.Container.HttpServer.GraphQL.Transports.Post {
 		server.AddTransport(transport.POST{})
 	}
-
+	
 	if r.Container.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval != 0 {
 		server.AddTransport(transport.Websocket{KeepAlivePingInterval: r.Container.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval})
 	}
-
+	
 	if r.Container.HttpServer.GraphQL.Introspection {
 		server.Use(extension.Introspection{})
 	}
-
+	
 	router.HandleFunc("/query", r.handleFunc(server))
-
+	
 	if r.Container.HttpServer.GraphQL.Playround.Enabled {
 		hdl := playground.Handler(r.Container.HttpServer.GraphQL.Playround.Title, "/query")
 		router.Handle(r.Container.HttpServer.GraphQL.Playround.Path, hdl)
 	}
-
+	
 	return router
 }
 
 func (r *GraphqlHttpRouter) handleFunc(srv *handler.Server) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
-
+		
 		//  Verify JWT authorization if provided.
 		claimContext, err := r.beforeServe(req)
 		if nil != err {
@@ -82,10 +82,10 @@ func (r *GraphqlHttpRouter) handleFunc(srv *handler.Server) func(http.ResponseWr
 		} else if nil != claimContext {
 			ctx = claimContext
 		}
-
+		
 		// Inject DB connection to context
 		ctx = connect.WithContextValue(ctx, r.Container.dbs)
-
+		
 		srv.ServeHTTP(w, req.WithContext(ctx))
 	}
 }
@@ -98,17 +98,17 @@ func (r *GraphqlHttpRouter) beforeServe(req *http.Request) (context.Context, err
 		if nil != err {
 			return nil, errors.Wrap(err, util.ErrorCodeConfig.String())
 		}
-
+		
 		claims, err := bundle.JwtService.Validate(authHeader)
 		if err != nil {
 			return nil, err
 		}
-
+		
 		if nil != claims {
-			ctx = context.WithValue(ctx, claim.ClaimsContextKey, claims)
+			ctx = claim.PayloadToContext(ctx, claims)
 		}
 	}
-
+	
 	return ctx, nil
 }
 
@@ -117,7 +117,7 @@ func (r *GraphqlHttpRouter) respondError(w http.ResponseWriter, err error, msg s
 	errList := gqlerror.List{{Message: err.Error()}}
 	body := graphql.Response{Errors: errList}
 	content, _ := json.Marshal(body)
-
+	
 	_, err = w.Write(content)
 	if nil != err {
 		r.Container.logger.Error(msg, zap.String("message", err.Error()))
