@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"bean/components/claim"
 	"bean/components/connect"
 	"bean/components/scalar"
 	"bean/components/util"
@@ -29,9 +30,15 @@ func (srv *AppService) Load(ctx context.Context, id string) (*model.Application,
 }
 
 func (srv *AppService) Create(ctx context.Context, in *dto.ApplicationCreateInput) (*dto.ApplicationOutcome, error) {
+	claims := claim.ContextToPayload(ctx)
+	if nil == claims {
+		return nil, util.ErrorAuthRequired
+	}
+
 	app := &model.Application{
 		ID:        srv.bundle.idr.MustULID(),
 		Version:   srv.bundle.idr.MustULID(),
+		SpaceId:   claims.SpaceId(),
 		IsActive:  in.IsActive,
 		Title:     in.Title,
 		CreatedAt: time.Now(),

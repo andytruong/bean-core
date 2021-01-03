@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 
 	"bean/components/claim"
@@ -226,10 +225,12 @@ func Test_Variable(t *testing.T) {
 		})
 
 		t.Run("writable bucket", func(t *testing.T) {
+			// setup auth context
 			userId := bundle.idr.MustULID()
-			ctx := context.WithValue(context.Background(), claim.ClaimsContextKey, &claim.Payload{
-				StandardClaims: jwt.StandardClaims{Subject: userId},
-			})
+			claims := claim.NewPayload()
+			claims.SetUserId(userId)
+			ctx := claim.PayloadToContext(context.Background(), &claims)
+
 			tx := db.Begin()
 			defer tx.Rollback()
 			access := scalar.AccessModePrivate
@@ -290,10 +291,11 @@ func Test_Variable(t *testing.T) {
 		defer tx.Rollback()
 
 		setup := func(access scalar.AccessMode) (context.Context, *model.ConfigBucket, *model.ConfigVariable) {
+			// setup auth context
 			authorId := bundle.idr.MustULID()
-			authorClaims := &claim.Payload{}
-			authorClaims.Subject = authorId
-			authorCtx := context.WithValue(context.Background(), claim.ClaimsContextKey, authorClaims)
+			authorClaims := claim.NewPayload()
+			authorClaims.SetUserId(authorId)
+			authorCtx := claim.PayloadToContext(context.Background(), &authorClaims)
 
 			// create private bucket
 			oBucketCreate, err := bundle.BucketService.Create(connect.DBToContext(authorCtx, tx), dto.BucketCreateInput{
@@ -326,7 +328,7 @@ func Test_Variable(t *testing.T) {
 			_, _, variable := setup(scalar.AccessModePrivate)
 
 			// load & assert outcome
-			load, err := bundle.VariableService.Load(ctx, variable.Id)
+			load, err := bundle.VariableService.Load(ctx, dto.VariableKey{Id: variable.Id})
 			ass.Error(err)
 			ass.Nil(load)
 		})
@@ -334,11 +336,19 @@ func Test_Variable(t *testing.T) {
 		t.Run("read-only bucket", func(t *testing.T) {
 			ctx, bucket, variable := setup(scalar.AccessModePrivate)
 
-			// load & assert outcome
-			load, err := bundle.VariableService.Load(connect.DBToContext(ctx, tx), variable.Id)
-			ass.NoError(err)
-			ass.Equal(bucket.Id, load.BucketId)
-			ass.Equal("1", load.Value)
+			t.Run("by ID", func(t *testing.T) {
+				load, err := bundle.VariableService.Load(connect.DBToContext(ctx, tx), dto.VariableKey{Id: variable.Id})
+				ass.NoError(err)
+				ass.Equal(bucket.Id, load.BucketId)
+				ass.Equal("1", load.Value)
+			})
+
+			t.Run("by name", func(t *testing.T) {
+				load, err := bundle.VariableService.Load(connect.DBToContext(ctx, tx), dto.VariableKey{BucketId: bucket.Id, Name: variable.Name})
+				ass.NoError(err)
+				ass.Equal(bucket.Id, load.BucketId)
+				ass.Equal("1", load.Value)
+			})
 		})
 	})
 

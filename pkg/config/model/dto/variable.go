@@ -30,3 +30,9 @@ type VariableMutationOutcome struct {
 	Errors   []util.Error          `json:"errors"`
 	Variable *model.ConfigVariable `json:"variable"`
 }
+
+type VariableKey struct {
+	Id       string
+	BucketId string
+	Name     string
+}

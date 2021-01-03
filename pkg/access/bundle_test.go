@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 
 	"bean/components/claim"
@@ -64,10 +63,11 @@ func Test_Create(t *testing.T) {
 	ass.NoError(err)
 
 	// create space
-	ctx = claim.ClaimPayloadToContext(ctx, &claim.Payload{
-		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
-		Kind:           claim.KindAuthenticated,
-	})
+	claims := claim.NewPayload()
+	claims.
+		SetUserId(oUser.User.ID).
+		SetKind(claim.KindAuthenticated)
+	ctx = claim.PayloadToContext(ctx, &claims)
 
 	iSpace := fSpace.SpaceCreateInputFixture(false)
 	oSpace, err := bundle.spaceBundle.Service.Create(ctx, iSpace)
@@ -199,10 +199,9 @@ func Test_Query(t *testing.T) {
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := bundle.userBundle.Service.Create(ctx, iUser)
 
-	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
-		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
-		Kind:           claim.KindAuthenticated,
-	})
+	claims := claim.NewPayload()
+	claims.SetUserId(oUser.User.ID).SetKind(claim.KindAuthenticated)
+	ctx = claim.PayloadToContext(ctx, &claims)
 	iSpace := fSpace.SpaceCreateInputFixture(false)
 	oSpace, _ := bundle.spaceBundle.Service.Create(ctx, iSpace)
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
@@ -244,10 +243,10 @@ func Test_Archive(t *testing.T) {
 	iUser := fUser.NewUserCreateInputFixture()
 	oUser, _ := bundle.userBundle.Service.Create(ctx, iUser)
 	ctx = connect.DBToContext(ctx, db)
-	ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
-		StandardClaims: jwt.StandardClaims{Subject: oUser.User.ID},
-		Kind:           claim.KindAuthenticated,
-	})
+
+	claims := claim.NewPayload()
+	claims.SetUserId(oUser.User.ID).SetKind(claim.KindAuthenticated)
+	ctx = claim.PayloadToContext(ctx, &claims)
 	iSpace := fSpace.SpaceCreateInputFixture(false)
 	oSpace, _ := bundle.spaceBundle.Service.Create(ctx, iSpace)
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
@@ -258,10 +257,13 @@ func Test_Archive(t *testing.T) {
 	{
 		resolver := bundle.resolvers["AccessSessionMutation"].(map[string]interface{})["Archive"].(func(context.Context, *dto.AccessSessionMutation) (*dto.SessionArchiveOutcome, error))
 
-		ctx = context.WithValue(ctx, claim.ClaimsContextKey, &claim.Payload{
-			StandardClaims: jwt.StandardClaims{Id: sessionOutcome.Session.ID, Subject: oUser.User.ID},
-			Kind:           claim.KindAuthenticated,
-		})
+		// setup auth context
+		claims := claim.NewPayload()
+		claims.
+			SetUserId(oUser.User.ID).
+			SetKind(claim.KindAuthenticated).
+			SetSessionId(sessionOutcome.Session.ID)
+		ctx = claim.PayloadToContext(ctx, &claims)
 
 		// can archive session without issue
 		{

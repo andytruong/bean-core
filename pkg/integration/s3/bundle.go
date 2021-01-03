@@ -12,29 +12,35 @@ import (
 	"bean/components/scalar"
 	"bean/pkg/app"
 	"bean/pkg/config"
+	"bean/pkg/config/model/dto"
+)
+
+const (
+	// unique ID of bundle
+	_id = "01EV1JTZ9FHTB1ZBFMEZ4PYG1N"
 )
 
 func NewS3Integration(
 	idr *scalar.Identifier,
-	logger *zap.Logger,
+	lgr *zap.Logger,
 	conf *S3Configuration,
 	appBundle *app.AppBundle,
 	configBundle *config.ConfigBundle,
 ) *S3Bundle {
-	this := &S3Bundle{
-		idr:    idr,
-		logger: logger,
-		cnf:    conf,
+	bundle := &S3Bundle{
+		idr:          idr,
+		lgr:          lgr,
+		cnf:          conf,
+		appBundle:    appBundle,
+		configBundle: configBundle,
 	}
 
-	this.appBundle = appBundle
-	this.configBundle = configBundle
-	this.AppService = &ApplicationService{bundle: this}
-	this.credentialService = &credentialService{bundle: this}
-	this.policyService = &policyService{bundle: this}
-	this.resolvers = newResolvers(this)
+	bundle.AppService = &AppService{bundle: bundle}
+	bundle.credentialService = &credentialService{bundle: bundle}
+	bundle.policyService = &policyService{bundle: bundle}
+	bundle.resolvers = newResolvers(bundle)
 
-	return this
+	return bundle
 }
 
 type S3Bundle struct {
@@ -43,10 +49,10 @@ type S3Bundle struct {
 	appBundle    *app.AppBundle
 	configBundle *config.ConfigBundle
 
-	idr               *scalar.Identifier
-	logger            *zap.Logger
 	cnf               *S3Configuration
-	AppService        *ApplicationService
+	idr               *scalar.Identifier
+	lgr               *zap.Logger
+	AppService        *AppService
 	credentialService *credentialService
 	policyService     *policyService
 	resolvers         map[string]interface{}
@@ -67,7 +73,7 @@ func (bundle S3Bundle) Migrate(ctx context.Context, driver string) error {
 	}
 
 	runner := connect.Runner{
-		Logger: bundle.logger,
+		Logger: bundle.lgr,
 		Driver: driver,
 		Bundle: "integration.s3",
 		Dir:    path.Dir(filename) + "/model/migration/",
@@ -77,7 +83,44 @@ func (bundle S3Bundle) Migrate(ctx context.Context, driver string) error {
 		return err
 	}
 
-	// srv.bundle.configBundle.BucketService.Create()
+	// save configuration buckets: credentials, policies
+	{
+		access := scalar.AccessModePrivate
+
+		// config bucket -> credentials
+		{
+			out, err := bundle.configBundle.BucketService.Create(ctx, dto.BucketCreateInput{
+				Slug:        scalar.NilString(credentialsConfigSlug),
+				Access:      &access,
+				Schema:      credentialsConfigSchema,
+				IsPublished: true,
+				HostId:      _id,
+			})
+
+			if nil != err {
+				return err
+			} else if out.Errors != nil {
+				panic(out.Errors)
+			}
+		}
+
+		// config bucket -> policies
+		{
+			out, err := bundle.configBundle.BucketService.Create(ctx, dto.BucketCreateInput{
+				Slug:        scalar.NilString(policyConfigSlug),
+				Access:      &access,
+				Schema:      policyConfigSchema,
+				IsPublished: true,
+				HostId:      _id,
+			})
+
+			if nil != err {
+				return err
+			} else if out.Errors != nil {
+				panic(out.Errors)
+			}
+		}
+	}
 
 	return nil
 }

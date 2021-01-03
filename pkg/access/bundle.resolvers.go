@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-
 	"bean/components/claim"
 	"bean/components/util"
 	"bean/pkg/access/model"
@@ -89,25 +87,17 @@ func (bundle *AccessBundle) newResolves() map[string]interface{} {
 					return "", fmt.Errorf("can not verify")
 				}
 
-				claims := claim.Payload{
-					Kind: session.Kind,
-					Roles: func() []string {
-						var roleNames []string
+				claims := claim.NewPayload()
+				claims.
+					SetKind(session.Kind).
+					SetSessionId(session.ID).
+					SetUserId(session.UserId).
+					SetSpaceId(session.SpaceId).
+					SetIssuer("access").
+					SetExpireAt(time.Now().Add(bundle.cnf.Jwt.Timeout).Unix())
 
-						for _, role := range roles {
-							roleNames = append(roleNames, role.Title)
-						}
-
-						return roleNames
-					}(),
-					StandardClaims: jwt.StandardClaims{
-						Issuer:    "access",
-						Id:        session.ID,
-						IssuedAt:  time.Now().Unix(),
-						ExpiresAt: time.Now().Add(bundle.cnf.Jwt.Timeout).Unix(),
-						Subject:   session.UserId,
-						Audience:  session.SpaceId,
-					},
+				for _, role := range roles {
+					claims.AddRole(role.Title)
 				}
 
 				return bundle.JwtService.Sign(claims)

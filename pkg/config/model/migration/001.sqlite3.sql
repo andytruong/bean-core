@@ -5,7 +5,7 @@ CREATE TABLE config_buckets
     slug         character varying(64) NOT NULL UNIQUE,
     title        character varying(256),
     description  text,
-    host_id      character varying(26) NOT NULL,
+    host_id      character varying(26),
     access       character varying(4)  NOT NULL,
     schema       json                  NOT NULL,
     created_at   timestamp             NOT NULL,

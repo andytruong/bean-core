@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 
@@ -59,16 +58,15 @@ func Test_Space(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
 		defer tearDown(db)
 		t.Run("happy case", func(t *testing.T) {
+			// setup auth context
+			claims := claim.NewPayload()
+			claims.
+				SetKind(claim.KindAuthenticated).
+				SetUserId(bundle.idr.MustULID()).
+				SetSpaceId(bundle.idr.MustULID())
+			ctx := claim.PayloadToContext(ctx, &claims)
 			now := time.Now()
 
-			claims := &claim.Payload{
-				StandardClaims: jwt.StandardClaims{
-					Audience: bundle.idr.MustULID(),
-					Subject:  bundle.idr.MustULID(),
-				},
-				Kind: claim.KindAuthenticated,
-			}
-			ctx := context.WithValue(ctx, claim.ClaimsContextKey, claims)
 			out, err := bundle.Service.Create(ctx, iCreate)
 
 			ass.NoError(err)

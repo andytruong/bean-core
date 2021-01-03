@@ -10,6 +10,7 @@ import (
 	"bean/components/connect"
 	"bean/components/module"
 	"bean/components/scalar"
+	"bean/components/util"
 	"bean/pkg/config"
 	"bean/pkg/space"
 )
@@ -34,6 +35,10 @@ func NewApplicationBundle(
 
 	return bundle, nil
 }
+
+const (
+	ErrorInactiveApplication = util.Err("inactive application")
+)
 
 type AppBundle struct {
 	module.AbstractBundle

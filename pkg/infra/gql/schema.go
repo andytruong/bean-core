@@ -66,7 +66,6 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
 	S3Mutation() S3MutationResolver
-	S3UploadMutation() S3UploadMutationResolver
 	Session() SessionResolver
 	Space() SpaceResolver
 	SpaceMembershipMutation() SpaceMembershipMutationResolver
@@ -105,15 +104,15 @@ type ComplexityRoot struct {
 	}
 
 	Application struct {
-		CreatedAt   func(childComplexity int) int
-		Credentials func(childComplexity int) int
-		DeletedAt   func(childComplexity int) int
-		ID          func(childComplexity int) int
-		IsActive    func(childComplexity int) int
-		Polices     func(childComplexity int) int
-		Title       func(childComplexity int) int
-		UpdatedAt   func(childComplexity int) int
-		Version     func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		DeletedAt        func(childComplexity int) int
+		ID               func(childComplexity int) int
+		IsActive         func(childComplexity int) int
+		S3Credentials    func(childComplexity int) int
+		S3UploadPolicies func(childComplexity int) int
+		Title            func(childComplexity int) int
+		UpdatedAt        func(childComplexity int) int
+		Version          func(childComplexity int) int
 	}
 
 	ApplicationMutation struct {
@@ -153,14 +152,6 @@ type ComplexityRoot struct {
 		UpdatedAt   func(childComplexity int) int
 		Value       func(childComplexity int) int
 		Version     func(childComplexity int) int
-	}
-
-	Credentials struct {
-		AccessKey func(childComplexity int) int
-		Bucket    func(childComplexity int) int
-		Endpoint  func(childComplexity int) int
-		ID        func(childComplexity int) int
-		IsSecure  func(childComplexity int) int
 	}
 
 	DomainName struct {
@@ -330,14 +321,6 @@ type ComplexityRoot struct {
 		UserMutation        func(childComplexity int) int
 	}
 
-	Policy struct {
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Kind      func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		Value     func(childComplexity int) int
-	}
-
 	Query struct {
 		AccessQuery      func(childComplexity int) int
 		ApplicationQuery func(childComplexity int) int
@@ -346,12 +329,34 @@ type ComplexityRoot struct {
 		UserQuery        func(childComplexity int) int
 	}
 
-	S3Mutation struct {
-		Upload func(childComplexity int) int
+	S3Credentials struct {
+		AccessKey func(childComplexity int) int
+		Bucket    func(childComplexity int) int
+		Endpoint  func(childComplexity int) int
+		IsSecure  func(childComplexity int) int
+		Version   func(childComplexity int) int
 	}
 
-	S3UploadMutation struct {
-		Token func(childComplexity int, input dto3.S3UploadTokenInput) int
+	S3CredentialsOutcome struct {
+		Credentials func(childComplexity int) int
+		Errors      func(childComplexity int) int
+	}
+
+	S3Mutation struct {
+		SaveCredentials    func(childComplexity int, input *dto3.S3CredentialsInput) int
+		SaveUploadPolicies func(childComplexity int, input *dto3.UploadPolicyInput) int
+		UploadToken        func(childComplexity int, input dto3.UploadTokenInput) int
+	}
+
+	S3UploadPolicy struct {
+		FileExtensions func(childComplexity int) int
+		RateLimit      func(childComplexity int) int
+		Version        func(childComplexity int) int
+	}
+
+	S3UploadPolicyOutcome struct {
+		Errors func(childComplexity int) int
+		Policy func(childComplexity int) int
 	}
 
 	Session struct {
@@ -435,6 +440,12 @@ type ComplexityRoot struct {
 		Membership func(childComplexity int) int
 	}
 
+	UploadRateLimitPolicy struct {
+		Interval func(childComplexity int) int
+		Object   func(childComplexity int) int
+		Value    func(childComplexity int) int
+	}
+
 	User struct {
 		AvatarURI func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
@@ -496,8 +507,8 @@ type AccessSessionQueryResolver interface {
 	Load(ctx context.Context, obj *dto.AccessSessionQuery, token string) (*model.Session, error)
 }
 type ApplicationResolver interface {
-	Polices(ctx context.Context, obj *model1.Application) ([]*model2.Policy, error)
-	Credentials(ctx context.Context, obj *model1.Application) (*model2.Credentials, error)
+	S3Credentials(ctx context.Context, obj *model1.Application) (*model2.S3Credentials, error)
+	S3UploadPolicies(ctx context.Context, obj *model1.Application) (*model2.S3UploadPolicy, error)
 }
 type ApplicationMutationResolver interface {
 	Create(ctx context.Context, obj *dto1.ApplicationMutation, input *dto1.ApplicationCreateInput) (*dto1.ApplicationOutcome, error)
@@ -545,10 +556,9 @@ type QueryResolver interface {
 	UserQuery(ctx context.Context) (*dto5.UserQuery, error)
 }
 type S3MutationResolver interface {
-	Upload(ctx context.Context, obj *dto3.S3Mutation) (*dto3.S3UploadMutation, error)
-}
-type S3UploadMutationResolver interface {
-	Token(ctx context.Context, obj *dto3.S3UploadMutation, input dto3.S3UploadTokenInput) (map[string]interface{}, error)
+	SaveCredentials(ctx context.Context, obj *dto3.S3Mutation, input *dto3.S3CredentialsInput) (*dto3.S3CredentialsOutcome, error)
+	SaveUploadPolicies(ctx context.Context, obj *dto3.S3Mutation, input *dto3.UploadPolicyInput) (*dto3.S3UploadPolicyOutcome, error)
+	UploadToken(ctx context.Context, obj *dto3.S3Mutation, input dto3.UploadTokenInput) (map[string]interface{}, error)
 }
 type SessionResolver interface {
 	User(ctx context.Context, obj *model.Session) (*model4.User, error)
@@ -663,13 +673,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Application.CreatedAt(childComplexity), true
 
-	case "Application.credentials":
-		if e.complexity.Application.Credentials == nil {
-			break
-		}
-
-		return e.complexity.Application.Credentials(childComplexity), true
-
 	case "Application.deletedAt":
 		if e.complexity.Application.DeletedAt == nil {
 			break
@@ -691,12 +694,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Application.IsActive(childComplexity), true
 
-	case "Application.polices":
-		if e.complexity.Application.Polices == nil {
+	case "Application.s3Credentials":
+		if e.complexity.Application.S3Credentials == nil {
 			break
 		}
 
-		return e.complexity.Application.Polices(childComplexity), true
+		return e.complexity.Application.S3Credentials(childComplexity), true
+
+	case "Application.s3UploadPolicies":
+		if e.complexity.Application.S3UploadPolicies == nil {
+			break
+		}
+
+		return e.complexity.Application.S3UploadPolicies(childComplexity), true
 
 	case "Application.title":
 		if e.complexity.Application.Title == nil {
@@ -901,41 +911,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ConfigVariable.Version(childComplexity), true
-
-	case "Credentials.accesskey":
-		if e.complexity.Credentials.AccessKey == nil {
-			break
-		}
-
-		return e.complexity.Credentials.AccessKey(childComplexity), true
-
-	case "Credentials.bucket":
-		if e.complexity.Credentials.Bucket == nil {
-			break
-		}
-
-		return e.complexity.Credentials.Bucket(childComplexity), true
-
-	case "Credentials.endpoint":
-		if e.complexity.Credentials.Endpoint == nil {
-			break
-		}
-
-		return e.complexity.Credentials.Endpoint(childComplexity), true
-
-	case "Credentials.id":
-		if e.complexity.Credentials.ID == nil {
-			break
-		}
-
-		return e.complexity.Credentials.ID(childComplexity), true
-
-	case "Credentials.isSecure":
-		if e.complexity.Credentials.IsSecure == nil {
-			break
-		}
-
-		return e.complexity.Credentials.IsSecure(childComplexity), true
 
 	case "DomainName.createdAt":
 		if e.complexity.DomainName.CreatedAt == nil {
@@ -1627,41 +1602,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UserMutation(childComplexity), true
 
-	case "Policy.createdAt":
-		if e.complexity.Policy.CreatedAt == nil {
-			break
-		}
-
-		return e.complexity.Policy.CreatedAt(childComplexity), true
-
-	case "Policy.id":
-		if e.complexity.Policy.ID == nil {
-			break
-		}
-
-		return e.complexity.Policy.ID(childComplexity), true
-
-	case "Policy.kind":
-		if e.complexity.Policy.Kind == nil {
-			break
-		}
-
-		return e.complexity.Policy.Kind(childComplexity), true
-
-	case "Policy.updatedAt":
-		if e.complexity.Policy.UpdatedAt == nil {
-			break
-		}
-
-		return e.complexity.Policy.UpdatedAt(childComplexity), true
-
-	case "Policy.value":
-		if e.complexity.Policy.Value == nil {
-			break
-		}
-
-		return e.complexity.Policy.Value(childComplexity), true
-
 	case "Query.accessQuery":
 		if e.complexity.Query.AccessQuery == nil {
 			break
@@ -1697,24 +1637,125 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.UserQuery(childComplexity), true
 
-	case "S3Mutation.upload":
-		if e.complexity.S3Mutation.Upload == nil {
+	case "S3Credentials.accesskey":
+		if e.complexity.S3Credentials.AccessKey == nil {
 			break
 		}
 
-		return e.complexity.S3Mutation.Upload(childComplexity), true
+		return e.complexity.S3Credentials.AccessKey(childComplexity), true
 
-	case "S3UploadMutation.token":
-		if e.complexity.S3UploadMutation.Token == nil {
+	case "S3Credentials.bucket":
+		if e.complexity.S3Credentials.Bucket == nil {
 			break
 		}
 
-		args, err := ec.field_S3UploadMutation_token_args(context.TODO(), rawArgs)
+		return e.complexity.S3Credentials.Bucket(childComplexity), true
+
+	case "S3Credentials.endpoint":
+		if e.complexity.S3Credentials.Endpoint == nil {
+			break
+		}
+
+		return e.complexity.S3Credentials.Endpoint(childComplexity), true
+
+	case "S3Credentials.isSecure":
+		if e.complexity.S3Credentials.IsSecure == nil {
+			break
+		}
+
+		return e.complexity.S3Credentials.IsSecure(childComplexity), true
+
+	case "S3Credentials.version":
+		if e.complexity.S3Credentials.Version == nil {
+			break
+		}
+
+		return e.complexity.S3Credentials.Version(childComplexity), true
+
+	case "S3CredentialsOutcome.credentials":
+		if e.complexity.S3CredentialsOutcome.Credentials == nil {
+			break
+		}
+
+		return e.complexity.S3CredentialsOutcome.Credentials(childComplexity), true
+
+	case "S3CredentialsOutcome.errors":
+		if e.complexity.S3CredentialsOutcome.Errors == nil {
+			break
+		}
+
+		return e.complexity.S3CredentialsOutcome.Errors(childComplexity), true
+
+	case "S3Mutation.saveCredentials":
+		if e.complexity.S3Mutation.SaveCredentials == nil {
+			break
+		}
+
+		args, err := ec.field_S3Mutation_saveCredentials_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.S3UploadMutation.Token(childComplexity, args["input"].(dto3.S3UploadTokenInput)), true
+		return e.complexity.S3Mutation.SaveCredentials(childComplexity, args["input"].(*dto3.S3CredentialsInput)), true
+
+	case "S3Mutation.saveUploadPolicies":
+		if e.complexity.S3Mutation.SaveUploadPolicies == nil {
+			break
+		}
+
+		args, err := ec.field_S3Mutation_saveUploadPolicies_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.S3Mutation.SaveUploadPolicies(childComplexity, args["input"].(*dto3.UploadPolicyInput)), true
+
+	case "S3Mutation.uploadToken":
+		if e.complexity.S3Mutation.UploadToken == nil {
+			break
+		}
+
+		args, err := ec.field_S3Mutation_uploadToken_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.S3Mutation.UploadToken(childComplexity, args["input"].(dto3.UploadTokenInput)), true
+
+	case "S3UploadPolicy.fileExtensions":
+		if e.complexity.S3UploadPolicy.FileExtensions == nil {
+			break
+		}
+
+		return e.complexity.S3UploadPolicy.FileExtensions(childComplexity), true
+
+	case "S3UploadPolicy.rateLimit":
+		if e.complexity.S3UploadPolicy.RateLimit == nil {
+			break
+		}
+
+		return e.complexity.S3UploadPolicy.RateLimit(childComplexity), true
+
+	case "S3UploadPolicy.version":
+		if e.complexity.S3UploadPolicy.Version == nil {
+			break
+		}
+
+		return e.complexity.S3UploadPolicy.Version(childComplexity), true
+
+	case "S3UploadPolicyOutcome.errors":
+		if e.complexity.S3UploadPolicyOutcome.Errors == nil {
+			break
+		}
+
+		return e.complexity.S3UploadPolicyOutcome.Errors(childComplexity), true
+
+	case "S3UploadPolicyOutcome.policy":
+		if e.complexity.S3UploadPolicyOutcome.Policy == nil {
+			break
+		}
+
+		return e.complexity.S3UploadPolicyOutcome.Policy(childComplexity), true
 
 	case "Session.context":
 		if e.complexity.Session.Context == nil {
@@ -2070,6 +2111,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SpaceQuery.Membership(childComplexity), true
+
+	case "UploadRateLimitPolicy.interval":
+		if e.complexity.UploadRateLimitPolicy.Interval == nil {
+			break
+		}
+
+		return e.complexity.UploadRateLimitPolicy.Interval(childComplexity), true
+
+	case "UploadRateLimitPolicy.object":
+		if e.complexity.UploadRateLimitPolicy.Object == nil {
+			break
+		}
+
+		return e.complexity.UploadRateLimitPolicy.Object(childComplexity), true
+
+	case "UploadRateLimitPolicy.value":
+		if e.complexity.UploadRateLimitPolicy.Value == nil {
+			break
+		}
+
+		return e.complexity.UploadRateLimitPolicy.Value(childComplexity), true
 
 	case "User.avatarUri":
 		if e.complexity.User.AvatarURI == nil {
@@ -2797,29 +2859,28 @@ type MailerTemplateMutation {
 # Entity
 # =====================
 extend type Application {
-    polices: [Policy!]
-    credentials: Credentials!
+    s3Credentials: S3Credentials
+    s3UploadPolicies: S3UploadPolicy
 }
 
-enum PolicyKind  {
-    FileExtensions,
-    RateLimit
-}
-
-type Policy {
-    id: ID!
-    createdAt: Time!
-    updatedAt: Time!
-    kind: PolicyKind!
-    value: String!
-}
-
-type Credentials {
-    id: ID!
+type S3Credentials {
+    version: ID!
     endpoint: Uri!
     bucket: String!
     isSecure: Boolean!
     accesskey: String! @comment(value: "no secret key")
+}
+
+type S3UploadPolicy {
+    version: ID!
+    fileExtensions:[FileType!]!
+    rateLimit: [UploadRateLimitPolicy]!
+}
+
+type UploadRateLimitPolicy {
+    value: String!     # example: 1MB, 1GB
+    object: String!    # example: user, space
+    interval: String!  # example: minute, hour, day
 }
 
 # =====================
@@ -2830,17 +2891,14 @@ extend type Mutation  {
 }
 
 type S3Mutation {
-    upload: S3UploadMutation!
-
-    # TODO: put credentials into application
-    #     -> do we need it?
-    #     -> Should do in application.configuration with predefined schema?
-    # TODO: put policy into application
-    #     -> do we need it?
-    #     -> Should do in application.configuration with predefined schema?
+    saveCredentials(input: S3CredentialsInput): S3CredentialsOutcome!
+    saveUploadPolicies(input: UploadPolicyInput): S3UploadPolicyOutcome!
+    uploadToken(input: UploadTokenInput!): Map! @requireAuth
 }
 
-input S3ApplicationCredentialsCreateInput {
+input S3CredentialsInput {
+    version: ID!
+    applicationId: ID!
     endpoint: Uri!
     bucket: String!
     isSecure: Boolean!
@@ -2848,54 +2906,30 @@ input S3ApplicationCredentialsCreateInput {
     secretKey: String!
 }
 
-input S3ApplicationPolicyCreateInput {
-    kind: PolicyKind!
-    value: String!
+type S3CredentialsOutcome {
+    errors: [Error!]
+    credentials: S3Credentials
 }
 
-# ---------------------
-# Mutation -> Update
-# ---------------------
-
-input S3ApplicationUpdateInput {
-    id: ID!
+input UploadPolicyInput {
     version: ID!
-    isActive: Boolean
-    credentials: S3ApplicationCredentialsUpdateInput
-    policies: S3ApplicationPolicyMutationInput
+    applicationId: ID!
+    fileExtensions: [FileType!]
+    rateLimit: [UploadRateLimitInput!]
 }
 
-input S3ApplicationCredentialsUpdateInput {
-    endpoint: Uri
-    bucket: String
-    isSecure: Boolean
-    accessKey: String
-    secretKey: String
-}
-
-input S3ApplicationPolicyMutationInput {
-    create: [S3ApplicationPolicyCreateInput!]
-    update: [S3ApplicationPolicyUpdateInput!]
-    delete: [S3ApplicationPolicyDeleteInput!]
-}
-
-input S3ApplicationPolicyUpdateInput {
-    id: ID!
+input UploadRateLimitInput {
     value: String!
+    object: String!
+    interval: String!
 }
 
-input S3ApplicationPolicyDeleteInput {
-    id: ID!
+type S3UploadPolicyOutcome {
+    errors: [Error!]
+    policy: S3UploadPolicy
 }
 
-# ---------------------
-# Mutation -> Upload
-# ---------------------
-type S3UploadMutation {
-    token(input: S3UploadTokenInput!): Map! @requireAuth
-}
-
-input S3UploadTokenInput {
+input UploadTokenInput {
     applicationId: ID!
     filePath:      Uri! @constraint(minLength: 7, maxLength: 128)
     contentType:   ContentType!
@@ -3457,13 +3491,43 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_S3UploadMutation_token_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_S3Mutation_saveCredentials_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 dto3.S3UploadTokenInput
+	var arg0 *dto3.S3CredentialsInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNS3UploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadTokenInput(ctx, tmp)
+		arg0, err = ec.unmarshalOS3CredentialsInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3CredentialsInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_S3Mutation_saveUploadPolicies_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *dto3.UploadPolicyInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOUploadPolicyInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐUploadPolicyInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_S3Mutation_uploadToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 dto3.UploadTokenInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐUploadTokenInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -4150,7 +4214,7 @@ func (ec *executionContext) _Application_deletedAt(ctx context.Context, field gr
 	return ec.marshalNTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_polices(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_s3Credentials(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4168,7 +4232,7 @@ func (ec *executionContext) _Application_polices(ctx context.Context, field grap
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Application().Polices(rctx, obj)
+		return ec.resolvers.Application().S3Credentials(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4177,12 +4241,12 @@ func (ec *executionContext) _Application_polices(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model2.Policy)
+	res := resTmp.(*model2.S3Credentials)
 	fc.Result = res
-	return ec.marshalOPolicy2ᚕᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyᚄ(ctx, field.Selections, res)
+	return ec.marshalOS3Credentials2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐS3Credentials(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Application_credentials(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
+func (ec *executionContext) _Application_s3UploadPolicies(ctx context.Context, field graphql.CollectedField, obj *model1.Application) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4200,21 +4264,18 @@ func (ec *executionContext) _Application_credentials(ctx context.Context, field 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Application().Credentials(rctx, obj)
+		return ec.resolvers.Application().S3UploadPolicies(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(*model2.Credentials)
+	res := resTmp.(*model2.S3UploadPolicy)
 	fc.Result = res
-	return ec.marshalNCredentials2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐCredentials(ctx, field.Selections, res)
+	return ec.marshalOS3UploadPolicy2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐS3UploadPolicy(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationMutation_create(ctx context.Context, field graphql.CollectedField, obj *dto1.ApplicationMutation) (ret graphql.Marshaler) {
@@ -5061,205 +5122,6 @@ func (ec *executionContext) _ConfigVariable_isLocked(ctx context.Context, field 
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Credentials_id(ctx context.Context, field graphql.CollectedField, obj *model2.Credentials) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Credentials",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Credentials_endpoint(ctx context.Context, field graphql.CollectedField, obj *model2.Credentials) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Credentials",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Endpoint, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(scalar.Uri)
-	fc.Result = res
-	return ec.marshalNUri2beanᚋcomponentsᚋscalarᚐUri(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Credentials_bucket(ctx context.Context, field graphql.CollectedField, obj *model2.Credentials) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Credentials",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Bucket, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Credentials_isSecure(ctx context.Context, field graphql.CollectedField, obj *model2.Credentials) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Credentials",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsSecure, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Credentials_accesskey(ctx context.Context, field graphql.CollectedField, obj *model2.Credentials) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Credentials",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return obj.AccessKey, nil
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			value, err := ec.unmarshalOString2ᚖstring(ctx, "no secret key")
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.Comment == nil {
-				return nil, errors.New("directive comment is not implemented")
-			}
-			return ec.directives.Comment(ctx, obj, directive0, value, nil)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(string); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DomainName_id(ctx context.Context, field graphql.CollectedField, obj *model3.DomainName) (ret graphql.Marshaler) {
@@ -8666,181 +8528,6 @@ func (ec *executionContext) _Mutation_userMutation(ctx context.Context, field gr
 	return ec.marshalNUserMutation2ᚖbeanᚋpkgᚋuserᚋmodelᚋdtoᚐUserMutation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Policy_id(ctx context.Context, field graphql.CollectedField, obj *model2.Policy) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Policy",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Policy_createdAt(ctx context.Context, field graphql.CollectedField, obj *model2.Policy) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Policy",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Policy_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model2.Policy) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Policy",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UpdatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Policy_kind(ctx context.Context, field graphql.CollectedField, obj *model2.Policy) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Policy",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Kind, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model2.PolicyKind)
-	fc.Result = res
-	return ec.marshalNPolicyKind2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyKind(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Policy_value(ctx context.Context, field graphql.CollectedField, obj *model2.Policy) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Policy",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Value, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Query_accessQuery(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -9087,7 +8774,270 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _S3Mutation_upload(ctx context.Context, field graphql.CollectedField, obj *dto3.S3Mutation) (ret graphql.Marshaler) {
+func (ec *executionContext) _S3Credentials_version(ctx context.Context, field graphql.CollectedField, obj *model2.S3Credentials) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3Credentials",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3Credentials_endpoint(ctx context.Context, field graphql.CollectedField, obj *model2.S3Credentials) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3Credentials",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Endpoint, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(scalar.Uri)
+	fc.Result = res
+	return ec.marshalNUri2beanᚋcomponentsᚋscalarᚐUri(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3Credentials_bucket(ctx context.Context, field graphql.CollectedField, obj *model2.S3Credentials) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3Credentials",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Bucket, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3Credentials_isSecure(ctx context.Context, field graphql.CollectedField, obj *model2.S3Credentials) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3Credentials",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsSecure, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3Credentials_accesskey(ctx context.Context, field graphql.CollectedField, obj *model2.S3Credentials) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3Credentials",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.AccessKey, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			value, err := ec.unmarshalOString2ᚖstring(ctx, "no secret key")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Comment == nil {
+				return nil, errors.New("directive comment is not implemented")
+			}
+			return ec.directives.Comment(ctx, obj, directive0, value, nil)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3CredentialsOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto3.S3CredentialsOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3CredentialsOutcome",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*util.Error)
+	fc.Result = res
+	return ec.marshalOError2ᚕᚖbeanᚋcomponentsᚋutilᚐErrorᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3CredentialsOutcome_credentials(ctx context.Context, field graphql.CollectedField, obj *dto3.S3CredentialsOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3CredentialsOutcome",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Credentials, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model2.S3Credentials)
+	fc.Result = res
+	return ec.marshalOS3Credentials2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐS3Credentials(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3Mutation_saveCredentials(ctx context.Context, field graphql.CollectedField, obj *dto3.S3Mutation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9103,9 +9053,16 @@ func (ec *executionContext) _S3Mutation_upload(ctx context.Context, field graphq
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_S3Mutation_saveCredentials_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.S3Mutation().Upload(rctx, obj)
+		return ec.resolvers.S3Mutation().SaveCredentials(rctx, obj, args["input"].(*dto3.S3CredentialsInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9117,12 +9074,12 @@ func (ec *executionContext) _S3Mutation_upload(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto3.S3UploadMutation)
+	res := resTmp.(*dto3.S3CredentialsOutcome)
 	fc.Result = res
-	return ec.marshalNS3UploadMutation2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadMutation(ctx, field.Selections, res)
+	return ec.marshalNS3CredentialsOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3CredentialsOutcome(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _S3UploadMutation_token(ctx context.Context, field graphql.CollectedField, obj *dto3.S3UploadMutation) (ret graphql.Marshaler) {
+func (ec *executionContext) _S3Mutation_saveUploadPolicies(ctx context.Context, field graphql.CollectedField, obj *dto3.S3Mutation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9130,7 +9087,7 @@ func (ec *executionContext) _S3UploadMutation_token(ctx context.Context, field g
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "S3UploadMutation",
+		Object:     "S3Mutation",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   true,
@@ -9139,7 +9096,49 @@ func (ec *executionContext) _S3UploadMutation_token(ctx context.Context, field g
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_S3UploadMutation_token_args(ctx, rawArgs)
+	args, err := ec.field_S3Mutation_saveUploadPolicies_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.S3Mutation().SaveUploadPolicies(rctx, obj, args["input"].(*dto3.UploadPolicyInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto3.S3UploadPolicyOutcome)
+	fc.Result = res
+	return ec.marshalNS3UploadPolicyOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadPolicyOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3Mutation_uploadToken(ctx context.Context, field graphql.CollectedField, obj *dto3.S3Mutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_S3Mutation_uploadToken_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -9148,7 +9147,7 @@ func (ec *executionContext) _S3UploadMutation_token(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.S3UploadMutation().Token(rctx, obj, args["input"].(dto3.S3UploadTokenInput))
+			return ec.resolvers.S3Mutation().UploadToken(rctx, obj, args["input"].(dto3.UploadTokenInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.RequireAuth == nil {
@@ -9182,6 +9181,175 @@ func (ec *executionContext) _S3UploadMutation_token(ctx context.Context, field g
 	res := resTmp.(map[string]interface{})
 	fc.Result = res
 	return ec.marshalNMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3UploadPolicy_version(ctx context.Context, field graphql.CollectedField, obj *model2.S3UploadPolicy) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3UploadPolicy",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3UploadPolicy_fileExtensions(ctx context.Context, field graphql.CollectedField, obj *model2.S3UploadPolicy) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3UploadPolicy",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileExtensions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]api.FileType)
+	fc.Result = res
+	return ec.marshalNFileType2ᚕbeanᚋpkgᚋinfraᚋapiᚐFileTypeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3UploadPolicy_rateLimit(ctx context.Context, field graphql.CollectedField, obj *model2.S3UploadPolicy) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3UploadPolicy",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RateLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model2.UploadRateLimitPolicy)
+	fc.Result = res
+	return ec.marshalNUploadRateLimitPolicy2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐUploadRateLimitPolicy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3UploadPolicyOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto3.S3UploadPolicyOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3UploadPolicyOutcome",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*util.Error)
+	fc.Result = res
+	return ec.marshalOError2ᚕᚖbeanᚋcomponentsᚋutilᚐErrorᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _S3UploadPolicyOutcome_policy(ctx context.Context, field graphql.CollectedField, obj *dto3.S3UploadPolicyOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "S3UploadPolicyOutcome",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Policy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model2.S3UploadPolicy)
+	fc.Result = res
+	return ec.marshalOS3UploadPolicy2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐS3UploadPolicy(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Session_id(ctx context.Context, field graphql.CollectedField, obj *model.Session) (ret graphql.Marshaler) {
@@ -10750,6 +10918,111 @@ func (ec *executionContext) _SpaceQuery_membership(ctx context.Context, field gr
 	res := resTmp.(*dto4.SpaceMembershipQuery)
 	fc.Result = res
 	return ec.marshalNSpaceMembershipQuery2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipQuery(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UploadRateLimitPolicy_value(ctx context.Context, field graphql.CollectedField, obj *model2.UploadRateLimitPolicy) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UploadRateLimitPolicy",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UploadRateLimitPolicy_object(ctx context.Context, field graphql.CollectedField, obj *model2.UploadRateLimitPolicy) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UploadRateLimitPolicy",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Object, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UploadRateLimitPolicy_interval(ctx context.Context, field graphql.CollectedField, obj *model2.UploadRateLimitPolicy) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UploadRateLimitPolicy",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Interval, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model4.User) (ret graphql.Marshaler) {
@@ -13261,12 +13534,28 @@ func (ec *executionContext) unmarshalInputMembershipsFilterSpace(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ctx context.Context, obj interface{}) (dto3.S3ApplicationCredentialsCreateInput, error) {
-	var it dto3.S3ApplicationCredentialsCreateInput
+func (ec *executionContext) unmarshalInputS3CredentialsInput(ctx context.Context, obj interface{}) (dto3.S3CredentialsInput, error) {
+	var it dto3.S3CredentialsInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
+		case "version":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
+			it.Version, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "applicationId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("applicationId"))
+			it.ApplicationId, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "endpoint":
 			var err error
 
@@ -13304,282 +13593,6 @@ func (ec *executionContext) unmarshalInputS3ApplicationCredentialsCreateInput(ct
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("secretKey"))
 			it.SecretKey, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputS3ApplicationCredentialsUpdateInput(ctx context.Context, obj interface{}) (dto3.S3ApplicationCredentialsUpdateInput, error) {
-	var it dto3.S3ApplicationCredentialsUpdateInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "endpoint":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endpoint"))
-			it.Endpoint, err = ec.unmarshalOUri2ᚖbeanᚋcomponentsᚋscalarᚐUri(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "bucket":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bucket"))
-			it.Bucket, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "isSecure":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isSecure"))
-			it.IsSecure, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "accessKey":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("accessKey"))
-			it.AccessKey, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "secretKey":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("secretKey"))
-			it.SecretKey, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputS3ApplicationPolicyCreateInput(ctx context.Context, obj interface{}) (dto3.S3ApplicationPolicyCreateInput, error) {
-	var it dto3.S3ApplicationPolicyCreateInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "kind":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
-			it.Kind, err = ec.unmarshalNPolicyKind2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyKind(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "value":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
-			it.Value, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputS3ApplicationPolicyDeleteInput(ctx context.Context, obj interface{}) (dto3.S3ApplicationPolicyDeleteInput, error) {
-	var it dto3.S3ApplicationPolicyDeleteInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.Id, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputS3ApplicationPolicyMutationInput(ctx context.Context, obj interface{}) (dto3.S3ApplicationPolicyMutationInput, error) {
-	var it dto3.S3ApplicationPolicyMutationInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "create":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("create"))
-			it.Create, err = ec.unmarshalOS3ApplicationPolicyCreateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "update":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("update"))
-			it.Update, err = ec.unmarshalOS3ApplicationPolicyUpdateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "delete":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("delete"))
-			it.Delete, err = ec.unmarshalOS3ApplicationPolicyDeleteInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputS3ApplicationPolicyUpdateInput(ctx context.Context, obj interface{}) (dto3.S3ApplicationPolicyUpdateInput, error) {
-	var it dto3.S3ApplicationPolicyUpdateInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.Id, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "value":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
-			it.Value, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputS3ApplicationUpdateInput(ctx context.Context, obj interface{}) (dto3.S3ApplicationUpdateInput, error) {
-	var it dto3.S3ApplicationUpdateInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.Id, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "version":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
-			it.Version, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "isActive":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isActive"))
-			it.IsActive, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "credentials":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("credentials"))
-			it.Credentials, err = ec.unmarshalOS3ApplicationCredentialsUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsUpdateInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "policies":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("policies"))
-			it.Policies, err = ec.unmarshalOS3ApplicationPolicyMutationInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyMutationInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputS3UploadTokenInput(ctx context.Context, obj interface{}) (dto3.S3UploadTokenInput, error) {
-	var it dto3.S3UploadTokenInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "applicationId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("applicationId"))
-			it.ApplicationId, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "filePath":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filePath"))
-			directive0 := func(ctx context.Context) (interface{}, error) {
-				return ec.unmarshalNUri2beanᚋcomponentsᚋscalarᚐUri(ctx, v)
-			}
-			directive1 := func(ctx context.Context) (interface{}, error) {
-				maxLength, err := ec.unmarshalOInt2ᚖint(ctx, 128)
-				if err != nil {
-					return nil, err
-				}
-				minLength, err := ec.unmarshalOInt2ᚖint(ctx, 7)
-				if err != nil {
-					return nil, err
-				}
-				if ec.directives.Constraint == nil {
-					return nil, errors.New("directive constraint is not implemented")
-				}
-				return ec.directives.Constraint(ctx, obj, directive0, maxLength, minLength)
-			}
-
-			tmp, err := directive1(ctx)
-			if err != nil {
-				return it, graphql.ErrorOnPath(ctx, err)
-			}
-			if data, ok := tmp.(scalar.Uri); ok {
-				it.FilePath = data
-			} else {
-				err := fmt.Errorf(`unexpected type %T from directive, should be bean/components/scalar.Uri`, tmp)
-				return it, graphql.ErrorOnPath(ctx, err)
-			}
-		case "contentType":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contentType"))
-			it.ContentType, err = ec.unmarshalNContentType2beanᚋcomponentsᚋscalarᚐContentType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -14085,6 +14098,146 @@ func (ec *executionContext) unmarshalInputSpaceUpdateInputObject(ctx context.Con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUploadPolicyInput(ctx context.Context, obj interface{}) (dto3.UploadPolicyInput, error) {
+	var it dto3.UploadPolicyInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "version":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
+			it.Version, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "applicationId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("applicationId"))
+			it.ApplicationId, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fileExtensions":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileExtensions"))
+			it.FileExtensions, err = ec.unmarshalOFileType2ᚕbeanᚋpkgᚋinfraᚋapiᚐFileTypeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "rateLimit":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rateLimit"))
+			it.RateLimit, err = ec.unmarshalOUploadRateLimitInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐUploadRateLimitInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUploadRateLimitInput(ctx context.Context, obj interface{}) (dto3.UploadRateLimitInput, error) {
+	var it dto3.UploadRateLimitInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "value":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			it.Value, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "object":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("object"))
+			it.Object, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "interval":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("interval"))
+			it.Interval, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUploadTokenInput(ctx context.Context, obj interface{}) (dto3.UploadTokenInput, error) {
+	var it dto3.UploadTokenInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "applicationId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("applicationId"))
+			it.ApplicationId, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "filePath":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filePath"))
+			directive0 := func(ctx context.Context) (interface{}, error) {
+				return ec.unmarshalNUri2beanᚋcomponentsᚋscalarᚐUri(ctx, v)
+			}
+			directive1 := func(ctx context.Context) (interface{}, error) {
+				maxLength, err := ec.unmarshalOInt2ᚖint(ctx, 128)
+				if err != nil {
+					return nil, err
+				}
+				minLength, err := ec.unmarshalOInt2ᚖint(ctx, 7)
+				if err != nil {
+					return nil, err
+				}
+				if ec.directives.Constraint == nil {
+					return nil, errors.New("directive constraint is not implemented")
+				}
+				return ec.directives.Constraint(ctx, obj, directive0, maxLength, minLength)
+			}
+
+			tmp, err := directive1(ctx)
+			if err != nil {
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+			if data, ok := tmp.(scalar.Uri); ok {
+				it.FilePath = data
+			} else {
+				err := fmt.Errorf(`unexpected type %T from directive, should be bean/components/scalar.Uri`, tmp)
+				return it, graphql.ErrorOnPath(ctx, err)
+			}
+		case "contentType":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contentType"))
+			it.ContentType, err = ec.unmarshalNContentType2beanᚋcomponentsᚋscalarᚐContentType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUserCreateInput(ctx context.Context, obj interface{}) (dto5.UserCreateInput, error) {
 	var it dto5.UserCreateInput
 	var asMap = obj.(map[string]interface{})
@@ -14519,7 +14672,7 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "polices":
+		case "s3Credentials":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -14527,10 +14680,10 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Application_polices(ctx, field, obj)
+				res = ec._Application_s3Credentials(ctx, field, obj)
 				return res
 			})
-		case "credentials":
+		case "s3UploadPolicies":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -14538,10 +14691,7 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Application_credentials(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
+				res = ec._Application_s3UploadPolicies(ctx, field, obj)
 				return res
 			})
 		default:
@@ -14783,53 +14933,6 @@ func (ec *executionContext) _ConfigVariable(ctx context.Context, sel ast.Selecti
 			}
 		case "isLocked":
 			out.Values[i] = ec._ConfigVariable_isLocked(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var credentialsImplementors = []string{"Credentials"}
-
-func (ec *executionContext) _Credentials(ctx context.Context, sel ast.SelectionSet, obj *model2.Credentials) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, credentialsImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Credentials")
-		case "id":
-			out.Values[i] = ec._Credentials_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "endpoint":
-			out.Values[i] = ec._Credentials_endpoint(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "bucket":
-			out.Values[i] = ec._Credentials_bucket(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "isSecure":
-			out.Values[i] = ec._Credentials_isSecure(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "accesskey":
-			out.Values[i] = ec._Credentials_accesskey(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -15887,53 +15990,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
-var policyImplementors = []string{"Policy"}
-
-func (ec *executionContext) _Policy(ctx context.Context, sel ast.SelectionSet, obj *model2.Policy) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, policyImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Policy")
-		case "id":
-			out.Values[i] = ec._Policy_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "createdAt":
-			out.Values[i] = ec._Policy_createdAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "updatedAt":
-			out.Values[i] = ec._Policy_updatedAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "kind":
-			out.Values[i] = ec._Policy_kind(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "value":
-			out.Values[i] = ec._Policy_value(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -16034,6 +16090,79 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
+var s3CredentialsImplementors = []string{"S3Credentials"}
+
+func (ec *executionContext) _S3Credentials(ctx context.Context, sel ast.SelectionSet, obj *model2.S3Credentials) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, s3CredentialsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("S3Credentials")
+		case "version":
+			out.Values[i] = ec._S3Credentials_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "endpoint":
+			out.Values[i] = ec._S3Credentials_endpoint(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "bucket":
+			out.Values[i] = ec._S3Credentials_bucket(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "isSecure":
+			out.Values[i] = ec._S3Credentials_isSecure(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "accesskey":
+			out.Values[i] = ec._S3Credentials_accesskey(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var s3CredentialsOutcomeImplementors = []string{"S3CredentialsOutcome"}
+
+func (ec *executionContext) _S3CredentialsOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto3.S3CredentialsOutcome) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, s3CredentialsOutcomeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("S3CredentialsOutcome")
+		case "errors":
+			out.Values[i] = ec._S3CredentialsOutcome_errors(ctx, field, obj)
+		case "credentials":
+			out.Values[i] = ec._S3CredentialsOutcome_credentials(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var s3MutationImplementors = []string{"S3Mutation"}
 
 func (ec *executionContext) _S3Mutation(ctx context.Context, sel ast.SelectionSet, obj *dto3.S3Mutation) graphql.Marshaler {
@@ -16045,7 +16174,7 @@ func (ec *executionContext) _S3Mutation(ctx context.Context, sel ast.SelectionSe
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("S3Mutation")
-		case "upload":
+		case "saveCredentials":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -16053,7 +16182,35 @@ func (ec *executionContext) _S3Mutation(ctx context.Context, sel ast.SelectionSe
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._S3Mutation_upload(ctx, field, obj)
+				res = ec._S3Mutation_saveCredentials(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "saveUploadPolicies":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._S3Mutation_saveUploadPolicies(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "uploadToken":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._S3Mutation_uploadToken(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -16070,31 +16227,58 @@ func (ec *executionContext) _S3Mutation(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var s3UploadMutationImplementors = []string{"S3UploadMutation"}
+var s3UploadPolicyImplementors = []string{"S3UploadPolicy"}
 
-func (ec *executionContext) _S3UploadMutation(ctx context.Context, sel ast.SelectionSet, obj *dto3.S3UploadMutation) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, s3UploadMutationImplementors)
+func (ec *executionContext) _S3UploadPolicy(ctx context.Context, sel ast.SelectionSet, obj *model2.S3UploadPolicy) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, s3UploadPolicyImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("S3UploadMutation")
-		case "token":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._S3UploadMutation_token(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = graphql.MarshalString("S3UploadPolicy")
+		case "version":
+			out.Values[i] = ec._S3UploadPolicy_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "fileExtensions":
+			out.Values[i] = ec._S3UploadPolicy_fileExtensions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "rateLimit":
+			out.Values[i] = ec._S3UploadPolicy_rateLimit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var s3UploadPolicyOutcomeImplementors = []string{"S3UploadPolicyOutcome"}
+
+func (ec *executionContext) _S3UploadPolicyOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto3.S3UploadPolicyOutcome) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, s3UploadPolicyOutcomeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("S3UploadPolicyOutcome")
+		case "errors":
+			out.Values[i] = ec._S3UploadPolicyOutcome_errors(ctx, field, obj)
+		case "policy":
+			out.Values[i] = ec._S3UploadPolicyOutcome_policy(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16674,6 +16858,43 @@ func (ec *executionContext) _SpaceQuery(ctx context.Context, sel ast.SelectionSe
 				}
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var uploadRateLimitPolicyImplementors = []string{"UploadRateLimitPolicy"}
+
+func (ec *executionContext) _UploadRateLimitPolicy(ctx context.Context, sel ast.SelectionSet, obj *model2.UploadRateLimitPolicy) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, uploadRateLimitPolicyImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UploadRateLimitPolicy")
+		case "value":
+			out.Values[i] = ec._UploadRateLimitPolicy_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "object":
+			out.Values[i] = ec._UploadRateLimitPolicy_object(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "interval":
+			out.Values[i] = ec._UploadRateLimitPolicy_interval(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17372,20 +17593,6 @@ func (ec *executionContext) marshalNContentType2beanᚋcomponentsᚋscalarᚐCon
 	return res
 }
 
-func (ec *executionContext) marshalNCredentials2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐCredentials(ctx context.Context, sel ast.SelectionSet, v model2.Credentials) graphql.Marshaler {
-	return ec._Credentials(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNCredentials2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐCredentials(ctx context.Context, sel ast.SelectionSet, v *model2.Credentials) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Credentials(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNDomainName2ᚖbeanᚋpkgᚋspaceᚋmodelᚐDomainName(ctx context.Context, sel ast.SelectionSet, v *model3.DomainName) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -17946,45 +18153,18 @@ func (ec *executionContext) unmarshalNMembershipsFilter2beanᚋpkgᚋspaceᚋmod
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPolicy2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicy(ctx context.Context, sel ast.SelectionSet, v *model2.Policy) graphql.Marshaler {
+func (ec *executionContext) marshalNS3CredentialsOutcome2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3CredentialsOutcome(ctx context.Context, sel ast.SelectionSet, v dto3.S3CredentialsOutcome) graphql.Marshaler {
+	return ec._S3CredentialsOutcome(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNS3CredentialsOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3CredentialsOutcome(ctx context.Context, sel ast.SelectionSet, v *dto3.S3CredentialsOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._Policy(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNPolicyKind2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyKind(ctx context.Context, v interface{}) (model2.PolicyKind, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := model2.PolicyKind(tmp)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNPolicyKind2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyKind(ctx context.Context, sel ast.SelectionSet, v model2.PolicyKind) graphql.Marshaler {
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNS3ApplicationPolicyCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInput(ctx context.Context, v interface{}) (dto3.S3ApplicationPolicyCreateInput, error) {
-	res, err := ec.unmarshalInputS3ApplicationPolicyCreateInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalNS3ApplicationPolicyDeleteInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInput(ctx context.Context, v interface{}) (dto3.S3ApplicationPolicyDeleteInput, error) {
-	res, err := ec.unmarshalInputS3ApplicationPolicyDeleteInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalNS3ApplicationPolicyUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInput(ctx context.Context, v interface{}) (dto3.S3ApplicationPolicyUpdateInput, error) {
-	res, err := ec.unmarshalInputS3ApplicationPolicyUpdateInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
+	return ec._S3CredentialsOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNS3Mutation2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3Mutation(ctx context.Context, sel ast.SelectionSet, v dto3.S3Mutation) graphql.Marshaler {
@@ -18001,23 +18181,18 @@ func (ec *executionContext) marshalNS3Mutation2ᚖbeanᚋpkgᚋintegrationᚋs3�
 	return ec._S3Mutation(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNS3UploadMutation2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadMutation(ctx context.Context, sel ast.SelectionSet, v dto3.S3UploadMutation) graphql.Marshaler {
-	return ec._S3UploadMutation(ctx, sel, &v)
+func (ec *executionContext) marshalNS3UploadPolicyOutcome2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadPolicyOutcome(ctx context.Context, sel ast.SelectionSet, v dto3.S3UploadPolicyOutcome) graphql.Marshaler {
+	return ec._S3UploadPolicyOutcome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNS3UploadMutation2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadMutation(ctx context.Context, sel ast.SelectionSet, v *dto3.S3UploadMutation) graphql.Marshaler {
+func (ec *executionContext) marshalNS3UploadPolicyOutcome2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadPolicyOutcome(ctx context.Context, sel ast.SelectionSet, v *dto3.S3UploadPolicyOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._S3UploadMutation(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNS3UploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3UploadTokenInput(ctx context.Context, v interface{}) (dto3.S3UploadTokenInput, error) {
-	res, err := ec.unmarshalInputS3UploadTokenInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
+	return ec._S3UploadPolicyOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNSessionArchiveOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionArchiveOutcome(ctx context.Context, sel ast.SelectionSet, v dto.SessionArchiveOutcome) graphql.Marshaler {
@@ -18277,6 +18452,53 @@ func (ec *executionContext) marshalNTime2ᚖtimeᚐTime(ctx context.Context, sel
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNUploadRateLimitInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐUploadRateLimitInput(ctx context.Context, v interface{}) (dto3.UploadRateLimitInput, error) {
+	res, err := ec.unmarshalInputUploadRateLimitInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUploadRateLimitPolicy2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐUploadRateLimitPolicy(ctx context.Context, sel ast.SelectionSet, v []model2.UploadRateLimitPolicy) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOUploadRateLimitPolicy2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐUploadRateLimitPolicy(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalNUploadTokenInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐUploadTokenInput(ctx context.Context, v interface{}) (dto3.UploadTokenInput, error) {
+	res, err := ec.unmarshalInputUploadTokenInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNUri2beanᚋcomponentsᚋscalarᚐUri(ctx context.Context, v interface{}) (scalar.Uri, error) {
@@ -19181,132 +19403,26 @@ func (ec *executionContext) unmarshalOMembershipsFilterSpace2ᚖbeanᚋpkgᚋspa
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOPolicy2ᚕᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicyᚄ(ctx context.Context, sel ast.SelectionSet, v []*model2.Policy) graphql.Marshaler {
+func (ec *executionContext) marshalOS3Credentials2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐS3Credentials(ctx context.Context, sel ast.SelectionSet, v *model2.S3Credentials) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNPolicy2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐPolicy(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
+	return ec._S3Credentials(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationCredentialsUpdateInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationCredentialsUpdateInput(ctx context.Context, v interface{}) (*dto3.S3ApplicationCredentialsUpdateInput, error) {
+func (ec *executionContext) unmarshalOS3CredentialsInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3CredentialsInput(ctx context.Context, v interface{}) (*dto3.S3CredentialsInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalInputS3ApplicationCredentialsUpdateInput(ctx, v)
+	res, err := ec.unmarshalInputS3CredentialsInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOS3ApplicationPolicyCreateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInputᚄ(ctx context.Context, v interface{}) ([]dto3.S3ApplicationPolicyCreateInput, error) {
+func (ec *executionContext) marshalOS3UploadPolicy2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚐS3UploadPolicy(ctx context.Context, sel ast.SelectionSet, v *model2.S3UploadPolicy) graphql.Marshaler {
 	if v == nil {
-		return nil, nil
+		return graphql.Null
 	}
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]dto3.S3ApplicationPolicyCreateInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNS3ApplicationPolicyCreateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyCreateInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalOS3ApplicationPolicyDeleteInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInputᚄ(ctx context.Context, v interface{}) ([]dto3.S3ApplicationPolicyDeleteInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]dto3.S3ApplicationPolicyDeleteInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNS3ApplicationPolicyDeleteInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyDeleteInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalOS3ApplicationPolicyMutationInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyMutationInput(ctx context.Context, v interface{}) (*dto3.S3ApplicationPolicyMutationInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputS3ApplicationPolicyMutationInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOS3ApplicationPolicyUpdateInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInputᚄ(ctx context.Context, v interface{}) ([]dto3.S3ApplicationPolicyUpdateInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]dto3.S3ApplicationPolicyUpdateInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNS3ApplicationPolicyUpdateInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐS3ApplicationPolicyUpdateInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
+	return ec._S3UploadPolicy(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx context.Context, sel ast.SelectionSet, v *model.Session) graphql.Marshaler {
@@ -19466,6 +19582,42 @@ func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel
 		return graphql.Null
 	}
 	return graphql.MarshalTime(*v)
+}
+
+func (ec *executionContext) unmarshalOUploadPolicyInput2ᚖbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐUploadPolicyInput(ctx context.Context, v interface{}) (*dto3.UploadPolicyInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUploadPolicyInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOUploadRateLimitInput2ᚕbeanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐUploadRateLimitInputᚄ(ctx context.Context, v interface{}) ([]dto3.UploadRateLimitInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]dto3.UploadRateLimitInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNUploadRateLimitInput2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚋdtoᚐUploadRateLimitInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOUploadRateLimitPolicy2beanᚋpkgᚋintegrationᚋs3ᚋmodelᚐUploadRateLimitPolicy(ctx context.Context, sel ast.SelectionSet, v model2.UploadRateLimitPolicy) graphql.Marshaler {
+	return ec._UploadRateLimitPolicy(ctx, sel, &v)
 }
 
 func (ec *executionContext) unmarshalOUri2ᚖbeanᚋcomponentsᚋscalarᚐUri(ctx context.Context, v interface{}) (*scalar.Uri, error) {

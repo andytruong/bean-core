@@ -18,9 +18,8 @@ type VariableService struct {
 	bundle *ConfigBundle
 }
 
-func (srv VariableService) access(ctx context.Context, bucketId string, action string) (bool, error) {
-	db := connect.ContextToDB(ctx)
-	bucket, err := srv.bundle.BucketService.Load(connect.DBToContext(ctx, db), dto.BucketKey{Id: bucketId})
+func (srv VariableService) canAccess(ctx context.Context, bucketId string, action string) (bool, error) {
+	bucket, err := srv.bundle.BucketService.Load(ctx, dto.BucketKey{Id: bucketId})
 	if nil != err {
 		return false, err
 	}
@@ -29,6 +28,10 @@ func (srv VariableService) access(ctx context.Context, bucketId string, action s
 		return false, nil
 	}
 
+	return srv.canAccessBucket(ctx, bucket, action)
+}
+
+func (srv VariableService) canAccessBucket(ctx context.Context, bucket *model.ConfigBucket, action string) (bool, error) {
 	claims := claim.ContextToPayload(ctx)
 	isOwner := (nil != claims) && claims.UserId() == bucket.HostId
 	isMember := (nil != claims) && claims.SpaceId() == bucket.HostId
@@ -47,16 +50,26 @@ func (srv VariableService) access(ctx context.Context, bucketId string, action s
 	return false, nil
 }
 
-func (srv VariableService) Load(ctx context.Context, id string) (*model.ConfigVariable, error) {
-	db := connect.ContextToDB(ctx)
-	variable := &model.ConfigVariable{}
-
-	err := db.First(&variable, "id = ?", id).Error
-	if nil != err {
-		return nil, err
+func (srv VariableService) Load(ctx context.Context, key dto.VariableKey) (*model.ConfigVariable, error) {
+	if (key.Id == "") && (key.BucketId == "" || key.Name == "") {
+		return nil, errors.New("invalid load key")
 	}
 
-	if access, err := srv.access(ctx, variable.BucketId, "read"); nil != err {
+	db := connect.ContextToDB(ctx)
+	variable := &model.ConfigVariable{}
+	if key.Id != "" {
+		err := db.Take(&variable, "id = ?", key.Id).Error
+		if nil != err {
+			return nil, err
+		}
+	} else if key.BucketId != "" && key.Name != "" {
+		err := db.Take(&variable, "bucket_id = ? AND name = ?", key.BucketId, key.Name).Error
+		if nil != err {
+			return nil, err
+		}
+	}
+
+	if access, err := srv.canAccess(ctx, variable.BucketId, "read"); nil != err {
 		return nil, err
 	} else if !access {
 		return nil, util.ErrorAccessDenied
@@ -66,18 +79,20 @@ func (srv VariableService) Load(ctx context.Context, id string) (*model.ConfigVa
 }
 
 func (srv VariableService) Create(ctx context.Context, in dto.VariableCreateInput) (*dto.VariableMutationOutcome, error) {
-	if access, err := srv.access(ctx, in.BucketId, "write"); nil != err {
-		return nil, err
-	} else if !access {
-		return nil, util.ErrorAccessDenied
-	}
-
 	bucket, err := srv.bundle.BucketService.Load(ctx, dto.BucketKey{Id: in.BucketId})
 	if nil != err {
 		return nil, err
 	} else if nil == bucket {
 		return nil, errors.New("bucket not found")
-	} else if reasons, err := bucket.Validate(ctx, in.Value); nil != err {
+	}
+
+	if access, err := srv.canAccessBucket(ctx, bucket, "write"); nil != err {
+		return nil, err
+	} else if !access {
+		return nil, util.ErrorAccessDenied
+	}
+
+	if reasons, err := bucket.Validate(ctx, in.Value); nil != err {
 		return nil, err
 	} else if len(reasons) > 0 {
 		errList := []util.Error{}
@@ -111,12 +126,12 @@ func (srv VariableService) Create(ctx context.Context, in dto.VariableCreateInpu
 
 func (srv VariableService) Update(ctx context.Context, in dto.VariableUpdateInput) (*dto.VariableMutationOutcome, error) {
 	tx := connect.ContextToDB(ctx)
-	variable, err := srv.Load(ctx, in.Id)
+	variable, err := srv.Load(ctx, dto.VariableKey{Id: in.Id})
 	if nil != err {
 		return nil, err
 	}
 
-	if access, err := srv.access(ctx, variable.BucketId, "write"); nil != err {
+	if access, err := srv.canAccess(ctx, variable.BucketId, "write"); nil != err {
 		return nil, err
 	} else if !access {
 		return nil, util.ErrorAccessDenied
@@ -175,13 +190,13 @@ func (srv VariableService) Update(ctx context.Context, in dto.VariableUpdateInpu
 
 func (srv VariableService) Delete(ctx context.Context, in dto.VariableDeleteInput) (*dto.VariableMutationOutcome, error) {
 	tx := connect.ContextToDB(ctx)
-	variable, err := srv.Load(ctx, in.Id)
+	variable, err := srv.Load(ctx, dto.VariableKey{Id: in.Id})
 	if nil != err {
 		return nil, err
 	} else if variable.IsLocked {
 		return nil, util.ErrorLocked
 	} else {
-		if access, err := srv.access(ctx, variable.BucketId, "delete"); nil != err {
+		if access, err := srv.canAccess(ctx, variable.BucketId, "delete"); nil != err {
 			return nil, err
 		} else if !access {
 			return nil, util.ErrorAccessDenied

@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"bean/components/claim"
 	"bean/components/connect"
 	"bean/components/module"
 	"bean/components/scalar"
@@ -25,10 +26,13 @@ func bundle() *AppBundle {
 
 func Test(t *testing.T) {
 	ass := assert.New(t)
-	bun := bundle()
-	db := connect.MockDatabase().WithContext(context.Background())
+	bundle := bundle()
+	db := connect.MockDatabase()
 	ctx := connect.DBToContext(context.Background(), db)
-	connect.MockInstall(ctx, bun)
+	claims := claim.NewPayload()
+	claims.SetSpaceId(bundle.idr.MustULID())
+	ctx = claim.PayloadToContext(ctx, &claims)
+	connect.MockInstall(ctx, bundle)
 
 	t.Run("database schema", func(t *testing.T) {
 		ass.True(
@@ -38,14 +42,14 @@ func Test(t *testing.T) {
 	})
 
 	// create
-	oCreate, err := bun.Service.Create(ctx, &dto.ApplicationCreateInput{IsActive: false, Title: scalar.NilString("QA app")})
+	oCreate, err := bundle.Service.Create(ctx, &dto.ApplicationCreateInput{IsActive: false, Title: scalar.NilString("QA app")})
 	ass.NoError(err)
 	ass.NotNil(oCreate)
 	ass.Equal(false, oCreate.App.IsActive)
 
 	t.Run("update", func(t *testing.T) {
 		t.Run("useless input", func(t *testing.T) {
-			oUpdate, err := bun.Service.Update(ctx, &dto.ApplicationUpdateInput{
+			oUpdate, err := bundle.Service.Update(ctx, &dto.ApplicationUpdateInput{
 				Id:      oCreate.App.ID,
 				Version: oCreate.App.Version,
 				Title:   scalar.NilString("QA app"),
@@ -56,8 +60,8 @@ func Test(t *testing.T) {
 		})
 
 		t.Run("status", func(t *testing.T) {
-			app, _ := bun.Service.Load(ctx, oCreate.App.ID)
-			oUpdate, err := bun.Service.Update(ctx, &dto.ApplicationUpdateInput{
+			app, _ := bundle.Service.Load(ctx, oCreate.App.ID)
+			oUpdate, err := bundle.Service.Update(ctx, &dto.ApplicationUpdateInput{
 				Id:       app.ID,
 				Version:  app.Version,
 				IsActive: scalar.NilBool(true),
@@ -70,8 +74,8 @@ func Test(t *testing.T) {
 		})
 
 		t.Run("title", func(t *testing.T) {
-			app, _ := bun.Service.Load(ctx, oCreate.App.ID)
-			oUpdate, err := bun.Service.Update(ctx, &dto.ApplicationUpdateInput{
+			app, _ := bundle.Service.Load(ctx, oCreate.App.ID)
+			oUpdate, err := bundle.Service.Update(ctx, &dto.ApplicationUpdateInput{
 				Id:      app.ID,
 				Version: app.Version,
 				Title:   scalar.NilString("Quality Assurance application"),
@@ -85,9 +89,9 @@ func Test(t *testing.T) {
 	})
 
 	t.Run("delete", func(t *testing.T) {
-		app, _ := bun.Service.Load(ctx, oCreate.App.ID)
+		app, _ := bundle.Service.Load(ctx, oCreate.App.ID)
 		now := time.Now()
-		oDelete, err := bun.Service.Delete(ctx, dto.ApplicationDeleteInput{
+		oDelete, err := bundle.Service.Delete(ctx, dto.ApplicationDeleteInput{
 			Id:      app.ID,
 			Version: app.Version,
 		})

@@ -1,19 +1,20 @@
 package claim
 
 import (
-	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
-func ContextToPayload(ctx context.Context) *Payload {
-	if claims, ok := ctx.Value(ClaimsContextKey).(*Payload); ok {
-		return claims
+func NewPayload() Payload {
+	return Payload{
+		StandardClaims: jwt.StandardClaims{
+			IssuedAt: time.Now().Unix(),
+		},
+		Roles: []string{},
 	}
-
-	return nil
 }
 
 type Payload struct {
@@ -22,25 +23,62 @@ type Payload struct {
 	Roles []string `json:"roles"`
 }
 
-func (payload Payload) UserId() string {
-	return payload.Subject
+func (pl *Payload) SetKind(value Kind) *Payload {
+	pl.Kind = value
+	return pl
 }
 
-func (payload Payload) SessionId() string {
-	return payload.Id
+func (pl *Payload) SetExpireAt(value int64) *Payload {
+	pl.ExpiresAt = value
+	return pl
 }
 
-func (payload Payload) SpaceId() string {
-	return payload.Audience
+func (pl *Payload) SetIssuer(value string) *Payload {
+	pl.Issuer = value
+	return pl
 }
 
-func (payload *Payload) UnmarshalGQL(v interface{}) error {
+func (pl *Payload) SetUserId(value string) *Payload {
+	pl.Subject = value
+	return pl
+}
+
+func (pl Payload) UserId() string {
+	return pl.Subject
+}
+
+func (pl *Payload) SetSessionId(value string) *Payload {
+	pl.Id = value
+	return pl
+}
+
+func (pl Payload) SessionId() string {
+	return pl.Id
+}
+
+func (pl *Payload) SetSpaceId(value string) *Payload {
+	pl.Audience = value
+
+	return pl
+}
+
+func (pl Payload) SpaceId() string {
+	return pl.Audience
+}
+
+func (pl *Payload) AddRole(values ...string) *Payload {
+	pl.Roles = append(pl.Roles, values...)
+
+	return pl
+}
+
+func (pl *Payload) UnmarshalGQL(v interface{}) error {
 	if in, ok := v.(string); !ok {
 		return fmt.Errorf("JWT must be strings")
 	} else {
 		token, err := jwt.ParseWithClaims(
 			in,
-			payload,
+			pl,
 			func(token *jwt.Token) (interface{}, error) {
 				return []byte("AllYourBase"), nil
 			},
@@ -56,11 +94,11 @@ func (payload *Payload) UnmarshalGQL(v interface{}) error {
 	return nil
 }
 
-func (payload Payload) MarshalGQL(w io.Writer) {
+func (pl Payload) MarshalGQL(w io.Writer) {
 	mySigningKey := []byte("AllYourBase")
 
 	// Create the Payload
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, pl)
 	ss, err := token.SignedString(mySigningKey)
 	fmt.Fprintf(w, "%v %v", ss, err)
 }

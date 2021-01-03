@@ -105,7 +105,7 @@ func (r *GraphqlHttpRouter) beforeServe(req *http.Request) (context.Context, err
 		}
 
 		if nil != claims {
-			ctx = context.WithValue(ctx, claim.ClaimsContextKey, claims)
+			ctx = claim.PayloadToContext(ctx, claims)
 		}
 	}
 
