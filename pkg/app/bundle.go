@@ -4,12 +4,13 @@ import (
 	"context"
 	"path"
 	"runtime"
-
+	
 	"go.uber.org/zap"
-
+	
 	"bean/components/connect"
 	"bean/components/module"
 	"bean/components/scalar"
+	"bean/components/util"
 	"bean/pkg/config"
 	"bean/pkg/space"
 )
@@ -28,16 +29,20 @@ func NewApplicationBundle(
 		spaceBundle:  spaceBundle,
 		configBundle: configBundle,
 	}
-
+	
 	bundle.resolvers = bundle.newResolvers()
 	bundle.Service = &AppService{bundle: bundle}
-
+	
 	return bundle, nil
 }
 
+const (
+	ErrorInactiveApplication = util.Err("inactive application")
+)
+
 type AppBundle struct {
 	module.AbstractBundle
-
+	
 	Service      *AppService
 	spaceBundle  *space.SpaceBundle
 	configBundle *config.ConfigBundle
@@ -55,7 +60,7 @@ func (bundle AppBundle) Dependencies() []module.Bundle {
 	if nil != bundle.spaceBundle {
 		return []module.Bundle{bundle.spaceBundle}
 	}
-
+	
 	return nil
 }
 
@@ -64,14 +69,14 @@ func (bundle AppBundle) Migrate(ctx context.Context, driver string) error {
 	if !ok {
 		return nil
 	}
-
+	
 	runner := connect.Runner{
 		Logger: bundle.lgr,
 		Driver: driver,
 		Bundle: "bundle",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
-
+	
 	return runner.Run(ctx)
 }
 
