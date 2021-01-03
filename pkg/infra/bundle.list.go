@@ -1,5 +1,7 @@
 package infra
 
+// TODO: Generate this code
+
 import (
 	"bean/components/module"
 	"bean/pkg/access"
@@ -11,7 +13,6 @@ import (
 	"bean/pkg/user"
 )
 
-// TODO: Generate this code
 func (bundles *BundleList) Get() []module.Bundle {
 	userBundle, _ := bundles.User()
 	spaceBundle, _ := bundles.Space()
@@ -23,22 +24,20 @@ func (bundles *BundleList) Get() []module.Bundle {
 	return []module.Bundle{userBundle, spaceBundle, appBundle, accessBundle, s3Bundle, mailerBundle}
 }
 
-// TODO: Generate this code
-func (bundles *BundleList) User() (*user.UserBundle, error) {
+func (bundles *BundleList) User() (*user.Bundle, error) {
 	var err error
 
 	if nil == bundles.user {
 		bundles.user = user.NewUserBundle(
 			bundles.container.logger,
-			bundles.container.Identifier(),
+			bundles.container.identifier,
 		)
 	}
 
 	return bundles.user, err
 }
 
-// TODO: Generate this code
-func (bundles *BundleList) Space() (*space.SpaceBundle, error) {
+func (bundles *BundleList) Space() (*space.Bundle, error) {
 	var err error
 
 	if nil == bundles.space {
@@ -49,20 +48,19 @@ func (bundles *BundleList) Space() (*space.SpaceBundle, error) {
 
 		bundles.space = space.NewSpaceBundle(
 			bundles.container.logger,
-			bundles.container.Identifier(),
+			bundles.container.identifier,
 			mUser,
-			bundles.container.Bundles.Space,
+			bundles.container.Config.Bundles.Space,
 		)
 	}
 
 	return bundles.space, err
 }
 
-// TODO: Generate this code
-func (bundles *BundleList) Config() (*config.ConfigBundle, error) {
+func (bundles *BundleList) Config() (*config.Bundle, error) {
 	if nil == bundles.config {
 		bundles.config = config.NewConfigBundle(
-			bundles.container.Identifier(),
+			bundles.container.identifier,
 			bundles.container.logger,
 		)
 	}
@@ -70,8 +68,7 @@ func (bundles *BundleList) Config() (*config.ConfigBundle, error) {
 	return bundles.config, nil
 }
 
-// TODO: Generate this code
-func (bundles *BundleList) Access() (*access.AccessBundle, error) {
+func (bundles *BundleList) Access() (*access.Bundle, error) {
 	if nil == bundles.access {
 		userBundle, err := bundles.User()
 		if nil != err {
@@ -84,28 +81,26 @@ func (bundles *BundleList) Access() (*access.AccessBundle, error) {
 		}
 
 		bundles.access = access.NewAccessBundle(
-			bundles.container.Identifier(),
+			bundles.container.identifier,
 			bundles.container.logger,
 			userBundle,
 			spaceBundle,
-			bundles.container.Bundles.Access,
+			bundles.container.Config.Bundles.Access,
 		)
 	}
 
 	return bundles.access, nil
 }
 
-// TODO: Generate this code
-func (bundles *BundleList) Mailer() (*mailer.MailerBundle, error) {
+func (bundles *BundleList) Mailer() (*mailer.Bundle, error) {
 	if nil == bundles.mailer {
-		bundles.mailer = mailer.NewMailerBundle(bundles.container.Bundles.Integration.Mailer, bundles.container.logger)
+		bundles.mailer = mailer.NewMailerBundle(bundles.container.Config.Bundles.Integration.Mailer, bundles.container.logger)
 	}
 
 	return bundles.mailer, nil
 }
 
-// TODO: Generate this code
-func (bundles *BundleList) App() (*app.AppBundle, error) {
+func (bundles *BundleList) App() (*app.Bundle, error) {
 	if nil == bundles.app {
 		spaceBundle, err := bundles.Space()
 		if nil != err {
@@ -118,7 +113,7 @@ func (bundles *BundleList) App() (*app.AppBundle, error) {
 		}
 
 		bundles.app, err = app.NewApplicationBundle(
-			bundles.container.Identifier(),
+			bundles.container.identifier,
 			bundles.container.logger,
 			bundles.container.hook,
 			spaceBundle,
@@ -133,8 +128,7 @@ func (bundles *BundleList) App() (*app.AppBundle, error) {
 	return bundles.app, nil
 }
 
-// TODO: Generate this code
-func (bundles *BundleList) S3() (*s3.S3Bundle, error) {
+func (bundles *BundleList) S3() (*s3.Bundle, error) {
 	if nil == bundles.s3 {
 		appBundle, err := bundles.App()
 		if nil != err {
@@ -144,9 +138,9 @@ func (bundles *BundleList) S3() (*s3.S3Bundle, error) {
 		configBundle, _ := bundles.Config()
 
 		bundles.s3 = s3.NewS3Integration(
-			bundles.container.Identifier(),
+			bundles.container.identifier,
 			bundles.container.logger,
-			bundles.container.Bundles.Integration.S3,
+			bundles.container.Config.Bundles.Integration.S3,
 			appBundle,
 			configBundle,
 		)

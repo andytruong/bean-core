@@ -1,6 +1,6 @@
 package space
 
-type SpaceConfiguration struct {
+type Config struct {
 	Manager ManagerConfig `yaml:"manager"`
 }
 

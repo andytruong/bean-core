@@ -13,7 +13,7 @@ import (
 )
 
 type AppService struct {
-	bundle *AppBundle
+	bundle *Bundle
 }
 
 func (srv *AppService) Load(ctx context.Context, id string) (*model.Application, error) {

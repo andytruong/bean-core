@@ -12,7 +12,7 @@ import (
 )
 
 type ConfigService struct {
-	bundle *SpaceBundle
+	bundle *Bundle
 }
 
 func (srv *ConfigService) CreateFeatures(ctx context.Context, space *model.Space, in dto.SpaceCreateInput) error {

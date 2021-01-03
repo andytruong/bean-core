@@ -15,7 +15,7 @@ import (
 	"bean/pkg/app/model/dto"
 )
 
-func bundle() *AppBundle {
+func bundle() *Bundle {
 	idr := util.MockIdentifier()
 	log := util.MockLogger()
 	hook := module.NewHook()

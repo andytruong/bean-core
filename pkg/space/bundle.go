@@ -15,10 +15,10 @@ import (
 
 func NewSpaceBundle(
 	lgr *zap.Logger, idr *scalar.Identifier,
-	userBundle *user.UserBundle,
-	config *SpaceConfiguration,
-) *SpaceBundle {
-	this := &SpaceBundle{
+	userBundle *user.Bundle,
+	config *Config,
+) *Bundle {
+	this := &Bundle{
 		lgr:        lgr,
 		idr:        idr,
 		userBundle: userBundle,
@@ -34,31 +34,31 @@ func NewSpaceBundle(
 	return this
 }
 
-type SpaceBundle struct {
+type Bundle struct {
 	module.AbstractBundle
 
 	Service       *SpaceService
 	MemberService *MemberService
 
 	// Internal services
-	config            *SpaceConfiguration
+	config            *Config
 	lgr               *zap.Logger
 	idr               *scalar.Identifier
-	userBundle        *user.UserBundle
+	userBundle        *user.Bundle
 	resolvers         map[string]interface{}
 	configService     *ConfigService
 	domainNameService *DomainNameService
 }
 
-func (SpaceBundle) Name() string {
+func (Bundle) Name() string {
 	return "Space"
 }
 
-func (bundle *SpaceBundle) Dependencies() []module.Bundle {
+func (bundle *Bundle) Dependencies() []module.Bundle {
 	return []module.Bundle{bundle.userBundle}
 }
 
-func (bundle SpaceBundle) Migrate(ctx context.Context, driver string) error {
+func (bundle Bundle) Migrate(ctx context.Context, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -74,6 +74,6 @@ func (bundle SpaceBundle) Migrate(ctx context.Context, driver string) error {
 	return runner.Run(ctx)
 }
 
-func (bundle *SpaceBundle) GraphqlResolver() map[string]interface{} {
+func (bundle *Bundle) GraphqlResolver() map[string]interface{} {
 	return bundle.resolvers
 }

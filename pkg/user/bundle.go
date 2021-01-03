@@ -13,12 +13,12 @@ import (
 	"bean/components/util"
 )
 
-func NewUserBundle(lgr *zap.Logger, idr *scalar.Identifier) *UserBundle {
+func NewUserBundle(lgr *zap.Logger, idr *scalar.Identifier) *Bundle {
 	if err := util.NilPointerErrorValidate(lgr, idr); nil != err {
 		panic(err)
 	}
 
-	this := &UserBundle{
+	this := &Bundle{
 		lgr:                      lgr,
 		idr:                      idr,
 		maxSecondaryEmailPerUser: 20,
@@ -33,7 +33,7 @@ func NewUserBundle(lgr *zap.Logger, idr *scalar.Identifier) *UserBundle {
 	return this
 }
 
-type UserBundle struct {
+type Bundle struct {
 	module.AbstractBundle
 
 	Service *UserService
@@ -48,11 +48,11 @@ type UserBundle struct {
 	passwordService          *PasswordService
 }
 
-func (UserBundle) Name() string {
+func (Bundle) Name() string {
 	return "User"
 }
 
-func (bundle UserBundle) Migrate(ctx context.Context, driver string) error {
+func (bundle Bundle) Migrate(ctx context.Context, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -68,6 +68,6 @@ func (bundle UserBundle) Migrate(ctx context.Context, driver string) error {
 	return runner.Run(ctx)
 }
 
-func (bundle *UserBundle) GraphqlResolver() map[string]interface{} {
+func (bundle *Bundle) GraphqlResolver() map[string]interface{} {
 	return bundle.resolvers
 }

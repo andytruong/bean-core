@@ -6,7 +6,7 @@ import (
 	"bean/pkg/integration/mailer/model/dto"
 )
 
-func newResoler(bundle *MailerBundle) map[string]interface{} {
+func newResoler(bundle *Bundle) map[string]interface{} {
 	return map[string]interface{}{
 		"Query": map[string]interface{}{
 			"MailerQuery": func(ctx context.Context) (*dto.MailerQuery, error) {

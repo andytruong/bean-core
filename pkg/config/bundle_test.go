@@ -15,7 +15,7 @@ import (
 	"bean/pkg/config/model/dto"
 )
 
-func bundle() *ConfigBundle {
+func bundle() *Bundle {
 	idr := util.MockIdentifier()
 	log := util.MockLogger()
 	bun := NewConfigBundle(idr, log)

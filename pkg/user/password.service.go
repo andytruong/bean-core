@@ -10,7 +10,7 @@ import (
 )
 
 type PasswordService struct {
-	bundle *UserBundle
+	bundle *Bundle
 }
 
 func (srv *PasswordService) create(ctx context.Context, user *model.User, in *dto.UserPasswordInput) error {

@@ -19,52 +19,58 @@ import (
 func NewContainer(path string) (*Container, error) {
 	var err error
 
-	this := &Container{
-		mutex:   &sync.Mutex{},
-		bundles: BundleList{},
-		hook:    module.NewHook(),
+	container := &Container{
+		Config:     &Config{},
+		mutex:      &sync.Mutex{},
+		identifier: &scalar.Identifier{},
+		bundles:    BundleList{},
+		hook:       module.NewHook(),
 	}
 
 	// parse configuration from YAML configuration file & env variables.
-	if err := conf.ParseFile(path, &this); nil != err {
+	if err := conf.ParseFile(path, &container.Config); nil != err {
 		return nil, err
 	}
 
-	this.bundles.container = this
-	this.dbs = connect.NewWrapper(this.Databases)
+	container.bundles.container = container
+	container.dbs = connect.NewWrapper(container.Config.Databases)
 
 	// setup logger
-	if this.Env == "dev" {
-		if this.logger, err = zap.NewDevelopment(); nil != err {
+	if container.Config.Env == "dev" {
+		if container.logger, err = zap.NewDevelopment(); nil != err {
 			return nil, err
 		}
 	} else {
-		if this.logger, err = zap.NewProduction(); nil != err {
+		if container.logger, err = zap.NewProduction(); nil != err {
 			return nil, err
 		}
 	}
 
-	return this, nil
+	return container, nil
 }
 
 type (
 	// Locator for most important services for system:
-	// 	- Logger
+	// 	- Logger, ID generator, bundles, …
 	//  - Database connections
 	//  - HTTP server (GraphQL query interface)
 	Container struct {
+		Config *Config
+
+		mutex      *sync.Mutex
+		identifier *scalar.Identifier
+		dbs        *connect.Wrapper
+		bundles    BundleList
+		logger     *zap.Logger
+		hook       *module.Hook
+	}
+
+	Config struct {
 		Version    string                            `yaml:"version"`
 		Env        string                            `yaml:"env"`
 		Databases  map[string]connect.DatabaseConfig `yaml:"databases"`
 		HttpServer HttpServerConfig                  `yaml:"http-server"`
-		Bundles    BundlesConfig                     `json:"BundleList"`
-
-		mutex   *sync.Mutex
-		id      *scalar.Identifier
-		dbs     *connect.Wrapper
-		bundles BundleList
-		logger  *zap.Logger
-		hook    *module.Hook
+		Bundles    BundlesConfig                     `yaml:"bundles"`
 	}
 
 	HttpServerConfig struct {
@@ -91,11 +97,11 @@ type (
 	}
 
 	BundlesConfig struct {
-		Access      *access.AccessConfiguration `yaml:"access"`
-		Space       *space.SpaceConfiguration   `yaml:"space"`
+		Access      *access.Config `yaml:"access"`
+		Space       *space.Config  `yaml:"space"`
 		Integration struct {
-			S3     *s3.S3Configuration         `yaml:"s3"`
-			Mailer *mailer.MailerConfiguration `yaml:"mailer"`
+			S3     *s3.Config     `yaml:"s3"`
+			Mailer *mailer.Config `yaml:"mailer"`
 		} `yaml:"integration"`
 	}
 )
@@ -104,23 +110,6 @@ func (c *Container) Logger() *zap.Logger {
 	return c.logger
 }
 
-func (c *Container) Identifier() *scalar.Identifier {
-	if c.id == nil {
-		c.mutex.Lock()
-		c.id = &scalar.Identifier{}
-		c.mutex.Unlock()
-	}
-
-	return c.id
-}
-
 func (c *Container) BundleList() BundleList {
 	return c.bundles
-}
-
-func (c *Container) Bundle(i int) module.Bundle {
-	list := c.BundleList()
-	bundles := list.Get()
-
-	return bundles[i]
 }

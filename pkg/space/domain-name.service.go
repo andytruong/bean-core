@@ -10,7 +10,7 @@ import (
 )
 
 type DomainNameService struct {
-	bundle *SpaceBundle
+	bundle *Bundle
 }
 
 func (srv *DomainNameService) createMultiple(ctx context.Context, space *model.Space, in dto.SpaceCreateInput) error {

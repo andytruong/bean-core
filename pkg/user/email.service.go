@@ -10,7 +10,7 @@ import (
 )
 
 type EmailService struct {
-	bundle *UserBundle
+	bundle *Bundle
 }
 
 func (srv EmailService) CreateBulk(ctx context.Context, user *model.User, in *dto.UserEmailsInput) error {

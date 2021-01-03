@@ -11,7 +11,7 @@ import (
 	"bean/pkg/user/model/dto"
 )
 
-func newResolvers(bundle *UserBundle) map[string]interface{} {
+func newResolvers(bundle *Bundle) map[string]interface{} {
 	return map[string]interface{}{
 		"Query": map[string]interface{}{
 			"UserQuery": func(ctx context.Context) (*dto.UserQuery, error) {

@@ -1,6 +1,6 @@
 package mailer
 
-type MailerConfiguration struct {
+type Config struct {
 	Account struct {
 		MaxPerSpace uint `yaml:"maxNumber"`
 	} `yaml:"account"`

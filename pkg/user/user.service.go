@@ -14,7 +14,7 @@ import (
 )
 
 type UserService struct {
-	bundle *UserBundle
+	bundle *Bundle
 }
 
 func (srv *UserService) Load(ctx context.Context, id string) (*model.User, error) {

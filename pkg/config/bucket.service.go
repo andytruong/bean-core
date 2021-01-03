@@ -16,7 +16,7 @@ import (
 )
 
 type BucketService struct {
-	bundle *ConfigBundle
+	bundle *Bundle
 }
 
 func (srv BucketService) Create(ctx context.Context, in dto.BucketCreateInput) (*dto.BucketMutationOutcome, error) {

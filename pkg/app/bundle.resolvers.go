@@ -8,7 +8,7 @@ import (
 	"bean/pkg/app/model/dto"
 )
 
-func (bundle *AppBundle) newResolvers() map[string]interface{} {
+func (bundle *Bundle) newResolvers() map[string]interface{} {
 	return map[string]interface{}{
 		"Query": map[string]interface{}{
 			"ApplicationQuery": map[string]interface{}{
