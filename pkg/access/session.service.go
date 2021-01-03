@@ -17,7 +17,7 @@ import (
 )
 
 type SessionService struct {
-	bundle *AccessBundle
+	bundle *Bundle
 }
 
 func (srv *SessionService) Create(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {

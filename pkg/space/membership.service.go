@@ -16,7 +16,7 @@ import (
 )
 
 type MemberService struct {
-	bundle *SpaceBundle
+	bundle *Bundle
 }
 
 func (srv MemberService) load(ctx context.Context, id string, version *string) (*model.Membership, error) {

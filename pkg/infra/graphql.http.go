@@ -49,23 +49,24 @@ func (r *GraphqlHttpRouter) Handler(router *mux.Router) *mux.Router {
 	config := r.config()
 	schema := gql.NewExecutableSchema(config)
 	server := handler.New(schema)
-	if r.Container.HttpServer.GraphQL.Transports.Post {
+
+	if r.Container.Config.HttpServer.GraphQL.Transports.Post {
 		server.AddTransport(transport.POST{})
 	}
 
-	if r.Container.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval != 0 {
-		server.AddTransport(transport.Websocket{KeepAlivePingInterval: r.Container.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval})
+	if r.Container.Config.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval != 0 {
+		server.AddTransport(transport.Websocket{KeepAlivePingInterval: r.Container.Config.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval})
 	}
 
-	if r.Container.HttpServer.GraphQL.Introspection {
+	if r.Container.Config.HttpServer.GraphQL.Introspection {
 		server.Use(extension.Introspection{})
 	}
 
 	router.HandleFunc("/query", r.handleFunc(server))
 
-	if r.Container.HttpServer.GraphQL.Playround.Enabled {
-		hdl := playground.Handler(r.Container.HttpServer.GraphQL.Playround.Title, "/query")
-		router.Handle(r.Container.HttpServer.GraphQL.Playround.Path, hdl)
+	if r.Container.Config.HttpServer.GraphQL.Playround.Enabled {
+		hdl := playground.Handler(r.Container.Config.HttpServer.GraphQL.Playround.Title, "/query")
+		router.Handle(r.Container.Config.HttpServer.GraphQL.Playround.Path, hdl)
 	}
 
 	return router

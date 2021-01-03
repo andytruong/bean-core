@@ -15,7 +15,7 @@ import (
 )
 
 type SpaceService struct {
-	bundle *SpaceBundle
+	bundle *Bundle
 }
 
 func (srv SpaceService) Load(ctx context.Context, id string) (*model.Space, error) {

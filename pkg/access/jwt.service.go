@@ -12,7 +12,7 @@ import (
 )
 
 type JwtService struct {
-	bundle *AccessBundle
+	bundle *Bundle
 }
 
 func (srv JwtService) Validate(authHeader string) (*claim.Payload, error) {

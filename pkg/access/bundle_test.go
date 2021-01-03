@@ -20,11 +20,11 @@ import (
 	fUser "bean/pkg/user/api/fixtures"
 )
 
-func bundle() *AccessBundle {
+func bundle() *Bundle {
 	config := &struct {
 		Bundles struct {
-			Access *AccessConfiguration      `yaml:"access"`
-			Space  *space.SpaceConfiguration `yaml:"space"`
+			Access *Config       `yaml:"access"`
+			Space  *space.Config `yaml:"space"`
 		} `yaml:"bundles"`
 	}{}
 

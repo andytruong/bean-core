@@ -23,50 +23,48 @@ const (
 func NewS3Integration(
 	idr *scalar.Identifier,
 	lgr *zap.Logger,
-	conf *S3Configuration,
-	appBundle *app.AppBundle,
-	configBundle *config.ConfigBundle,
-) *S3Bundle {
-	bundle := &S3Bundle{
+	cnf *Config,
+	appBundle *app.Bundle,
+	cnfBundle *config.Bundle,
+) *Bundle {
+	bundle := &Bundle{
 		idr:          idr,
 		lgr:          lgr,
-		cnf:          conf,
+		cnf:          cnf,
 		appBundle:    appBundle,
-		configBundle: configBundle,
+		configBundle: cnfBundle,
 	}
 
-	bundle.AppService = &AppService{bundle: bundle}
-	bundle.credentialService = &credentialService{bundle: bundle}
-	bundle.policyService = &policyService{bundle: bundle}
+	bundle.uploadSrv = &uploadService{bundle: bundle}
+	bundle.configSrv = &configService{bundle: bundle}
 	bundle.resolvers = newResolvers(bundle)
 
 	return bundle
 }
 
-type S3Bundle struct {
+type Bundle struct {
 	module.AbstractBundle
 
-	appBundle    *app.AppBundle
-	configBundle *config.ConfigBundle
+	appBundle    *app.Bundle
+	configBundle *config.Bundle
 
-	cnf               *S3Configuration
-	idr               *scalar.Identifier
-	lgr               *zap.Logger
-	AppService        *AppService
-	credentialService *credentialService
-	policyService     *policyService
-	resolvers         map[string]interface{}
+	cnf       *Config
+	idr       *scalar.Identifier
+	lgr       *zap.Logger
+	configSrv *configService
+	uploadSrv *uploadService
+	resolvers map[string]interface{}
 }
 
-func (S3Bundle) Name() string {
+func (Bundle) Name() string {
 	return "S3"
 }
 
-func (bundle S3Bundle) Dependencies() []module.Bundle {
+func (bundle Bundle) Dependencies() []module.Bundle {
 	return []module.Bundle{bundle.configBundle, bundle.appBundle}
 }
 
-func (bundle S3Bundle) Migrate(ctx context.Context, driver string) error {
+func (bundle Bundle) Migrate(ctx context.Context, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -107,9 +105,9 @@ func (bundle S3Bundle) Migrate(ctx context.Context, driver string) error {
 		// config bucket -> policies
 		{
 			out, err := bundle.configBundle.BucketService.Create(ctx, dto.BucketCreateInput{
-				Slug:        scalar.NilString(policyConfigSlug),
+				Slug:        scalar.NilString(uploadPolicyConfigSlug),
 				Access:      &access,
-				Schema:      policyConfigSchema,
+				Schema:      uploadPolicyConfigSchema,
 				IsPublished: true,
 				HostId:      _id,
 			})
@@ -125,6 +123,6 @@ func (bundle S3Bundle) Migrate(ctx context.Context, driver string) error {
 	return nil
 }
 
-func (bundle *S3Bundle) GraphqlResolver() map[string]interface{} {
+func (bundle *Bundle) GraphqlResolver() map[string]interface{} {
 	return bundle.resolvers
 }

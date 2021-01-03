@@ -22,10 +22,10 @@ import (
 	mUser "bean/pkg/user/model"
 )
 
-func bundle() *SpaceBundle {
+func bundle() *Bundle {
 	config := &struct {
 		Bundles struct {
-			Space *SpaceConfiguration `yaml:"space"`
+			Space *Config `yaml:"space"`
 		} `yaml:"bundles"`
 	}{}
 

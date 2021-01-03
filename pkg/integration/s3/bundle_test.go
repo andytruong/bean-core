@@ -22,10 +22,10 @@ import (
 	"bean/pkg/integration/s3/model/dto"
 )
 
-func bundle() *S3Bundle {
+func bundle() *Bundle {
 	idr := util.MockIdentifier()
 	log := util.MockLogger()
-	cnf := &S3Configuration{Key: "01EBWB516AP6BQD7"}
+	cnf := &Config{Key: "01EBWB516AP6BQD7"}
 	hook := module.NewHook()
 	appBundle, _ := app.NewApplicationBundle(idr, log, hook, nil, nil)
 	configBundle := config.NewConfigBundle(idr, log)
@@ -54,9 +54,9 @@ func Test_Install(t *testing.T) {
 		})
 
 		t.Run("policy", func(t *testing.T) {
-			bucket, err := bundle.configBundle.BucketService.Load(ctx, configDto.BucketKey{Slug: policyConfigSlug})
+			bucket, err := bundle.configBundle.BucketService.Load(ctx, configDto.BucketKey{Slug: uploadPolicyConfigSlug})
 			ass.NoError(err)
-			ass.Equal(bucket.Schema, policyConfigSchema)
+			ass.Equal(bucket.Schema, uploadPolicyConfigSchema)
 		})
 	})
 }
@@ -73,8 +73,8 @@ func Test_Credentials(t *testing.T) {
 	connect.MockInstall(ctx, bundle)
 
 	t.Run("encrypt", func(t *testing.T) {
-		encrypted := bundle.credentialService.encrypt("xxxxxxxxxxxxxxxxxxxxx")
-		decrypted := bundle.credentialService.decrypt(encrypted)
+		encrypted := bundle.configSrv.encrypt("xxxxxxxxxxxxxxxxxxxxx")
+		decrypted := bundle.configSrv.decrypt(encrypted)
 
 		ass.Equal("xxxxxxxxxxxxxxxxxxxxx", decrypted)
 		ass.True(len(encrypted)*2 <= 256)
@@ -86,7 +86,7 @@ func Test_Credentials(t *testing.T) {
 		ass.NoError(err)
 		ass.NotNil(oApp)
 
-		cre, err := bundle.credentialService.save(ctx, dto.S3CredentialsInput{
+		cre, err := bundle.configSrv.saveCredentials(ctx, dto.S3CredentialsInput{
 			Version:       "",
 			ApplicationId: oApp.App.ID,
 			Endpoint:      "http://localhost:9000",
@@ -108,14 +108,14 @@ func Test_Credentials(t *testing.T) {
 		})
 
 		t.Run("load", func(t *testing.T) {
-			cre, err := bundle.credentialService.load(ctx, oApp.App.ID)
+			cre, err := bundle.configSrv.loadCredentials(ctx, oApp.App.ID)
 
 			ass.NoError(err)
 			ass.NotNil(cre)
 		})
 
 		t.Run("update.useless-input", func(t *testing.T) {
-			_, err := bundle.credentialService.save(ctx, dto.S3CredentialsInput{
+			_, err := bundle.configSrv.saveCredentials(ctx, dto.S3CredentialsInput{
 				Version:       cre.Version,
 				ApplicationId: oApp.App.ID,
 				Endpoint:      "http://localhost:9000",
@@ -130,7 +130,7 @@ func Test_Credentials(t *testing.T) {
 		})
 
 		t.Run("update.version.conflict", func(t *testing.T) {
-			_, err := bundle.credentialService.save(ctx, dto.S3CredentialsInput{
+			_, err := bundle.configSrv.saveCredentials(ctx, dto.S3CredentialsInput{
 				Version:       cre.Id,
 				ApplicationId: oApp.App.ID,
 				Endpoint:      "http://localhost:9000",
@@ -145,7 +145,7 @@ func Test_Credentials(t *testing.T) {
 		})
 
 		t.Run("update.version.valid", func(t *testing.T) {
-			cre, err := bundle.credentialService.save(ctx, dto.S3CredentialsInput{
+			cre, err := bundle.configSrv.saveCredentials(ctx, dto.S3CredentialsInput{
 				Version:       cre.Version,
 				ApplicationId: oApp.App.ID,
 				Endpoint:      "http://localhost:9000",
@@ -178,7 +178,7 @@ func Test_Policies(t *testing.T) {
 		ass.NoError(err)
 		ass.NotNil(oApp)
 
-		pol, err := bundle.policyService.save(ctx, dto.UploadPolicyInput{
+		pol, err := bundle.configSrv.saveUploadPolicy(ctx, dto.UploadPolicyInput{
 			Version:        "",
 			ApplicationId:  oApp.App.ID,
 			FileExtensions: []api.FileType{"jpeg", "gif", "png", "webp"},
@@ -194,7 +194,7 @@ func Test_Policies(t *testing.T) {
 		})
 
 		t.Run("update.useless-input", func(t *testing.T) {
-			_, err := bundle.policyService.save(ctx, dto.UploadPolicyInput{
+			_, err := bundle.configSrv.saveUploadPolicy(ctx, dto.UploadPolicyInput{
 				Version:        pol.Version,
 				ApplicationId:  oApp.App.ID,
 				FileExtensions: []api.FileType{"jpeg", "gif", "png", "webp"},
@@ -208,7 +208,7 @@ func Test_Policies(t *testing.T) {
 		})
 
 		t.Run("update.version.conflict", func(t *testing.T) {
-			_, err := bundle.policyService.save(ctx, dto.UploadPolicyInput{
+			_, err := bundle.configSrv.saveUploadPolicy(ctx, dto.UploadPolicyInput{
 				Version:        pol.Id,
 				ApplicationId:  oApp.App.ID,
 				FileExtensions: []api.FileType{"jpeg", "gif", "png", "webp"},
@@ -222,7 +222,7 @@ func Test_Policies(t *testing.T) {
 		})
 
 		t.Run("update.version.valid", func(t *testing.T) {
-			newPol, err := bundle.policyService.save(ctx, dto.UploadPolicyInput{
+			newPol, err := bundle.configSrv.saveUploadPolicy(ctx, dto.UploadPolicyInput{
 				Version:        pol.Version,
 				ApplicationId:  oApp.App.ID,
 				FileExtensions: []api.FileType{"jpeg", "gif", "png", "webp"},
@@ -243,7 +243,7 @@ func Test_Policies(t *testing.T) {
 func Test_UploadToken(t *testing.T) {
 	ass := assert.New(t)
 	bundle := bundle()
-	bundle.credentialService.transport = connect.MockRoundTrip{
+	bundle.configSrv.transport = connect.MockRoundTrip{
 		Callback: func(request *http.Request) (*http.Response, error) {
 			response := &http.Response{Status: "OK", StatusCode: http.StatusOK}
 			content := `<?xml version="1.0" encoding="UTF-8"?>`
@@ -270,7 +270,7 @@ func Test_UploadToken(t *testing.T) {
 
 	// setup app's settings
 	{
-		_, err = bundle.credentialService.save(ctx, dto.S3CredentialsInput{
+		_, err = bundle.configSrv.saveCredentials(ctx, dto.S3CredentialsInput{
 			Version:       "",
 			ApplicationId: oApp.App.ID,
 			Endpoint:      "http://localhost:9000",
@@ -281,7 +281,7 @@ func Test_UploadToken(t *testing.T) {
 		})
 		ass.NoError(err)
 
-		_, err = bundle.policyService.save(ctx, dto.UploadPolicyInput{
+		_, err = bundle.configSrv.saveUploadPolicy(ctx, dto.UploadPolicyInput{
 			Version:        "",
 			ApplicationId:  oApp.App.ID,
 			FileExtensions: []api.FileType{"jpeg", "gif", "png", "webp"},
@@ -293,7 +293,7 @@ func Test_UploadToken(t *testing.T) {
 		ass.NoError(err)
 	}
 
-	formData, err := bundle.AppService.CreateUploadToken(ctx, dto.UploadTokenInput{
+	formData, err := bundle.uploadSrv.CreateUploadToken(ctx, dto.UploadTokenInput{
 		ApplicationId: oApp.App.ID,
 		FilePath:      "/path/to/image.png",
 		ContentType:   scalar.ImagePNG,

@@ -17,11 +17,11 @@ import (
 func NewAccessBundle(
 	idr *scalar.Identifier,
 	lgr *zap.Logger,
-	userBundle *user.UserBundle,
-	spaceBundle *space.SpaceBundle,
-	cnf *AccessConfiguration,
-) *AccessBundle {
-	this := &AccessBundle{
+	userBundle *user.Bundle,
+	spaceBundle *space.Bundle,
+	cnf *Config,
+) *Bundle {
+	this := &Bundle{
 		cnf:         cnf.init(),
 		lgr:         lgr,
 		idr:         idr,
@@ -37,34 +37,34 @@ func NewAccessBundle(
 }
 
 type (
-	AccessBundle struct {
+	Bundle struct {
 		module.AbstractBundle
 
-		cnf            *AccessConfiguration
+		cnf            *Config
 		lgr            *zap.Logger
 		idr            *scalar.Identifier
 		sessionService *SessionService
 		JwtService     *JwtService
 
 		// depends on userBundle bundle
-		userBundle  *user.UserBundle
-		spaceBundle *space.SpaceBundle
+		userBundle  *user.Bundle
+		spaceBundle *space.Bundle
 		resolvers   map[string]interface{}
 	}
 )
 
-func (AccessBundle) Name() string {
+func (Bundle) Name() string {
 	return "Access"
 }
 
-func (bundle AccessBundle) Dependencies() []module.Bundle {
+func (bundle Bundle) Dependencies() []module.Bundle {
 	return []module.Bundle{
 		bundle.userBundle,
 		bundle.spaceBundle,
 	}
 }
 
-func (bundle AccessBundle) Migrate(ctx context.Context, driver string) error {
+func (bundle Bundle) Migrate(ctx context.Context, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -80,6 +80,6 @@ func (bundle AccessBundle) Migrate(ctx context.Context, driver string) error {
 	return runner.Run(ctx)
 }
 
-func (bundle AccessBundle) GraphqlResolver() map[string]interface{} {
+func (bundle Bundle) GraphqlResolver() map[string]interface{} {
 	return bundle.resolvers
 }

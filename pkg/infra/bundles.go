@@ -14,12 +14,12 @@ type (
 	BundleList struct {
 		container *Container
 
-		user   *user.UserBundle
-		space  *space.SpaceBundle
-		config *config.ConfigBundle
-		access *access.AccessBundle
-		s3     *s3.S3Bundle
-		mailer *mailer.MailerBundle
-		app    *app.AppBundle
+		user   *user.Bundle
+		space  *space.Bundle
+		config *config.Bundle
+		access *access.Bundle
+		s3     *s3.Bundle
+		mailer *mailer.Bundle
+		app    *app.Bundle
 	}
 )

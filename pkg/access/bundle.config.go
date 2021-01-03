@@ -15,7 +15,7 @@ import (
 )
 
 type (
-	AccessConfiguration struct {
+	Config struct {
 		SessionTimeout time.Duration `yaml:"timeout"`
 		Jwt            JwtConfig     `yaml:"jwt"`
 
@@ -32,7 +32,7 @@ type (
 	}
 )
 
-func (cnf *AccessConfiguration) init() *AccessConfiguration {
+func (cnf *Config) init() *Config {
 	if nil == cnf.mutex {
 		cnf.mutex = &sync.Mutex{}
 	}
@@ -47,7 +47,7 @@ func (cnf *AccessConfiguration) init() *AccessConfiguration {
 	return cnf
 }
 
-func (cnf *AccessConfiguration) signMethod() jwt.SigningMethod {
+func (cnf *Config) signMethod() jwt.SigningMethod {
 	switch cnf.Jwt.Algorithm {
 	case "RS512":
 		return jwt.SigningMethodRS512
@@ -57,7 +57,7 @@ func (cnf *AccessConfiguration) signMethod() jwt.SigningMethod {
 	}
 }
 
-func (cnf *AccessConfiguration) GetSignKey() (interface{}, error) {
+func (cnf *Config) GetSignKey() (interface{}, error) {
 	if nil == cnf.privateKey {
 		cnf.mutex.Lock()
 		defer cnf.mutex.Unlock()
@@ -78,7 +78,7 @@ func (cnf *AccessConfiguration) GetSignKey() (interface{}, error) {
 	return cnf.privateKey, nil
 }
 
-func (cnf *AccessConfiguration) GetParseKey() (interface{}, error) {
+func (cnf *Config) GetParseKey() (interface{}, error) {
 	if nil == cnf.publicKey {
 		cnf.mutex.Lock()
 		defer cnf.mutex.Unlock()

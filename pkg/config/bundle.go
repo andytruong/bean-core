@@ -12,15 +12,15 @@ import (
 	"bean/components/scalar"
 )
 
-func NewConfigBundle(idr *scalar.Identifier, lgr *zap.Logger) *ConfigBundle {
-	bundle := &ConfigBundle{idr: idr, lgr: lgr}
+func NewConfigBundle(idr *scalar.Identifier, lgr *zap.Logger) *Bundle {
+	bundle := &Bundle{idr: idr, lgr: lgr}
 	bundle.BucketService = &BucketService{bundle: bundle}
 	bundle.VariableService = &VariableService{bundle: bundle}
 
 	return bundle
 }
 
-type ConfigBundle struct {
+type Bundle struct {
 	module.AbstractBundle
 
 	idr             *scalar.Identifier
@@ -29,11 +29,11 @@ type ConfigBundle struct {
 	VariableService *VariableService
 }
 
-func (ConfigBundle) Name() string {
+func (Bundle) Name() string {
 	return "Config"
 }
 
-func (bundle ConfigBundle) Migrate(ctx context.Context, driver string) error {
+func (bundle Bundle) Migrate(ctx context.Context, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil

@@ -13,7 +13,7 @@ import (
 	mUser "bean/pkg/user/model"
 )
 
-func (bundle *SpaceBundle) newResolvers() map[string]interface{} {
+func (bundle *Bundle) newResolvers() map[string]interface{} {
 	return map[string]interface{}{
 		"Query": map[string]interface{}{
 			"SpaceQuery": func(ctx context.Context) (*dto.SpaceQuery, error) {

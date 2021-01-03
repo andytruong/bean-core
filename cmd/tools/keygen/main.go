@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"crypto/rand"
@@ -6,37 +6,33 @@ import (
 	"crypto/x509"
 	"encoding/asn1"
 	"encoding/pem"
+	"flag"
 	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/urfave/cli/v2"
 
 	"bean/components/claim"
-	"bean/pkg/infra"
 )
 
-func KeyGenCommand(_ *infra.Container) *cli.Command {
-	return &cli.Command{
-		Name: "gen-key",
-		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:  "verify",
-				Value: false,
-				Usage: "Set to true to verify generated key pair.",
-			},
-		},
-		Action: func(ctx *cli.Context) error {
-			if ctx.Bool("verify") {
-				return verify()
-			}
+func main() {
+	verify := flag.Bool("verify", false, "Set to true to verify generated key pair.")
 
-			return generate()
-		},
+	if nil != verify {
+		if *verify {
+			err := verifyKeys()
+			if nil != err {
+				panic(err)
+			}
+		}
+	}
+
+	if err := generate(); nil != err {
+		panic(err)
 	}
 }
 
-func verify() error {
+func verifyKeys() error {
 	// public key
 	{
 		pub, err := claim.ParseRsaPublicKeyFromFile("resources/keys/id_rsa.pub")
@@ -47,10 +43,8 @@ func verify() error {
 		}
 	}
 
-	// private key
-	{
-		// …
-	}
+	// TODO: private key
+	// …
 
 	return nil
 }

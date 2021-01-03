@@ -37,33 +37,57 @@ const (
 			"isSecure":  { "type": "boolean" }
 		}
 	}`
+
+	uploadPolicyConfigSlug   = `bean.s3.policy.schema.v1`
+	uploadPolicyConfigSchema = `{
+		"type":       "object",
+		"required":   [],
+		"properties": {
+			"fileExtensions": {
+				"type":  "array",
+				"items": { "type": "string", "maxLength": 32 }
+			},
+			"rateLimit":      {
+				"type":  "array",
+				"items": {
+					"type":       "object",
+					"required":   ["value", "object", "interval"],
+					"properties": {
+						"value":    { "type": "string" },
+						"object":   { "type": "string", "enum": ["user", "space"] },
+						"interval": {
+							"type": "string",
+							"pattern": "^(\\d+) (minute|minutes|hour|hours|day|days)$"
+						}
+					}
+				}
+			}
+		}
+	}`
 )
 
-type credentialService struct {
-	bundle    *S3Bundle
+type configService struct {
+	bundle    *Bundle
 	transport http.RoundTripper
 }
 
-func (srv *credentialService) load(ctx context.Context, appId string) (*model.S3Credentials, error) {
-	var (
-		err      error
-		bucket   *configModel.ConfigBucket
-		variable *configModel.ConfigVariable
-		cre      = &model.S3Credentials{}
-	)
-
-	// load current bucket
-	bucket, err = srv.bundle.configBundle.BucketService.Load(ctx, configDto.BucketKey{Slug: credentialsConfigSlug})
+func (srv configService) loadVariable(ctx context.Context, bucketSlug string, appId string) (*configModel.ConfigVariable, error) {
+	bucket, err := srv.bundle.configBundle.BucketService.Load(ctx, configDto.BucketKey{Slug: bucketSlug})
 	if nil != err {
 		return nil, err
 	}
 
+	return srv.bundle.configBundle.VariableService.Load(ctx, configDto.VariableKey{BucketId: bucket.Id, Name: appId})
+}
+
+func (srv configService) loadCredentials(ctx context.Context, appId string) (*model.S3Credentials, error) {
 	// load current variable
-	variable, err = srv.bundle.configBundle.VariableService.Load(ctx, configDto.VariableKey{BucketId: bucket.Id, Name: appId})
+	variable, err := srv.loadVariable(ctx, credentialsConfigSlug, appId)
 	if nil != err {
 		return nil, err
 	}
 
+	cre := &model.S3Credentials{}
 	err = json.Unmarshal([]byte(variable.Value), cre)
 	if nil != err {
 		return nil, err
@@ -75,7 +99,7 @@ func (srv *credentialService) load(ctx context.Context, appId string) (*model.S3
 	return cre, nil
 }
 
-func (srv *credentialService) save(ctx context.Context, in dto.S3CredentialsInput) (*model.S3Credentials, error) {
+func (srv *configService) saveCredentials(ctx context.Context, in dto.S3CredentialsInput) (*model.S3Credentials, error) {
 	var (
 		err    error
 		bucket *configModel.ConfigBucket
@@ -87,7 +111,7 @@ func (srv *credentialService) save(ctx context.Context, in dto.S3CredentialsInpu
 		return nil, errors.Wrap(err, "bucket load error")
 	}
 
-	cre, err := srv.load(ctx, in.ApplicationId)
+	cre, err := srv.loadCredentials(ctx, in.ApplicationId)
 	if nil != err {
 		if err != gorm.ErrRecordNotFound {
 			return nil, err
@@ -154,7 +178,104 @@ func (srv *credentialService) save(ctx context.Context, in dto.S3CredentialsInpu
 	}, nil
 }
 
-func (srv credentialService) encrypt(text string) string {
+func (srv configService) loadUploadPolicy(ctx context.Context, appId string) (*model.S3UploadPolicy, error) {
+	variable, err := srv.loadVariable(ctx, uploadPolicyConfigSlug, appId)
+	if nil != err {
+		return nil, err
+	}
+
+	pol := &model.S3UploadPolicy{}
+	err = json.Unmarshal([]byte(variable.Value), pol)
+	if nil != err {
+		return nil, err
+	}
+
+	pol.Id = variable.Id
+	pol.Version = variable.Version
+
+	return pol, nil
+}
+
+func (srv *configService) saveUploadPolicy(ctx context.Context, in dto.UploadPolicyInput) (*model.S3UploadPolicy, error) {
+	var (
+		err    error
+		bucket *configModel.ConfigBucket
+		policy *model.S3UploadPolicy
+	)
+
+	// load current bucket
+	bucket, err = srv.bundle.configBundle.BucketService.Load(ctx, configDto.BucketKey{Slug: uploadPolicyConfigSlug})
+	if nil != err {
+		return nil, errors.Wrap(err, "bucket load error")
+	}
+
+	policy, err = srv.loadUploadPolicy(ctx, in.ApplicationId)
+	if nil != err {
+		if err != gorm.ErrRecordNotFound {
+			return nil, err
+		}
+	}
+
+	newPolicy := model.S3UploadPolicy{
+		FileExtensions: in.FileExtensions,
+		RateLimit:      []model.UploadRateLimitPolicy{},
+	}
+
+	for _, input := range in.RateLimit {
+		newPolicy.RateLimit = append(newPolicy.RateLimit, model.UploadRateLimitPolicy{
+			Value:    input.Value,
+			Object:   input.Object,
+			Interval: input.Interval,
+		})
+	}
+
+	newPolicyBytes, err := json.Marshal(newPolicy)
+	if nil != err {
+		return nil, err
+	}
+
+	var out *configDto.VariableMutationOutcome
+
+	if nil == policy {
+		out, err = srv.bundle.configBundle.VariableService.Create(ctx, configDto.VariableCreateInput{
+			BucketId: bucket.Id,
+			Name:     in.ApplicationId,
+			Value:    string(newPolicyBytes),
+			IsLocked: scalar.NilBool(false),
+		})
+
+		if nil != err {
+			return nil, err
+		}
+	} else {
+		useless, err := policy.EqualTo(newPolicy)
+		if nil != err {
+			return nil, err
+		} else if useless {
+			return nil, util.ErrorUselessInput
+		}
+
+		out, err = srv.bundle.configBundle.VariableService.Update(ctx, configDto.VariableUpdateInput{
+			Id:       policy.Id,
+			Version:  in.Version,
+			Value:    scalar.NilString(string(newPolicyBytes)),
+			IsLocked: scalar.NilBool(false),
+		})
+
+		if nil != err {
+			return nil, err
+		}
+	}
+
+	return &model.S3UploadPolicy{
+		Id:             out.Variable.Id,
+		Version:        out.Variable.Version,
+		FileExtensions: newPolicy.FileExtensions,
+		RateLimit:      newPolicy.RateLimit,
+	}, nil
+}
+
+func (srv configService) encrypt(text string) string {
 	plaintext := []byte(text)
 
 	block, err := aes.NewCipher([]byte(srv.bundle.cnf.Key))
@@ -174,7 +295,7 @@ func (srv credentialService) encrypt(text string) string {
 	return base64.URLEncoding.EncodeToString(cipherText)
 }
 
-func (srv credentialService) decrypt(cryptoText string) string {
+func (srv configService) decrypt(cryptoText string) string {
 	cipherText, _ := base64.URLEncoding.DecodeString(cryptoText)
 	block, err := aes.NewCipher([]byte(srv.bundle.cnf.Key))
 	if err != nil {
@@ -193,7 +314,7 @@ func (srv credentialService) decrypt(cryptoText string) string {
 	return string(cipherText)
 }
 
-func (srv *credentialService) client(creds *model.S3Credentials) (*minio.Client, error) {
+func (srv *configService) client(creds *model.S3Credentials) (*minio.Client, error) {
 	endpoint := string(creds.Endpoint)
 	endpoint = strings.Replace(endpoint, "http://", "", 1)
 	endpoint = strings.Replace(endpoint, "https://", "", 1)

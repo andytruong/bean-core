@@ -9,7 +9,7 @@ import (
 )
 
 type NameService struct {
-	bundle *UserBundle
+	bundle *Bundle
 }
 
 func (srv *NameService) load(ctx context.Context, userId string) (*model.UserName, error) {

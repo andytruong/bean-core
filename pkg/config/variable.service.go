@@ -15,7 +15,7 @@ import (
 )
 
 type VariableService struct {
-	bundle *ConfigBundle
+	bundle *Bundle
 }
 
 func (srv VariableService) canAccess(ctx context.Context, bucketId string, action string) (bool, error) {

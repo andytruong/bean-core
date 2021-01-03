@@ -13,7 +13,7 @@ import (
 	user_model "bean/pkg/user/model"
 )
 
-func (bundle *AccessBundle) newResolves() map[string]interface{} {
+func (bundle *Bundle) newResolves() map[string]interface{} {
 	return map[string]interface{}{
 		"Query": map[string]interface{}{
 			"AccessQuery": func(ctx context.Context) (*dto.AccessQuery, error) {

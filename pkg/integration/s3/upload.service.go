@@ -7,6 +7,7 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"bean/components/claim"
@@ -16,12 +17,12 @@ import (
 	"bean/pkg/integration/s3/model/dto"
 )
 
-type AppService struct {
-	bundle *S3Bundle
+type uploadService struct {
+	bundle *Bundle
 }
 
 // TODO: move to other service
-func (srv *AppService) CreateUploadToken(ctx context.Context, in dto.UploadTokenInput) (map[string]interface{}, error) {
+func (srv *uploadService) CreateUploadToken(ctx context.Context, in dto.UploadTokenInput) (map[string]interface{}, error) {
 	// get claims from context
 	claims := claim.ContextToPayload(ctx)
 	if nil == claims {
@@ -37,29 +38,33 @@ func (srv *AppService) CreateUploadToken(ctx context.Context, in dto.UploadToken
 	}
 
 	// check upload policy
-	pol, err := srv.bundle.policyService.load(ctx, in.ApplicationId)
+	pol, err := srv.bundle.configSrv.loadUploadPolicy(ctx, in.ApplicationId)
 	if nil != err && err != gorm.ErrRecordNotFound {
 		return nil, err
 	} else if nil != pol {
 		// TODO: pol.FileExtensions
 		// TODO: file size policy
-		// TODO: rate limit policy
+
+		// validate rate limit policy
 		for _, limit := range pol.RateLimit {
 			switch limit.Object {
 			case "user":
+				srv.bundle.lgr.Info("TODO.user", zap.Any("what", limit))
+				fmt.Println("", limit)
+
 			case "space":
-				fmt.Println("TODO", limit)
+				srv.bundle.lgr.Info("TODO.space", zap.Any("what", limit))
 			}
 		}
 	}
 
 	// load s3 credentials
-	cre, err := srv.bundle.credentialService.load(ctx, in.ApplicationId)
+	cre, err := srv.bundle.configSrv.loadCredentials(ctx, in.ApplicationId)
 	if nil != err {
 		return nil, errors.Wrap(err, "credentials not found")
 	}
 
-	client, err := srv.bundle.credentialService.client(cre)
+	client, err := srv.bundle.configSrv.client(cre)
 	if nil != err {
 		return nil, err
 	}

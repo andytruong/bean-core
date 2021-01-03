@@ -19,10 +19,10 @@ func NewApplicationBundle(
 	idr *scalar.Identifier,
 	lgr *zap.Logger,
 	hook *module.Hook,
-	spaceBundle *space.SpaceBundle,
-	configBundle *config.ConfigBundle,
-) (*AppBundle, error) {
-	bundle := &AppBundle{
+	spaceBundle *space.Bundle,
+	configBundle *config.Bundle,
+) (*Bundle, error) {
+	bundle := &Bundle{
 		idr:          idr,
 		lgr:          lgr,
 		hook:         hook,
@@ -40,23 +40,23 @@ const (
 	ErrorInactiveApplication = util.Err("inactive application")
 )
 
-type AppBundle struct {
+type Bundle struct {
 	module.AbstractBundle
 
 	Service      *AppService
-	spaceBundle  *space.SpaceBundle
-	configBundle *config.ConfigBundle
+	spaceBundle  *space.Bundle
+	configBundle *config.Bundle
 	idr          *scalar.Identifier
 	lgr          *zap.Logger
 	hook         *module.Hook
 	resolvers    map[string]interface{}
 }
 
-func (AppBundle) Name() string {
+func (Bundle) Name() string {
 	return "App"
 }
 
-func (bundle AppBundle) Dependencies() []module.Bundle {
+func (bundle Bundle) Dependencies() []module.Bundle {
 	if nil != bundle.spaceBundle {
 		return []module.Bundle{bundle.spaceBundle}
 	}
@@ -64,7 +64,7 @@ func (bundle AppBundle) Dependencies() []module.Bundle {
 	return nil
 }
 
-func (bundle AppBundle) Migrate(ctx context.Context, driver string) error {
+func (bundle Bundle) Migrate(ctx context.Context, driver string) error {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return nil
@@ -80,6 +80,6 @@ func (bundle AppBundle) Migrate(ctx context.Context, driver string) error {
 	return runner.Run(ctx)
 }
 
-func (bundle *AppBundle) GraphqlResolver() map[string]interface{} {
+func (bundle *Bundle) GraphqlResolver() map[string]interface{} {
 	return bundle.resolvers
 }
