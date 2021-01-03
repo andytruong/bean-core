@@ -2,11 +2,11 @@
 # Entity
 # =====================
 extend type Application {
-    credentials: Credentials!
-    polices: [Policy!]
+    s3Credentials: S3Credentials
+    s3UploadPolicies: S3UploadPolicy
 }
 
-type Credentials {
+type S3Credentials {
     version: ID!
     endpoint: Uri!
     bucket: String!
@@ -14,17 +14,16 @@ type Credentials {
     accesskey: String! @comment(value: "no secret key")
 }
 
-enum PolicyKind  {
-    FileExtensions,
-    RateLimit
+type S3UploadPolicy {
+    version: ID!
+    fileExtensions:[FileType!]!
+    rateLimit: [UploadRateLimitPolicy]!
 }
 
-type Policy {
-    id: ID!
-    createdAt: Time!
-    updatedAt: Time!
-    kind: PolicyKind!
-    value: String!
+type UploadRateLimitPolicy {
+    value: String!     # example: 1MB, 1GB
+    object: String!    # example: user, space
+    interval: String!  # example: minute, hour, day
 }
 
 # =====================
@@ -35,12 +34,12 @@ extend type Mutation  {
 }
 
 type S3Mutation {
-    saveCredentials: S3ApplicationCredentialsInput!
-    savePolicies: S3ApplicationPolicyCreateInput!
-    upload: S3UploadMutation!
+    saveCredentials(input: S3CredentialsInput): S3CredentialsOutcome!
+    saveUploadPolicies(input: UploadPolicyInput): S3UploadPolicyOutcome!
+    uploadToken(input: UploadTokenInput!): Map! @requireAuth
 }
 
-input S3ApplicationCredentialsInput {
+input S3CredentialsInput {
     version: ID!
     applicationId: ID!
     endpoint: Uri!
@@ -50,43 +49,30 @@ input S3ApplicationCredentialsInput {
     secretKey: String!
 }
 
-input S3ApplicationPolicyCreateInput {
-    kind: PolicyKind!
+type S3CredentialsOutcome {
+    errors: [Error!]
+    credentials: S3Credentials
+}
+
+input UploadPolicyInput {
+    version: ID!
+    applicationId: ID!
+    fileExtensions: [FileType!]
+    rateLimit: [UploadRateLimitInput!]
+}
+
+input UploadRateLimitInput {
     value: String!
+    object: String!
+    interval: String!
 }
 
-# ---------------------
-# Mutation -> Update
-# ---------------------
-
-# TODO: Remove
-input S3ApplicationUpdateInput {
-    policies: S3ApplicationPolicyMutationInput
+type S3UploadPolicyOutcome {
+    errors: [Error!]
+    policy: S3UploadPolicy
 }
 
-input S3ApplicationPolicyMutationInput {
-    create: [S3ApplicationPolicyCreateInput!]
-    update: [S3ApplicationPolicyUpdateInput!]
-    delete: [S3ApplicationPolicyDeleteInput!]
-}
-
-input S3ApplicationPolicyUpdateInput {
-    id: ID!
-    value: String!
-}
-
-input S3ApplicationPolicyDeleteInput {
-    id: ID!
-}
-
-# ---------------------
-# Mutation -> Upload
-# ---------------------
-type S3UploadMutation {
-    token(input: S3UploadTokenInput!): Map! @requireAuth
-}
-
-input S3UploadTokenInput {
+input UploadTokenInput {
     applicationId: ID!
     filePath:      Uri! @constraint(minLength: 7, maxLength: 128)
     contentType:   ContentType!

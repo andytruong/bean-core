@@ -55,11 +55,8 @@ func (r *Resolver) MembershipConnection() gql.MembershipConnectionResolver {
 func (r *Resolver) Mutation() gql.MutationResolver     { return &mutationResolver{r} }
 func (r *Resolver) Query() gql.QueryResolver           { return &queryResolver{r} }
 func (r *Resolver) S3Mutation() gql.S3MutationResolver { return &s3MutationResolver{r} }
-func (r *Resolver) S3UploadMutation() gql.S3UploadMutationResolver {
-	return &s3UploadMutationResolver{r}
-}
-func (r *Resolver) Session() gql.SessionResolver { return &sessionResolver{r} }
-func (r *Resolver) Space() gql.SpaceResolver     { return &spaceResolver{r} }
+func (r *Resolver) Session() gql.SessionResolver       { return &sessionResolver{r} }
+func (r *Resolver) Space() gql.SpaceResolver           { return &spaceResolver{r} }
 func (r *Resolver) SpaceMembershipMutation() gql.SpaceMembershipMutationResolver {
 	return &spaceMembershipMutationResolver{r}
 }
@@ -89,7 +86,6 @@ type membershipConnectionResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type s3MutationResolver struct{ *Resolver }
-type s3UploadMutationResolver struct{ *Resolver }
 type sessionResolver struct{ *Resolver }
 type spaceResolver struct{ *Resolver }
 type spaceMembershipMutationResolver struct{ *Resolver }
@@ -141,21 +137,16 @@ func (r *accessSessionQueryResolver) Load(ctx context.Context, obj *dto.AccessSe
 
 	return callback(ctx, obj, token)
 }
-func (r *applicationResolver) Polices(ctx context.Context, obj *model1.Application) ([]*model2.Policy, error) {
+func (r *applicationResolver) S3Credentials(ctx context.Context, obj *model1.Application) (*model2.S3Credentials, error) {
 	bundle, _ := r.container.bundles.S3()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Application"].(map[string]interface{})
-	callback := objectResolver["Polices"].(func(ctx context.Context, obj *model1.Application) ([]*model2.Policy, error))
+	callback := objectResolver["S3Credentials"].(func(ctx context.Context, obj *model1.Application) (*model2.S3Credentials, error))
 
 	return callback(ctx, obj)
 }
-func (r *applicationResolver) Credentials(ctx context.Context, obj *model1.Application) (*model2.Credentials, error) {
-	bundle, _ := r.container.bundles.S3()
-	resolvers := bundle.GraphqlResolver()
-	objectResolver := resolvers["Application"].(map[string]interface{})
-	callback := objectResolver["Credentials"].(func(ctx context.Context, obj *model1.Application) (*model2.Credentials, error))
-
-	return callback(ctx, obj)
+func (r *applicationResolver) S3UploadPolicies(ctx context.Context, obj *model1.Application) (*model2.S3UploadPolicy, error) {
+	panic("no implementation found in resolvers[Application][S3UploadPolicies]")
 }
 func (r *applicationMutationResolver) Create(ctx context.Context, obj *dto1.ApplicationMutation, input *dto1.ApplicationCreateInput) (*dto1.ApplicationOutcome, error) {
 	panic("no implementation found in resolvers[ApplicationMutation][Create]")
@@ -325,19 +316,27 @@ func (r *queryResolver) UserQuery(ctx context.Context) (*dto5.UserQuery, error) 
 
 	return callback(ctx)
 }
-func (r *s3MutationResolver) Upload(ctx context.Context, obj *dto3.S3Mutation) (*dto3.S3UploadMutation, error) {
+func (r *s3MutationResolver) SaveCredentials(ctx context.Context, obj *dto3.S3Mutation, input *dto3.S3CredentialsInput) (*dto3.S3CredentialsOutcome, error) {
 	bundle, _ := r.container.bundles.S3()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["S3Mutation"].(map[string]interface{})
-	callback := objectResolver["Upload"].(func(ctx context.Context, obj *dto3.S3Mutation) (*dto3.S3UploadMutation, error))
+	callback := objectResolver["SaveCredentials"].(func(ctx context.Context, obj *dto3.S3Mutation, input *dto3.S3CredentialsInput) (*dto3.S3CredentialsOutcome, error))
 
-	return callback(ctx, obj)
+	return callback(ctx, obj, input)
 }
-func (r *s3UploadMutationResolver) Token(ctx context.Context, obj *dto3.S3UploadMutation, input dto3.S3UploadTokenInput) (map[string]interface{}, error) {
+func (r *s3MutationResolver) SaveUploadPolicies(ctx context.Context, obj *dto3.S3Mutation, input *dto3.UploadPolicyInput) (*dto3.S3UploadPolicyOutcome, error) {
 	bundle, _ := r.container.bundles.S3()
 	resolvers := bundle.GraphqlResolver()
-	objectResolver := resolvers["S3UploadMutation"].(map[string]interface{})
-	callback := objectResolver["Token"].(func(ctx context.Context, obj *dto3.S3UploadMutation, input dto3.S3UploadTokenInput) (map[string]interface{}, error))
+	objectResolver := resolvers["S3Mutation"].(map[string]interface{})
+	callback := objectResolver["SaveUploadPolicies"].(func(ctx context.Context, obj *dto3.S3Mutation, input *dto3.UploadPolicyInput) (*dto3.S3UploadPolicyOutcome, error))
+
+	return callback(ctx, obj, input)
+}
+func (r *s3MutationResolver) UploadToken(ctx context.Context, obj *dto3.S3Mutation, input dto3.UploadTokenInput) (map[string]interface{}, error) {
+	bundle, _ := r.container.bundles.S3()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["S3Mutation"].(map[string]interface{})
+	callback := objectResolver["UploadToken"].(func(ctx context.Context, obj *dto3.S3Mutation, input dto3.UploadTokenInput) (map[string]interface{}, error))
 
 	return callback(ctx, obj, input)
 }

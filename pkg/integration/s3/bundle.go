@@ -4,9 +4,9 @@ import (
 	"context"
 	"path"
 	"runtime"
-	
+
 	"go.uber.org/zap"
-	
+
 	"bean/components/connect"
 	"bean/components/module"
 	"bean/components/scalar"
@@ -34,21 +34,21 @@ func NewS3Integration(
 		appBundle:    appBundle,
 		configBundle: configBundle,
 	}
-	
+
 	bundle.AppService = &AppService{bundle: bundle}
 	bundle.credentialService = &credentialService{bundle: bundle}
 	bundle.policyService = &policyService{bundle: bundle}
 	bundle.resolvers = newResolvers(bundle)
-	
+
 	return bundle
 }
 
 type S3Bundle struct {
 	module.AbstractBundle
-	
+
 	appBundle    *app.AppBundle
 	configBundle *config.ConfigBundle
-	
+
 	cnf               *S3Configuration
 	idr               *scalar.Identifier
 	lgr               *zap.Logger
@@ -71,50 +71,57 @@ func (bundle S3Bundle) Migrate(ctx context.Context, driver string) error {
 	if !ok {
 		return nil
 	}
-	
+
 	runner := connect.Runner{
 		Logger: bundle.lgr,
 		Driver: driver,
 		Bundle: "integration.s3",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
-	
+
 	if err := runner.Run(ctx); nil != err {
 		return err
 	}
-	
-	// create configuration buckets: credentials, policies
+
+	// save configuration buckets: credentials, policies
 	{
-		var err error
 		access := scalar.AccessModePrivate
-		
+
 		// config bucket -> credentials
-		_, err = bundle.configBundle.BucketService.Create(ctx, dto.BucketCreateInput{
-			Slug:        scalar.NilString(credentialsConfigSlug),
-			Access:      &access,
-			Schema:      credentialsConfigSchema,
-			IsPublished: true,
-			HostId:      _id,
-		})
-		
-		if nil != err {
-			return err
+		{
+			out, err := bundle.configBundle.BucketService.Create(ctx, dto.BucketCreateInput{
+				Slug:        scalar.NilString(credentialsConfigSlug),
+				Access:      &access,
+				Schema:      credentialsConfigSchema,
+				IsPublished: true,
+				HostId:      _id,
+			})
+
+			if nil != err {
+				return err
+			} else if out.Errors != nil {
+				panic(out.Errors)
+			}
 		}
-		
+
 		// config bucket -> policies
-		_, err = bundle.configBundle.BucketService.Create(ctx, dto.BucketCreateInput{
-			Slug:        scalar.NilString(policyConfigSlug),
-			Access:      &access,
-			Schema:      policyConfigSchema,
-			IsPublished: true,
-			HostId:      _id,
-		})
-		
-		if nil != err {
-			return err
+		{
+			out, err := bundle.configBundle.BucketService.Create(ctx, dto.BucketCreateInput{
+				Slug:        scalar.NilString(policyConfigSlug),
+				Access:      &access,
+				Schema:      policyConfigSchema,
+				IsPublished: true,
+				HostId:      _id,
+			})
+
+			if nil != err {
+				return err
+			} else if out.Errors != nil {
+				panic(out.Errors)
+			}
 		}
 	}
-	
+
 	return nil
 }
 

@@ -2,20 +2,20 @@ package s3
 
 import (
 	"context"
-	
+
 	appModel "bean/pkg/app/model"
 	"bean/pkg/integration/s3/model"
 	"bean/pkg/integration/s3/model/dto"
 )
 
-func newResolvers(this *S3Bundle) map[string]interface{} {
+func newResolvers(bundle *S3Bundle) map[string]interface{} {
 	return map[string]interface{}{
 		"Application": map[string]interface{}{
-			"Credentials": func(ctx context.Context, obj *appModel.Application) (*model.Credentials, error) {
-				return this.credentialService.load(ctx, obj.ID)
+			"S3Credentials": func(ctx context.Context, app *appModel.Application) (*model.S3Credentials, error) {
+				return bundle.credentialService.load(ctx, app.ID)
 			},
-			"Polices": func(ctx context.Context, obj *appModel.Application) ([]*model.Policy, error) {
-				return this.policyService.loadByApplicationId(ctx, obj.ID)
+			"S3UploadPolices": func(ctx context.Context, app *appModel.Application) (*model.S3UploadPolicy, error) {
+				return bundle.policyService.load(ctx, app.ID)
 			},
 		},
 		"Mutation": map[string]interface{}{
@@ -24,16 +24,24 @@ func newResolvers(this *S3Bundle) map[string]interface{} {
 			},
 		},
 		"S3Mutation": map[string]interface{}{
-			"Application": func(ctx context.Context) (*dto.S3ApplicationMutation, error) {
-				return &dto.S3ApplicationMutation{}, nil
+			"SaveCredentials": func(ctx context.Context, _ *dto.S3Mutation, in dto.S3CredentialsInput) (*dto.S3CredentialsOutcome, error) {
+				cre, err := bundle.credentialService.save(ctx, in)
+				if nil != err {
+					return nil, err
+				}
+
+				return &dto.S3CredentialsOutcome{Errors: nil, Credentials: cre}, err
 			},
-			"Upload": func(ctx context.Context, _ *dto.S3Mutation) (*dto.S3UploadMutation, error) {
-				return &dto.S3UploadMutation{}, nil
+			"SaveUploadPolicies": func(ctx context.Context, _ *dto.S3Mutation, in dto.UploadPolicyInput) (*dto.S3UploadPolicyOutcome, error) {
+				policy, err := bundle.policyService.save(ctx, in)
+				if nil != err {
+					return nil, err
+				}
+
+				return &dto.S3UploadPolicyOutcome{Errors: nil, Policy: policy}, nil
 			},
-		},
-		"S3UploadMutation": map[string]interface{}{
-			"Token": func(ctx context.Context, _ *dto.S3UploadMutation, input dto.S3UploadTokenInput) (map[string]interface{}, error) {
-				return this.AppService.S3UploadToken(ctx, input)
+			"UploadToken": func(ctx context.Context, _ *dto.S3Mutation, in dto.UploadTokenInput) (map[string]interface{}, error) {
+				return bundle.AppService.CreateUploadToken(ctx, in)
 			},
 		},
 	}
