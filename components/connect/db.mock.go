@@ -2,11 +2,11 @@ package connect
 
 import (
 	"context"
-	
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	
+
 	"bean/components/module"
 )
 
@@ -18,7 +18,7 @@ func MockDatabase() *gorm.DB {
 	} else {
 		db.Logger = db.Logger.LogMode(logger.Silent)
 	}
-	
+
 	return db
 }
 

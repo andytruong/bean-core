@@ -2,7 +2,7 @@ package claim
 
 import (
 	"context"
-	
+
 	"bean/components/scalar"
 )
 
@@ -17,6 +17,6 @@ func ContextToPayload(ctx context.Context) *Payload {
 	if claims, ok := ctx.Value(ClaimsContextKey).(*Payload); ok {
 		return claims
 	}
-	
+
 	return nil
 }
