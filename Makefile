@@ -51,7 +51,7 @@ dev.check-size:
 	@rm /tmp/go-bean
 
 tools.generate.key:
-	CONFIG=config.yaml go run cmd/main.go gen-key
+	go run cmd/tools/keygen/main.go
 
 tools.generate.ulid:
 	@go run cmd/tools/ulid/main.go

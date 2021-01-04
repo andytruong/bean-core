@@ -2,15 +2,18 @@ package connect
 
 import (
 	"context"
+	"database/sql"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"bean/components/module"
 	"bean/components/scalar"
 )
 
@@ -41,6 +44,44 @@ type (
 		Dir    string
 	}
 )
+
+func dbDriver(db *sql.DB) string {
+	switch db.Driver().(type) {
+	case *sqlite3.SQLiteDriver:
+		return SQLite
+
+	default:
+		return Postgres
+	}
+}
+
+func Migrate(ctx context.Context, bundles []module.Bundle, db *gorm.DB) error {
+	con, err := db.DB()
+	if nil != err {
+		return err
+	}
+
+	driver := dbDriver(con)
+	tx := db.WithContext(ctx).Begin()
+	ctx = DBToContext(ctx, db)
+
+	// create migration table if not existing
+	if !tx.Migrator().HasTable(Migration{}) {
+		if err := tx.Migrator().CreateTable(Migration{}); nil != err {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	for _, bundle := range bundles {
+		if err := bundle.Migrate(ctx, driver); nil != err {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
+}
 
 func (mig Migration) realPath() string {
 	return scalar.RootDirectory() + "/" + mig.Name

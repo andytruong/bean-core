@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 
+	"bean/components/connect"
 	"bean/components/util"
 	"bean/pkg/infra"
 )
@@ -29,7 +30,19 @@ func main() {
 		Name: "bean",
 		Commands: []*cli.Command{
 			cmdHttpServer(container),
-			cmdMigration(container),
+			{
+				Name: "migrate",
+				Action: func(ctx *cli.Context) error {
+					db, err := container.DBs.Master()
+					if nil != err {
+						return err
+					}
+
+					bundles := container.BundleList()
+
+					return connect.Migrate(ctx.Context, bundles.Get(), db)
+				},
+			},
 		},
 	}
 
@@ -57,15 +70,6 @@ func cmdHttpServer(c *infra.Container) *cli.Command {
 			c.Logger().Info("🚀 HTTP server is running", zap.String("address", c.Config.HttpServer.Address))
 
 			return server.ListenAndServe()
-		},
-	}
-}
-
-func cmdMigration(container *infra.Container) *cli.Command {
-	return &cli.Command{
-		Name: "migrate",
-		Action: func(ctx *cli.Context) error {
-			return container.Migrate(ctx.Context)
 		},
 	}
 }

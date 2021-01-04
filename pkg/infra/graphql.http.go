@@ -85,7 +85,7 @@ func (r *GraphqlHttpRouter) handleFunc(srv *handler.Server) func(http.ResponseWr
 		}
 
 		// Inject DB connection to context
-		ctx = connect.WithContextValue(ctx, r.Container.dbs)
+		ctx = connect.WithContextValue(ctx, r.Container.DBs)
 
 		srv.ServeHTTP(w, req.WithContext(ctx))
 	}

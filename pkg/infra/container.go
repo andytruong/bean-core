@@ -33,7 +33,7 @@ func NewContainer(path string) (*Container, error) {
 	}
 
 	container.bundles.container = container
-	container.dbs = connect.NewWrapper(container.Config.Databases)
+	container.DBs = connect.NewWrapper(container.Config.Databases)
 
 	// setup logger
 	if container.Config.Env == "dev" {
@@ -59,7 +59,7 @@ type (
 
 		mutex      *sync.Mutex
 		identifier *scalar.Identifier
-		dbs        *connect.Wrapper
+		DBs        *connect.Wrapper
 		bundles    BundleList
 		logger     *zap.Logger
 		hook       *module.Hook
