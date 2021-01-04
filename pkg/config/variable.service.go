@@ -105,8 +105,8 @@ func (srv VariableService) Create(ctx context.Context, in dto.VariableCreateInpu
 	}
 
 	variable := &model.ConfigVariable{
-		Id:          srv.bundle.idr.MustULID(),
-		Version:     srv.bundle.idr.MustULID(),
+		Id:          srv.bundle.idr.ULID(),
+		Version:     srv.bundle.idr.ULID(),
 		BucketId:    in.BucketId,
 		Name:        in.Name,
 		Description: in.Description,
@@ -171,7 +171,7 @@ func (srv VariableService) Update(ctx context.Context, in dto.VariableUpdateInpu
 
 		if changed {
 			version := variable.Version
-			variable.Version = srv.bundle.idr.MustULID()
+			variable.Version = srv.bundle.idr.ULID()
 			err = tx.
 				Where("version = ?", version).
 				Save(&variable).

@@ -29,8 +29,8 @@ func (srv *ConfigService) CreateFeature(
 	space *model.Space, bucket string, key string, value []byte,
 ) error {
 	config := model.SpaceConfig{
-		Id:        srv.bundle.idr.MustULID(),
-		Version:   srv.bundle.idr.MustULID(),
+		Id:        srv.bundle.idr.ULID(),
+		Version:   srv.bundle.idr.ULID(),
 		SpaceId:   space.ID,
 		Bucket:    bucket,
 		Key:       key,
@@ -92,7 +92,7 @@ func (srv *ConfigService) updateFeature(
 	return tx.
 		Where("space_id = ? AND bucket = ? AND key = ?", obj.ID, bucket, key).
 		Updates(&model.SpaceConfig{
-			Version:   srv.bundle.idr.MustULID(),
+			Version:   srv.bundle.idr.ULID(),
 			Value:     value,
 			UpdatedAt: time.Now(),
 		}).

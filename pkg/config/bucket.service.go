@@ -33,9 +33,9 @@ func (srv BucketService) Create(ctx context.Context, in dto.BucketCreateInput) (
 
 	tx := connect.ContextToDB(ctx)
 	bucket := &model.ConfigBucket{
-		Id:          srv.bundle.idr.MustULID(),
-		Version:     srv.bundle.idr.MustULID(),
-		Slug:        scalar.NotNilString(in.Slug, srv.bundle.idr.MustULID()),
+		Id:          srv.bundle.idr.ULID(),
+		Version:     srv.bundle.idr.ULID(),
+		Slug:        scalar.NotNilString(in.Slug, srv.bundle.idr.ULID()),
 		Title:       scalar.NotNilString(in.Title, ""),
 		Description: in.Description,
 		Access:      "777",
@@ -113,7 +113,7 @@ func (srv BucketService) Update(ctx context.Context, in dto.BucketUpdateInput) (
 	}
 
 	if changed {
-		bucket.Version = srv.bundle.idr.MustULID()
+		bucket.Version = srv.bundle.idr.ULID()
 		err = tx.Save(&bucket).Error
 		if nil != err {
 			return nil, err

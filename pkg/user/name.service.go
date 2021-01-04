@@ -25,7 +25,7 @@ func (srv *NameService) load(ctx context.Context, userId string) (*model.UserNam
 func (srv *NameService) create(ctx context.Context, user *model.User, input *dto.UserCreateInput) error {
 	if nil != input.Name {
 		name := model.UserName{
-			ID:            srv.bundle.idr.MustULID(),
+			ID:            srv.bundle.idr.ULID(),
 			UserId:        user.ID,
 			FirstName:     input.Name.FirstName,
 			LastName:      input.Name.LastName,

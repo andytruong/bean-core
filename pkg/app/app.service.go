@@ -36,8 +36,8 @@ func (srv *AppService) Create(ctx context.Context, in *dto.ApplicationCreateInpu
 	}
 
 	app := &model.Application{
-		ID:        srv.bundle.idr.MustULID(),
-		Version:   srv.bundle.idr.MustULID(),
+		ID:        srv.bundle.idr.ULID(),
+		Version:   srv.bundle.idr.ULID(),
 		SpaceId:   claims.SpaceId(),
 		IsActive:  in.IsActive,
 		Title:     in.Title,
@@ -88,7 +88,7 @@ func (srv *AppService) Update(ctx context.Context, in *dto.ApplicationUpdateInpu
 		return &dto.ApplicationOutcome{App: app, Errors: nil}, util.ErrorUselessInput
 	}
 
-	app.Version = srv.bundle.idr.MustULID()
+	app.Version = srv.bundle.idr.ULID()
 	app.UpdatedAt = time.Now()
 	err = con.Save(&app).Error
 

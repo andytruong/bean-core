@@ -127,10 +127,10 @@ func (srv SessionService) create(
 		}
 	}
 
-	token := srv.bundle.idr.MustULID()
+	token := srv.bundle.idr.ULID()
 	session := &model.Session{
-		ID:          srv.bundle.idr.MustULID(),
-		Version:     srv.bundle.idr.MustULID(),
+		ID:          srv.bundle.idr.ULID(),
+		Version:     srv.bundle.idr.ULID(),
 		Kind:        kind,
 		UserId:      userId,
 		SpaceId:     spaceId,
@@ -205,7 +205,7 @@ func (srv SessionService) LoadByToken(ctx context.Context, token string) (*model
 func (srv SessionService) Delete(ctx context.Context, session *model.Session) (*dto.SessionArchiveOutcome, error) {
 	tx := connect.ContextToDB(ctx)
 	session.IsActive = false
-	session.Version = srv.bundle.idr.MustULID()
+	session.Version = srv.bundle.idr.ULID()
 	session.UpdatedAt = time.Now()
 	err := tx.Save(&session).Error
 	if nil != err {

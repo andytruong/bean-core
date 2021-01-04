@@ -62,8 +62,8 @@ func Test_Space(t *testing.T) {
 			claims := claim.NewPayload()
 			claims.
 				SetKind(claim.KindAuthenticated).
-				SetUserId(bundle.idr.MustULID()).
-				SetSpaceId(bundle.idr.MustULID())
+				SetUserId(bundle.idr.ULID()).
+				SetSpaceId(bundle.idr.ULID())
 			ctx := claim.PayloadToContext(ctx, &claims)
 			now := time.Now()
 

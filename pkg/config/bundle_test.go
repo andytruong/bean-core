@@ -34,7 +34,7 @@ func Test_Bucket(t *testing.T) {
 
 	t.Run("create", func(t *testing.T) {
 		t.Run("invalid schema", func(t *testing.T) {
-			hostId := bundle.idr.MustULID()
+			hostId := bundle.idr.ULID()
 			access := scalar.AccessMode("444")
 			out, err := bundle.BucketService.Create(ctx, dto.BucketCreateInput{
 				HostId:      hostId,
@@ -52,7 +52,7 @@ func Test_Bucket(t *testing.T) {
 		})
 
 		t.Run("valid schema", func(t *testing.T) {
-			hostId := bundle.idr.MustULID()
+			hostId := bundle.idr.ULID()
 			access := scalar.AccessMode("444")
 			out, err := bundle.BucketService.Create(ctx, dto.BucketCreateInput{
 				HostId:      hostId,
@@ -79,7 +79,7 @@ func Test_Bucket(t *testing.T) {
 
 		privateAccess := scalar.AccessModePrivate
 		oCreate, _ := bundle.BucketService.Create(connect.DBToContext(ctx, tx), dto.BucketCreateInput{
-			HostId:      bundle.idr.MustULID(),
+			HostId:      bundle.idr.ULID(),
 			Slug:        scalar.NilString("qa"),
 			Title:       scalar.NilString("QA"),
 			Description: scalar.NilString("Just for QA"),
@@ -138,7 +138,7 @@ func Test_Bucket(t *testing.T) {
 		var err error
 		var oCreate *dto.BucketMutationOutcome
 		var bucket *model.ConfigBucket
-		hostId := bundle.idr.MustULID()
+		hostId := bundle.idr.ULID()
 		access := scalar.AccessMode("444")
 		tx := db.Begin()
 		defer tx.Rollback()
@@ -192,7 +192,7 @@ func Test_Variable(t *testing.T) {
 			ctx := context.Background()
 			tx := db.Begin(&sql.TxOptions{})
 			defer tx.Rollback()
-			hostId := bundle.idr.MustULID()
+			hostId := bundle.idr.ULID()
 			access := scalar.AccessModePrivateReadonly
 
 			// create read-only bucket
@@ -226,7 +226,7 @@ func Test_Variable(t *testing.T) {
 
 		t.Run("writable bucket", func(t *testing.T) {
 			// setup auth context
-			userId := bundle.idr.MustULID()
+			userId := bundle.idr.ULID()
 			claims := claim.NewPayload()
 			claims.SetUserId(userId)
 			ctx := claim.PayloadToContext(context.Background(), &claims)
@@ -292,7 +292,7 @@ func Test_Variable(t *testing.T) {
 
 		setup := func(access scalar.AccessMode) (context.Context, *model.ConfigBucket, *model.ConfigVariable) {
 			// setup auth context
-			authorId := bundle.idr.MustULID()
+			authorId := bundle.idr.ULID()
 			authorClaims := claim.NewPayload()
 			authorClaims.SetUserId(authorId)
 			authorCtx := claim.PayloadToContext(context.Background(), &authorClaims)
@@ -300,7 +300,7 @@ func Test_Variable(t *testing.T) {
 			// create private bucket
 			oBucketCreate, err := bundle.BucketService.Create(connect.DBToContext(authorCtx, tx), dto.BucketCreateInput{
 				HostId:      authorId,
-				Slug:        scalar.NilString(bundle.idr.MustULID()),
+				Slug:        scalar.NilString(bundle.idr.ULID()),
 				Title:       scalar.NilString("Doe"),
 				Description: scalar.NilString("Just for John Doe"),
 				Access:      &access,

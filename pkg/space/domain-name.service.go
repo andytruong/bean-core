@@ -39,7 +39,7 @@ func (srv *DomainNameService) createMultiple(ctx context.Context, space *model.S
 
 func (srv *DomainNameService) create(ctx context.Context, space *model.Space, in *dto.DomainNameInput, isPrimary bool) error {
 	domain := model.DomainName{
-		ID:         srv.bundle.idr.MustULID(),
+		ID:         srv.bundle.idr.ULID(),
 		SpaceId:    space.ID,
 		IsVerified: *in.Verified,
 		Value:      *in.Value,

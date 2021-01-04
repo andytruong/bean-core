@@ -20,7 +20,7 @@ func (srv *PasswordService) create(ctx context.Context, user *model.User, in *dt
 
 	db := connect.ContextToDB(ctx)
 	pass := &model.UserPassword{
-		ID:          srv.bundle.idr.MustULID(),
+		ID:          srv.bundle.idr.ULID(),
 		UserId:      user.ID,
 		HashedValue: in.HashedValue,
 		CreatedAt:   time.Now(),

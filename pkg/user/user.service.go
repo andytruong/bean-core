@@ -41,8 +41,8 @@ func (srv *UserService) Create(ctx context.Context, in *dto.UserCreateInput) (*d
 
 	// create base record
 	obj := &model.User{
-		ID:        srv.bundle.idr.MustULID(),
-		Version:   srv.bundle.idr.MustULID(),
+		ID:        srv.bundle.idr.ULID(),
+		Version:   srv.bundle.idr.ULID(),
 		AvatarURI: in.AvatarURI,
 		IsActive:  in.IsActive,
 		CreatedAt: time.Now(),
@@ -90,7 +90,7 @@ func (srv *UserService) Update(ctx context.Context, in dto.UserUpdateInput) (*dt
 	}
 
 	// bump new version
-	obj.Version = srv.bundle.idr.MustULID()
+	obj.Version = srv.bundle.idr.ULID()
 	if err := tx.Save(obj).Error; nil != err {
 		return nil, err
 	}

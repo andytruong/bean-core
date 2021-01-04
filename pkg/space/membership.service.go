@@ -147,8 +147,8 @@ func (srv MemberService) Create(ctx context.Context, in dto.SpaceMembershipCreat
 
 func (srv MemberService) doCreate(ctx context.Context, spaceId string, userId string, isActive bool) (*model.Membership, error) {
 	membership := &model.Membership{
-		ID:        srv.bundle.idr.MustULID(),
-		Version:   srv.bundle.idr.MustULID(),
+		ID:        srv.bundle.idr.ULID(),
+		Version:   srv.bundle.idr.ULID(),
 		SpaceID:   spaceId,
 		UserID:    userId,
 		IsActive:  isActive,
@@ -200,8 +200,8 @@ func (srv MemberService) createRelationships(ctx context.Context, obj *model.Mem
 
 func (srv MemberService) createRelationship(ctx context.Context, obj *model.Membership, managerMemberId string) error {
 	relationship := model.ManagerRelationship{
-		ID:              srv.bundle.idr.MustULID(),
-		Version:         srv.bundle.idr.MustULID(),
+		ID:              srv.bundle.idr.ULID(),
+		Version:         srv.bundle.idr.ULID(),
 		UserMemberId:    obj.ID,
 		ManagerMemberId: managerMemberId,
 		IsActive:        true,
@@ -213,7 +213,7 @@ func (srv MemberService) createRelationship(ctx context.Context, obj *model.Memb
 }
 
 func (srv MemberService) Update(ctx context.Context, in dto.SpaceMembershipUpdateInput, obj *model.Membership) (*dto.SpaceMembershipCreateOutcome, error) {
-	obj.Version = srv.bundle.idr.MustULID()
+	obj.Version = srv.bundle.idr.ULID()
 	obj.IsActive = in.IsActive
 
 	err := connect.ContextToDB(ctx).Save(&obj).Error

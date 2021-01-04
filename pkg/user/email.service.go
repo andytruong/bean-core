@@ -44,7 +44,7 @@ func (srv EmailService) Create(ctx context.Context, user *model.User, in dto.Use
 	}
 
 	email := model.UserEmail{
-		ID:        srv.bundle.idr.MustULID(),
+		ID:        srv.bundle.idr.ULID(),
 		UserId:    user.ID,
 		Value:     in.Value.LowerCaseValue(),
 		IsActive:  in.Verified,

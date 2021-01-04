@@ -89,7 +89,7 @@ func Test_Update(t *testing.T) {
 		t.Run("version conflict", func(t *testing.T) {
 			oUpdate, err := rUpdate(ctx, nil, dto.UserUpdateInput{
 				ID:      oCreate.User.ID,
-				Version: bundle.idr.MustULID(), // some other version
+				Version: bundle.idr.ULID(), // some other version
 			})
 
 			ass.NoError(err)
@@ -102,7 +102,7 @@ func Test_Update(t *testing.T) {
 				Version: oCreate.User.Version,
 				Values: &dto.UserUpdateValuesInput{
 					Password: &dto.UserPasswordInput{
-						HashedValue: bundle.idr.MustULID(),
+						HashedValue: bundle.idr.ULID(),
 					},
 				},
 			})

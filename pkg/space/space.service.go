@@ -63,8 +63,8 @@ func (srv *SpaceService) Create(ctx context.Context, in dto.SpaceCreateInput) (*
 func (srv *SpaceService) create(ctx context.Context, in dto.SpaceCreateInput) (*model.Space, error) {
 	db := connect.ContextToDB(ctx)
 	space := &model.Space{
-		ID:        srv.bundle.idr.MustULID(),
-		Version:   srv.bundle.idr.MustULID(),
+		ID:        srv.bundle.idr.ULID(),
+		Version:   srv.bundle.idr.ULID(),
 		Kind:      in.Object.Kind,
 		Title:     *in.Object.Title,
 		Language:  in.Object.Language,
@@ -150,7 +150,7 @@ func (srv SpaceService) Update(ctx context.Context, obj model.Space, in dto.Spac
 	}
 
 	// change version
-	obj.Version = srv.bundle.idr.MustULID()
+	obj.Version = srv.bundle.idr.ULID()
 	if err := tx.Save(obj).Error; nil != err {
 		return nil, err
 	}
