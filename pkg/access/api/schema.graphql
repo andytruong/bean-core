@@ -63,17 +63,12 @@ type AccessMutation {
 # Mutation.accessMutation.create()
 # ---------------------
 type AccessSessionMutation {
-    create(input: SessionCreateInput): SessionCreateOutcome!
+    create(input: SessionCreateInput!): SessionOutcome!
+    generateOneTimeLoginToken(input: SessionCreateOTLTSessionInput!): SessionOutcome!
+    exchangeOneTimeLoginToken(input: SessionExchangeOTLTInput!): SessionOutcome!
 }
 
 input SessionCreateInput {
-    useCredentials:  SessionCreateUseCredentialsInput
-    generateOTLT: SessionCreateGenerateOTLT
-    useOTLT: SessionCreateUseOTLT
-    context: SessionCreateContextInput
-}
-
-input SessionCreateUseCredentialsInput {
     spaceId: ID!
     email: EmailAddress!
     hashedPassword: String!
@@ -81,25 +76,18 @@ input SessionCreateUseCredentialsInput {
     codeChallenge: String!
 }
 
-input SessionCreateGenerateOTLT {
+input SessionCreateOTLTSessionInput {
     spaceId: String!
     userId: String!
 }
 
-input SessionCreateUseOTLT {
+input SessionExchangeOTLTInput {
     token: String!
     codeChallengeMethod: String!
     codeChallenge: String!
 }
 
-input SessionCreateContextInput {
-    ipAddress: IP
-    country: CountryCode
-    deviceType: DeviceType
-    deviceName: String
-}
-
-type SessionCreateOutcome {
+type SessionOutcome {
     errors: [Error!]
     session: Session
     token: String

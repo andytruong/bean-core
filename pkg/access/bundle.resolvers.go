@@ -20,11 +20,6 @@ func (bundle *Bundle) newResolves() map[string]interface{} {
 				return &dto.AccessQuery{}, nil
 			},
 		},
-		"Mutation": map[string]interface{}{
-			"AccessMutation": func(ctx context.Context) (*dto.AccessMutation, error) {
-				return &dto.AccessMutation{}, nil
-			},
-		},
 		"AccessQuery": map[string]interface{}{
 			"Session": func(ctx context.Context, _ *dto.AccessQuery) (*dto.AccessSessionQuery, error) {
 				return &dto.AccessSessionQuery{}, nil
@@ -35,14 +30,25 @@ func (bundle *Bundle) newResolves() map[string]interface{} {
 				return bundle.sessionService.load(ctx, id)
 			},
 		},
+		"Mutation": map[string]interface{}{
+			"AccessMutation": func(ctx context.Context) (*dto.AccessMutation, error) {
+				return &dto.AccessMutation{}, nil
+			},
+		},
 		"AccessMutation": map[string]interface{}{
 			"Session": func(ctx context.Context, _ *dto.AccessMutation) (*dto.AccessSessionMutation, error) {
 				return &dto.AccessSessionMutation{}, nil
 			},
 		},
 		"AccessSessionMutation": map[string]interface{}{
-			"Create": func(ctx context.Context, _ *dto.AccessSessionMutation, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
-				return bundle.sessionService.Create(ctx, in)
+			"Create": func(ctx context.Context, _ *dto.AccessSessionMutation, in *dto.SessionCreateInput) (*dto.SessionOutcome, error) {
+				return bundle.sessionService.newSessionWithCredentials(ctx, in)
+			},
+			"GenerateOneTimeLoginToken": func(ctx context.Context, _ *dto.AccessSessionMutation, in *dto.SessionCreateOTLTSessionInput) (*dto.SessionOutcome, error) {
+				return bundle.sessionService.newOTLTSession(ctx, in)
+			},
+			"ExchangeOneTimeLoginToken": func(ctx context.Context, _ *dto.AccessSessionMutation, in *dto.SessionExchangeOTLTInput) (*dto.SessionOutcome, error) {
+				return bundle.sessionService.newSessionWithOTLT(ctx, in)
 			},
 			"Archive": func(ctx context.Context, _ *dto.AccessSessionMutation) (*dto.SessionArchiveOutcome, error) {
 				claims := claim.ContextToPayload(ctx)

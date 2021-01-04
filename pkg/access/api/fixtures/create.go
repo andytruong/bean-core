@@ -12,18 +12,10 @@ func SessionCreateInputFixtureUseCredentials(spaceId string, email string, hashe
 	codeVerifier := []byte("0123456789")
 
 	return &dto.SessionCreateInput{
-		UseCredentials: &dto.SessionCreateUseCredentialsInput{
-			SpaceID:             spaceId,
-			Email:               scalar.EmailAddress(email),
-			HashedPassword:      hashedPassword,
-			CodeChallengeMethod: "S256",
-			CodeChallenge:       fmt.Sprintf("%x", sha256.Sum256(codeVerifier)),
-		},
-		Context: &dto.SessionCreateContextInput{
-			IPAddress:  nil,
-			Country:    nil,
-			DeviceType: nil,
-			DeviceName: nil,
-		},
+		SpaceID:             spaceId,
+		Email:               scalar.EmailAddress(email),
+		HashedPassword:      hashedPassword,
+		CodeChallengeMethod: "S256",
+		CodeChallenge:       fmt.Sprintf("%x", sha256.Sum256(codeVerifier)),
 	}
 }

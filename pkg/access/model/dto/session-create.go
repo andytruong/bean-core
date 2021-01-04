@@ -7,13 +7,6 @@ import (
 )
 
 type SessionCreateInput struct {
-	UseCredentials *SessionCreateUseCredentialsInput `json:"useCredentials"`
-	GenerateOTLT   *SessionCreateGenerateOTLT        `json:"generateOTLT"`
-	UseOTLT        *SessionCreateUseOTLT             `json:"useOTLT"`
-	Context        *SessionCreateContextInput        `json:"context"`
-}
-
-type SessionCreateUseCredentialsInput struct {
 	SpaceID             string              `json:"spaceId"`
 	Email               scalar.EmailAddress `json:"email"`
 	HashedPassword      string              `json:"hashedPassword"`
@@ -21,12 +14,15 @@ type SessionCreateUseCredentialsInput struct {
 	CodeChallenge       string              `json:"codeChallenge"`
 }
 
-type SessionCreateGenerateOTLT struct {
+type SessionCreateUseCredentialsInput struct {
+}
+
+type SessionCreateOTLTSessionInput struct {
 	SpaceID string `json:"spaceId"`
 	UserID  string `json:"userId"`
 }
 
-type SessionCreateUseOTLT struct {
+type SessionExchangeOTLTInput struct {
 	Token               string `json:"token"`
 	CodeChallengeMethod string `json:"codeChallengeMethod"`
 	CodeChallenge       string `json:"codeChallenge"`
@@ -39,7 +35,7 @@ type SessionCreateContextInput struct {
 	DeviceName *string           `json:"deviceName"`
 }
 
-type SessionCreateOutcome struct {
+type SessionOutcome struct {
 	Errors  []*util.Error  `json:"errors"`
 	Token   *string        `json:"token"`
 	Session *model.Session `json:"session"`

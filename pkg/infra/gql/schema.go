@@ -97,8 +97,10 @@ type ComplexityRoot struct {
 	}
 
 	AccessSessionMutation struct {
-		Archive func(childComplexity int) int
-		Create  func(childComplexity int, input *dto.SessionCreateInput) int
+		Archive                   func(childComplexity int) int
+		Create                    func(childComplexity int, input dto.SessionCreateInput) int
+		ExchangeOneTimeLoginToken func(childComplexity int, input dto.SessionExchangeOTLTInput) int
+		GenerateOneTimeLoginToken func(childComplexity int, input dto.SessionCreateOTLTSessionInput) int
 	}
 
 	AccessSessionQuery struct {
@@ -387,7 +389,7 @@ type ComplexityRoot struct {
 		IPAddress  func(childComplexity int) int
 	}
 
-	SessionCreateOutcome struct {
+	SessionOutcome struct {
 		Errors  func(childComplexity int) int
 		Session func(childComplexity int) int
 		Token   func(childComplexity int) int
@@ -405,11 +407,6 @@ type ComplexityRoot struct {
 		Title       func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
 		Version     func(childComplexity int) int
-	}
-
-	SpaceCreateOutcome struct {
-		Errors func(childComplexity int) int
-		Space  func(childComplexity int) int
 	}
 
 	SpaceFeatures struct {
@@ -435,6 +432,11 @@ type ComplexityRoot struct {
 		Create     func(childComplexity int, input dto4.SpaceCreateInput) int
 		Membership func(childComplexity int) int
 		Update     func(childComplexity int, input dto4.SpaceUpdateInput) int
+	}
+
+	SpaceOutcome struct {
+		Errors func(childComplexity int) int
+		Space  func(childComplexity int) int
 	}
 
 	SpaceQuery struct {
@@ -502,7 +504,9 @@ type AccessQueryResolver interface {
 	Session(ctx context.Context, obj *dto.AccessQuery) (*dto.AccessSessionQuery, error)
 }
 type AccessSessionMutationResolver interface {
-	Create(ctx context.Context, obj *dto.AccessSessionMutation, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error)
+	Create(ctx context.Context, obj *dto.AccessSessionMutation, input dto.SessionCreateInput) (*dto.SessionOutcome, error)
+	GenerateOneTimeLoginToken(ctx context.Context, obj *dto.AccessSessionMutation, input dto.SessionCreateOTLTSessionInput) (*dto.SessionOutcome, error)
+	ExchangeOneTimeLoginToken(ctx context.Context, obj *dto.AccessSessionMutation, input dto.SessionExchangeOTLTInput) (*dto.SessionOutcome, error)
 	Archive(ctx context.Context, obj *dto.AccessSessionMutation) (*dto.SessionArchiveOutcome, error)
 }
 type AccessSessionQueryResolver interface {
@@ -588,8 +592,8 @@ type SpaceMembershipQueryResolver interface {
 	Find(ctx context.Context, obj *dto4.SpaceMembershipQuery, first int, after *string, filters dto4.MembershipsFilter) (*model4.MembershipConnection, error)
 }
 type SpaceMutationResolver interface {
-	Create(ctx context.Context, obj *dto4.SpaceMutation, input dto4.SpaceCreateInput) (*dto4.SpaceCreateOutcome, error)
-	Update(ctx context.Context, obj *dto4.SpaceMutation, input dto4.SpaceUpdateInput) (*dto4.SpaceCreateOutcome, error)
+	Create(ctx context.Context, obj *dto4.SpaceMutation, input dto4.SpaceCreateInput) (*dto4.SpaceOutcome, error)
+	Update(ctx context.Context, obj *dto4.SpaceMutation, input dto4.SpaceUpdateInput) (*dto4.SpaceOutcome, error)
 	Membership(ctx context.Context, obj *dto4.SpaceMutation) (*dto4.SpaceMembershipMutation, error)
 }
 type SpaceQueryResolver interface {
@@ -657,7 +661,31 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.AccessSessionMutation.Create(childComplexity, args["input"].(*dto.SessionCreateInput)), true
+		return e.complexity.AccessSessionMutation.Create(childComplexity, args["input"].(dto.SessionCreateInput)), true
+
+	case "AccessSessionMutation.exchangeOneTimeLoginToken":
+		if e.complexity.AccessSessionMutation.ExchangeOneTimeLoginToken == nil {
+			break
+		}
+
+		args, err := ec.field_AccessSessionMutation_exchangeOneTimeLoginToken_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.AccessSessionMutation.ExchangeOneTimeLoginToken(childComplexity, args["input"].(dto.SessionExchangeOTLTInput)), true
+
+	case "AccessSessionMutation.generateOneTimeLoginToken":
+		if e.complexity.AccessSessionMutation.GenerateOneTimeLoginToken == nil {
+			break
+		}
+
+		args, err := ec.field_AccessSessionMutation_generateOneTimeLoginToken_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.AccessSessionMutation.GenerateOneTimeLoginToken(childComplexity, args["input"].(dto.SessionCreateOTLTSessionInput)), true
 
 	case "AccessSessionQuery.load":
 		if e.complexity.AccessSessionQuery.Load == nil {
@@ -1886,26 +1914,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SessionContext.IPAddress(childComplexity), true
 
-	case "SessionCreateOutcome.errors":
-		if e.complexity.SessionCreateOutcome.Errors == nil {
+	case "SessionOutcome.errors":
+		if e.complexity.SessionOutcome.Errors == nil {
 			break
 		}
 
-		return e.complexity.SessionCreateOutcome.Errors(childComplexity), true
+		return e.complexity.SessionOutcome.Errors(childComplexity), true
 
-	case "SessionCreateOutcome.session":
-		if e.complexity.SessionCreateOutcome.Session == nil {
+	case "SessionOutcome.session":
+		if e.complexity.SessionOutcome.Session == nil {
 			break
 		}
 
-		return e.complexity.SessionCreateOutcome.Session(childComplexity), true
+		return e.complexity.SessionOutcome.Session(childComplexity), true
 
-	case "SessionCreateOutcome.token":
-		if e.complexity.SessionCreateOutcome.Token == nil {
+	case "SessionOutcome.token":
+		if e.complexity.SessionOutcome.Token == nil {
 			break
 		}
 
-		return e.complexity.SessionCreateOutcome.Token(childComplexity), true
+		return e.complexity.SessionOutcome.Token(childComplexity), true
 
 	case "Space.createdAt":
 		if e.complexity.Space.CreatedAt == nil {
@@ -1983,20 +2011,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Space.Version(childComplexity), true
-
-	case "SpaceCreateOutcome.errors":
-		if e.complexity.SpaceCreateOutcome.Errors == nil {
-			break
-		}
-
-		return e.complexity.SpaceCreateOutcome.Errors(childComplexity), true
-
-	case "SpaceCreateOutcome.space":
-		if e.complexity.SpaceCreateOutcome.Space == nil {
-			break
-		}
-
-		return e.complexity.SpaceCreateOutcome.Space(childComplexity), true
 
 	case "SpaceFeatures.register":
 		if e.complexity.SpaceFeatures.Register == nil {
@@ -2097,6 +2111,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SpaceMutation.Update(childComplexity, args["input"].(dto4.SpaceUpdateInput)), true
+
+	case "SpaceOutcome.errors":
+		if e.complexity.SpaceOutcome.Errors == nil {
+			break
+		}
+
+		return e.complexity.SpaceOutcome.Errors(childComplexity), true
+
+	case "SpaceOutcome.space":
+		if e.complexity.SpaceOutcome.Space == nil {
+			break
+		}
+
+		return e.complexity.SpaceOutcome.Space(childComplexity), true
 
 	case "SpaceQuery.findOne":
 		if e.complexity.SpaceQuery.FindOne == nil {
@@ -2457,17 +2485,12 @@ type AccessMutation {
 # Mutation.accessMutation.create()
 # ---------------------
 type AccessSessionMutation {
-    create(input: SessionCreateInput): SessionCreateOutcome!
+    create(input: SessionCreateInput!): SessionOutcome!
+    generateOneTimeLoginToken(input: SessionCreateOTLTSessionInput!): SessionOutcome!
+    exchangeOneTimeLoginToken(input: SessionExchangeOTLTInput!): SessionOutcome!
 }
 
 input SessionCreateInput {
-    useCredentials:  SessionCreateUseCredentialsInput
-    generateOTLT: SessionCreateGenerateOTLT
-    useOTLT: SessionCreateUseOTLT
-    context: SessionCreateContextInput
-}
-
-input SessionCreateUseCredentialsInput {
     spaceId: ID!
     email: EmailAddress!
     hashedPassword: String!
@@ -2475,25 +2498,18 @@ input SessionCreateUseCredentialsInput {
     codeChallenge: String!
 }
 
-input SessionCreateGenerateOTLT {
+input SessionCreateOTLTSessionInput {
     spaceId: String!
     userId: String!
 }
 
-input SessionCreateUseOTLT {
+input SessionExchangeOTLTInput {
     token: String!
     codeChallengeMethod: String!
     codeChallenge: String!
 }
 
-input SessionCreateContextInput {
-    ipAddress: IP
-    country: CountryCode
-    deviceType: DeviceType
-    deviceName: String
-}
-
-type SessionCreateOutcome {
+type SessionOutcome {
     errors: [Error!]
     session: Session
     token: String
@@ -3050,8 +3066,8 @@ extend type Mutation {
 }
 
 type SpaceMutation {
-    create(input: SpaceCreateInput!): SpaceCreateOutcome!
-    update(input: SpaceUpdateInput!): SpaceCreateOutcome!
+    create(input: SpaceCreateInput!): SpaceOutcome!
+    update(input: SpaceUpdateInput!): SpaceOutcome!
     membership: SpaceMembershipMutation!
 }
 
@@ -3086,7 +3102,7 @@ input DomainNameInput {
     isActive: Boolean
 }
 
-type SpaceCreateOutcome {
+type SpaceOutcome {
     errors: [Error!]
     space: Space
 }
@@ -3322,10 +3338,40 @@ func (ec *executionContext) dir_value_args(ctx context.Context, rawArgs map[stri
 func (ec *executionContext) field_AccessSessionMutation_create_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *dto.SessionCreateInput
+	var arg0 dto.SessionCreateInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx, tmp)
+		arg0, err = ec.unmarshalNSessionCreateInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_AccessSessionMutation_exchangeOneTimeLoginToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 dto.SessionExchangeOTLTInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNSessionExchangeOTLTInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionExchangeOTLTInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_AccessSessionMutation_generateOneTimeLoginToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 dto.SessionCreateOTLTSessionInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNSessionCreateOTLTSessionInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOTLTSessionInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3881,7 +3927,7 @@ func (ec *executionContext) _AccessSessionMutation_create(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.AccessSessionMutation().Create(rctx, obj, args["input"].(*dto.SessionCreateInput))
+		return ec.resolvers.AccessSessionMutation().Create(rctx, obj, args["input"].(dto.SessionCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3893,9 +3939,93 @@ func (ec *executionContext) _AccessSessionMutation_create(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto.SessionCreateOutcome)
+	res := resTmp.(*dto.SessionOutcome)
 	fc.Result = res
-	return ec.marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx, field.Selections, res)
+	return ec.marshalNSessionOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccessSessionMutation_generateOneTimeLoginToken(ctx context.Context, field graphql.CollectedField, obj *dto.AccessSessionMutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccessSessionMutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_AccessSessionMutation_generateOneTimeLoginToken_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AccessSessionMutation().GenerateOneTimeLoginToken(rctx, obj, args["input"].(dto.SessionCreateOTLTSessionInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto.SessionOutcome)
+	fc.Result = res
+	return ec.marshalNSessionOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccessSessionMutation_exchangeOneTimeLoginToken(ctx context.Context, field graphql.CollectedField, obj *dto.AccessSessionMutation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccessSessionMutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_AccessSessionMutation_exchangeOneTimeLoginToken_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AccessSessionMutation().ExchangeOneTimeLoginToken(rctx, obj, args["input"].(dto.SessionExchangeOTLTInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*dto.SessionOutcome)
+	fc.Result = res
+	return ec.marshalNSessionOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AccessSessionMutation_archive(ctx context.Context, field graphql.CollectedField, obj *dto.AccessSessionMutation) (ret graphql.Marshaler) {
@@ -9950,7 +10080,7 @@ func (ec *executionContext) _SessionContext_deviceName(ctx context.Context, fiel
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.SessionCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto.SessionOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9958,7 +10088,7 @@ func (ec *executionContext) _SessionCreateOutcome_errors(ctx context.Context, fi
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "SessionCreateOutcome",
+		Object:     "SessionOutcome",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -9982,7 +10112,7 @@ func (ec *executionContext) _SessionCreateOutcome_errors(ctx context.Context, fi
 	return ec.marshalOError2ᚕᚖbeanᚋcomponentsᚋutilᚐErrorᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto.SessionCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionOutcome_session(ctx context.Context, field graphql.CollectedField, obj *dto.SessionOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9990,7 +10120,7 @@ func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, f
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "SessionCreateOutcome",
+		Object:     "SessionOutcome",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -10014,7 +10144,7 @@ func (ec *executionContext) _SessionCreateOutcome_session(ctx context.Context, f
 	return ec.marshalOSession2ᚖbeanᚋpkgᚋaccessᚋmodelᚐSession(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SessionCreateOutcome_token(ctx context.Context, field graphql.CollectedField, obj *dto.SessionCreateOutcome) (ret graphql.Marshaler) {
+func (ec *executionContext) _SessionOutcome_token(ctx context.Context, field graphql.CollectedField, obj *dto.SessionOutcome) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10022,7 +10152,7 @@ func (ec *executionContext) _SessionCreateOutcome_token(ctx context.Context, fie
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "SessionCreateOutcome",
+		Object:     "SessionOutcome",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -10419,70 +10549,6 @@ func (ec *executionContext) _Space_parent(ctx context.Context, field graphql.Col
 	return ec.marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SpaceCreateOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto4.SpaceCreateOutcome) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "SpaceCreateOutcome",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Errors, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]util.Error)
-	fc.Result = res
-	return ec.marshalOError2ᚕbeanᚋcomponentsᚋutilᚐErrorᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _SpaceCreateOutcome_space(ctx context.Context, field graphql.CollectedField, obj *dto4.SpaceCreateOutcome) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "SpaceCreateOutcome",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Space, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model4.Space)
-	fc.Result = res
-	return ec.marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _SpaceFeatures_register(ctx context.Context, field graphql.CollectedField, obj *model4.SpaceFeatures) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -10784,9 +10850,9 @@ func (ec *executionContext) _SpaceMutation_create(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto4.SpaceCreateOutcome)
+	res := resTmp.(*dto4.SpaceOutcome)
 	fc.Result = res
-	return ec.marshalNSpaceCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateOutcome(ctx, field.Selections, res)
+	return ec.marshalNSpaceOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SpaceMutation_update(ctx context.Context, field graphql.CollectedField, obj *dto4.SpaceMutation) (ret graphql.Marshaler) {
@@ -10826,9 +10892,9 @@ func (ec *executionContext) _SpaceMutation_update(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*dto4.SpaceCreateOutcome)
+	res := resTmp.(*dto4.SpaceOutcome)
 	fc.Result = res
-	return ec.marshalNSpaceCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateOutcome(ctx, field.Selections, res)
+	return ec.marshalNSpaceOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceOutcome(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SpaceMutation_membership(ctx context.Context, field graphql.CollectedField, obj *dto4.SpaceMutation) (ret graphql.Marshaler) {
@@ -10864,6 +10930,70 @@ func (ec *executionContext) _SpaceMutation_membership(ctx context.Context, field
 	res := resTmp.(*dto4.SpaceMembershipMutation)
 	fc.Result = res
 	return ec.marshalNSpaceMembershipMutation2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceMembershipMutation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SpaceOutcome_errors(ctx context.Context, field graphql.CollectedField, obj *dto4.SpaceOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SpaceOutcome",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]util.Error)
+	fc.Result = res
+	return ec.marshalOError2ᚕbeanᚋcomponentsᚋutilᚐErrorᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SpaceOutcome_space(ctx context.Context, field graphql.CollectedField, obj *dto4.SpaceOutcome) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SpaceOutcome",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Space, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model4.Space)
+	fc.Result = res
+	return ec.marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SpaceQuery_findOne(ctx context.Context, field graphql.CollectedField, obj *dto4.SpaceQuery) (ret graphql.Marshaler) {
@@ -13622,124 +13752,8 @@ func (ec *executionContext) unmarshalInputS3CredentialsInput(ctx context.Context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSessionCreateContextInput(ctx context.Context, obj interface{}) (dto.SessionCreateContextInput, error) {
-	var it dto.SessionCreateContextInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "ipAddress":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ipAddress"))
-			it.IPAddress, err = ec.unmarshalOIP2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "country":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("country"))
-			it.Country, err = ec.unmarshalOCountryCode2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "deviceType":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deviceType"))
-			it.DeviceType, err = ec.unmarshalODeviceType2ᚖbeanᚋpkgᚋaccessᚋmodelᚐDeviceType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "deviceName":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deviceName"))
-			it.DeviceName, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputSessionCreateGenerateOTLT(ctx context.Context, obj interface{}) (dto.SessionCreateGenerateOTLT, error) {
-	var it dto.SessionCreateGenerateOTLT
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "spaceId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("spaceId"))
-			it.SpaceID, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			it.UserID, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputSessionCreateInput(ctx context.Context, obj interface{}) (dto.SessionCreateInput, error) {
 	var it dto.SessionCreateInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "useCredentials":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("useCredentials"))
-			it.UseCredentials, err = ec.unmarshalOSessionCreateUseCredentialsInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseCredentialsInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "generateOTLT":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("generateOTLT"))
-			it.GenerateOTLT, err = ec.unmarshalOSessionCreateGenerateOTLT2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateGenerateOTLT(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "useOTLT":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("useOTLT"))
-			it.UseOTLT, err = ec.unmarshalOSessionCreateUseOTLT2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOTLT(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "context":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("context"))
-			it.Context, err = ec.unmarshalOSessionCreateContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateContextInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputSessionCreateUseCredentialsInput(ctx context.Context, obj interface{}) (dto.SessionCreateUseCredentialsInput, error) {
-	var it dto.SessionCreateUseCredentialsInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -13790,8 +13804,36 @@ func (ec *executionContext) unmarshalInputSessionCreateUseCredentialsInput(ctx c
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSessionCreateUseOTLT(ctx context.Context, obj interface{}) (dto.SessionCreateUseOTLT, error) {
-	var it dto.SessionCreateUseOTLT
+func (ec *executionContext) unmarshalInputSessionCreateOTLTSessionInput(ctx context.Context, obj interface{}) (dto.SessionCreateOTLTSessionInput, error) {
+	var it dto.SessionCreateOTLTSessionInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "spaceId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("spaceId"))
+			it.SpaceID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "userId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			it.UserID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSessionExchangeOTLTInput(ctx context.Context, obj interface{}) (dto.SessionExchangeOTLTInput, error) {
+	var it dto.SessionExchangeOTLTInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -14586,6 +14628,34 @@ func (ec *executionContext) _AccessSessionMutation(ctx context.Context, sel ast.
 					}
 				}()
 				res = ec._AccessSessionMutation_create(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "generateOneTimeLoginToken":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AccessSessionMutation_generateOneTimeLoginToken(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "exchangeOneTimeLoginToken":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AccessSessionMutation_exchangeOneTimeLoginToken(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -16491,23 +16561,23 @@ func (ec *executionContext) _SessionContext(ctx context.Context, sel ast.Selecti
 	return out
 }
 
-var sessionCreateOutcomeImplementors = []string{"SessionCreateOutcome"}
+var sessionOutcomeImplementors = []string{"SessionOutcome"}
 
-func (ec *executionContext) _SessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.SessionCreateOutcome) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, sessionCreateOutcomeImplementors)
+func (ec *executionContext) _SessionOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto.SessionOutcome) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sessionOutcomeImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("SessionCreateOutcome")
+			out.Values[i] = graphql.MarshalString("SessionOutcome")
 		case "errors":
-			out.Values[i] = ec._SessionCreateOutcome_errors(ctx, field, obj)
+			out.Values[i] = ec._SessionOutcome_errors(ctx, field, obj)
 		case "session":
-			out.Values[i] = ec._SessionCreateOutcome_session(ctx, field, obj)
+			out.Values[i] = ec._SessionOutcome_session(ctx, field, obj)
 		case "token":
-			out.Values[i] = ec._SessionCreateOutcome_token(ctx, field, obj)
+			out.Values[i] = ec._SessionOutcome_token(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16600,32 +16670,6 @@ func (ec *executionContext) _Space(ctx context.Context, sel ast.SelectionSet, ob
 				res = ec._Space_parent(ctx, field, obj)
 				return res
 			})
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var spaceCreateOutcomeImplementors = []string{"SpaceCreateOutcome"}
-
-func (ec *executionContext) _SpaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto4.SpaceCreateOutcome) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, spaceCreateOutcomeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("SpaceCreateOutcome")
-		case "errors":
-			out.Values[i] = ec._SpaceCreateOutcome_errors(ctx, field, obj)
-		case "space":
-			out.Values[i] = ec._SpaceCreateOutcome_space(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16840,6 +16884,32 @@ func (ec *executionContext) _SpaceMutation(ctx context.Context, sel ast.Selectio
 				}
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var spaceOutcomeImplementors = []string{"SpaceOutcome"}
+
+func (ec *executionContext) _SpaceOutcome(ctx context.Context, sel ast.SelectionSet, obj *dto4.SpaceOutcome) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, spaceOutcomeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SpaceOutcome")
+		case "errors":
+			out.Values[i] = ec._SpaceOutcome_errors(ctx, field, obj)
+		case "space":
+			out.Values[i] = ec._SpaceOutcome_space(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -18238,18 +18308,33 @@ func (ec *executionContext) marshalNSessionArchiveOutcome2ᚖbeanᚋpkgᚋaccess
 	return ec._SessionArchiveOutcome(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNSessionCreateOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto.SessionCreateOutcome) graphql.Marshaler {
-	return ec._SessionCreateOutcome(ctx, sel, &v)
+func (ec *executionContext) unmarshalNSessionCreateInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx context.Context, v interface{}) (dto.SessionCreateInput, error) {
+	res, err := ec.unmarshalInputSessionCreateInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNSessionCreateOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.SessionCreateOutcome) graphql.Marshaler {
+func (ec *executionContext) unmarshalNSessionCreateOTLTSessionInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateOTLTSessionInput(ctx context.Context, v interface{}) (dto.SessionCreateOTLTSessionInput, error) {
+	res, err := ec.unmarshalInputSessionCreateOTLTSessionInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNSessionExchangeOTLTInput2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionExchangeOTLTInput(ctx context.Context, v interface{}) (dto.SessionExchangeOTLTInput, error) {
+	res, err := ec.unmarshalInputSessionExchangeOTLTInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSessionOutcome2beanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionOutcome(ctx context.Context, sel ast.SelectionSet, v dto.SessionOutcome) graphql.Marshaler {
+	return ec._SessionOutcome(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSessionOutcome2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionOutcome(ctx context.Context, sel ast.SelectionSet, v *dto.SessionOutcome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._SessionCreateOutcome(ctx, sel, v)
+	return ec._SessionOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNSpace2beanᚋpkgᚋspaceᚋmodelᚐSpace(ctx context.Context, sel ast.SelectionSet, v model4.Space) graphql.Marshaler {
@@ -18311,20 +18396,6 @@ func (ec *executionContext) unmarshalNSpaceCreateInput2beanᚋpkgᚋspaceᚋmode
 func (ec *executionContext) unmarshalNSpaceCreateInputObject2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateInputObject(ctx context.Context, v interface{}) (dto4.SpaceCreateInputObject, error) {
 	res, err := ec.unmarshalInputSpaceCreateInputObject(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNSpaceCreateOutcome2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v dto4.SpaceCreateOutcome) graphql.Marshaler {
-	return ec._SpaceCreateOutcome(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNSpaceCreateOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceCreateOutcome(ctx context.Context, sel ast.SelectionSet, v *dto4.SpaceCreateOutcome) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._SpaceCreateOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNSpaceFeaturesInput2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceFeaturesInput(ctx context.Context, v interface{}) (dto4.SpaceFeaturesInput, error) {
@@ -18411,6 +18482,20 @@ func (ec *executionContext) marshalNSpaceMutation2ᚖbeanᚋpkgᚋspaceᚋmodel�
 		return graphql.Null
 	}
 	return ec._SpaceMutation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSpaceOutcome2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceOutcome(ctx context.Context, sel ast.SelectionSet, v dto4.SpaceOutcome) graphql.Marshaler {
+	return ec._SpaceOutcome(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSpaceOutcome2ᚖbeanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceOutcome(ctx context.Context, sel ast.SelectionSet, v *dto4.SpaceOutcome) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._SpaceOutcome(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNSpaceQuery2beanᚋpkgᚋspaceᚋmodelᚋdtoᚐSpaceQuery(ctx context.Context, sel ast.SelectionSet, v dto4.SpaceQuery) graphql.Marshaler {
@@ -19466,46 +19551,6 @@ func (ec *executionContext) marshalOSessionContext2ᚖbeanᚋpkgᚋaccessᚋmode
 		return graphql.Null
 	}
 	return ec._SessionContext(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOSessionCreateContextInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateContextInput(ctx context.Context, v interface{}) (*dto.SessionCreateContextInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputSessionCreateContextInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOSessionCreateGenerateOTLT2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateGenerateOTLT(ctx context.Context, v interface{}) (*dto.SessionCreateGenerateOTLT, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputSessionCreateGenerateOTLT(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOSessionCreateInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateInput(ctx context.Context, v interface{}) (*dto.SessionCreateInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputSessionCreateInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOSessionCreateUseCredentialsInput2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseCredentialsInput(ctx context.Context, v interface{}) (*dto.SessionCreateUseCredentialsInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputSessionCreateUseCredentialsInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOSessionCreateUseOTLT2ᚖbeanᚋpkgᚋaccessᚋmodelᚋdtoᚐSessionCreateUseOTLT(ctx context.Context, v interface{}) (*dto.SessionCreateUseOTLT, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputSessionCreateUseOTLT(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOSpace2ᚖbeanᚋpkgᚋspaceᚋmodelᚐSpace(ctx context.Context, sel ast.SelectionSet, v *model4.Space) graphql.Marshaler {

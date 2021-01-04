@@ -12,13 +12,11 @@ mutation ($spaceId: ID!, $email: EmailAddress!) {
     session {
       create(
         input: {
-          useCredentials: {
             spaceId: $spaceId,
             email: $email,
             hashedPassword: "$hashedPassword",
             codeChallengeMethod: "S256",
             codeChallenge: "SHA256($codeVerifier)"
-          }
         }
       ) {
         errors { code fields message }
@@ -62,13 +60,11 @@ curl http://path/to/endpoint -H "Authorization: Bearer ${accessToken}"
 mutation ($token: String!, $codeVerifier: String!) {
   accessMutation {
     session {
-      create (
+      generateOneTimeLoginToken(
         input: {
-          useOTLT: {
             token: $token
             codeChallengeMethod: "S256"
             codeChallenge: "SH256(…)"
-          }
         }
       ) {
         errors { code fields message }
@@ -78,7 +74,6 @@ mutation ($token: String!, $codeVerifier: String!) {
     }
   }
 }
-
 ```
 
 4. Terminate the session

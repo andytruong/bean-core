@@ -20,23 +20,9 @@ type SessionService struct {
 	bundle *Bundle
 }
 
-func (srv *SessionService) Create(ctx context.Context, in *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
-	if nil != in.UseCredentials {
-		return srv.createUseCredentials(ctx, in.UseCredentials)
-	}
-
-	if nil != in.GenerateOTLT {
-		return srv.generateOTLT(ctx, in.GenerateOTLT)
-	}
-
-	if nil != in.UseOTLT {
-		return srv.useOTLT(ctx, in.UseOTLT)
-	}
-
-	return nil, nil
-}
-
-func (srv *SessionService) createUseCredentials(ctx context.Context, in *dto.SessionCreateUseCredentialsInput) (*dto.SessionCreateOutcome, error) {
+func (srv *SessionService) newSessionWithCredentials(ctx context.Context, in *dto.SessionCreateInput) (
+	*dto.SessionOutcome, error,
+) {
 	tx := connect.ContextToDB(ctx)
 
 	// load email object, so we have userID
@@ -48,7 +34,7 @@ func (srv *SessionService) createUseCredentials(ctx context.Context, in *dto.Ses
 		}
 
 		if !email.IsActive {
-			return &dto.SessionCreateOutcome{
+			return &dto.SessionOutcome{
 				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.email"}, "email address is not active"),
 			}, nil
 		}
@@ -60,7 +46,7 @@ func (srv *SessionService) createUseCredentials(ctx context.Context, in *dto.Ses
 		err := tx.First(&pass, "user_id = ? AND hashed_value = ? AND is_active = ?", email.UserId, in.HashedPassword, true).Error
 		if nil != err {
 			if err == gorm.ErrRecordNotFound {
-				return &dto.SessionCreateOutcome{
+				return &dto.SessionOutcome{
 					Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "invalid password"),
 				}, nil
 			}
@@ -73,11 +59,13 @@ func (srv *SessionService) createUseCredentials(ctx context.Context, in *dto.Ses
 	})
 }
 
-func (srv *SessionService) generateOTLT(ctx context.Context, in *dto.SessionCreateGenerateOTLT) (*dto.SessionCreateOutcome, error) {
+func (srv *SessionService) newOTLTSession(ctx context.Context, in *dto.SessionCreateOTLTSessionInput) (
+	*dto.SessionOutcome, error,
+) {
 	return srv.create(ctx, claim.KindOTLT, in.UserID, in.SpaceID, nil)
 }
 
-func (srv *SessionService) useOTLT(ctx context.Context, in *dto.SessionCreateUseOTLT) (*dto.SessionCreateOutcome, error) {
+func (srv *SessionService) newSessionWithOTLT(ctx context.Context, in *dto.SessionExchangeOTLTInput) (*dto.SessionOutcome, error) {
 	oneTimeSession, err := srv.LoadByToken(ctx, in.Token)
 	if nil != err {
 		return nil, err
@@ -110,7 +98,7 @@ func (srv SessionService) create(
 	ctx context.Context,
 	kind claim.Kind, userId string, spaceId string,
 	create func(*model.Session),
-) (*dto.SessionCreateOutcome, error) {
+) (*dto.SessionOutcome, error) {
 	tx := connect.ContextToDB(ctx)
 	membership := &mSpace.Membership{}
 
@@ -121,7 +109,7 @@ func (srv SessionService) create(
 			Error
 
 		if err == gorm.ErrRecordNotFound {
-			return &dto.SessionCreateOutcome{
+			return &dto.SessionOutcome{
 				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "membership not found"),
 			}, nil
 		}
@@ -156,7 +144,7 @@ func (srv SessionService) create(
 		}
 	}
 
-	return &dto.SessionCreateOutcome{
+	return &dto.SessionOutcome{
 		Errors:  nil,
 		Token:   &token,
 		Session: session,

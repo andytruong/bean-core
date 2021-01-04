@@ -35,7 +35,7 @@ type (
 	SpaceMutation           struct{}
 	SpaceMembershipMutation struct{}
 
-	SpaceCreateOutcome struct {
+	SpaceOutcome struct {
 		Errors []util.Error `json:"errors"`
 		Space  *model.Space `json:"space"`
 	}

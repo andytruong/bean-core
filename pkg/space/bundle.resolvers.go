@@ -42,7 +42,7 @@ func (bundle *Bundle) newResolvers() map[string]interface{} {
 			},
 		},
 		"SpaceMutation": map[string]interface{}{
-			"Create": func(ctx context.Context, _ *dto.SpaceMutation, input dto.SpaceCreateInput) (*dto.SpaceCreateOutcome, error) {
+			"Create": func(ctx context.Context, _ *dto.SpaceMutation, input dto.SpaceCreateInput) (*dto.SpaceOutcome, error) {
 				tx := connect.ContextToDB(ctx)
 				out, err := bundle.Service.Create(ctx, input)
 
@@ -53,7 +53,7 @@ func (bundle *Bundle) newResolvers() map[string]interface{} {
 					return out, tx.Commit().Error
 				}
 			},
-			"Update": func(ctx context.Context, _ *dto.SpaceMutation, in dto.SpaceUpdateInput) (*dto.SpaceCreateOutcome, error) {
+			"Update": func(ctx context.Context, _ *dto.SpaceMutation, in dto.SpaceUpdateInput) (*dto.SpaceOutcome, error) {
 				space, err := bundle.Service.Load(ctx, in.SpaceID)
 				if nil != err {
 					return nil, err

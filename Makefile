@@ -26,7 +26,6 @@ dev.test:
 	@go test -mod=vendor -race -count=1 ./... -v
 
 dev.gql:
-	@git checkout pkg/infra/gql/schema.go
 	@go run cmd/gqlgen/main.go
 	@rm -rf pkg/infra/gql.resolver/*
 	@rm pkg/infra/__tmp__resolvers.go

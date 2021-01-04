@@ -46,7 +46,7 @@ func (srv SpaceService) FindOne(ctx context.Context, filters dto.SpaceFilters) (
 	return nil, nil
 }
 
-func (srv *SpaceService) Create(ctx context.Context, in dto.SpaceCreateInput) (*dto.SpaceCreateOutcome, error) {
+func (srv *SpaceService) Create(ctx context.Context, in dto.SpaceCreateInput) (*dto.SpaceOutcome, error) {
 	space, err := srv.create(ctx, in)
 	if nil != err {
 		return nil, err
@@ -56,7 +56,7 @@ func (srv *SpaceService) Create(ctx context.Context, in dto.SpaceCreateInput) (*
 			return nil, err
 		}
 
-		return &dto.SpaceCreateOutcome{Errors: nil, Space: space}, nil
+		return &dto.SpaceOutcome{Errors: nil, Space: space}, nil
 	}
 }
 
@@ -137,7 +137,7 @@ func (srv *SpaceService) createRelationships(ctx context.Context, space *model.S
 	return nil
 }
 
-func (srv SpaceService) Update(ctx context.Context, obj model.Space, in dto.SpaceUpdateInput) (*dto.SpaceCreateOutcome, error) {
+func (srv SpaceService) Update(ctx context.Context, obj model.Space, in dto.SpaceUpdateInput) (*dto.SpaceOutcome, error) {
 	tx := connect.ContextToDB(ctx)
 
 	// check version for conflict
@@ -160,5 +160,5 @@ func (srv SpaceService) Update(ctx context.Context, obj model.Space, in dto.Spac
 		return nil, err
 	}
 
-	return &dto.SpaceCreateOutcome{Errors: nil, Space: &obj}, nil
+	return &dto.SpaceOutcome{Errors: nil, Space: &obj}, nil
 }

@@ -116,11 +116,27 @@ func (r *accessQueryResolver) Session(ctx context.Context, obj *dto.AccessQuery)
 
 	return callback(ctx, obj)
 }
-func (r *accessSessionMutationResolver) Create(ctx context.Context, obj *dto.AccessSessionMutation, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error) {
+func (r *accessSessionMutationResolver) Create(ctx context.Context, obj *dto.AccessSessionMutation, input dto.SessionCreateInput) (*dto.SessionOutcome, error) {
 	bundle, _ := r.container.bundles.Access()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["AccessSessionMutation"].(map[string]interface{})
-	callback := objectResolver["Create"].(func(ctx context.Context, obj *dto.AccessSessionMutation, input *dto.SessionCreateInput) (*dto.SessionCreateOutcome, error))
+	callback := objectResolver["Create"].(func(ctx context.Context, obj *dto.AccessSessionMutation, input dto.SessionCreateInput) (*dto.SessionOutcome, error))
+
+	return callback(ctx, obj, input)
+}
+func (r *accessSessionMutationResolver) GenerateOneTimeLoginToken(ctx context.Context, obj *dto.AccessSessionMutation, input dto.SessionCreateOTLTSessionInput) (*dto.SessionOutcome, error) {
+	bundle, _ := r.container.bundles.Access()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["AccessSessionMutation"].(map[string]interface{})
+	callback := objectResolver["GenerateOneTimeLoginToken"].(func(ctx context.Context, obj *dto.AccessSessionMutation, input dto.SessionCreateOTLTSessionInput) (*dto.SessionOutcome, error))
+
+	return callback(ctx, obj, input)
+}
+func (r *accessSessionMutationResolver) ExchangeOneTimeLoginToken(ctx context.Context, obj *dto.AccessSessionMutation, input dto.SessionExchangeOTLTInput) (*dto.SessionOutcome, error) {
+	bundle, _ := r.container.bundles.Access()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["AccessSessionMutation"].(map[string]interface{})
+	callback := objectResolver["ExchangeOneTimeLoginToken"].(func(ctx context.Context, obj *dto.AccessSessionMutation, input dto.SessionExchangeOTLTInput) (*dto.SessionOutcome, error))
 
 	return callback(ctx, obj, input)
 }
@@ -442,19 +458,19 @@ func (r *spaceMembershipQueryResolver) Find(ctx context.Context, obj *dto4.Space
 
 	return callback(ctx, obj, first, after, filters)
 }
-func (r *spaceMutationResolver) Create(ctx context.Context, obj *dto4.SpaceMutation, input dto4.SpaceCreateInput) (*dto4.SpaceCreateOutcome, error) {
+func (r *spaceMutationResolver) Create(ctx context.Context, obj *dto4.SpaceMutation, input dto4.SpaceCreateInput) (*dto4.SpaceOutcome, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["SpaceMutation"].(map[string]interface{})
-	callback := objectResolver["Create"].(func(ctx context.Context, obj *dto4.SpaceMutation, input dto4.SpaceCreateInput) (*dto4.SpaceCreateOutcome, error))
+	callback := objectResolver["Create"].(func(ctx context.Context, obj *dto4.SpaceMutation, input dto4.SpaceCreateInput) (*dto4.SpaceOutcome, error))
 
 	return callback(ctx, obj, input)
 }
-func (r *spaceMutationResolver) Update(ctx context.Context, obj *dto4.SpaceMutation, input dto4.SpaceUpdateInput) (*dto4.SpaceCreateOutcome, error) {
+func (r *spaceMutationResolver) Update(ctx context.Context, obj *dto4.SpaceMutation, input dto4.SpaceUpdateInput) (*dto4.SpaceOutcome, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["SpaceMutation"].(map[string]interface{})
-	callback := objectResolver["Update"].(func(ctx context.Context, obj *dto4.SpaceMutation, input dto4.SpaceUpdateInput) (*dto4.SpaceCreateOutcome, error))
+	callback := objectResolver["Update"].(func(ctx context.Context, obj *dto4.SpaceMutation, input dto4.SpaceUpdateInput) (*dto4.SpaceOutcome, error))
 
 	return callback(ctx, obj, input)
 }

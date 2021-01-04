@@ -108,8 +108,8 @@ extend type Mutation {
 }
 
 type SpaceMutation {
-    create(input: SpaceCreateInput!): SpaceCreateOutcome!
-    update(input: SpaceUpdateInput!): SpaceCreateOutcome!
+    create(input: SpaceCreateInput!): SpaceOutcome!
+    update(input: SpaceUpdateInput!): SpaceOutcome!
     membership: SpaceMembershipMutation!
 }
 
@@ -144,7 +144,7 @@ input DomainNameInput {
     isActive: Boolean
 }
 
-type SpaceCreateOutcome {
+type SpaceOutcome {
     errors: [Error!]
     space: Space
 }

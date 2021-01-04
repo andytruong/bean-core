@@ -76,15 +76,15 @@ func Test_Create(t *testing.T) {
 	t.Run("use credentials", func(t *testing.T) {
 		t.Run("email inactive", func(t *testing.T) {
 			in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-			in.UseCredentials.Email = iUser.Emails.Secondary[1].Value
-			_, err := bundle.sessionService.Create(ctx, in)
+			in.Email = iUser.Emails.Secondary[1].Value
+			_, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 			ass.Equal(err.Error(), "userBundle not found")
 		})
 
 		t.Run("password unmatched", func(t *testing.T) {
 			in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-			in.UseCredentials.HashedPassword = "invalid-password"
-			outcome, err := bundle.sessionService.Create(ctx, in)
+			in.HashedPassword = "invalid-password"
+			outcome, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 
 			ass.NoError(err)
 			ass.Equal(util.ErrorCodeInput, *outcome.Errors[0].Code)
@@ -94,7 +94,7 @@ func Test_Create(t *testing.T) {
 
 		t.Run("ok", func(t *testing.T) {
 			in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
-			out, err := bundle.sessionService.Create(ctx, in)
+			out, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 			ass.NoError(err)
 			ass.Equal(oUser.User.ID, out.Session.UserId)
 			ass.Equal(oSpace.Space.ID, out.Session.SpaceId)
@@ -113,7 +113,9 @@ func Test_Create(t *testing.T) {
 
 			// check that with outcome.Session we can generate JWT
 			{
-				resolver := bundle.resolvers["Session"].(map[string]interface{})["Jwt"].(func(context.Context, *model.Session, string) (string, error))
+				resolver := bundle.resolvers["Session"].(map[string]interface{})["Jwt"].(func(context.Context, *model.Session, string) (
+					string, error,
+				))
 				signedString, err := resolver(ctx, out.Session, "0123456789")
 
 				ass.NoError(err)
@@ -136,21 +138,16 @@ func Test_Create(t *testing.T) {
 
 	t.Run("OTLT - one time login token", func(t *testing.T) {
 		t.Run("generate", func(t *testing.T) {
-			oGenerate, err := bundle.sessionService.Create(ctx, &dto.SessionCreateInput{
-				GenerateOTLT: &dto.SessionCreateGenerateOTLT{
-					SpaceID: oSpace.Space.ID,
-					UserID:  oUser.User.ID,
-				},
+			oGenerate, err := bundle.sessionService.newOTLTSession(ctx, &dto.SessionCreateOTLTSessionInput{
+				SpaceID: oSpace.Space.ID,
+				UserID:  oUser.User.ID,
 			})
 
 			ass.NoError(err)
 			ass.Equal(claim.KindOTLT, oGenerate.Session.Kind)
 
 			{
-				out, err := bundle.sessionService.Create(ctx, &dto.SessionCreateInput{
-					UseOTLT: &dto.SessionCreateUseOTLT{Token: *oGenerate.Token},
-				})
-
+				out, err := bundle.sessionService.newSessionWithOTLT(ctx, &dto.SessionExchangeOTLTInput{Token: *oGenerate.Token})
 				ass.NoError(err)
 				ass.Equal(claim.KindAuthenticated, out.Session.Kind)
 
@@ -183,7 +180,7 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 	// base input
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
-	out, err := bundle.sessionService.Create(ctx, in)
+	out, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 	ass.Error(err)
 	ass.Nil(out)
 	ass.Contains(err.Error(), "userBundle not found")
@@ -206,7 +203,7 @@ func Test_Query(t *testing.T) {
 	oSpace, _ := bundle.spaceBundle.Service.Create(ctx, iSpace)
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
-	out, err := bundle.sessionService.Create(ctx, in)
+	out, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 	ass.NoError(err)
 
 	// can load session without issue
@@ -251,11 +248,13 @@ func Test_Archive(t *testing.T) {
 	oSpace, _ := bundle.spaceBundle.Service.Create(ctx, iSpace)
 	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
-	sessionOutcome, err := bundle.sessionService.Create(ctx, in)
+	sessionOutcome, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 	ass.NoError(err)
 
 	{
-		resolver := bundle.resolvers["AccessSessionMutation"].(map[string]interface{})["Archive"].(func(context.Context, *dto.AccessSessionMutation) (*dto.SessionArchiveOutcome, error))
+		resolver := bundle.resolvers["AccessSessionMutation"].(map[string]interface{})["Archive"].(func(context.Context, *dto.AccessSessionMutation) (
+			*dto.SessionArchiveOutcome, error,
+		))
 
 		// setup auth context
 		claims := claim.NewPayload()
