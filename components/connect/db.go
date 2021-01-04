@@ -29,14 +29,23 @@ const (
 
 func NewWrapper(cnf map[string]DatabaseConfig) *Wrapper {
 	return &Wrapper{
-		cnf: cnf,
-		dbs: &sync.Map{},
+		cnf:         cnf,
+		dbs:         &sync.Map{},
+		prepareStmt: true,
 	}
 }
 
 type Wrapper struct {
 	cnf map[string]DatabaseConfig
 	dbs *sync.Map
+
+	prepareStmt bool
+}
+
+func (w *Wrapper) PrepareStmt(value bool) *Wrapper {
+	w.prepareStmt = value
+
+	return w
 }
 
 func (w *Wrapper) Master() (*gorm.DB, error) {
@@ -54,7 +63,7 @@ func (w *Wrapper) get(name string) (*gorm.DB, error) {
 			SkipDefaultTransaction:                   true,
 			DisableAutomaticPing:                     true,
 			DisableForeignKeyConstraintWhenMigrating: true,
-			PrepareStmt:                              true,
+			PrepareStmt:                              w.prepareStmt,
 		}
 
 		if con, err := gorm.Open(w.dialector(cnf), dbCnf); nil != err {

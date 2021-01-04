@@ -2,6 +2,8 @@ package access
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"testing"
 	"time"
 
@@ -10,8 +12,8 @@ import (
 	"bean/components/claim"
 	"bean/components/conf"
 	"bean/components/connect"
+	"bean/components/scalar"
 	"bean/components/util"
-	"bean/pkg/access/api/fixtures"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	"bean/pkg/space"
@@ -40,6 +42,18 @@ func bundle() *Bundle {
 	bundle := NewAccessBundle(id, lgr, userBundle, spaceBundle, config.Bundles.Access)
 
 	return bundle
+}
+
+func newCreateSessionInput(spaceId string, email string, hashedPassword string) *dto.SessionCreateInput {
+	codeVerifier := []byte("0123456789")
+
+	return &dto.SessionCreateInput{
+		SpaceID:             spaceId,
+		Email:               scalar.EmailAddress(email),
+		HashedPassword:      hashedPassword,
+		CodeChallengeMethod: "S256",
+		CodeChallenge:       fmt.Sprintf("%x", sha256.Sum256(codeVerifier)),
+	}
 }
 
 func Test_Config(t *testing.T) {
@@ -75,14 +89,14 @@ func Test_Create(t *testing.T) {
 
 	t.Run("use credentials", func(t *testing.T) {
 		t.Run("email inactive", func(t *testing.T) {
-			in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+			in := newCreateSessionInput(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 			in.Email = iUser.Emails.Secondary[1].Value
 			_, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 			ass.Equal(err.Error(), "userBundle not found")
 		})
 
 		t.Run("password unmatched", func(t *testing.T) {
-			in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+			in := newCreateSessionInput(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 			in.HashedPassword = "invalid-password"
 			outcome, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 
@@ -93,7 +107,7 @@ func Test_Create(t *testing.T) {
 		})
 
 		t.Run("ok", func(t *testing.T) {
-			in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+			in := newCreateSessionInput(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 			out, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 			ass.NoError(err)
 			ass.Equal(oUser.User.ID, out.Session.UserId)
@@ -178,7 +192,7 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 	ass.NoError(err)
 
 	// base input
-	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+	in := newCreateSessionInput(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	out, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 	ass.Error(err)
@@ -201,7 +215,7 @@ func Test_Query(t *testing.T) {
 	ctx = claim.PayloadToContext(ctx, &claims)
 	iSpace := fSpace.SpaceCreateInputFixture(false)
 	oSpace, _ := bundle.spaceBundle.Service.Create(ctx, iSpace)
-	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+	in := newCreateSessionInput(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	out, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 	ass.NoError(err)
@@ -246,7 +260,7 @@ func Test_Archive(t *testing.T) {
 	ctx = claim.PayloadToContext(ctx, &claims)
 	iSpace := fSpace.SpaceCreateInputFixture(false)
 	oSpace, _ := bundle.spaceBundle.Service.Create(ctx, iSpace)
-	in := fixtures.SessionCreateInputFixtureUseCredentials(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
+	in := newCreateSessionInput(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 
 	sessionOutcome, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 	ass.NoError(err)

@@ -34,7 +34,7 @@ func MockInstall(ctx context.Context, bean module.Bundle) {
 	}
 }
 
-func mockInstall(ctx context.Context, bean module.Bundle) error {
+func mockInstall(ctx context.Context, bundle module.Bundle) error {
 	db := ContextToDB(ctx)
 	if !db.Migrator().HasTable(Migration{}) {
 		if err := db.Migrator().CreateTable(Migration{}); nil != err {
@@ -42,7 +42,7 @@ func mockInstall(ctx context.Context, bean module.Bundle) error {
 		}
 	}
 
-	dependencies := bean.Dependencies()
+	dependencies := bundle.Dependencies()
 	if nil != dependencies {
 		for _, dependency := range dependencies {
 			err := mockInstall(ctx, dependency)
@@ -52,7 +52,7 @@ func mockInstall(ctx context.Context, bean module.Bundle) error {
 		}
 	}
 
-	if err := bean.Migrate(ctx, SQLite); nil != err {
+	if err := bundle.Migrate(ctx, SQLite); nil != err {
 		db.Rollback()
 		panic(err)
 	}

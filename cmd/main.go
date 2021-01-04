@@ -54,7 +54,7 @@ func cmdMigrate(container *infra.Container) *cli.Command {
 	return &cli.Command{
 		Name: "migrate",
 		Action: func(ctx *cli.Context) error {
-			db, err := container.DBs.Master()
+			db, err := container.DBs.PrepareStmt(false).Master()
 			if nil != err {
 				return err
 			}

@@ -31,7 +31,7 @@ func (srv BucketService) Create(ctx context.Context, in dto.BucketCreateInput) (
 		}
 	}
 
-	tx := connect.ContextToDB(ctx)
+	db := connect.ContextToDB(ctx)
 	bucket := &model.ConfigBucket{
 		Id:          srv.bundle.idr.ULID(),
 		Version:     srv.bundle.idr.ULID(),
@@ -50,7 +50,7 @@ func (srv BucketService) Create(ctx context.Context, in dto.BucketCreateInput) (
 		bucket.Access = *in.Access
 	}
 
-	err := tx.Create(&bucket).Error
+	err := db.Create(&bucket).Error
 	if nil != err {
 		return nil, err
 	}

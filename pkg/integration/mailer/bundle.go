@@ -53,7 +53,7 @@ func (bundle Bundle) Migrate(ctx context.Context, driver string) error {
 }
 
 func (bundle Bundle) Dependencies() []module.Bundle {
-	panic("implement me")
+	return nil
 }
 
 func (bundle Bundle) Send(message model.Message) error {

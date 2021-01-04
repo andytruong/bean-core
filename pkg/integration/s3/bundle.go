@@ -6,6 +6,7 @@ import (
 	"runtime"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"bean/components/connect"
 	"bean/components/module"
@@ -86,7 +87,10 @@ func (bundle Bundle) Migrate(ctx context.Context, driver string) error {
 		access := scalar.AccessModePrivate
 
 		// config bucket -> credentials
-		{
+		credentialsBucket, err := bundle.configBundle.BucketService.Load(ctx, dto.BucketKey{Slug: credentialsConfigSlug})
+		if nil != err && err != gorm.ErrRecordNotFound {
+			return err
+		} else if nil == credentialsBucket {
 			out, err := bundle.configBundle.BucketService.Create(ctx, dto.BucketCreateInput{
 				Slug:        scalar.NilString(credentialsConfigSlug),
 				Access:      &access,
@@ -103,7 +107,10 @@ func (bundle Bundle) Migrate(ctx context.Context, driver string) error {
 		}
 
 		// config bucket -> policies
-		{
+		uploadPolicyBucket, err := bundle.configBundle.BucketService.Load(ctx, dto.BucketKey{Slug: uploadPolicyConfigSlug})
+		if nil != err && err != gorm.ErrRecordNotFound {
+			return err
+		} else if nil == uploadPolicyBucket {
 			out, err := bundle.configBundle.BucketService.Create(ctx, dto.BucketCreateInput{
 				Slug:        scalar.NilString(uploadPolicyConfigSlug),
 				Access:      &access,

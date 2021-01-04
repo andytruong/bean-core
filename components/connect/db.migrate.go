@@ -3,6 +3,7 @@ package connect
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -17,15 +18,15 @@ import (
 	"bean/components/scalar"
 )
 
-func NewMigration(bundleName string, name string) Migration {
+func NewMigration(bundleName string, fileName string) Migration {
 	this := Migration{
 		Bundle:    bundleName,
-		Name:      name,
+		FileName:  fileName,
 		CreatedAt: time.Now(),
 	}
 
-	this.Name = strings.TrimPrefix(this.Name, scalar.RootDirectory())
-	this.Name = strings.TrimPrefix(this.Name, "/")
+	this.FileName = strings.TrimPrefix(this.FileName, scalar.RootDirectory())
+	this.FileName = strings.TrimPrefix(this.FileName, "/")
 
 	return this
 }
@@ -33,7 +34,7 @@ func NewMigration(bundleName string, name string) Migration {
 type (
 	Migration struct {
 		Bundle    string `gorm:"unique_index:bundle_unique_schema"`
-		Name      string `gorm:"unique_index:bundle_unique_schema"`
+		FileName  string `gorm:"unique_index:bundle_unique_schema"`
 		CreatedAt time.Time
 	}
 
@@ -62,8 +63,9 @@ func Migrate(ctx context.Context, bundles []module.Bundle, db *gorm.DB) error {
 	}
 
 	driver := dbDriver(con)
+	fmt.Println("DRIVER: ", driver)
 	tx := db.WithContext(ctx).Begin()
-	ctx = DBToContext(ctx, db)
+	ctx = DBToContext(ctx, tx)
 
 	// create migration table if not existing
 	if !tx.Migrator().HasTable(Migration{}) {
@@ -74,7 +76,7 @@ func Migrate(ctx context.Context, bundles []module.Bundle, db *gorm.DB) error {
 	}
 
 	for _, bundle := range bundles {
-		if err := bundle.Migrate(ctx, driver); nil != err {
+		if err := migrate(ctx, driver, bundle); nil != err {
 			tx.Rollback()
 			return err
 		}
@@ -83,12 +85,26 @@ func Migrate(ctx context.Context, bundles []module.Bundle, db *gorm.DB) error {
 	return tx.Commit().Error
 }
 
+func migrate(ctx context.Context, driver string, bundle module.Bundle) error {
+	dependencies := bundle.Dependencies()
+	if nil != dependencies {
+		for _, dependency := range dependencies {
+			err := migrate(ctx, driver, dependency)
+			if nil != err {
+				return err
+			}
+		}
+	}
+
+	return bundle.Migrate(ctx, driver)
+}
+
 func (mig Migration) realPath() string {
-	return scalar.RootDirectory() + "/" + mig.Name
+	return scalar.RootDirectory() + "/" + mig.FileName
 }
 
 func (mig Migration) driverMatch(driver string) bool {
-	return strings.HasSuffix(mig.Name, "."+driver+".sql")
+	return strings.HasSuffix(mig.FileName, "."+driver+".sql")
 }
 
 func (mig *Migration) isExecuted(db *gorm.DB) (bool, error) {
@@ -96,7 +112,7 @@ func (mig *Migration) isExecuted(db *gorm.DB) (bool, error) {
 
 	err := db.
 		Model(&Migration{}).
-		Where(&Migration{Bundle: mig.Bundle, Name: mig.Name}).
+		Where(&Migration{Bundle: mig.Bundle, FileName: mig.FileName}).
 		Count(&count).
 		Error
 
