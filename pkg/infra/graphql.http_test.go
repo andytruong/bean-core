@@ -15,8 +15,8 @@ func Test_Authorization(t *testing.T) {
 	t.Parallel()
 	ass := assert.New(t)
 	container := NewMockContainer()
-	router := GraphqlHttpRouter{Container: container}
-	hdl := router.Handler(mux.NewRouter())
+	router := graphqlHttpHandler{container: container}
+	hdl := router.Get(mux.NewRouter())
 
 	t.Run("ping without auth", func(t *testing.T) {
 		w := httptest.NewRecorder()

@@ -30,7 +30,7 @@ func (bundles *BundleList) User() (*user.Bundle, error) {
 	if nil == bundles.user {
 		bundles.user = user.NewUserBundle(
 			bundles.container.logger,
-			bundles.container.identifier,
+			bundles.container.idr,
 		)
 	}
 
@@ -48,7 +48,7 @@ func (bundles *BundleList) Space() (*space.Bundle, error) {
 
 		bundles.space = space.NewSpaceBundle(
 			bundles.container.logger,
-			bundles.container.identifier,
+			bundles.container.idr,
 			mUser,
 			bundles.container.Config.Bundles.Space,
 		)
@@ -60,7 +60,7 @@ func (bundles *BundleList) Space() (*space.Bundle, error) {
 func (bundles *BundleList) Config() (*config.Bundle, error) {
 	if nil == bundles.config {
 		bundles.config = config.NewConfigBundle(
-			bundles.container.identifier,
+			bundles.container.idr,
 			bundles.container.logger,
 		)
 	}
@@ -81,7 +81,7 @@ func (bundles *BundleList) Access() (*access.Bundle, error) {
 		}
 
 		bundles.access = access.NewAccessBundle(
-			bundles.container.identifier,
+			bundles.container.idr,
 			bundles.container.logger,
 			userBundle,
 			spaceBundle,
@@ -113,7 +113,7 @@ func (bundles *BundleList) App() (*app.Bundle, error) {
 		}
 
 		bundles.app, err = app.NewApplicationBundle(
-			bundles.container.identifier,
+			bundles.container.idr,
 			bundles.container.logger,
 			bundles.container.hook,
 			spaceBundle,
@@ -138,7 +138,7 @@ func (bundles *BundleList) S3() (*s3.Bundle, error) {
 		configBundle, _ := bundles.Config()
 
 		bundles.s3 = s3.NewS3Integration(
-			bundles.container.identifier,
+			bundles.container.idr,
 			bundles.container.logger,
 			bundles.container.Config.Bundles.Integration.S3,
 			appBundle,

@@ -25,7 +25,7 @@ func Test(t *testing.T) {
 
 	ass := assert.New(t)
 	can := NewMockContainer()
-	idr := can.identifier
+	idr := can.idr
 	ass.NotNil(t, idr)
 
 	sv, err := can.bundles.User()

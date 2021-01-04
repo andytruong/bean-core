@@ -21,20 +21,24 @@ import (
 	"bean/pkg/infra/gql"
 )
 
-type GraphqlHttpRouter struct {
-	Container *Container
+type graphqlHttpHandler struct {
+	container *Container
 }
 
-func (r *GraphqlHttpRouter) config() gql.Config {
+func (h *graphqlHttpHandler) config() gql.Config {
 	cnf := gql.Config{
-		Resolvers: &Resolver{container: r.Container},
+		Resolvers: &Resolver{container: h.container},
 		Directives: gql.DirectiveRoot{
-			Constraint: func(ctx context.Context, obj interface{}, next graphql.Resolver, maxLength *int, minLength *int) (res interface{}, err error) {
+			Constraint: func(ctx context.Context, obj interface{}, next graphql.Resolver, maxLength *int, minLength *int) (
+				res interface{}, err error,
+			) {
 				// TODO: implement me
 
 				return next(ctx)
 			},
-			RequireAuth: func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
+			RequireAuth: func(ctx context.Context, obj interface{}, next graphql.Resolver) (
+				res interface{}, err error,
+			) {
 				// TODO: implement me
 
 				return next(ctx)
@@ -45,75 +49,92 @@ func (r *GraphqlHttpRouter) config() gql.Config {
 	return cnf
 }
 
-func (r *GraphqlHttpRouter) Handler(router *mux.Router) *mux.Router {
-	config := r.config()
-	schema := gql.NewExecutableSchema(config)
-	server := handler.New(schema)
+func (h *graphqlHttpHandler) Get(router *mux.Router) *mux.Router {
+	router.HandleFunc("/query", h.callback())
 
-	if r.Container.Config.HttpServer.GraphQL.Transports.Post {
-		server.AddTransport(transport.POST{})
-	}
-
-	if r.Container.Config.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval != 0 {
-		server.AddTransport(transport.Websocket{KeepAlivePingInterval: r.Container.Config.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval})
-	}
-
-	if r.Container.Config.HttpServer.GraphQL.Introspection {
-		server.Use(extension.Introspection{})
-	}
-
-	router.HandleFunc("/query", r.handleFunc(server))
-
-	if r.Container.Config.HttpServer.GraphQL.Playround.Enabled {
-		hdl := playground.Handler(r.Container.Config.HttpServer.GraphQL.Playround.Title, "/query")
-		router.Handle(r.Container.Config.HttpServer.GraphQL.Playround.Path, hdl)
+	if h.container.Config.HttpServer.GraphQL.Playround.Enabled {
+		router.Handle(
+			h.container.Config.HttpServer.GraphQL.Playround.Path,
+			playground.Handler(
+				h.container.Config.HttpServer.GraphQL.Playround.Title,
+				"/query",
+			),
+		)
 	}
 
 	return router
 }
 
-func (r *GraphqlHttpRouter) handleFunc(srv *handler.Server) func(http.ResponseWriter, *http.Request) {
+func (h *graphqlHttpHandler) defaultCallback() func(http.ResponseWriter, *http.Request) {
+	config := h.config()
+	schema := gql.NewExecutableSchema(config)
+	server := handler.New(schema)
+
+	if h.container.Config.HttpServer.GraphQL.Transports.Post {
+		server.AddTransport(transport.POST{})
+	}
+
+	if h.container.Config.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval != 0 {
+		trans := transport.Websocket{KeepAlivePingInterval: h.container.Config.HttpServer.GraphQL.Transports.Websocket.KeepAlivePingInterval}
+		server.AddTransport(trans)
+	}
+
+	if h.container.Config.HttpServer.GraphQL.Introspection {
+		server.Use(extension.Introspection{})
+	}
+
+	return server.ServeHTTP
+}
+
+func (h *graphqlHttpHandler) callback() func(http.ResponseWriter, *http.Request) {
+	defaultCallback := h.defaultCallback()
+
 	return func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 
 		//  Verify JWT authorization if provided.
-		claimContext, err := r.beforeServe(req)
+		claimContext, err := h.beforeServe(req)
 		if nil != err {
-			r.respondError(w, err, "failed responding", http.StatusForbidden)
+			h.respondError(w, err, "failed responding", http.StatusForbidden)
 		} else if nil != claimContext {
 			ctx = claimContext
 		}
 
 		// Inject DB connection to context
-		ctx = connect.WithContextValue(ctx, r.Container.DBs)
+		ctx = connect.WithContextValue(ctx, h.container.DBs)
 
-		srv.ServeHTTP(w, req.WithContext(ctx))
+		defaultCallback(w, req.WithContext(ctx))
 	}
 }
 
-func (r *GraphqlHttpRouter) beforeServe(req *http.Request) (context.Context, error) {
-	ctx := req.Context()
+func (h *graphqlHttpHandler) beforeServe(req *http.Request) (context.Context, error) {
 	authHeader := req.Header.Get("Authorization")
-	if authHeader != "" {
-		bundle, err := r.Container.bundles.Access()
-		if nil != err {
-			return nil, errors.Wrap(err, util.ErrorCodeConfig.String())
-		}
 
-		claims, err := bundle.JwtService.Validate(authHeader)
-		if err != nil {
-			return nil, err
-		}
+	// no authentication header, no need to validate
+	if authHeader == "" {
+		return nil, nil
+	}
 
-		if nil != claims {
-			ctx = claim.PayloadToContext(ctx, claims)
-		}
+	// invoke access bundle to validate the auth header
+	ctx := req.Context()
+	accessBundle, err := h.container.bundles.Access()
+	if nil != err {
+		return nil, errors.Wrap(err, util.ErrorCodeConfig.String())
+	}
+
+	claims, err := accessBundle.JwtService.Validate(authHeader)
+	if err != nil {
+		return nil, err
+	}
+
+	if nil != claims {
+		ctx = claim.PayloadToContext(ctx, claims)
 	}
 
 	return ctx, nil
 }
 
-func (r *GraphqlHttpRouter) respondError(w http.ResponseWriter, err error, msg string, status int) {
+func (h *graphqlHttpHandler) respondError(w http.ResponseWriter, err error, msg string, status int) {
 	w.WriteHeader(status)
 	errList := gqlerror.List{{Message: err.Error()}}
 	body := graphql.Response{Errors: errList}
@@ -121,6 +142,6 @@ func (r *GraphqlHttpRouter) respondError(w http.ResponseWriter, err error, msg s
 
 	_, err = w.Write(content)
 	if nil != err {
-		r.Container.logger.Error(msg, zap.String("message", err.Error()))
+		h.container.logger.Error(msg, zap.String("message", err.Error()))
 	}
 }

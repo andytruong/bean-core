@@ -1,9 +1,11 @@
 package infra
 
 import (
+	"net/http"
 	"sync"
 	"time"
 
+	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
 	"bean/components/conf"
@@ -20,11 +22,11 @@ func NewContainer(path string) (*Container, error) {
 	var err error
 
 	container := &Container{
-		Config:     &Config{},
-		mutex:      &sync.Mutex{},
-		identifier: &scalar.Identifier{},
-		bundles:    BundleList{},
-		hook:       module.NewHook(),
+		Config:  &Config{},
+		mutex:   &sync.Mutex{},
+		idr:     &scalar.Identifier{},
+		bundles: BundleList{},
+		hook:    module.NewHook(),
 	}
 
 	// parse configuration from YAML configuration file & env variables.
@@ -56,13 +58,13 @@ type (
 	//  - HTTP server (GraphQL query interface)
 	Container struct {
 		Config *Config
+		DBs    *connect.Wrapper
 
-		mutex      *sync.Mutex
-		identifier *scalar.Identifier
-		DBs        *connect.Wrapper
-		bundles    BundleList
-		logger     *zap.Logger
-		hook       *module.Hook
+		mutex   *sync.Mutex
+		idr     *scalar.Identifier
+		logger  *zap.Logger
+		hook    *module.Hook
+		bundles BundleList
 	}
 
 	Config struct {
@@ -112,4 +114,18 @@ func (c *Container) Logger() *zap.Logger {
 
 func (c *Container) BundleList() BundleList {
 	return c.bundles
+}
+
+func (c *Container) HttpServer() http.Server {
+	router := mux.NewRouter()
+	handler := graphqlHttpHandler{container: c}
+
+	return http.Server{
+		Addr:              c.Config.HttpServer.Address,
+		Handler:           handler.Get(router),
+		ReadTimeout:       c.Config.HttpServer.ReadTimeout,
+		ReadHeaderTimeout: c.Config.HttpServer.ReadTimeout,
+		WriteTimeout:      c.Config.HttpServer.WriteTimeout,
+		IdleTimeout:       c.Config.HttpServer.ReadTimeout,
+	}
 }
