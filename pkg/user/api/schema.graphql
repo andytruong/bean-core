@@ -1,0 +1,107 @@
+# =====================
+# Entity
+# =====================
+type User {
+    id:        ID!
+    version:   ID!
+    name:      UserName!
+    emails:    UserEmails
+    avatarUri: Uri
+    isActive:  Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+    language:  Language!
+}
+
+type UserName {
+    firstName:     String
+    lastName:      String
+    preferredName: String
+}
+
+type UserEmails {
+    primary:   UserEmail
+    secondary: [UserEmail]
+}
+
+type UserEmail {
+    id:        ID!
+    verified:  Boolean!
+    value:     EmailAddress!
+    createdAt: Time!
+    updatedAt: Time!
+    isActive:  Boolean!
+}
+
+# =====================
+# Query
+# =====================
+extend type Query {
+    userQuery: UserQuery!
+}
+
+type UserQuery {
+    load(id: ID!): User
+}
+
+# =====================
+# Query
+# =====================
+extend type Mutation {
+    userMutation: UserMutation!
+}
+
+type UserMutation {
+    create(input: UserCreateInput): UserMutationOutcome!
+    update(input: UserUpdateInput!): UserMutationOutcome!
+}
+
+type UserMutationOutcome {
+    user: User
+    errors: [Error!]
+}
+
+# ---------------------
+# Mutation > Create
+# ---------------------
+input UserCreateInput {
+    name: UserNameInput!
+    emails: UserEmailsInput
+    password: UserPasswordInput!
+    avatarUri: Uri
+    isActive: Boolean!
+}
+
+input UserNameInput {
+    firstName: String
+    lastName: String
+    preferredName: String
+}
+
+input UserEmailsInput {
+    primary: UserEmailInput!
+    secondary: [UserEmailInput]
+}
+
+input UserEmailInput {
+    verified: Boolean!
+    value: EmailAddress!
+    isActive: Boolean!
+}
+
+input UserPasswordInput {
+    hashedValue: String!
+}
+
+# ---------------------
+# Mutation > Create
+# ---------------------
+input UserUpdateInput {
+    id: ID!
+    version: ID!
+    values: UserUpdateValuesInput
+}
+
+input UserUpdateValuesInput {
+    password: UserPasswordInput!
+}

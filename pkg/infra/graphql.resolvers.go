@@ -8,12 +8,13 @@ import (
 	model1 "bean/pkg/app/model"
 	dto1 "bean/pkg/app/model/dto"
 	"bean/pkg/infra/gql"
+	model3 "bean/pkg/integration/mailer/model"
 	dto2 "bean/pkg/integration/mailer/model/dto"
 	model2 "bean/pkg/integration/s3/model"
 	dto3 "bean/pkg/integration/s3/model/dto"
-	model3 "bean/pkg/space/model"
+	model4 "bean/pkg/space/model"
 	dto4 "bean/pkg/space/model/dto"
-	model4 "bean/pkg/user/model"
+	model5 "bean/pkg/user/model"
 	dto5 "bean/pkg/user/model/dto"
 	"context"
 )
@@ -42,6 +43,7 @@ func (r *Resolver) ApplicationQuery() gql.ApplicationQueryResolver {
 func (r *Resolver) MailerAccountMutation() gql.MailerAccountMutationResolver {
 	return &mailerAccountMutationResolver{r}
 }
+func (r *Resolver) MailerAuditLog() gql.MailerAuditLogResolver { return &mailerAuditLogResolver{r} }
 func (r *Resolver) MailerQueryAccount() gql.MailerQueryAccountResolver {
 	return &mailerQueryAccountResolver{r}
 }
@@ -79,6 +81,7 @@ type applicationResolver struct{ *Resolver }
 type applicationMutationResolver struct{ *Resolver }
 type applicationQueryResolver struct{ *Resolver }
 type mailerAccountMutationResolver struct{ *Resolver }
+type mailerAuditLogResolver struct{ *Resolver }
 type mailerQueryAccountResolver struct{ *Resolver }
 type mailerTemplateMutationResolver struct{ *Resolver }
 type membershipResolver struct{ *Resolver }
@@ -181,10 +184,13 @@ func (r *mailerAccountMutationResolver) Verify(ctx context.Context, obj *dto2.Ma
 
 	return callback(ctx, obj, id, version)
 }
-func (r *mailerQueryAccountResolver) Get(ctx context.Context, obj *dto2.MailerQueryAccount, id string) (*dto2.MailerAccount, error) {
+func (r *mailerAuditLogResolver) WarningMessagse(ctx context.Context, obj *model3.MailerAuditLog) (*string, error) {
+	panic("no implementation found in resolvers[MailerAuditLog][WarningMessagse]")
+}
+func (r *mailerQueryAccountResolver) Get(ctx context.Context, obj *dto2.MailerQueryAccount, id string) (*model3.MailerAccount, error) {
 	panic("no implementation found in resolvers[MailerQueryAccount][Get]")
 }
-func (r *mailerQueryAccountResolver) GetMultiple(ctx context.Context, obj *dto2.MailerQueryAccount, first int, after *string) ([]*dto2.MailerAccount, error) {
+func (r *mailerQueryAccountResolver) GetMultiple(ctx context.Context, obj *dto2.MailerQueryAccount, first int, after *string) ([]*model3.MailerAccount, error) {
 	panic("no implementation found in resolvers[MailerQueryAccount][GetMultiple]")
 }
 func (r *mailerTemplateMutationResolver) Create(ctx context.Context, obj *dto2.MailerTemplateMutation) (*bool, error) {
@@ -196,35 +202,35 @@ func (r *mailerTemplateMutationResolver) Update(ctx context.Context, obj *dto2.M
 func (r *mailerTemplateMutationResolver) Delete(ctx context.Context, obj *dto2.MailerTemplateMutation) (*bool, error) {
 	panic("no implementation found in resolvers[MailerTemplateMutation][Delete]")
 }
-func (r *membershipResolver) Space(ctx context.Context, obj *model3.Membership) (*model3.Space, error) {
+func (r *membershipResolver) Space(ctx context.Context, obj *model4.Membership) (*model4.Space, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Membership"].(map[string]interface{})
-	callback := objectResolver["Space"].(func(ctx context.Context, obj *model3.Membership) (*model3.Space, error))
+	callback := objectResolver["Space"].(func(ctx context.Context, obj *model4.Membership) (*model4.Space, error))
 
 	return callback(ctx, obj)
 }
-func (r *membershipResolver) User(ctx context.Context, obj *model3.Membership) (*model4.User, error) {
+func (r *membershipResolver) User(ctx context.Context, obj *model4.Membership) (*model5.User, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Membership"].(map[string]interface{})
-	callback := objectResolver["User"].(func(ctx context.Context, obj *model3.Membership) (*model4.User, error))
+	callback := objectResolver["User"].(func(ctx context.Context, obj *model4.Membership) (*model5.User, error))
 
 	return callback(ctx, obj)
 }
-func (r *membershipResolver) Roles(ctx context.Context, obj *model3.Membership) ([]*model3.Space, error) {
+func (r *membershipResolver) Roles(ctx context.Context, obj *model4.Membership) ([]*model4.Space, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Membership"].(map[string]interface{})
-	callback := objectResolver["Roles"].(func(ctx context.Context, obj *model3.Membership) ([]*model3.Space, error))
+	callback := objectResolver["Roles"].(func(ctx context.Context, obj *model4.Membership) ([]*model4.Space, error))
 
 	return callback(ctx, obj)
 }
-func (r *membershipConnectionResolver) Edges(ctx context.Context, obj *model3.MembershipConnection) ([]*model3.MembershipEdge, error) {
+func (r *membershipConnectionResolver) Edges(ctx context.Context, obj *model4.MembershipConnection) ([]*model4.MembershipEdge, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["MembershipConnection"].(map[string]interface{})
-	callback := objectResolver["Edges"].(func(ctx context.Context, obj *model3.MembershipConnection) ([]*model3.MembershipEdge, error))
+	callback := objectResolver["Edges"].(func(ctx context.Context, obj *model4.MembershipConnection) ([]*model4.MembershipEdge, error))
 
 	return callback(ctx, obj)
 }
@@ -340,19 +346,19 @@ func (r *s3MutationResolver) UploadToken(ctx context.Context, obj *dto3.S3Mutati
 
 	return callback(ctx, obj, input)
 }
-func (r *sessionResolver) User(ctx context.Context, obj *model.Session) (*model4.User, error) {
+func (r *sessionResolver) User(ctx context.Context, obj *model.Session) (*model5.User, error) {
 	bundle, _ := r.container.bundles.Access()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Session"].(map[string]interface{})
-	callback := objectResolver["User"].(func(ctx context.Context, obj *model.Session) (*model4.User, error))
+	callback := objectResolver["User"].(func(ctx context.Context, obj *model.Session) (*model5.User, error))
 
 	return callback(ctx, obj)
 }
-func (r *sessionResolver) Space(ctx context.Context, obj *model.Session) (*model3.Space, error) {
+func (r *sessionResolver) Space(ctx context.Context, obj *model.Session) (*model4.Space, error) {
 	bundle, _ := r.container.bundles.Access()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Session"].(map[string]interface{})
-	callback := objectResolver["Space"].(func(ctx context.Context, obj *model.Session) (*model3.Space, error))
+	callback := objectResolver["Space"].(func(ctx context.Context, obj *model.Session) (*model4.Space, error))
 
 	return callback(ctx, obj)
 }
@@ -380,27 +386,27 @@ func (r *sessionResolver) Jwt(ctx context.Context, obj *model.Session, codeVerif
 
 	return callback(ctx, obj, codeVerifier)
 }
-func (r *spaceResolver) DomainNames(ctx context.Context, obj *model3.Space) (*model3.DomainNames, error) {
+func (r *spaceResolver) DomainNames(ctx context.Context, obj *model4.Space) (*model4.DomainNames, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Space"].(map[string]interface{})
-	callback := objectResolver["DomainNames"].(func(ctx context.Context, obj *model3.Space) (*model3.DomainNames, error))
+	callback := objectResolver["DomainNames"].(func(ctx context.Context, obj *model4.Space) (*model4.DomainNames, error))
 
 	return callback(ctx, obj)
 }
-func (r *spaceResolver) Features(ctx context.Context, obj *model3.Space) (*model3.SpaceFeatures, error) {
+func (r *spaceResolver) Features(ctx context.Context, obj *model4.Space) (*model4.SpaceFeatures, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Space"].(map[string]interface{})
-	callback := objectResolver["Features"].(func(ctx context.Context, obj *model3.Space) (*model3.SpaceFeatures, error))
+	callback := objectResolver["Features"].(func(ctx context.Context, obj *model4.Space) (*model4.SpaceFeatures, error))
 
 	return callback(ctx, obj)
 }
-func (r *spaceResolver) Parent(ctx context.Context, obj *model3.Space) (*model3.Space, error) {
+func (r *spaceResolver) Parent(ctx context.Context, obj *model4.Space) (*model4.Space, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["Space"].(map[string]interface{})
-	callback := objectResolver["Parent"].(func(ctx context.Context, obj *model3.Space) (*model3.Space, error))
+	callback := objectResolver["Parent"].(func(ctx context.Context, obj *model4.Space) (*model4.Space, error))
 
 	return callback(ctx, obj)
 }
@@ -420,19 +426,19 @@ func (r *spaceMembershipMutationResolver) Update(ctx context.Context, obj *dto4.
 
 	return callback(ctx, obj, input)
 }
-func (r *spaceMembershipQueryResolver) Load(ctx context.Context, obj *dto4.SpaceMembershipQuery, id string, version *string) (*model3.Membership, error) {
+func (r *spaceMembershipQueryResolver) Load(ctx context.Context, obj *dto4.SpaceMembershipQuery, id string, version *string) (*model4.Membership, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["SpaceMembershipQuery"].(map[string]interface{})
-	callback := objectResolver["Load"].(func(ctx context.Context, obj *dto4.SpaceMembershipQuery, id string, version *string) (*model3.Membership, error))
+	callback := objectResolver["Load"].(func(ctx context.Context, obj *dto4.SpaceMembershipQuery, id string, version *string) (*model4.Membership, error))
 
 	return callback(ctx, obj, id, version)
 }
-func (r *spaceMembershipQueryResolver) Find(ctx context.Context, obj *dto4.SpaceMembershipQuery, first int, after *string, filters dto4.MembershipsFilter) (*model3.MembershipConnection, error) {
+func (r *spaceMembershipQueryResolver) Find(ctx context.Context, obj *dto4.SpaceMembershipQuery, first int, after *string, filters dto4.MembershipsFilter) (*model4.MembershipConnection, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["SpaceMembershipQuery"].(map[string]interface{})
-	callback := objectResolver["Find"].(func(ctx context.Context, obj *dto4.SpaceMembershipQuery, first int, after *string, filters dto4.MembershipsFilter) (*model3.MembershipConnection, error))
+	callback := objectResolver["Find"].(func(ctx context.Context, obj *dto4.SpaceMembershipQuery, first int, after *string, filters dto4.MembershipsFilter) (*model4.MembershipConnection, error))
 
 	return callback(ctx, obj, first, after, filters)
 }
@@ -460,11 +466,11 @@ func (r *spaceMutationResolver) Membership(ctx context.Context, obj *dto4.SpaceM
 
 	return callback(ctx, obj)
 }
-func (r *spaceQueryResolver) FindOne(ctx context.Context, obj *dto4.SpaceQuery, filters dto4.SpaceFilters) (*model3.Space, error) {
+func (r *spaceQueryResolver) FindOne(ctx context.Context, obj *dto4.SpaceQuery, filters dto4.SpaceFilters) (*model4.Space, error) {
 	bundle, _ := r.container.bundles.Space()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["SpaceQuery"].(map[string]interface{})
-	callback := objectResolver["FindOne"].(func(ctx context.Context, obj *dto4.SpaceQuery, filters dto4.SpaceFilters) (*model3.Space, error))
+	callback := objectResolver["FindOne"].(func(ctx context.Context, obj *dto4.SpaceQuery, filters dto4.SpaceFilters) (*model4.Space, error))
 
 	return callback(ctx, obj, filters)
 }
@@ -476,23 +482,23 @@ func (r *spaceQueryResolver) Membership(ctx context.Context, obj *dto4.SpaceQuer
 
 	return callback(ctx, obj)
 }
-func (r *userResolver) Name(ctx context.Context, obj *model4.User) (*model4.UserName, error) {
+func (r *userResolver) Name(ctx context.Context, obj *model5.User) (*model5.UserName, error) {
 	bundle, _ := r.container.bundles.User()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["User"].(map[string]interface{})
-	callback := objectResolver["Name"].(func(ctx context.Context, obj *model4.User) (*model4.UserName, error))
+	callback := objectResolver["Name"].(func(ctx context.Context, obj *model5.User) (*model5.UserName, error))
 
 	return callback(ctx, obj)
 }
-func (r *userResolver) Emails(ctx context.Context, obj *model4.User) (*model4.UserEmails, error) {
+func (r *userResolver) Emails(ctx context.Context, obj *model5.User) (*model5.UserEmails, error) {
 	bundle, _ := r.container.bundles.User()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["User"].(map[string]interface{})
-	callback := objectResolver["Emails"].(func(ctx context.Context, obj *model4.User) (*model4.UserEmails, error))
+	callback := objectResolver["Emails"].(func(ctx context.Context, obj *model5.User) (*model5.UserEmails, error))
 
 	return callback(ctx, obj)
 }
-func (r *userEmailResolver) Verified(ctx context.Context, obj *model4.UserEmail) (bool, error) {
+func (r *userEmailResolver) Verified(ctx context.Context, obj *model5.UserEmail) (bool, error) {
 	panic("no implementation found in resolvers[UserEmail][Verified]")
 }
 func (r *userMutationResolver) Create(ctx context.Context, obj *dto5.UserMutation, input *dto5.UserCreateInput) (*dto5.UserMutationOutcome, error) {
@@ -511,11 +517,11 @@ func (r *userMutationResolver) Update(ctx context.Context, obj *dto5.UserMutatio
 
 	return callback(ctx, obj, input)
 }
-func (r *userQueryResolver) Load(ctx context.Context, obj *dto5.UserQuery, id string) (*model4.User, error) {
+func (r *userQueryResolver) Load(ctx context.Context, obj *dto5.UserQuery, id string) (*model5.User, error) {
 	bundle, _ := r.container.bundles.User()
 	resolvers := bundle.GraphqlResolver()
 	objectResolver := resolvers["UserQuery"].(map[string]interface{})
-	callback := objectResolver["Load"].(func(ctx context.Context, obj *dto5.UserQuery, id string) (*model4.User, error))
+	callback := objectResolver["Load"].(func(ctx context.Context, obj *dto5.UserQuery, id string) (*model5.User, error))
 
 	return callback(ctx, obj, id)
 }

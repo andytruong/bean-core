@@ -1,8 +1,0 @@
-extend type Mutation {
-    userMutation: UserMutation!
-}
-
-type UserMutation {
-    create(input: UserCreateInput): UserMutationOutcome!
-    update(input: UserUpdateInput!): UserMutationOutcome!
-}

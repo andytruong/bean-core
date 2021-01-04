@@ -1,7 +1,0 @@
-extend type Query {
-    userQuery: UserQuery!
-}
-
-type UserQuery {
-    load(id: ID!): User
-}

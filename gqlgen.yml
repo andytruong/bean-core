@@ -28,6 +28,7 @@ autobind:
   - bean/pkg/app/model/dto
   - bean/pkg/config/model
   - bean/pkg/infra/api
+  - bean/pkg/integration/mailer/model
   - bean/pkg/integration/mailer/model/dto
   - bean/pkg/integration/s3/model
   - bean/pkg/integration/s3/model/dto

@@ -1,9 +1,0 @@
-input UserUpdateInput {
-    id: ID!
-    version: ID!
-    values: UserUpdateValuesInput
-}
-
-input UserUpdateValuesInput {
-    password: UserPasswordInput!
-}

@@ -3,6 +3,7 @@ package mailer
 import (
 	"context"
 
+	"bean/pkg/integration/mailer/model"
 	"bean/pkg/integration/mailer/model/dto"
 )
 
@@ -28,10 +29,10 @@ func newResoler(bundle *Bundle) map[string]interface{} {
 			},
 		},
 		"MailerAccountQuery": map[string]interface{}{
-			"Get": func(ctx context.Context, obj *dto.MailerQueryAccount, id string) (*dto.MailerAccount, error) {
+			"Get": func(ctx context.Context, obj *dto.MailerQueryAccount, id string) (*model.MailerAccount, error) {
 				panic("no implementation")
 			},
-			"GetMultiple": func(ctx context.Context, obj *dto.MailerQueryAccount, first int, after *string) ([]*dto.MailerAccount, error) {
+			"GetMultiple": func(ctx context.Context, obj *dto.MailerQueryAccount, first int, after *string) ([]*model.MailerAccount, error) {
 				panic("no implementation")
 			},
 		},

@@ -1,4 +1,4 @@
-package dto
+package model
 
 import (
 	"time"
@@ -32,7 +32,4 @@ type MailerTemplateMessage struct {
 	Language api.Language `json:"language"`
 	BodyHTML string       `json:"bodyHTML"`
 	BodyText *string      `json:"bodyText"`
-}
-
-type MailerTemplateMutation struct {
 }
