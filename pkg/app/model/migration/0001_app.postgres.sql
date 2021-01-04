@@ -10,3 +10,6 @@ CREATE TABLE applications
     deleted_at timestamp,
     FOREIGN KEY (space_id) REFERENCES spaces (id)
 );
+
+CREATE INDEX application_status ON applications (is_active);
+CREATE INDEX application_deleted ON applications ((deleted_at IS NULL));

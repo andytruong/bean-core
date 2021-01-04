@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 
 	"bean/components/claim"
 	"bean/components/connect"
@@ -42,7 +43,9 @@ func Test(t *testing.T) {
 	})
 
 	// create
-	oCreate, err := bundle.Service.Create(ctx, &dto.ApplicationCreateInput{IsActive: false, Title: scalar.NilString("QA app")})
+	oCreate, err := bundle.Service.Create(ctx, &dto.ApplicationCreateInput{
+		IsActive: false, Title: scalar.NilString("QA app"),
+	})
 	ass.NoError(err)
 	ass.NotNil(oCreate)
 	ass.Equal(false, oCreate.App.IsActive)
@@ -91,6 +94,7 @@ func Test(t *testing.T) {
 	t.Run("delete", func(t *testing.T) {
 		app, _ := bundle.Service.Load(ctx, oCreate.App.ID)
 		now := time.Now()
+
 		oDelete, err := bundle.Service.Delete(ctx, dto.ApplicationDeleteInput{
 			Id:      app.ID,
 			Version: app.Version,
@@ -99,5 +103,16 @@ func Test(t *testing.T) {
 		ass.NoError(err)
 		ass.NotNil(oDelete)
 		ass.True(now.UnixNano() <= oDelete.App.DeletedAt.UnixNano())
+
+		t.Run("deleted application", func(t *testing.T) {
+			oDelete, err := bundle.Service.Delete(ctx, dto.ApplicationDeleteInput{
+				Id:      app.ID,
+				Version: oDelete.App.Version,
+			})
+
+			ass.Error(err)
+			ass.Equal(gorm.ErrRecordNotFound, err)
+			ass.Nil(oDelete)
+		})
 	})
 }

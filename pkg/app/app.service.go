@@ -19,9 +19,7 @@ type AppService struct {
 func (srv *AppService) Load(ctx context.Context, id string) (*model.Application, error) {
 	con := connect.ContextToDB(ctx)
 	app := &model.Application{}
-
-	// TODO: don't allow to load pending deleted applications.
-	err := con.Where("id = ?", id).First(&app).Error
+	err := con.Where("id = ? AND deleted_at IS NULL", id).First(&app).Error
 	if nil != err {
 		return nil, err
 	}
@@ -62,6 +60,8 @@ func (srv *AppService) Update(ctx context.Context, in *dto.ApplicationUpdateInpu
 		return nil, err
 	} else if app.Version != in.Version {
 		return nil, util.ErrorVersionConflict
+	} else if app.DeletedAt != nil {
+		return nil, util.ErrorLocked
 	}
 
 	changed := false
