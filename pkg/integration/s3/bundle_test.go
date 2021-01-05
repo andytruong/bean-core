@@ -67,8 +67,7 @@ func Test_Credentials(t *testing.T) {
 	db := connect.MockDatabase()
 
 	claims := claim.NewPayload()
-	claims.SetUserId(_id)
-	ctx := claim.PayloadToContext(context.Background(), &claims)
+	ctx := claims.SetUserId(_id).ToContext(context.Background())
 	ctx = connect.DBToContext(ctx, db)
 	connect.MockInstall(ctx, bundle)
 
@@ -168,8 +167,7 @@ func Test_Policies(t *testing.T) {
 	db := connect.MockDatabase()
 
 	claims := claim.NewPayload()
-	claims.SetUserId(_id)
-	ctx := claim.PayloadToContext(context.Background(), &claims)
+	ctx := claims.SetUserId(_id).ToContext(context.Background())
 	ctx = connect.DBToContext(ctx, db)
 	connect.MockInstall(ctx, bundle)
 
@@ -256,11 +254,11 @@ func Test_UploadToken(t *testing.T) {
 	}
 	db := connect.MockDatabase()
 	claims := claim.NewPayload()
-	claims.
+	ctx := claims.
 		SetUserId(_id).
 		SetSpaceId(_id).
-		SetSessionId(_id)
-	ctx := claim.PayloadToContext(context.Background(), &claims)
+		SetSessionId(_id).
+		ToContext(context.Background())
 	ctx = connect.DBToContext(ctx, db)
 	connect.MockInstall(ctx, bundle)
 

@@ -31,8 +31,10 @@ func Test(t *testing.T) {
 	db := connect.MockDatabase()
 	ctx := connect.DBToContext(context.Background(), db)
 	claims := claim.NewPayload()
-	claims.SetSpaceId(bundle.idr.ULID())
-	ctx = claim.PayloadToContext(ctx, &claims)
+	ctx = claims.
+		SetSpaceId(bundle.idr.ULID()).
+		ToContext(ctx)
+
 	connect.MockInstall(ctx, bundle)
 
 	t.Run("database schema", func(t *testing.T) {

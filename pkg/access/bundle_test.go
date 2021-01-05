@@ -78,10 +78,10 @@ func Test_Create(t *testing.T) {
 
 	// create space
 	claims := claim.NewPayload()
-	claims.
+	ctx = claims.
 		SetUserId(oUser.User.ID).
-		SetKind(claim.KindAuthenticated)
-	ctx = claim.PayloadToContext(ctx, &claims)
+		SetKind(claim.KindAuthenticated).
+		ToContext(ctx)
 
 	iSpace := fSpace.SpaceCreateInputFixture(false)
 	oSpace, err := bundle.spaceBundle.Service.Create(ctx, iSpace)
@@ -211,8 +211,11 @@ func Test_Query(t *testing.T) {
 	oUser, _ := bundle.userBundle.UserService.Create(ctx, iUser)
 
 	claims := claim.NewPayload()
-	claims.SetUserId(oUser.User.ID).SetKind(claim.KindAuthenticated)
-	ctx = claim.PayloadToContext(ctx, &claims)
+	ctx = claims.
+		SetUserId(oUser.User.ID).
+		SetKind(claim.KindAuthenticated).
+		ToContext(ctx)
+
 	iSpace := fSpace.SpaceCreateInputFixture(false)
 	oSpace, _ := bundle.spaceBundle.Service.Create(ctx, iSpace)
 	in := newCreateSessionInput(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
@@ -256,8 +259,11 @@ func Test_Archive(t *testing.T) {
 	ctx = connect.DBToContext(ctx, db)
 
 	claims := claim.NewPayload()
-	claims.SetUserId(oUser.User.ID).SetKind(claim.KindAuthenticated)
-	ctx = claim.PayloadToContext(ctx, &claims)
+	ctx = claims.
+		SetUserId(oUser.User.ID).
+		SetKind(claim.KindAuthenticated).
+		ToContext(ctx)
+
 	iSpace := fSpace.SpaceCreateInputFixture(false)
 	oSpace, _ := bundle.spaceBundle.Service.Create(ctx, iSpace)
 	in := newCreateSessionInput(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
@@ -272,11 +278,11 @@ func Test_Archive(t *testing.T) {
 
 		// setup auth context
 		claims := claim.NewPayload()
-		claims.
+		ctx = claims.
 			SetUserId(oUser.User.ID).
 			SetKind(claim.KindAuthenticated).
-			SetSessionId(sessionOutcome.Session.ID)
-		ctx = claim.PayloadToContext(ctx, &claims)
+			SetSessionId(sessionOutcome.Session.ID).
+			ToContext(ctx)
 
 		// can archive session without issue
 		{

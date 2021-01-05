@@ -64,9 +64,9 @@ func Test_Space(t *testing.T) {
 				SetKind(claim.KindAuthenticated).
 				SetUserId(bundle.idr.ULID()).
 				SetSpaceId(bundle.idr.ULID())
-			ctx := claim.PayloadToContext(ctx, &claims)
-			now := time.Now()
+			ctx := claims.ToContext(ctx)
 
+			now := time.Now()
 			out, err := bundle.Service.Create(ctx, iCreate)
 
 			ass.NoError(err)
@@ -278,7 +278,9 @@ func Test_Membership(t *testing.T) {
 				IsActive: false,
 			}
 
-			resolver := bundle.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Create"].(func(context.Context, *dto.SpaceMembershipMutation, dto.SpaceMembershipCreateInput) (*dto.SpaceMembershipCreateOutcome, error))
+			resolver := bundle.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Create"].(func(context.Context, *dto.SpaceMembershipMutation, dto.SpaceMembershipCreateInput) (
+				*dto.SpaceMembershipCreateOutcome, error,
+			))
 			outcome, err := resolver(ctx, nil, input)
 
 			// check error
@@ -316,7 +318,9 @@ func Test_Membership(t *testing.T) {
 		})
 
 		t.Run("update membership", func(t *testing.T) {
-			resolver := bundle.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Update"].(func(context.Context, *dto.SpaceMembershipMutation, dto.SpaceMembershipUpdateInput) (*dto.SpaceMembershipCreateOutcome, error))
+			resolver := bundle.resolvers["SpaceMembershipMutation"].(map[string]interface{})["Update"].(func(context.Context, *dto.SpaceMembershipMutation, dto.SpaceMembershipUpdateInput) (
+				*dto.SpaceMembershipCreateOutcome, error,
+			))
 			var membership *model.Membership
 
 			// create a membership with status OFF.
@@ -334,7 +338,9 @@ func Test_Membership(t *testing.T) {
 
 			// load membership
 			{
-				resolver := bundle.resolvers["SpaceMembershipQuery"].(map[string]interface{})["Load"].(func(context.Context, *dto.SpaceMembershipQuery, string, *string) (*model.Membership, error))
+				resolver := bundle.resolvers["SpaceMembershipQuery"].(map[string]interface{})["Load"].(func(context.Context, *dto.SpaceMembershipQuery, string, *string) (
+					*model.Membership, error,
+				))
 
 				// without version
 				{
