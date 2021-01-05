@@ -17,10 +17,14 @@ func NewPayload() Payload {
 	}
 }
 
+// Id       -> sessionID
+// Issuer   -> applicationID
+// Subject  -> userID
+// Audience -> spaceID
 type Payload struct {
 	jwt.StandardClaims
 	Kind  Kind     `json:"kind"`
-	Roles []string `json:"roles"`
+	Roles []string `json:"roles,omitempty"`
 }
 
 func (pl *Payload) SetKind(value Kind) *Payload {
@@ -33,9 +37,13 @@ func (pl *Payload) SetExpireAt(value int64) *Payload {
 	return pl
 }
 
-func (pl *Payload) SetIssuer(value string) *Payload {
+func (pl *Payload) SetApplication(value string) *Payload {
 	pl.Issuer = value
 	return pl
+}
+
+func (pl *Payload) GetApplication() string {
+	return pl.Issuer
 }
 
 func (pl *Payload) SetUserId(value string) *Payload {

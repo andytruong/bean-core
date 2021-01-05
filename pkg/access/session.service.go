@@ -13,7 +13,7 @@ import (
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	mSpace "bean/pkg/space/model"
-	mUser "bean/pkg/user/model"
+	"bean/pkg/user"
 )
 
 type SessionService struct {
@@ -23,34 +23,29 @@ type SessionService struct {
 func (srv *SessionService) newSessionWithCredentials(ctx context.Context, in *dto.SessionCreateInput) (
 	*dto.SessionOutcome, error,
 ) {
-	tx := connect.ContextToDB(ctx)
-
 	// load email object, so we have userID
-	email := mUser.UserEmail{}
-	{
-		err := tx.First(&email, "value = ?", in.Email).Error
-		if nil != err {
-			return nil, errors.New("userBundle not found")
+	email, err := srv.bundle.userBundle.EmailService.Load(ctx, in.Email)
+	if nil != err {
+		if err == gorm.ErrRecordNotFound {
+			return nil, user.ErrorUserNotFound
 		}
 
-		if !email.IsActive {
-			return &dto.SessionOutcome{
-				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.email"}, "email address is not active"),
-			}, nil
-		}
+		return nil, err
+	} else if !email.IsActive {
+		err := user.ErrorEmailInactive.Error()
+		errList := util.NewErrors(util.ErrorCodeInput, []string{"input.email"}, err)
+
+		return &dto.SessionOutcome{Errors: errList}, nil
 	}
 
 	// password validation
-	{
-		pass := mUser.UserPassword{}
-		err := tx.First(&pass, "user_id = ? AND hashed_value = ? AND is_active = ?", email.UserId, in.HashedPassword, true).Error
-		if nil != err {
-			if err == gorm.ErrRecordNotFound {
-				return &dto.SessionOutcome{
-					Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "invalid password"),
-				}, nil
-			}
-		}
+	passwordMatched, err := srv.bundle.userBundle.PasswordService.ValidPassword(ctx, email.UserId, in.HashedPassword)
+	if nil != err {
+		return nil, err
+	} else if !passwordMatched {
+		errList := util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "invalid password")
+
+		return &dto.SessionOutcome{Errors: errList}, nil
 	}
 
 	return srv.create(ctx, claim.KindCredentials, email.UserId, in.SpaceID, func(session *model.Session) {
@@ -65,7 +60,9 @@ func (srv *SessionService) newOTLTSession(ctx context.Context, in *dto.SessionCr
 	return srv.create(ctx, claim.KindOTLT, in.UserID, in.SpaceID, nil)
 }
 
-func (srv *SessionService) newSessionWithOTLT(ctx context.Context, in *dto.SessionExchangeOTLTInput) (*dto.SessionOutcome, error) {
+func (srv *SessionService) newSessionWithOTLT(ctx context.Context, in *dto.SessionExchangeOTLTInput) (
+	*dto.SessionOutcome, error,
+) {
 	oneTimeSession, err := srv.LoadByToken(ctx, in.Token)
 	if nil != err {
 		return nil, err

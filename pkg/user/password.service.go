@@ -13,6 +13,22 @@ type PasswordService struct {
 	bundle *Bundle
 }
 
+func (srv PasswordService) ValidPassword(ctx context.Context, userId string, hashedValue string) (bool, error) {
+	count := int64(0)
+	err := connect.
+		ContextToDB(ctx).
+		Model(&model.UserPassword{}).
+		Where("user_id = ? AND hashed_value = ? AND is_active = ?", userId, hashedValue, true).
+		Count(&count).
+		Error
+
+	if nil != err {
+		return false, err
+	}
+
+	return count == 1, nil
+}
+
 func (srv *PasswordService) create(ctx context.Context, user *model.User, in *dto.UserPasswordInput) error {
 	if nil == in {
 		return nil

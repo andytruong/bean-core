@@ -73,7 +73,7 @@ func Test_Create(t *testing.T) {
 
 	// create userBundle
 	iUser := fUser.NewUserCreateInputFixture()
-	oUser, err := bundle.userBundle.Service.Create(ctx, iUser)
+	oUser, err := bundle.userBundle.UserService.Create(ctx, iUser)
 	ass.NoError(err)
 
 	// create space
@@ -92,7 +92,7 @@ func Test_Create(t *testing.T) {
 			in := newCreateSessionInput(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 			in.Email = iUser.Emails.Secondary[1].Value
 			_, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
-			ass.Equal(err.Error(), "userBundle not found")
+			ass.Equal(err, user.ErrorUserNotFound)
 		})
 
 		t.Run("password unmatched", func(t *testing.T) {
@@ -197,7 +197,7 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 	out, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 	ass.Error(err)
 	ass.Nil(out)
-	ass.Contains(err.Error(), "userBundle not found")
+	ass.Contains(err, user.ErrorUserNotFound)
 }
 
 func Test_Query(t *testing.T) {
@@ -208,7 +208,7 @@ func Test_Query(t *testing.T) {
 	connect.MockInstall(ctx, bundle)
 
 	iUser := fUser.NewUserCreateInputFixture()
-	oUser, _ := bundle.userBundle.Service.Create(ctx, iUser)
+	oUser, _ := bundle.userBundle.UserService.Create(ctx, iUser)
 
 	claims := claim.NewPayload()
 	claims.SetUserId(oUser.User.ID).SetKind(claim.KindAuthenticated)
@@ -252,7 +252,7 @@ func Test_Archive(t *testing.T) {
 	connect.MockInstall(ctx, bundle)
 
 	iUser := fUser.NewUserCreateInputFixture()
-	oUser, _ := bundle.userBundle.Service.Create(ctx, iUser)
+	oUser, _ := bundle.userBundle.UserService.Create(ctx, iUser)
 	ctx = connect.DBToContext(ctx, db)
 
 	claims := claim.NewPayload()

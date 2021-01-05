@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"bean/components/connect"
+	"bean/components/scalar"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
 )
@@ -13,13 +14,24 @@ type EmailService struct {
 	bundle *Bundle
 }
 
+func (srv EmailService) Load(ctx context.Context, email scalar.EmailAddress) (*model.UserEmail, error) {
+	entity := &model.UserEmail{}
+	err := connect.ContextToDB(ctx).First(entity, "value = ?", email).Error
+
+	if nil != err {
+		return nil, err
+	}
+
+	return entity, nil
+}
+
 func (srv EmailService) CreateBulk(ctx context.Context, user *model.User, in *dto.UserEmailsInput) error {
 	if nil == in {
 		return nil
 	}
 
 	if nil != in.Primary {
-		err := srv.bundle.emailService.Create(ctx, user, *in.Primary, true)
+		err := srv.bundle.EmailService.Create(ctx, user, *in.Primary, true)
 		if nil != err {
 			return err
 		}
@@ -27,7 +39,7 @@ func (srv EmailService) CreateBulk(ctx context.Context, user *model.User, in *dt
 
 	if nil != in.Secondary {
 		for _, secondaryInput := range in.Secondary {
-			err := srv.bundle.emailService.Create(ctx, user, *secondaryInput, false)
+			err := srv.bundle.EmailService.Create(ctx, user, *secondaryInput, false)
 			if nil != err {
 				return err
 			}
