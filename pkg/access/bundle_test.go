@@ -92,7 +92,7 @@ func Test_Create(t *testing.T) {
 			in := newCreateSessionInput(oSpace.Space.ID, string(iUser.Emails.Secondary[0].Value), iUser.Password.HashedValue)
 			in.Email = iUser.Emails.Secondary[1].Value
 			_, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
-			ass.Equal(err.Error(), "user not found")
+			ass.Equal(err, user.ErrorUserNotFound)
 		})
 
 		t.Run("password unmatched", func(t *testing.T) {
@@ -197,7 +197,7 @@ func Test_SessionCreate_MembershipNotFound(t *testing.T) {
 	out, err := bundle.sessionService.newSessionWithCredentials(ctx, in)
 	ass.Error(err)
 	ass.Nil(out)
-	ass.Contains(err.Error(), "user not found")
+	ass.Contains(err, user.ErrorUserNotFound)
 }
 
 func Test_Query(t *testing.T) {
