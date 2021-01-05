@@ -2,9 +2,7 @@ package access
 
 import (
 	"context"
-	"fmt"
-	"time"
-
+	
 	"bean/components/claim"
 	"bean/components/util"
 	"bean/pkg/access/model"
@@ -41,13 +39,19 @@ func (bundle *Bundle) newResolves() map[string]interface{} {
 			},
 		},
 		"AccessSessionMutation": map[string]interface{}{
-			"Create": func(ctx context.Context, _ *dto.AccessSessionMutation, in *dto.SessionCreateInput) (*dto.SessionOutcome, error) {
+			"Create": func(ctx context.Context, _ *dto.AccessSessionMutation, in *dto.SessionCreateInput) (
+				*dto.SessionOutcome, error,
+			) {
 				return bundle.sessionService.newSessionWithCredentials(ctx, in)
 			},
-			"GenerateOneTimeLoginToken": func(ctx context.Context, _ *dto.AccessSessionMutation, in *dto.SessionCreateOTLTSessionInput) (*dto.SessionOutcome, error) {
+			"GenerateOneTimeLoginToken": func(ctx context.Context, _ *dto.AccessSessionMutation, in *dto.SessionCreateOTLTSessionInput) (
+				*dto.SessionOutcome, error,
+			) {
 				return bundle.sessionService.newOTLTSession(ctx, in)
 			},
-			"ExchangeOneTimeLoginToken": func(ctx context.Context, _ *dto.AccessSessionMutation, in *dto.SessionExchangeOTLTInput) (*dto.SessionOutcome, error) {
+			"ExchangeOneTimeLoginToken": func(ctx context.Context, _ *dto.AccessSessionMutation, in *dto.SessionExchangeOTLTInput) (
+				*dto.SessionOutcome, error,
+			) {
 				return bundle.sessionService.newSessionWithOTLT(ctx, in)
 			},
 			"Archive": func(ctx context.Context, _ *dto.AccessSessionMutation) (*dto.SessionArchiveOutcome, error) {
@@ -55,14 +59,14 @@ func (bundle *Bundle) newResolves() map[string]interface{} {
 				if nil == claims {
 					return nil, util.ErrorAuthRequired
 				}
-
+				
 				sess, _ := bundle.sessionService.load(ctx, claims.SessionId())
 				if sess != nil {
 					out, err := bundle.sessionService.Delete(ctx, sess)
-
+					
 					return out, err
 				}
-
+				
 				return &dto.SessionArchiveOutcome{
 					Errors: util.NewErrors(util.ErrorCodeInput, []string{"token"}, "session not found"),
 					Result: false,
@@ -71,7 +75,7 @@ func (bundle *Bundle) newResolves() map[string]interface{} {
 		},
 		"Session": map[string]interface{}{
 			"User": func(ctx context.Context, obj *model.Session) (*user_model.User, error) {
-				return bundle.userBundle.Service.Load(ctx, obj.UserId)
+				return bundle.userBundle.UserService.Load(ctx, obj.UserId)
 			},
 			"Context": func(ctx context.Context, obj *model.Session) (*model.SessionContext, error) {
 				panic("implement me")
@@ -83,30 +87,7 @@ func (bundle *Bundle) newResolves() map[string]interface{} {
 				return bundle.spaceBundle.Service.Load(ctx, obj.SpaceId)
 			},
 			"Jwt": func(ctx context.Context, session *model.Session, codeVerifier string) (string, error) {
-				roles, err := bundle.spaceBundle.MemberService.FindRoles(ctx, session.UserId, session.SpaceId)
-
-				if nil != err {
-					return "", err
-				}
-
-				if !session.Verify(codeVerifier) {
-					return "", fmt.Errorf("can not verify")
-				}
-
-				claims := claim.NewPayload()
-				claims.
-					SetKind(session.Kind).
-					SetSessionId(session.ID).
-					SetUserId(session.UserId).
-					SetSpaceId(session.SpaceId).
-					SetIssuer("access").
-					SetExpireAt(time.Now().Add(bundle.cnf.Jwt.Timeout).Unix())
-
-				for _, role := range roles {
-					claims.AddRole(role.Title)
-				}
-
-				return bundle.JwtService.Sign(claims)
+				return bundle.JwtService.claim(ctx, session, codeVerifier)
 			},
 		},
 	}

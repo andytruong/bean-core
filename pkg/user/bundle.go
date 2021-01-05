@@ -4,48 +4,54 @@ import (
 	"context"
 	"path"
 	"runtime"
-
+	
 	"go.uber.org/zap"
-
+	
 	"bean/components/connect"
 	"bean/components/module"
 	"bean/components/scalar"
 	"bean/components/util"
 )
 
+const (
+	ErrorUserNotFound    = util.Err("user not found")
+	ErrorEmailInactive   = util.Err("email address is not active")
+	ErrorInvalidPassword = util.Err("invalid password")
+)
+
 func NewUserBundle(lgr *zap.Logger, idr *scalar.Identifier) *Bundle {
 	if err := util.NilPointerErrorValidate(lgr, idr); nil != err {
 		panic(err)
 	}
-
+	
 	this := &Bundle{
 		lgr:                      lgr,
 		idr:                      idr,
 		maxSecondaryEmailPerUser: 20,
 	}
-
-	this.Service = &UserService{bundle: this}
+	
+	this.UserService = &UserService{bundle: this}
+	this.EmailService = &EmailService{bundle: this}
+	this.PasswordService = &PasswordService{bundle: this}
 	this.nameService = &NameService{bundle: this}
-	this.emailService = &EmailService{bundle: this}
-	this.passwordService = &PasswordService{bundle: this}
 	this.resolvers = newResolvers(this)
-
+	
 	return this
 }
 
 type Bundle struct {
 	module.AbstractBundle
-
-	Service *UserService
-
+	
+	UserService     *UserService
+	EmailService    *EmailService
+	PasswordService *PasswordService
+	
 	// Internal services
 	lgr                      *zap.Logger
 	idr                      *scalar.Identifier
 	maxSecondaryEmailPerUser uint8
 	resolvers                map[string]interface{}
 	nameService              *NameService
-	emailService             *EmailService
-	passwordService          *PasswordService
 }
 
 func (Bundle) Name() string {
@@ -57,14 +63,14 @@ func (bundle Bundle) Migrate(ctx context.Context, driver string) error {
 	if !ok {
 		return nil
 	}
-
+	
 	runner := connect.Runner{
 		Logger: bundle.lgr,
 		Driver: driver,
 		Bundle: "user",
 		Dir:    path.Dir(filename) + "/model/migration/",
 	}
-
+	
 	return runner.Run(ctx)
 }
 

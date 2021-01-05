@@ -211,7 +211,7 @@ func Test_Membership(t *testing.T) {
 
 	// create user
 	iUser := uFixtures.NewUserCreateInputFixture()
-	oUser, err := bundle.userBundle.Service.Create(ctx, iUser)
+	oUser, err := bundle.userBundle.UserService.Create(ctx, iUser)
 
 	ass.NoError(err)
 
@@ -300,7 +300,7 @@ func Test_Membership(t *testing.T) {
 
 		// create user
 		iUser := uFixtures.NewUserCreateInputFixture()
-		oUser, err := bundle.userBundle.Service.Create(ctx, iUser)
+		oUser, err := bundle.userBundle.UserService.Create(ctx, iUser)
 
 		ass.NoError(err)
 

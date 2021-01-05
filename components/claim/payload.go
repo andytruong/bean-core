@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"time"
-
+	
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -17,10 +17,14 @@ func NewPayload() Payload {
 	}
 }
 
+// Id       -> sessionID
+// Issuer   -> applicationID
+// Subject  -> userID
+// Audience -> spaceID
 type Payload struct {
 	jwt.StandardClaims
 	Kind  Kind     `json:"kind"`
-	Roles []string `json:"roles"`
+	Roles []string `json:"roles,omitempty"`
 }
 
 func (pl *Payload) SetKind(value Kind) *Payload {
@@ -33,9 +37,13 @@ func (pl *Payload) SetExpireAt(value int64) *Payload {
 	return pl
 }
 
-func (pl *Payload) SetIssuer(value string) *Payload {
+func (pl *Payload) SetApplication(value string) *Payload {
 	pl.Issuer = value
 	return pl
+}
+
+func (pl *Payload) GetApplication() string {
+	return pl.Issuer
 }
 
 func (pl *Payload) SetUserId(value string) *Payload {
@@ -58,7 +66,7 @@ func (pl Payload) SessionId() string {
 
 func (pl *Payload) SetSpaceId(value string) *Payload {
 	pl.Audience = value
-
+	
 	return pl
 }
 
@@ -68,7 +76,7 @@ func (pl Payload) SpaceId() string {
 
 func (pl *Payload) AddRole(values ...string) *Payload {
 	pl.Roles = append(pl.Roles, values...)
-
+	
 	return pl
 }
 
@@ -83,20 +91,20 @@ func (pl *Payload) UnmarshalGQL(v interface{}) error {
 				return []byte("AllYourBase"), nil
 			},
 		)
-
+		
 		if claims, ok := token.Claims.(*Payload); ok && token.Valid {
 			fmt.Printf("%v %v", claims.Subject, claims.StandardClaims.ExpiresAt)
 		} else {
 			return err
 		}
 	}
-
+	
 	return nil
 }
 
 func (pl Payload) MarshalGQL(w io.Writer) {
 	mySigningKey := []byte("AllYourBase")
-
+	
 	// Create the Payload
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, pl)
 	ss, err := token.SignedString(mySigningKey)

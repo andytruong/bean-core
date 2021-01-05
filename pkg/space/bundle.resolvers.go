@@ -80,7 +80,7 @@ func (bundle *Bundle) newResolvers() map[string]interface{} {
 					return nil, err
 				}
 
-				_, err = bundle.userBundle.Service.Load(ctx, in.UserID)
+				_, err = bundle.userBundle.UserService.Load(ctx, in.UserID)
 				if nil != err {
 					return nil, err
 				}
@@ -143,7 +143,7 @@ func (bundle *Bundle) newResolvers() map[string]interface{} {
 				return bundle.Service.Load(ctx, obj.SpaceID)
 			},
 			"User": func(ctx context.Context, obj *model.Membership) (*mUser.User, error) {
-				return bundle.userBundle.Service.Load(ctx, obj.UserID)
+				return bundle.userBundle.UserService.Load(ctx, obj.UserID)
 			},
 			"Roles": func(ctx context.Context, obj *model.Membership) ([]*model.Space, error) {
 				return bundle.MemberService.FindRoles(ctx, obj.UserID, obj.SpaceID)

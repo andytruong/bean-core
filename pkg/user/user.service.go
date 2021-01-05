@@ -54,7 +54,7 @@ func (srv *UserService) Create(ctx context.Context, in *dto.UserCreateInput) (*d
 	}
 
 	// create emails
-	if err := srv.bundle.emailService.CreateBulk(ctx, obj, in.Emails); nil != err {
+	if err := srv.bundle.EmailService.CreateBulk(ctx, obj, in.Emails); nil != err {
 		return nil, err
 	}
 
@@ -64,7 +64,7 @@ func (srv *UserService) Create(ctx context.Context, in *dto.UserCreateInput) (*d
 	}
 
 	// save password
-	if err := srv.bundle.passwordService.create(ctx, obj, in.Password); nil != err {
+	if err := srv.bundle.PasswordService.create(ctx, obj, in.Password); nil != err {
 		return nil, err
 	}
 
@@ -73,7 +73,7 @@ func (srv *UserService) Create(ctx context.Context, in *dto.UserCreateInput) (*d
 
 func (srv *UserService) Update(ctx context.Context, in dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
 	tx := connect.ContextToDB(ctx)
-	obj, err := srv.bundle.Service.Load(ctx, in.ID)
+	obj, err := srv.bundle.UserService.Load(ctx, in.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (srv *UserService) Update(ctx context.Context, in dto.UserUpdateInput) (*dt
 		return &dto.UserMutationOutcome{Errors: errList, User: nil}, nil
 	}
 
-	if err := srv.bundle.passwordService.create(ctx, obj, in.Values.Password); nil != err {
+	if err := srv.bundle.PasswordService.create(ctx, obj, in.Values.Password); nil != err {
 		return nil, err
 	}
 

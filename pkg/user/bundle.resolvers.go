@@ -2,9 +2,9 @@ package user
 
 import (
 	"context"
-
+	
 	"gorm.io/gorm"
-
+	
 	"bean/components/connect"
 	spaceModel "bean/pkg/space/model"
 	"bean/pkg/user/model"
@@ -28,38 +28,42 @@ func newResolvers(bundle *Bundle) map[string]interface{} {
 		},
 		"UserQuery": map[string]interface{}{
 			"Load": func(ctx context.Context, _ *dto.UserQuery, id string) (*model.User, error) {
-				return bundle.Service.Load(ctx, id)
+				return bundle.UserService.Load(ctx, id)
 			},
 		},
 		"UserMutation": map[string]interface{}{
-			"Create": func(ctx context.Context, _ *dto.UserMutation, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
+			"Create": func(ctx context.Context, _ *dto.UserMutation, in *dto.UserCreateInput) (
+				*dto.UserMutationOutcome, error,
+			) {
 				var err error
 				var out *dto.UserMutationOutcome
-
+				
 				err = connect.Transaction(
 					ctx,
 					func(tx *gorm.DB) error {
-						out, err = bundle.Service.Create(connect.DBToContext(ctx, tx), in)
-
+						out, err = bundle.UserService.Create(connect.DBToContext(ctx, tx), in)
+						
 						return err
 					},
 				)
-
+				
 				return out, err
 			},
-			"Update": func(ctx context.Context, _ *dto.UserMutation, input dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
+			"Update": func(ctx context.Context, _ *dto.UserMutation, input dto.UserUpdateInput) (
+				*dto.UserMutationOutcome, error,
+			) {
 				var err error
 				var out *dto.UserMutationOutcome
-
+				
 				err = connect.Transaction(
 					ctx,
 					func(tx *gorm.DB) error {
-						out, err = bundle.Service.Update(connect.DBToContext(ctx, tx), input)
-
+						out, err = bundle.UserService.Update(connect.DBToContext(ctx, tx), input)
+						
 						return err
 					},
 				)
-
+				
 				return out, err
 			},
 		},
@@ -71,7 +75,12 @@ func newResolvers(bundle *Bundle) map[string]interface{} {
 				return obj.IsVerified, nil
 			},
 			"Emails": func(ctx context.Context, obj *model.User) (*model.UserEmails, error) {
-				return bundle.emailService.List(ctx, obj)
+				return bundle.EmailService.List(ctx, obj)
+			},
+		},
+		"UserEmail": map[string]interface{}{
+			"Verified": func(ctx context.Context, obj model.UserEmail) (bool, error) {
+				return obj.IsVerified, nil
 			},
 		},
 	}

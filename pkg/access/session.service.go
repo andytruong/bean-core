@@ -4,16 +4,16 @@ import (
 	"context"
 	"errors"
 	"time"
-
+	
 	"gorm.io/gorm"
-
+	
 	"bean/components/claim"
 	"bean/components/connect"
 	"bean/components/util"
 	"bean/pkg/access/model"
 	"bean/pkg/access/model/dto"
 	mSpace "bean/pkg/space/model"
-	mUser "bean/pkg/user/model"
+	"bean/pkg/user"
 )
 
 type SessionService struct {
@@ -23,36 +23,31 @@ type SessionService struct {
 func (srv *SessionService) newSessionWithCredentials(ctx context.Context, in *dto.SessionCreateInput) (
 	*dto.SessionOutcome, error,
 ) {
-	tx := connect.ContextToDB(ctx)
-
 	// load email object, so we have userID
-	email := mUser.UserEmail{}
-	{
-		err := tx.First(&email, "value = ?", in.Email).Error
-		if nil != err {
-			return nil, errors.New("userBundle not found")
+	email, err := srv.bundle.userBundle.EmailService.Load(ctx, in.Email)
+	if nil != err {
+		if err == gorm.ErrRecordNotFound {
+			return nil, user.ErrorUserNotFound
 		}
-
-		if !email.IsActive {
-			return &dto.SessionOutcome{
-				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.email"}, "email address is not active"),
-			}, nil
-		}
+		
+		return nil, err
+	} else if !email.IsActive {
+		err := user.ErrorEmailInactive.Error()
+		errList := util.NewErrors(util.ErrorCodeInput, []string{"input.email"}, err)
+		
+		return &dto.SessionOutcome{Errors: errList}, nil
 	}
-
+	
 	// password validation
-	{
-		pass := mUser.UserPassword{}
-		err := tx.First(&pass, "user_id = ? AND hashed_value = ? AND is_active = ?", email.UserId, in.HashedPassword, true).Error
-		if nil != err {
-			if err == gorm.ErrRecordNotFound {
-				return &dto.SessionOutcome{
-					Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "invalid password"),
-				}, nil
-			}
-		}
+	passwordMatched, err := srv.bundle.userBundle.PasswordService.ValidPassword(ctx, email.UserId, in.HashedPassword)
+	if nil != err {
+		return nil, err
+	} else if !passwordMatched {
+		errList := util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "invalid password")
+		
+		return &dto.SessionOutcome{Errors: errList}, nil
 	}
-
+	
 	return srv.create(ctx, claim.KindCredentials, email.UserId, in.SpaceID, func(session *model.Session) {
 		session.CodeChallengeMethod = in.CodeChallengeMethod
 		session.CodeChallenge = in.CodeChallenge
@@ -65,16 +60,18 @@ func (srv *SessionService) newOTLTSession(ctx context.Context, in *dto.SessionCr
 	return srv.create(ctx, claim.KindOTLT, in.UserID, in.SpaceID, nil)
 }
 
-func (srv *SessionService) newSessionWithOTLT(ctx context.Context, in *dto.SessionExchangeOTLTInput) (*dto.SessionOutcome, error) {
+func (srv *SessionService) newSessionWithOTLT(ctx context.Context, in *dto.SessionExchangeOTLTInput) (
+	*dto.SessionOutcome, error,
+) {
 	oneTimeSession, err := srv.LoadByToken(ctx, in.Token)
 	if nil != err {
 		return nil, err
 	}
-
+	
 	if oneTimeSession.Kind != claim.KindOTLT {
 		return nil, util.ErrorInvalidArgument
 	}
-
+	
 	out, err := srv.create(ctx, claim.KindAuthenticated, oneTimeSession.UserId, oneTimeSession.SpaceId, func(session *model.Session) {
 		session.CodeChallengeMethod = in.CodeChallengeMethod
 		session.CodeChallenge = in.CodeChallenge
@@ -82,7 +79,7 @@ func (srv *SessionService) newSessionWithOTLT(ctx context.Context, in *dto.Sessi
 	if nil != err {
 		return nil, err
 	}
-
+	
 	// delete OTLT session
 	{
 		_, err := srv.Delete(ctx, oneTimeSession)
@@ -90,7 +87,7 @@ func (srv *SessionService) newSessionWithOTLT(ctx context.Context, in *dto.Sessi
 			return nil, err
 		}
 	}
-
+	
 	return out, err
 }
 
@@ -101,20 +98,20 @@ func (srv SessionService) create(
 ) (*dto.SessionOutcome, error) {
 	tx := connect.ContextToDB(ctx)
 	membership := &mSpace.Membership{}
-
+	
 	// validate membership
 	{
 		err := tx.
 			First(&membership, "space_id = ? AND user_id = ?", spaceId, userId).
 			Error
-
+		
 		if err == gorm.ErrRecordNotFound {
 			return &dto.SessionOutcome{
 				Errors: util.NewErrors(util.ErrorCodeInput, []string{"input.spaceId"}, "membership not found"),
 			}, nil
 		}
 	}
-
+	
 	token := srv.bundle.idr.ULID()
 	session := &model.Session{
 		ID:          srv.bundle.idr.ULID(),
@@ -129,11 +126,11 @@ func (srv SessionService) create(
 		UpdatedAt:   time.Now(),
 		ExpiredAt:   time.Now().Add(srv.bundle.cnf.SessionTimeout),
 	}
-
+	
 	if nil != create {
 		create(session)
 	}
-
+	
 	if err := tx.Create(&session).Error; nil != err {
 		return nil, err
 	} else {
@@ -143,7 +140,7 @@ func (srv SessionService) create(
 			return nil, err
 		}
 	}
-
+	
 	return &dto.SessionOutcome{
 		Errors:  nil,
 		Token:   &token,
@@ -155,19 +152,19 @@ func (srv SessionService) load(ctx context.Context, id string) (*model.Session, 
 	session := &model.Session{}
 	db := connect.ContextToDB(ctx)
 	err := db.WithContext(ctx).First(&session, "id = ?", id).Error
-
+	
 	if err == gorm.ErrRecordNotFound {
 		return nil, errors.New("session not found: " + id)
 	}
-
+	
 	if session.ExpiredAt.Unix() <= time.Now().Unix() {
 		return nil, errors.New("session expired")
 	}
-
+	
 	if !session.IsActive {
 		return nil, errors.New("session archived")
 	}
-
+	
 	return session, nil
 }
 
@@ -178,15 +175,15 @@ func (srv SessionService) LoadByToken(ctx context.Context, token string) (*model
 	if err == gorm.ErrRecordNotFound {
 		return nil, errors.New("session not found: " + srv.bundle.idr.Encode(token))
 	}
-
+	
 	if session.ExpiredAt.Unix() <= time.Now().Unix() {
 		return nil, errors.New("session expired")
 	}
-
+	
 	if !session.IsActive {
 		return nil, errors.New("session archived")
 	}
-
+	
 	return session, nil
 }
 
@@ -199,15 +196,15 @@ func (srv SessionService) Delete(ctx context.Context, session *model.Session) (*
 	if nil != err {
 		return nil, err
 	}
-
+	
 	// TODO
 	// If session.kind is … also archive parent sessions
 	// if session.Kind == claim.KindOTLT {}
-
+	
 	// TODO
 	// If session.kind is KindCredentials/KindAuthenticated also archive child sessions
 	// find & archive all child sessions
 	// if session.Kind == claim.KindCredentials || session.Kind == claim.KindAuthenticated {}
-
+	
 	return &dto.SessionArchiveOutcome{Errors: nil, Result: true}, nil
 }
