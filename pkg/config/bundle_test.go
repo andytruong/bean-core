@@ -228,8 +228,7 @@ func Test_Variable(t *testing.T) {
 			// setup auth context
 			userId := bundle.idr.ULID()
 			claims := claim.NewPayload()
-			claims.SetUserId(userId)
-			ctx := claim.PayloadToContext(context.Background(), &claims)
+			ctx := claims.SetUserId(userId).ToContext(context.Background())
 
 			tx := db.Begin()
 			defer tx.Rollback()
@@ -294,8 +293,7 @@ func Test_Variable(t *testing.T) {
 			// setup auth context
 			authorId := bundle.idr.ULID()
 			authorClaims := claim.NewPayload()
-			authorClaims.SetUserId(authorId)
-			authorCtx := claim.PayloadToContext(context.Background(), &authorClaims)
+			authorCtx := authorClaims.SetUserId(authorId).ToContext(context.Background())
 
 			// create private bucket
 			oBucketCreate, err := bundle.BucketService.Create(connect.DBToContext(authorCtx, tx), dto.BucketCreateInput{
@@ -344,7 +342,9 @@ func Test_Variable(t *testing.T) {
 			})
 
 			t.Run("by name", func(t *testing.T) {
-				load, err := bundle.VariableService.Load(connect.DBToContext(ctx, tx), dto.VariableKey{BucketId: bucket.Id, Name: variable.Name})
+				load, err := bundle.VariableService.Load(connect.DBToContext(ctx, tx), dto.VariableKey{
+					BucketId: bucket.Id, Name: variable.Name,
+				})
 				ass.NoError(err)
 				ass.Equal(bucket.Id, load.BucketId)
 				ass.Equal("1", load.Value)

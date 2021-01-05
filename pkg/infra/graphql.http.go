@@ -15,7 +15,6 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"go.uber.org/zap"
 
-	"bean/components/claim"
 	"bean/components/connect"
 	"bean/components/util"
 	"bean/pkg/infra/gql"
@@ -128,7 +127,7 @@ func (h *graphqlHttpHandler) beforeServe(req *http.Request) (context.Context, er
 	}
 
 	if nil != claims {
-		ctx = claim.PayloadToContext(ctx, claims)
+		ctx = claims.ToContext(ctx)
 	}
 
 	return ctx, nil

@@ -1,11 +1,14 @@
 package claim
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+
+	"bean/components/scalar"
 )
 
 func NewPayload() Payload {
@@ -17,6 +20,16 @@ func NewPayload() Payload {
 	}
 }
 
+func ContextToPayload(ctx context.Context) *Payload {
+	if claims, ok := ctx.Value(ClaimsContextKey).(*Payload); ok {
+		return claims
+	}
+
+	return nil
+}
+
+const ClaimsContextKey scalar.ContextKey = "bean.claims"
+
 // Id       -> sessionID
 // Issuer   -> applicationID
 // Subject  -> userID
@@ -25,6 +38,10 @@ type Payload struct {
 	jwt.StandardClaims
 	Kind  Kind     `json:"kind"`
 	Roles []string `json:"roles,omitempty"`
+}
+
+func (pl *Payload) ToContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, ClaimsContextKey, pl)
 }
 
 func (pl *Payload) SetKind(value Kind) *Payload {
