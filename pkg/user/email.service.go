@@ -3,7 +3,7 @@ package user
 import (
 	"context"
 	"time"
-	
+
 	"bean/components/connect"
 	"bean/components/scalar"
 	"bean/pkg/user/model"
@@ -17,11 +17,11 @@ type EmailService struct {
 func (srv EmailService) Load(ctx context.Context, email scalar.EmailAddress) (*model.UserEmail, error) {
 	entity := &model.UserEmail{}
 	err := connect.ContextToDB(ctx).First(entity, "value = ?", email).Error
-	
+
 	if nil != err {
 		return nil, err
 	}
-	
+
 	return entity, nil
 }
 
@@ -29,14 +29,14 @@ func (srv EmailService) CreateBulk(ctx context.Context, user *model.User, in *dt
 	if nil == in {
 		return nil
 	}
-	
+
 	if nil != in.Primary {
 		err := srv.bundle.EmailService.Create(ctx, user, *in.Primary, true)
 		if nil != err {
 			return err
 		}
 	}
-	
+
 	if nil != in.Secondary {
 		for _, secondaryInput := range in.Secondary {
 			err := srv.bundle.EmailService.Create(ctx, user, *secondaryInput, false)
@@ -45,7 +45,7 @@ func (srv EmailService) CreateBulk(ctx context.Context, user *model.User, in *dt
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -54,7 +54,7 @@ func (srv EmailService) Create(ctx context.Context, user *model.User, in dto.Use
 	if !in.Verified {
 		table = connect.TableUserEmailUnverified
 	}
-	
+
 	email := model.UserEmail{
 		ID:        srv.bundle.idr.ULID(),
 		UserId:    user.ID,
@@ -64,7 +64,7 @@ func (srv EmailService) Create(ctx context.Context, user *model.User, in dto.Use
 		UpdatedAt: time.Now(),
 		IsPrimary: isPrimary,
 	}
-	
+
 	return connect.ContextToDB(ctx).Table(table).Create(&email).Error
 }
 
@@ -72,7 +72,7 @@ func (srv EmailService) Create(ctx context.Context, user *model.User, in dto.Use
 //       see: https://gqlgen.com/reference/field-collection/
 func (srv EmailService) List(ctx context.Context, user *model.User) (*model.UserEmails, error) {
 	emails := &model.UserEmails{}
-	
+
 	var rows []*model.UserEmail
 	err := connect.ContextToDB(ctx).
 		WithContext(ctx).
@@ -82,7 +82,7 @@ func (srv EmailService) List(ctx context.Context, user *model.User) (*model.User
 		`, user.ID, user.ID).
 		Find(&rows).
 		Error
-	
+
 	if nil != err {
 		return nil, err
 	} else {
@@ -94,6 +94,6 @@ func (srv EmailService) List(ctx context.Context, user *model.User) (*model.User
 			}
 		}
 	}
-	
+
 	return emails, nil
 }

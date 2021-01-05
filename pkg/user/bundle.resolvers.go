@@ -2,9 +2,9 @@ package user
 
 import (
 	"context"
-	
+
 	"gorm.io/gorm"
-	
+
 	"bean/components/connect"
 	spaceModel "bean/pkg/space/model"
 	"bean/pkg/user/model"
@@ -37,16 +37,16 @@ func newResolvers(bundle *Bundle) map[string]interface{} {
 			) {
 				var err error
 				var out *dto.UserMutationOutcome
-				
+
 				err = connect.Transaction(
 					ctx,
 					func(tx *gorm.DB) error {
 						out, err = bundle.UserService.Create(connect.DBToContext(ctx, tx), in)
-						
+
 						return err
 					},
 				)
-				
+
 				return out, err
 			},
 			"Update": func(ctx context.Context, _ *dto.UserMutation, input dto.UserUpdateInput) (
@@ -54,16 +54,16 @@ func newResolvers(bundle *Bundle) map[string]interface{} {
 			) {
 				var err error
 				var out *dto.UserMutationOutcome
-				
+
 				err = connect.Transaction(
 					ctx,
 					func(tx *gorm.DB) error {
 						out, err = bundle.UserService.Update(connect.DBToContext(ctx, tx), input)
-						
+
 						return err
 					},
 				)
-				
+
 				return out, err
 			},
 		},

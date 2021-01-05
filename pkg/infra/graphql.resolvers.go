@@ -515,7 +515,12 @@ func (r *userResolver) Emails(ctx context.Context, obj *model5.User) (*model5.Us
 	return callback(ctx, obj)
 }
 func (r *userEmailResolver) Verified(ctx context.Context, obj *model5.UserEmail) (bool, error) {
-	panic("no implementation found in resolvers[UserEmail][Verified]")
+	bundle, _ := r.container.bundles.User()
+	resolvers := bundle.GraphqlResolver()
+	objectResolver := resolvers["UserEmail"].(map[string]interface{})
+	callback := objectResolver["Verified"].(func(ctx context.Context, obj *model5.UserEmail) (bool, error))
+
+	return callback(ctx, obj)
 }
 func (r *userMutationResolver) Create(ctx context.Context, obj *dto5.UserMutation, input *dto5.UserCreateInput) (*dto5.UserMutationOutcome, error) {
 	bundle, _ := r.container.bundles.User()

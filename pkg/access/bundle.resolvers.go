@@ -2,7 +2,7 @@ package access
 
 import (
 	"context"
-	
+
 	"bean/components/claim"
 	"bean/components/util"
 	"bean/pkg/access/model"
@@ -59,14 +59,14 @@ func (bundle *Bundle) newResolves() map[string]interface{} {
 				if nil == claims {
 					return nil, util.ErrorAuthRequired
 				}
-				
+
 				sess, _ := bundle.sessionService.load(ctx, claims.SessionId())
 				if sess != nil {
 					out, err := bundle.sessionService.Delete(ctx, sess)
-					
+
 					return out, err
 				}
-				
+
 				return &dto.SessionArchiveOutcome{
 					Errors: util.NewErrors(util.ErrorCodeInput, []string{"token"}, "session not found"),
 					Result: false,

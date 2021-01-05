@@ -3,7 +3,7 @@ package user
 import (
 	"context"
 	"time"
-	
+
 	"bean/components/connect"
 	"bean/pkg/user/model"
 	"bean/pkg/user/model/dto"
@@ -21,11 +21,11 @@ func (srv PasswordService) ValidPassword(ctx context.Context, userId string, has
 		Where("user_id = ? AND hashed_value = ? AND is_active = ?", userId, hashedValue, true).
 		Count(&count).
 		Error
-	
+
 	if nil != err {
 		return false, err
 	}
-	
+
 	return count == 1, nil
 }
 
@@ -33,7 +33,7 @@ func (srv *PasswordService) create(ctx context.Context, user *model.User, in *dt
 	if nil == in {
 		return nil
 	}
-	
+
 	db := connect.ContextToDB(ctx)
 	pass := &model.UserPassword{
 		ID:          srv.bundle.idr.ULID(),
@@ -43,14 +43,14 @@ func (srv *PasswordService) create(ctx context.Context, user *model.User, in *dt
 		UpdatedAt:   time.Now(),
 		IsActive:    true,
 	}
-	
+
 	{
 		err := db.Create(pass).Error
 		if nil != err {
 			return err
 		}
 	}
-	
+
 	// set other passwords to inactive
 	return db.
 		Where("user_id == ?", pass.UserId).
