@@ -39,7 +39,10 @@ func bundle() *Bundle {
 	id := util.MockIdentifier()
 	userBundle := user.NewUserBundle(lgr, id)
 	spaceBundle := space.NewSpaceBundle(lgr, id, userBundle, config.Bundles.Space)
-	bundle := NewAccessBundle(id, lgr, userBundle, spaceBundle, config.Bundles.Access)
+	bundle, err := NewAccessBundle(id, lgr, userBundle, spaceBundle, config.Bundles.Access)
+	if nil != err {
+		panic(err)
+	}
 
 	return bundle
 }
@@ -58,10 +61,8 @@ func newCreateSessionInput(spaceId string, email string, hashedPassword string) 
 
 func Test_Config(t *testing.T) {
 	ass := assert.New(t)
-	this := bundle()
-	key, err := this.cnf.GetSignKey()
-	ass.NoError(err)
-	ass.NotNil(key)
+	bundle := bundle()
+	ass.NotNil(bundle.JwtService.privateKey)
 }
 
 func Test_Create(t *testing.T) {

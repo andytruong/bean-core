@@ -2,20 +2,52 @@ package access
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/pkg/errors"
 
 	"bean/components/claim"
 	"bean/components/util"
 	"bean/pkg/access/model"
 )
 
+func newJwtService(bundle *Bundle) (*JwtService, error) {
+	privateKey, err := func(path string) (interface{}, error) {
+		file, err := ioutil.ReadFile(path)
+		if nil != err {
+			return nil, err
+		}
+
+		block, _ := pem.Decode(file)
+
+		return x509.ParsePKCS1PrivateKey(block.Bytes)
+	}(bundle.cnf.Jwt.PrivateKey.String())
+
+	if nil != err {
+		return nil, err
+	}
+
+	publicKey, err := claim.ParseRsaPublicKeyFromFile(bundle.cnf.Jwt.PublicKey.String())
+	if nil != err {
+		return nil, err
+	}
+
+	return &JwtService{
+		bundle:     bundle,
+		privateKey: privateKey,
+		publicKey:  publicKey,
+	}, nil
+}
+
 type JwtService struct {
-	bundle *Bundle
+	bundle     *Bundle
+	privateKey interface{}
+	publicKey  interface{}
 }
 
 func (srv JwtService) Validate(authHeader string) (*claim.Payload, error) {
@@ -27,7 +59,7 @@ func (srv JwtService) Validate(authHeader string) (*claim.Payload, error) {
 			authHeader,
 			&claim.Payload{},
 			func(token *jwt.Token) (interface{}, error) {
-				return srv.bundle.cnf.GetParseKey()
+				return srv.publicKey, nil
 			},
 		)
 
@@ -38,10 +70,12 @@ func (srv JwtService) Validate(authHeader string) (*claim.Payload, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("invalid authentication header")
+	return nil, ErrInvalidHeader
 }
 
-func (srv JwtService) claim(ctx context.Context, session *model.Session, codeVerifier string) (string, error) {
+func (srv JwtService) getSignedString(ctx context.Context, session *model.Session, codeVerifier string) (
+	string, error,
+) {
 	roles, err := srv.bundle.spaceBundle.MemberService.FindRoles(ctx, session.UserId, session.SpaceId)
 
 	if nil != err {
@@ -52,8 +86,8 @@ func (srv JwtService) claim(ctx context.Context, session *model.Session, codeVer
 		return "", fmt.Errorf("can not verify")
 	}
 
-	claims := claim.NewPayload()
-	claims.
+	payload := claim.NewPayload()
+	payload.
 		SetKind(session.Kind).
 		SetSessionId(session.ID).
 		SetUserId(session.UserId).
@@ -62,19 +96,24 @@ func (srv JwtService) claim(ctx context.Context, session *model.Session, codeVer
 		SetExpireAt(time.Now().Add(srv.bundle.cnf.Jwt.Timeout).Unix())
 
 	for _, role := range roles {
-		claims.AddRole(role.Title)
+		payload.AddRole(role.Title)
 	}
 
-	return srv.bundle.JwtService.Sign(claims)
+	return srv.bundle.JwtService.SignedString(payload)
 }
 
-func (srv JwtService) Sign(claims jwt.Claims) (string, error) {
-	key, err := srv.bundle.cnf.GetSignKey()
-	if nil != err {
-		return "", errors.Wrap(util.ErrorConfig, err.Error())
-	}
-
+func (srv JwtService) SignedString(claims jwt.Claims) (string, error) {
 	return jwt.
-		NewWithClaims(srv.bundle.cnf.signMethod(), claims).
-		SignedString(key)
+		NewWithClaims(srv.signMethod(), claims).
+		SignedString(srv.privateKey)
+}
+
+func (srv JwtService) signMethod() jwt.SigningMethod {
+	switch srv.bundle.cnf.Jwt.Algorithm {
+	case "RS512":
+		return jwt.SigningMethodRS512
+
+	default:
+		panic(util.ErrorToBeImplemented)
+	}
 }

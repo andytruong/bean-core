@@ -9,10 +9,9 @@ import (
 	"gorm.io/gorm/utils"
 )
 
-func preload(db *gorm.DB, rels []*schema.Relationship, conds []interface{}) {
+func preload(db *gorm.DB, rel *schema.Relationship, conds []interface{}, preloads map[string][]interface{}) {
 	var (
 		reflectValue     = db.Statement.ReflectValue
-		rel              = rels[len(rels)-1]
 		tx               = db.Session(&gorm.Session{NewDB: true}).Model(nil).Session(&gorm.Session{SkipHooks: db.Statement.SkipHooks})
 		relForeignKeys   []string
 		relForeignFields []*schema.Field
@@ -22,9 +21,10 @@ func preload(db *gorm.DB, rels []*schema.Relationship, conds []interface{}) {
 		inlineConds      []interface{}
 	)
 
-	if len(rels) > 1 {
-		reflectValue = schema.GetRelationsValues(reflectValue, rels[:len(rels)-1])
-	}
+	db.Statement.Settings.Range(func(k, v interface{}) bool {
+		tx.Statement.Settings.Store(k, v)
+		return true
+	})
 
 	if rel.JoinTable != nil {
 		var joinForeignFields, joinRelForeignFields []*schema.Field
@@ -49,7 +49,7 @@ func preload(db *gorm.DB, rels []*schema.Relationship, conds []interface{}) {
 		}
 
 		joinResults := rel.JoinTable.MakeSlice().Elem()
-		column, values := schema.ToQueryValues(rel.JoinTable.Table, joinForeignKeys, joinForeignValues)
+		column, values := schema.ToQueryValues(clause.CurrentTable, joinForeignKeys, joinForeignValues)
 		db.AddError(tx.Where(clause.IN{Column: column, Values: values}).Find(joinResults.Addr().Interface()).Error)
 
 		// convert join identity map to relation identity map
@@ -90,6 +90,11 @@ func preload(db *gorm.DB, rels []*schema.Relationship, conds []interface{}) {
 		if len(foreignValues) == 0 {
 			return
 		}
+	}
+
+	// nested preload
+	for p, pvs := range preloads {
+		tx = tx.Preload(p, pvs...)
 	}
 
 	reflectResults := rel.FieldSchema.MakeSlice().Elem()

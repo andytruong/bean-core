@@ -33,7 +33,8 @@ func (db *DB) CreateInBatches(value interface{}, batchSize int) (tx *DB) {
 	case reflect.Slice, reflect.Array:
 		var rowsAffected int64
 		tx = db.getInstance()
-		tx.AddError(tx.Transaction(func(tx *DB) error {
+
+		callFc := func(tx *DB) error {
 			for i := 0; i < reflectValue.Len(); i += batchSize {
 				ends := i + batchSize
 				if ends > reflectValue.Len() {
@@ -49,7 +50,14 @@ func (db *DB) CreateInBatches(value interface{}, batchSize int) (tx *DB) {
 				rowsAffected += subtx.RowsAffected
 			}
 			return nil
-		}))
+		}
+
+		if tx.SkipDefaultTransaction {
+			tx.AddError(callFc(tx.Session(&Session{})))
+		} else {
+			tx.AddError(tx.Transaction(callFc))
+		}
+
 		tx.RowsAffected = rowsAffected
 	default:
 		tx = db.getInstance()
@@ -70,7 +78,7 @@ func (db *DB) Save(value interface{}) (tx *DB) {
 		if _, ok := tx.Statement.Clauses["ON CONFLICT"]; !ok {
 			tx = tx.Clauses(clause.OnConflict{UpdateAll: true})
 		}
-		tx.callbacks.Create().Execute(tx)
+		tx.callbacks.Create().Execute(tx.InstanceSet("gorm:update_track_time", true))
 	case reflect.Struct:
 		if err := tx.Statement.Parse(value); err == nil && tx.Statement.Schema != nil {
 			for _, pf := range tx.Statement.Schema.PrimaryFields {
@@ -108,7 +116,9 @@ func (db *DB) First(dest interface{}, conds ...interface{}) (tx *DB) {
 		Column: clause.Column{Table: clause.CurrentTable, Name: clause.PrimaryKey},
 	})
 	if len(conds) > 0 {
-		tx.Statement.AddClause(clause.Where{Exprs: tx.Statement.BuildCondition(conds[0], conds[1:]...)})
+		if exprs := tx.Statement.BuildCondition(conds[0], conds[1:]...); len(exprs) > 0 {
+			tx.Statement.AddClause(clause.Where{Exprs: exprs})
+		}
 	}
 	tx.Statement.RaiseErrorOnNotFound = true
 	tx.Statement.Dest = dest
@@ -120,7 +130,9 @@ func (db *DB) First(dest interface{}, conds ...interface{}) (tx *DB) {
 func (db *DB) Take(dest interface{}, conds ...interface{}) (tx *DB) {
 	tx = db.Limit(1)
 	if len(conds) > 0 {
-		tx.Statement.AddClause(clause.Where{Exprs: tx.Statement.BuildCondition(conds[0], conds[1:]...)})
+		if exprs := tx.Statement.BuildCondition(conds[0], conds[1:]...); len(exprs) > 0 {
+			tx.Statement.AddClause(clause.Where{Exprs: exprs})
+		}
 	}
 	tx.Statement.RaiseErrorOnNotFound = true
 	tx.Statement.Dest = dest
@@ -135,7 +147,9 @@ func (db *DB) Last(dest interface{}, conds ...interface{}) (tx *DB) {
 		Desc:   true,
 	})
 	if len(conds) > 0 {
-		tx.Statement.AddClause(clause.Where{Exprs: tx.Statement.BuildCondition(conds[0], conds[1:]...)})
+		if exprs := tx.Statement.BuildCondition(conds[0], conds[1:]...); len(exprs) > 0 {
+			tx.Statement.AddClause(clause.Where{Exprs: exprs})
+		}
 	}
 	tx.Statement.RaiseErrorOnNotFound = true
 	tx.Statement.Dest = dest
@@ -147,7 +161,9 @@ func (db *DB) Last(dest interface{}, conds ...interface{}) (tx *DB) {
 func (db *DB) Find(dest interface{}, conds ...interface{}) (tx *DB) {
 	tx = db.getInstance()
 	if len(conds) > 0 {
-		tx.Statement.AddClause(clause.Where{Exprs: tx.Statement.BuildCondition(conds[0], conds[1:]...)})
+		if exprs := tx.Statement.BuildCondition(conds[0], conds[1:]...); len(exprs) > 0 {
+			tx.Statement.AddClause(clause.Where{Exprs: exprs})
+		}
 	}
 	tx.Statement.Dest = dest
 	tx.callbacks.Query().Execute(tx)
@@ -178,8 +194,13 @@ func (db *DB) FindInBatches(dest interface{}, batchSize int, fc func(tx *DB, bat
 			break
 		} else {
 			resultsValue := reflect.Indirect(reflect.ValueOf(dest))
-			primaryValue, _ := result.Statement.Schema.PrioritizedPrimaryField.ValueOf(resultsValue.Index(resultsValue.Len() - 1))
-			queryDB = tx.Clauses(clause.Gt{Column: clause.Column{Table: clause.CurrentTable, Name: clause.PrimaryKey}, Value: primaryValue})
+			if result.Statement.Schema.PrioritizedPrimaryField == nil {
+				tx.AddError(ErrPrimaryKeyRequired)
+				break
+			} else {
+				primaryValue, _ := result.Statement.Schema.PrioritizedPrimaryField.ValueOf(resultsValue.Index(resultsValue.Len() - 1))
+				queryDB = tx.Clauses(clause.Gt{Column: clause.Column{Table: clause.CurrentTable, Name: clause.PrimaryKey}, Value: primaryValue})
+			}
 		}
 	}
 
@@ -208,8 +229,9 @@ func (tx *DB) assignInterfacesToValue(values ...interface{}) {
 				}
 			}
 		case clause.Expression, map[string]string, map[interface{}]interface{}, map[string]interface{}:
-			exprs := tx.Statement.BuildCondition(value)
-			tx.assignInterfacesToValue(exprs)
+			if exprs := tx.Statement.BuildCondition(value); len(exprs) > 0 {
+				tx.assignInterfacesToValue(exprs)
+			}
 		default:
 			if s, err := schema.Parse(value, tx.cacheStore, tx.NamingStrategy); err == nil {
 				reflectValue := reflect.Indirect(reflect.ValueOf(value))
@@ -226,8 +248,9 @@ func (tx *DB) assignInterfacesToValue(values ...interface{}) {
 					}
 				}
 			} else if len(values) > 0 {
-				exprs := tx.Statement.BuildCondition(values[0], values[1:]...)
-				tx.assignInterfacesToValue(exprs)
+				if exprs := tx.Statement.BuildCondition(values[0], values[1:]...); len(exprs) > 0 {
+					tx.assignInterfacesToValue(exprs)
+				}
 				return
 			}
 		}
@@ -339,7 +362,9 @@ func (db *DB) UpdateColumns(values interface{}) (tx *DB) {
 func (db *DB) Delete(value interface{}, conds ...interface{}) (tx *DB) {
 	tx = db.getInstance()
 	if len(conds) > 0 {
-		tx.Statement.AddClause(clause.Where{Exprs: tx.Statement.BuildCondition(conds[0], conds[1:]...)})
+		if exprs := tx.Statement.BuildCondition(conds[0], conds[1:]...); len(exprs) > 0 {
+			tx.Statement.AddClause(clause.Where{Exprs: exprs})
+		}
 	}
 	tx.Statement.Dest = value
 	tx.callbacks.Delete().Execute(tx)
@@ -365,7 +390,7 @@ func (db *DB) Count(count *int64) (tx *DB) {
 
 	if len(tx.Statement.Selects) == 0 {
 		tx.Statement.AddClause(clause.Select{Expression: clause.Expr{SQL: "count(1)"}})
-	} else if !strings.Contains(strings.ToLower(tx.Statement.Selects[0]), "count(") {
+	} else if !strings.HasPrefix(strings.TrimSpace(strings.ToLower(tx.Statement.Selects[0])), "count(") {
 		expr := clause.Expr{SQL: "count(1)"}
 
 		if len(tx.Statement.Selects) == 1 {
@@ -441,6 +466,8 @@ func (db *DB) Scan(dest interface{}) (tx *DB) {
 		defer rows.Close()
 		if rows.Next() {
 			tx.ScanRows(rows, dest)
+		} else {
+			tx.RowsAffected = 0
 		}
 	}
 

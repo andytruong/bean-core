@@ -10,8 +10,13 @@ import (
 	"bean/components/connect"
 	"bean/components/module"
 	"bean/components/scalar"
+	"bean/components/util"
 	"bean/pkg/space"
 	"bean/pkg/user"
+)
+
+const (
+	ErrInvalidHeader = util.Err("invalid authentication header")
 )
 
 func NewAccessBundle(
@@ -20,8 +25,8 @@ func NewAccessBundle(
 	userBundle *user.Bundle,
 	spaceBundle *space.Bundle,
 	cnf *Config,
-) *Bundle {
-	this := &Bundle{
+) (*Bundle, error) {
+	bundle := &Bundle{
 		cnf:         cnf.init(),
 		lgr:         lgr,
 		idr:         idr,
@@ -29,11 +34,16 @@ func NewAccessBundle(
 		spaceBundle: spaceBundle,
 	}
 
-	this.sessionService = &SessionService{bundle: this}
-	this.JwtService = &JwtService{bundle: this}
-	this.resolvers = this.newResolves()
+	var err error
+	bundle.JwtService, err = newJwtService(bundle)
+	if nil != err {
+		return nil, err
+	}
 
-	return this
+	bundle.sessionService = &SessionService{bundle: bundle}
+	bundle.resolvers = bundle.newResolves()
+
+	return bundle, nil
 }
 
 type (

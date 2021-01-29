@@ -103,7 +103,7 @@ func (p plugin) resolverBody(data *codegen.Data, o *codegen.Object, f *codegen.F
 	implementation := fmt.Sprintf(`panic("no implementation found in resolvers[%s][%s]")`, o.Name, f.GoFieldName)
 	bundles := p.container.BundleList()
 
-	for _, bundle := range bundles.Get() {
+	for _, bundle := range bundles {
 		resolvers := bundle.GraphqlResolver()
 		if nil == resolvers {
 			continue

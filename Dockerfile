@@ -4,7 +4,7 @@ WORKDIR   /code
 COPY    . /code
 
 RUN apk add --no-cache git gcc g++ sqlite
-RUN go build -mod=vendor -o /app /code/cmd/main.go
+RUN go build -mod=vendor -ldflags "-w" -o /app /code/cmd/main.go
 
 FROM alpine:3.12
 RUN apk add --no-cache ca-certificates
