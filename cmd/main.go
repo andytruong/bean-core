@@ -59,9 +59,7 @@ func cmdMigrate(container *infra.Container) *cli.Command {
 				return err
 			}
 
-			bundles := container.BundleList()
-
-			return connect.Migrate(ctx.Context, bundles.Get(), db)
+			return connect.Migrate(ctx.Context, container.BundleList(), db)
 		},
 	}
 }

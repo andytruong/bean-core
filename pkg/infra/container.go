@@ -3,7 +3,6 @@ package infra
 import (
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -12,10 +11,6 @@ import (
 	"bean/components/connect"
 	"bean/components/module"
 	"bean/components/scalar"
-	"bean/pkg/access"
-	"bean/pkg/integration/mailer"
-	"bean/pkg/integration/s3"
-	"bean/pkg/space"
 )
 
 func NewContainer(path string) (*Container, error) {
@@ -25,7 +20,7 @@ func NewContainer(path string) (*Container, error) {
 		Config:  &Config{},
 		mutex:   &sync.Mutex{},
 		idr:     &scalar.Identifier{},
-		bundles: BundleList{},
+		bundles: bundleList{},
 		hook:    module.NewHook(),
 	}
 
@@ -64,47 +59,7 @@ type (
 		idr     *scalar.Identifier
 		logger  *zap.Logger
 		hook    *module.Hook
-		bundles BundleList
-	}
-
-	Config struct {
-		Version    string                            `yaml:"version"`
-		Env        string                            `yaml:"env"`
-		Databases  map[string]connect.DatabaseConfig `yaml:"databases"`
-		HttpServer HttpServerConfig                  `yaml:"http-server"`
-		Bundles    BundlesConfig                     `yaml:"bundles"`
-	}
-
-	HttpServerConfig struct {
-		Address      string        `yaml:"address"`
-		ReadTimeout  time.Duration `yaml:"readTimeout"`
-		WriteTimeout time.Duration `yaml:"writeTimeout"`
-		IdleTimeout  time.Duration `yaml:"idleTimeout"`
-		GraphQL      struct {
-			Introspection bool `yaml:"introspection"`
-			Transports    struct {
-				Post      bool `yaml:"post"`
-				Websocket struct {
-					KeepAlivePingInterval time.Duration `yaml:"keepAlivePingInterval"`
-				} `yaml:"websocket"`
-			} `yaml:"transports"`
-			Playround PlayroundConfig `yaml:"playround"`
-		} `yaml:"graphql"`
-	}
-
-	PlayroundConfig struct {
-		Title   string `yaml:"title"`
-		Enabled bool   `yaml:"enabled"`
-		Path    string `yaml:"path"`
-	}
-
-	BundlesConfig struct {
-		Access      *access.Config `yaml:"access"`
-		Space       *space.Config  `yaml:"space"`
-		Integration struct {
-			S3     *s3.Config     `yaml:"s3"`
-			Mailer *mailer.Config `yaml:"mailer"`
-		} `yaml:"integration"`
+		bundles bundleList
 	}
 )
 
@@ -112,8 +67,8 @@ func (c *Container) Logger() *zap.Logger {
 	return c.logger
 }
 
-func (c *Container) BundleList() BundleList {
-	return c.bundles
+func (c *Container) BundleList() []module.Bundle {
+	return c.bundles.Get()
 }
 
 func (c *Container) HttpServer() http.Server {

@@ -87,7 +87,7 @@ func (bundle *Bundle) newResolves() map[string]interface{} {
 				return bundle.spaceBundle.Service.Load(ctx, obj.SpaceId)
 			},
 			"Jwt": func(ctx context.Context, session *model.Session, codeVerifier string) (string, error) {
-				return bundle.JwtService.claim(ctx, session, codeVerifier)
+				return bundle.JwtService.getSignedString(ctx, session, codeVerifier)
 			},
 		},
 	}

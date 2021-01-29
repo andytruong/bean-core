@@ -45,7 +45,7 @@ dev.lint:
 	@staticcheck ./...
 
 dev.check-size:
-	@go build -mod=vendor -o /tmp/go-bean cmd/main.go
+	@go build -mod=vendor -ldflags "-w" -o /tmp/go-bean cmd/main.go
 	@du -h /tmp/go-bean
 	@rm /tmp/go-bean
 

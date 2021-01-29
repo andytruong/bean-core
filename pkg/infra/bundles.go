@@ -11,7 +11,7 @@ import (
 )
 
 type (
-	BundleList struct {
+	bundleList struct {
 		container *Container
 
 		user   *user.Bundle

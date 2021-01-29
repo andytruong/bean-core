@@ -13,7 +13,7 @@ import (
 	"bean/pkg/user"
 )
 
-func (bundles *BundleList) Get() []module.Bundle {
+func (bundles *bundleList) Get() []module.Bundle {
 	userBundle, _ := bundles.User()
 	spaceBundle, _ := bundles.Space()
 	appBundle, _ := bundles.App()
@@ -24,7 +24,7 @@ func (bundles *BundleList) Get() []module.Bundle {
 	return []module.Bundle{userBundle, spaceBundle, appBundle, accessBundle, s3Bundle, mailerBundle}
 }
 
-func (bundles *BundleList) User() (*user.Bundle, error) {
+func (bundles *bundleList) User() (*user.Bundle, error) {
 	var err error
 
 	if nil == bundles.user {
@@ -37,7 +37,7 @@ func (bundles *BundleList) User() (*user.Bundle, error) {
 	return bundles.user, err
 }
 
-func (bundles *BundleList) Space() (*space.Bundle, error) {
+func (bundles *bundleList) Space() (*space.Bundle, error) {
 	var err error
 
 	if nil == bundles.space {
@@ -57,7 +57,7 @@ func (bundles *BundleList) Space() (*space.Bundle, error) {
 	return bundles.space, err
 }
 
-func (bundles *BundleList) Config() (*config.Bundle, error) {
+func (bundles *bundleList) Config() (*config.Bundle, error) {
 	if nil == bundles.config {
 		bundles.config = config.NewConfigBundle(
 			bundles.container.idr,
@@ -68,7 +68,7 @@ func (bundles *BundleList) Config() (*config.Bundle, error) {
 	return bundles.config, nil
 }
 
-func (bundles *BundleList) Access() (*access.Bundle, error) {
+func (bundles *bundleList) Access() (*access.Bundle, error) {
 	if nil == bundles.access {
 		userBundle, err := bundles.User()
 		if nil != err {
@@ -80,19 +80,23 @@ func (bundles *BundleList) Access() (*access.Bundle, error) {
 			return nil, err
 		}
 
-		bundles.access = access.NewAccessBundle(
+		bundles.access, err = access.NewAccessBundle(
 			bundles.container.idr,
 			bundles.container.logger,
 			userBundle,
 			spaceBundle,
 			bundles.container.Config.Bundles.Access,
 		)
+
+		if nil != err {
+			return nil, err
+		}
 	}
 
 	return bundles.access, nil
 }
 
-func (bundles *BundleList) Mailer() (*mailer.Bundle, error) {
+func (bundles *bundleList) Mailer() (*mailer.Bundle, error) {
 	if nil == bundles.mailer {
 		bundles.mailer = mailer.NewMailerBundle(bundles.container.Config.Bundles.Integration.Mailer, bundles.container.logger)
 	}
@@ -100,7 +104,7 @@ func (bundles *BundleList) Mailer() (*mailer.Bundle, error) {
 	return bundles.mailer, nil
 }
 
-func (bundles *BundleList) App() (*app.Bundle, error) {
+func (bundles *bundleList) App() (*app.Bundle, error) {
 	if nil == bundles.app {
 		spaceBundle, err := bundles.Space()
 		if nil != err {
@@ -128,7 +132,7 @@ func (bundles *BundleList) App() (*app.Bundle, error) {
 	return bundles.app, nil
 }
 
-func (bundles *BundleList) S3() (*s3.Bundle, error) {
+func (bundles *bundleList) S3() (*s3.Bundle, error) {
 	if nil == bundles.s3 {
 		appBundle, err := bundles.App()
 		if nil != err {

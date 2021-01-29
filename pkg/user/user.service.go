@@ -20,7 +20,7 @@ type UserService struct {
 func (srv *UserService) Load(ctx context.Context, id string) (*model.User, error) {
 	user := &model.User{}
 	db := connect.ContextToDB(ctx)
-	err := db.Where(&model.User{ID: id}).First(user).Error
+	err := db.Where(&model.User{ID: id}).Take(user).Error
 
 	if nil != err {
 		return nil, err
