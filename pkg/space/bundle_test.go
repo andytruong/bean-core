@@ -81,7 +81,7 @@ func Test_Space(t *testing.T) {
 			// check that owner role is created
 			// -------
 			ownerNS := &model.Space{}
-			err = db.First(&ownerNS, "parent_id = ?", out.Space.ID).Error
+			err = db.Take(&ownerNS, "parent_id = ?", out.Space.ID).Error
 			ass.NoError(err)
 			ass.Equal(ownerNS.Title, "owner")
 			ass.Equal(ownerNS.Kind, model.SpaceKindRole)

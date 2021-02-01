@@ -17,9 +17,9 @@ type AppService struct {
 }
 
 func (srv *AppService) Load(ctx context.Context, id string) (*model.Application, error) {
-	con := connect.ContextToDB(ctx)
+	con := connect.DB(ctx)
 	app := &model.Application{}
-	err := con.Where("id = ? AND deleted_at IS NULL", id).First(&app).Error
+	err := con.Where("id = ? AND deleted_at IS NULL", id).Take(&app).Error
 	if nil != err {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (srv *AppService) Create(ctx context.Context, in *dto.ApplicationCreateInpu
 		DeletedAt: nil,
 	}
 
-	err := connect.ContextToDB(ctx).Create(&app).Error
+	err := connect.DB(ctx).Create(&app).Error
 	if nil != err {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (srv *AppService) Create(ctx context.Context, in *dto.ApplicationCreateInpu
 }
 
 func (srv *AppService) Update(ctx context.Context, in *dto.ApplicationUpdateInput) (*dto.ApplicationOutcome, error) {
-	con := connect.ContextToDB(ctx)
+	con := connect.DB(ctx)
 	app, err := srv.Load(ctx, in.Id)
 
 	if nil != err {

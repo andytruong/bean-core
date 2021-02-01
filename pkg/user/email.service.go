@@ -16,7 +16,7 @@ type EmailService struct {
 
 func (srv EmailService) Load(ctx context.Context, email scalar.EmailAddress) (*model.UserEmail, error) {
 	entity := &model.UserEmail{}
-	err := connect.ContextToDB(ctx).First(entity, "value = ?", email).Error
+	err := connect.DB(ctx).Take(entity, "value = ?", email).Error
 
 	if nil != err {
 		return nil, err
@@ -65,7 +65,7 @@ func (srv EmailService) Create(ctx context.Context, user *model.User, in dto.Use
 		IsPrimary: isPrimary,
 	}
 
-	return connect.ContextToDB(ctx).Table(table).Create(&email).Error
+	return connect.DB(ctx).Table(table).Create(&email).Error
 }
 
 // TODO: need a better resolver, we not always load secondary emails.
@@ -74,7 +74,7 @@ func (srv EmailService) List(ctx context.Context, user *model.User) (*model.User
 	emails := &model.UserEmails{}
 
 	var rows []*model.UserEmail
-	err := connect.ContextToDB(ctx).
+	err := connect.DB(ctx).
 		WithContext(ctx).
 		Raw(`
 			     SELECT *, 1 AS is_verified FROM user_emails            WHERE user_id = ?

@@ -90,7 +90,7 @@ func (w *Wrapper) dialector(cnf DatabaseConfig) gorm.Dialector {
 }
 
 func Transaction(ctx context.Context, callback func(tx *gorm.DB) error) error {
-	con := ContextToDB(ctx)
+	con := DB(ctx)
 	txn := con.Begin()
 	err := callback(txn)
 

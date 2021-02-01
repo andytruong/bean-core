@@ -23,7 +23,7 @@ func MockDatabase() *gorm.DB {
 }
 
 func MockInstall(ctx context.Context, bean module.Bundle) {
-	db := ContextToDB(ctx)
+	db := DB(ctx)
 	tx := db.Begin()
 	err := mockInstall(DBToContext(ctx, tx), bean)
 	if nil != err {
@@ -35,7 +35,7 @@ func MockInstall(ctx context.Context, bean module.Bundle) {
 }
 
 func mockInstall(ctx context.Context, bundle module.Bundle) error {
-	db := ContextToDB(ctx)
+	db := DB(ctx)
 	if !db.Migrator().HasTable(Migration{}) {
 		if err := db.Migrator().CreateTable(Migration{}); nil != err {
 			return err

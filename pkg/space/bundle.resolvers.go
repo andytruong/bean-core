@@ -43,7 +43,7 @@ func (bundle *Bundle) newResolvers() map[string]interface{} {
 		},
 		"SpaceMutation": map[string]interface{}{
 			"Create": func(ctx context.Context, _ *dto.SpaceMutation, input dto.SpaceCreateInput) (*dto.SpaceOutcome, error) {
-				tx := connect.ContextToDB(ctx)
+				tx := connect.DB(ctx)
 				out, err := bundle.Service.Create(ctx, input)
 
 				if nil != err {
@@ -59,7 +59,7 @@ func (bundle *Bundle) newResolvers() map[string]interface{} {
 					return nil, err
 				}
 
-				txn := connect.ContextToDB(ctx)
+				txn := connect.DB(ctx)
 				out, err := bundle.Service.Update(ctx, *space, in)
 
 				if nil != err {
@@ -94,7 +94,7 @@ func (bundle *Bundle) newResolvers() map[string]interface{} {
 					return nil, errors.Wrap(util.ErrorConfig, "register is off")
 				}
 
-				tx := connect.ContextToDB(ctx).Begin()
+				tx := connect.DB(ctx).Begin()
 
 				outcome, err := bundle.MemberService.Create(connect.DBToContext(ctx, tx), in)
 
@@ -112,7 +112,7 @@ func (bundle *Bundle) newResolvers() map[string]interface{} {
 					return nil, err
 				}
 
-				tx := connect.ContextToDB(ctx).Begin()
+				tx := connect.DB(ctx).Begin()
 				out, err := bundle.MemberService.Update(connect.DBToContext(ctx, tx), in, membership)
 
 				if nil != err {

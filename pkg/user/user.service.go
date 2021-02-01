@@ -19,7 +19,7 @@ type UserService struct {
 
 func (srv *UserService) Load(ctx context.Context, id string) (*model.User, error) {
 	user := &model.User{}
-	db := connect.ContextToDB(ctx)
+	db := connect.DB(ctx)
 	err := db.Where(&model.User{ID: id}).Take(user).Error
 
 	if nil != err {
@@ -30,7 +30,7 @@ func (srv *UserService) Load(ctx context.Context, id string) (*model.User, error
 }
 
 func (srv *UserService) Create(ctx context.Context, in *dto.UserCreateInput) (*dto.UserMutationOutcome, error) {
-	db := connect.ContextToDB(ctx)
+	db := connect.DB(ctx)
 
 	if uint8(len(in.Emails.Secondary)) > srv.bundle.maxSecondaryEmailPerUser {
 		return nil, errors.Wrap(
@@ -72,7 +72,7 @@ func (srv *UserService) Create(ctx context.Context, in *dto.UserCreateInput) (*d
 }
 
 func (srv *UserService) Update(ctx context.Context, in dto.UserUpdateInput) (*dto.UserMutationOutcome, error) {
-	tx := connect.ContextToDB(ctx)
+	tx := connect.DB(ctx)
 	obj, err := srv.bundle.UserService.Load(ctx, in.ID)
 	if err != nil {
 		return nil, err

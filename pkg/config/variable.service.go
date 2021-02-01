@@ -55,7 +55,7 @@ func (srv VariableService) Load(ctx context.Context, key dto.VariableKey) (*mode
 		return nil, errors.New("invalid load key")
 	}
 
-	db := connect.ContextToDB(ctx)
+	db := connect.DB(ctx)
 	variable := &model.ConfigVariable{}
 	if key.Id != "" {
 		err := db.Take(&variable, "id = ?", key.Id).Error
@@ -116,7 +116,7 @@ func (srv VariableService) Create(ctx context.Context, in dto.VariableCreateInpu
 		UpdatedAt:   time.Now(),
 	}
 
-	err = connect.ContextToDB(ctx).Create(&variable).Error
+	err = connect.DB(ctx).Create(&variable).Error
 	if nil != err {
 		return nil, err
 	} else {
@@ -125,7 +125,7 @@ func (srv VariableService) Create(ctx context.Context, in dto.VariableCreateInpu
 }
 
 func (srv VariableService) Update(ctx context.Context, in dto.VariableUpdateInput) (*dto.VariableMutationOutcome, error) {
-	tx := connect.ContextToDB(ctx)
+	tx := connect.DB(ctx)
 	variable, err := srv.Load(ctx, dto.VariableKey{Id: in.Id})
 	if nil != err {
 		return nil, err
@@ -189,7 +189,7 @@ func (srv VariableService) Update(ctx context.Context, in dto.VariableUpdateInpu
 }
 
 func (srv VariableService) Delete(ctx context.Context, in dto.VariableDeleteInput) (*dto.VariableMutationOutcome, error) {
-	tx := connect.ContextToDB(ctx)
+	tx := connect.DB(ctx)
 	variable, err := srv.Load(ctx, dto.VariableKey{Id: in.Id})
 	if nil != err {
 		return nil, err

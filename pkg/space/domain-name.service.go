@@ -49,7 +49,7 @@ func (srv *DomainNameService) create(ctx context.Context, space *model.Space, in
 		IsActive:   *in.IsActive,
 	}
 
-	return connect.ContextToDB(ctx).Create(&domain).Error
+	return connect.DB(ctx).Create(&domain).Error
 }
 
 func (srv *DomainNameService) Find(ctx context.Context, space *model.Space) (*model.DomainNames, error) {
@@ -60,7 +60,7 @@ func (srv *DomainNameService) Find(ctx context.Context, space *model.Space) (*mo
 
 	var domainNames []*model.DomainName
 
-	err := connect.ContextToDB(ctx).
+	err := connect.DB(ctx).
 		Where("space_id = ?", space.ID).
 		Find(&domainNames).
 		Error

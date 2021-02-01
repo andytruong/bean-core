@@ -39,11 +39,11 @@ func (srv *ConfigService) CreateFeature(
 		UpdatedAt: time.Now(),
 	}
 
-	return connect.ContextToDB(ctx).Create(&config).Error
+	return connect.DB(ctx).Create(&config).Error
 }
 
 func (srv *ConfigService) List(ctx context.Context, space *model.Space) (*model.SpaceFeatures, error) {
-	db := connect.ContextToDB(ctx)
+	db := connect.DB(ctx)
 	features := &model.SpaceFeatures{Register: false}
 	var configList []model.SpaceConfig
 

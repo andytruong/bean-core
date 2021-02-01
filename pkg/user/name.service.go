@@ -14,7 +14,7 @@ type NameService struct {
 
 func (srv *NameService) load(ctx context.Context, userId string) (*model.UserName, error) {
 	name := &model.UserName{}
-	err := connect.ContextToDB(ctx).Where(model.UserName{UserId: userId}).First(&name).Error
+	err := connect.DB(ctx).Where(model.UserName{UserId: userId}).Take(&name).Error
 	if nil != err {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (srv *NameService) create(ctx context.Context, user *model.User, input *dto
 			PreferredName: input.Name.PreferredName,
 		}
 
-		if err := connect.ContextToDB(ctx).Create(name).Error; nil != err {
+		if err := connect.DB(ctx).Create(name).Error; nil != err {
 			return err
 		}
 	}

@@ -16,7 +16,7 @@ type PasswordService struct {
 func (srv PasswordService) ValidPassword(ctx context.Context, userId string, hashedValue string) (bool, error) {
 	count := int64(0)
 	err := connect.
-		ContextToDB(ctx).
+		DB(ctx).
 		Model(&model.UserPassword{}).
 		Where("user_id = ? AND hashed_value = ? AND is_active = ?", userId, hashedValue, true).
 		Count(&count).
@@ -34,7 +34,7 @@ func (srv *PasswordService) create(ctx context.Context, user *model.User, in *dt
 		return nil
 	}
 
-	db := connect.ContextToDB(ctx)
+	db := connect.DB(ctx)
 	pass := &model.UserPassword{
 		ID:          srv.bundle.idr.ULID(),
 		UserId:      user.ID,

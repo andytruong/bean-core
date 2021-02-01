@@ -21,7 +21,7 @@ type MemberService struct {
 
 func (srv MemberService) load(ctx context.Context, id string, version *string) (*model.Membership, error) {
 	obj := &model.Membership{}
-	err := connect.ContextToDB(ctx).First(&obj, "id = ?", id).Error
+	err := connect.DB(ctx).Take(&obj, "id = ?", id).Error
 	if nil != err {
 		return nil, err
 	} else if nil != version {
@@ -80,7 +80,7 @@ func (srv MemberService) Find(ctx context.Context, first int, after *string, fil
 }
 
 func (srv MemberService) findUnlimited(ctx context.Context, afterRaw *string, filters dto.MembershipsFilter) (*gorm.DB, error) {
-	query := connect.ContextToDB(ctx).
+	query := connect.DB(ctx).
 		Where("space_memberships.user_id = ?", filters.UserID).
 		Where("space_memberships.is_active = ?", filters.IsActive).
 		Order("space_memberships.logged_in_at DESC")
@@ -156,7 +156,7 @@ func (srv MemberService) doCreate(ctx context.Context, spaceId string, userId st
 		UpdatedAt: time.Now(),
 	}
 
-	if err := connect.ContextToDB(ctx).Create(&membership).Error; nil != err {
+	if err := connect.DB(ctx).Create(&membership).Error; nil != err {
 		return nil, err
 	}
 
@@ -164,7 +164,7 @@ func (srv MemberService) doCreate(ctx context.Context, spaceId string, userId st
 }
 
 func (srv MemberService) createRelationships(ctx context.Context, obj *model.Membership, managerMemberIds []string) ([]*util.Error, error) {
-	tx := connect.ContextToDB(ctx)
+	tx := connect.DB(ctx)
 	if len(managerMemberIds) > srv.bundle.config.Manager.MaxNumberOfManager {
 		return util.NewErrors(util.ErrorQueryTooMuch, []string{"input", "managerMemberIds"}, "exceeded limitation"), nil
 	}
@@ -209,14 +209,14 @@ func (srv MemberService) createRelationship(ctx context.Context, obj *model.Memb
 		UpdatedAt:       time.Now(),
 	}
 
-	return connect.ContextToDB(ctx).Save(&relationship).Error
+	return connect.DB(ctx).Save(&relationship).Error
 }
 
 func (srv MemberService) Update(ctx context.Context, in dto.SpaceMembershipUpdateInput, obj *model.Membership) (*dto.SpaceMembershipCreateOutcome, error) {
 	obj.Version = srv.bundle.idr.ULID()
 	obj.IsActive = in.IsActive
 
-	err := connect.ContextToDB(ctx).Save(&obj).Error
+	err := connect.DB(ctx).Save(&obj).Error
 	if nil != err {
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func (srv MemberService) Update(ctx context.Context, in dto.SpaceMembershipUpdat
 
 func (srv MemberService) FindRoles(ctx context.Context, userId string, spaceId string) ([]*model.Space, error) {
 	var roles []*model.Space
-	db := connect.ContextToDB(ctx)
+	db := connect.DB(ctx)
 
 	err := db.
 		Joins(
@@ -257,5 +257,5 @@ func (srv MemberService) FindRoles(ctx context.Context, userId string, spaceId s
 func (srv MemberService) UpdateLastLoginTime(ctx context.Context, membership *model.Membership) error {
 	membership.LoggedInAt = scalar.NilTime(time.Now())
 
-	return connect.ContextToDB(ctx).Save(&membership).Error
+	return connect.DB(ctx).Save(&membership).Error
 }

@@ -20,7 +20,7 @@ type SpaceService struct {
 
 func (srv SpaceService) Load(ctx context.Context, id string) (*model.Space, error) {
 	obj := &model.Space{}
-	err := connect.ContextToDB(ctx).First(&obj, "id = ?", id).Error
+	err := connect.DB(ctx).Take(&obj, "id = ?", id).Error
 	if nil != err {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (srv SpaceService) FindOne(ctx context.Context, filters dto.SpaceFilters) (
 		return srv.Load(ctx, *filters.ID)
 	} else if nil != filters.Domain {
 		domain := &model.DomainName{}
-		err := connect.ContextToDB(ctx).Where("value = ?", filters.Domain).First(&domain).Error
+		err := connect.DB(ctx).Where("value = ?", filters.Domain).Take(&domain).Error
 		if nil != err {
 			return nil, err
 		} else if !domain.IsActive {
@@ -61,7 +61,7 @@ func (srv *SpaceService) Create(ctx context.Context, in dto.SpaceCreateInput) (*
 }
 
 func (srv *SpaceService) create(ctx context.Context, in dto.SpaceCreateInput) (*model.Space, error) {
-	db := connect.ContextToDB(ctx)
+	db := connect.DB(ctx)
 	space := &model.Space{
 		ID:        srv.bundle.idr.ULID(),
 		Version:   srv.bundle.idr.ULID(),
@@ -138,7 +138,7 @@ func (srv *SpaceService) createRelationships(ctx context.Context, space *model.S
 }
 
 func (srv SpaceService) Update(ctx context.Context, obj model.Space, in dto.SpaceUpdateInput) (*dto.SpaceOutcome, error) {
-	tx := connect.ContextToDB(ctx)
+	tx := connect.DB(ctx)
 
 	// check version for conflict
 	if in.SpaceVersion != obj.Version {

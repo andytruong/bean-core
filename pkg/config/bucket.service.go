@@ -31,7 +31,7 @@ func (srv BucketService) Create(ctx context.Context, in dto.BucketCreateInput) (
 		}
 	}
 
-	db := connect.ContextToDB(ctx)
+	db := connect.DB(ctx)
 	bucket := &model.ConfigBucket{
 		Id:          srv.bundle.idr.ULID(),
 		Version:     srv.bundle.idr.ULID(),
@@ -59,7 +59,7 @@ func (srv BucketService) Create(ctx context.Context, in dto.BucketCreateInput) (
 }
 
 func (srv BucketService) Update(ctx context.Context, in dto.BucketUpdateInput) (*dto.BucketMutationOutcome, error) {
-	tx := connect.ContextToDB(ctx)
+	tx := connect.DB(ctx)
 	bucket, err := srv.Load(ctx, dto.BucketKey{Id: in.Id})
 	if nil != err {
 		return nil, err
@@ -128,7 +128,7 @@ func (srv BucketService) Update(ctx context.Context, in dto.BucketUpdateInput) (
 
 func (srv BucketService) Load(ctx context.Context, key dto.BucketKey) (*model.ConfigBucket, error) {
 	bucket := &model.ConfigBucket{}
-	db := connect.ContextToDB(ctx)
+	db := connect.DB(ctx)
 
 	if key.Id != "" {
 		// load by ID

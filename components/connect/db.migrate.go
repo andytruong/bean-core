@@ -140,7 +140,7 @@ func (runner Runner) Run(ctx context.Context) error {
 }
 
 func (runner Runner) execute(ctx context.Context, file string) error {
-	db := ContextToDB(ctx)
+	db := DB(ctx)
 	migration := NewMigration(runner.Bundle, file)
 	path := migration.realPath()
 

@@ -96,13 +96,13 @@ func (srv SessionService) create(
 	kind claim.Kind, userId string, spaceId string,
 	create func(*model.Session),
 ) (*dto.SessionOutcome, error) {
-	tx := connect.ContextToDB(ctx)
+	tx := connect.DB(ctx)
 	membership := &mSpace.Membership{}
 
 	// validate membership
 	{
 		err := tx.
-			First(&membership, "space_id = ? AND user_id = ?", spaceId, userId).
+			Take(&membership, "space_id = ? AND user_id = ?", spaceId, userId).
 			Error
 
 		if err == gorm.ErrRecordNotFound {
@@ -150,8 +150,8 @@ func (srv SessionService) create(
 
 func (srv SessionService) load(ctx context.Context, id string) (*model.Session, error) {
 	session := &model.Session{}
-	db := connect.ContextToDB(ctx)
-	err := db.WithContext(ctx).First(&session, "id = ?", id).Error
+	db := connect.DB(ctx)
+	err := db.WithContext(ctx).Take(&session, "id = ?", id).Error
 
 	if err == gorm.ErrRecordNotFound {
 		return nil, errors.New("session not found: " + id)
@@ -169,9 +169,9 @@ func (srv SessionService) load(ctx context.Context, id string) (*model.Session, 
 }
 
 func (srv SessionService) LoadByToken(ctx context.Context, token string) (*model.Session, error) {
-	db := connect.ContextToDB(ctx)
+	db := connect.DB(ctx)
 	session := &model.Session{}
-	err := db.First(&session, "hashed_token = ?", srv.bundle.idr.Encode(token)).Error
+	err := db.Take(&session, "hashed_token = ?", srv.bundle.idr.Encode(token)).Error
 	if err == gorm.ErrRecordNotFound {
 		return nil, errors.New("session not found: " + srv.bundle.idr.Encode(token))
 	}
@@ -188,7 +188,7 @@ func (srv SessionService) LoadByToken(ctx context.Context, token string) (*model
 }
 
 func (srv SessionService) Delete(ctx context.Context, session *model.Session) (*dto.SessionArchiveOutcome, error) {
-	tx := connect.ContextToDB(ctx)
+	tx := connect.DB(ctx)
 	session.IsActive = false
 	session.Version = srv.bundle.idr.ULID()
 	session.UpdatedAt = time.Now()

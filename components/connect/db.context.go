@@ -14,7 +14,7 @@ func WithContextValue(ctx context.Context, wrapper *Wrapper) context.Context {
 	return context.WithValue(ctx, DatabaseContextKey, wrapper)
 }
 
-func ContextToDB(ctx context.Context) *gorm.DB {
+func DB(ctx context.Context) *gorm.DB {
 	if db, ok := ctx.Value(DatabaseContextKey).(*gorm.DB); ok {
 		return db
 	}
