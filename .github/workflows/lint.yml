@@ -15,7 +15,7 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - run: "go get honnef.co/go/tools/cmd/staticcheck"
       - uses: "actions/checkout@v2.3.4"
-      - uses: "actions/cache@v2"
+      - uses: "actions/cache@v2.1.4"
         with:
           path: ~/.cache/staticcheck
           key: staticcheck-${{ github.sha }}
