@@ -1,8 +1,7 @@
 Access › Login
 ====
 
-1. Start session using credentials
-====
+## 1. Start session using credentials
 
 Using credentials to get refresh token (`outcome.token`) to access system:
 
@@ -27,8 +26,7 @@ mutation ($spaceId: ID!, $email: EmailAddress!) {
 }
 ```
 
-2. Access token
-====
+## 2. Access token
 
 Go get access token (in JWT format) to access the system. It's fast to be expired, use session's `refreshToken`
 and `$codeVerifier` to get it:
@@ -46,15 +44,13 @@ query ($refreshToken: String!, $codeVerifier: String!) {
 }
 ```
 
-4. Use accessToken
-====
+## 3. Use accessToken
 
 ```
 curl http://path/to/endpoint -H "Authorization: Bearer ${accessToken}"
 ```
 
-3. Start session using one-time login token
-====
+## 4. Start session using one-time login token
 
 ```graphql
 mutation ($token: String!, $codeVerifier: String!) {
@@ -76,8 +72,7 @@ mutation ($token: String!, $codeVerifier: String!) {
 }
 ```
 
-4. Terminate the session
-====
+## 5. Terminate the session
 
 Related sessions will be also terminated (request with auth header).
 
