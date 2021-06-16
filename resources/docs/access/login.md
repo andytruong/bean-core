@@ -19,7 +19,7 @@ mutation ($spaceId: ID!, $email: EmailAddress!) {
         }
       ) {
         errors { code fields message }
-        token
+        refreshToken: token
       }
     }
   }
